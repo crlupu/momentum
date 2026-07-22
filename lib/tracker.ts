@@ -194,13 +194,21 @@ export function useTracker() {
 
   const loaded = useRef(false);
   const stateRef = useRef<TrackerState | null>(null);
+  const userRef = useRef<User | null>(null);
   const remoteApplied = useRef(false);
+  const initialLoad = useRef(true);
+  const lastUpdated = useRef(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      setState(regenerate(migrate(raw ? JSON.parse(raw) : DEFAULT_STATE)));
+      const parsed = raw ? JSON.parse(raw) : null;
+      // Support both the { state, updated } wrapper and the old bare state.
+      const rawState = parsed && parsed.state ? parsed.state : parsed ?? DEFAULT_STATE;
+      lastUpdated.current =
+        parsed && typeof parsed.updated === "number" ? parsed.updated : 0;
+      setState(regenerate(migrate(rawState)));
     } catch {
       setState(DEFAULT_STATE);
     }
@@ -210,6 +218,10 @@ export function useTracker() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (!isFirebaseConfigured) return;
@@ -227,49 +239,103 @@ export function useTracker() {
     });
   }, []);
 
+  // Live Firestore sync. The newest copy wins, decided by `updated` timestamp,
+  // so a fresh local change is never clobbered by a stale remote snapshot.
   useEffect(() => {
     if (!isFirebaseConfigured || !user) return;
     const fb = getFirebase();
     if (!fb) return;
     const ref = doc(fb.db, "users", user.uid);
-    return onSnapshot(ref, (snap) => {
-      if (snap.metadata.hasPendingWrites) return;
-      if (snap.exists()) {
-        const data = snap.data().state;
-        if (data) {
-          remoteApplied.current = true;
-          setState(migrate(data));
+    return onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.metadata.hasPendingWrites) return;
+        if (snap.exists()) {
+          const data = snap.data();
+          const remoteUpdated = typeof data.updated === "number" ? data.updated : 0;
+          if (remoteUpdated > lastUpdated.current && data.state) {
+            // Remote is newer (e.g. another device) — apply it.
+            remoteApplied.current = true;
+            lastUpdated.current = remoteUpdated;
+            setState(migrate(data.state));
+          } else if (remoteUpdated < lastUpdated.current && stateRef.current) {
+            // Local is newer — push it up so remote catches up.
+            setDoc(ref, { state: stateRef.current, updated: lastUpdated.current }).catch((e) =>
+              console.error("sync write failed", e)
+            );
+          }
+        } else {
+          const updated = lastUpdated.current || Date.now();
+          lastUpdated.current = updated;
+          setDoc(ref, { state: stateRef.current ?? DEFAULT_STATE, updated }).catch((e) =>
+            console.error("seed failed", e)
+          );
         }
-      } else {
-        setDoc(ref, { state: stateRef.current ?? DEFAULT_STATE, updated: Date.now() }).catch(
-          (e) => console.error("seed failed", e)
-        );
-      }
-    });
+      },
+      (err) => console.error("snapshot error", err)
+    );
   }, [user]);
 
+  // Persist on every data change: localStorage synchronously (survives reload),
+  // Firestore debounced. Only real data changes bump the timestamp.
   useEffect(() => {
     if (!loaded.current || !state) return;
+
+    const fromRemote = remoteApplied.current;
+    if (fromRemote) remoteApplied.current = false;
+
+    if (!fromRemote) {
+      if (initialLoad.current) initialLoad.current = false;
+      else lastUpdated.current = Date.now();
+    }
+
+    const payload = { state, updated: lastUpdated.current };
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(KEY, JSON.stringify(payload));
     } catch (e) {
       console.error("cache write failed", e);
     }
-    if (remoteApplied.current) {
-      remoteApplied.current = false;
-      return;
-    }
-    if (isFirebaseConfigured && user) {
+
+    if (!fromRemote && isFirebaseConfigured && userRef.current) {
       const fb = getFirebase();
       if (!fb) return;
+      const uidStr = userRef.current.uid;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        setDoc(doc(fb.db, "users", user.uid), { state, updated: Date.now() }).catch((e) =>
+        setDoc(doc(fb.db, "users", uidStr), payload).catch((e) =>
           console.error("sync write failed", e)
         );
-      }, 400);
+      }, 250);
     }
-  }, [state, user]);
+  }, [state]);
+
+  // Flush any pending write when the page is hidden/closed.
+  useEffect(() => {
+    const flush = () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      if (isFirebaseConfigured && userRef.current && stateRef.current) {
+        const fb = getFirebase();
+        if (fb) {
+          setDoc(doc(fb.db, "users", userRef.current.uid), {
+            state: stateRef.current,
+            updated: lastUpdated.current,
+          }).catch(() => {});
+        }
+      }
+    };
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
 
   const update = (fn: (s: TrackerState) => TrackerState) =>
     setState((s) => (s ? fn(s) : s));
