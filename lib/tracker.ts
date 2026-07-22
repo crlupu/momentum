@@ -304,6 +304,8 @@ export function useTracker() {
         board: [...s.board, { id: uid(), title, catId: s.categories[0]?.id ?? "", status }],
       })),
 
+    setBoard: (board: BoardCard[]) => update((s) => ({ ...s, board })),
+
     moveCard: (id: string, dir: -1 | 1) =>
       update((s) => {
         const order: BoardStatus[] = ["planned", "progress", "done"];

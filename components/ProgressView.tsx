@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@heroui/react";
-import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
+import { Tracker, Task, dateKey } from "@/lib/tracker";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -9,9 +9,74 @@ function offsetDate(days: number): Date {
   return d;
 }
 
-const HEAT = ["rgba(245,165,36,0.10)", "#F9D08A", "#F7B94E", "#F5A524", "#D98A0B"];
-const heatColor = (n: number) =>
-  n === 0 ? HEAT[0] : n === 1 ? HEAT[1] : n === 2 ? HEAT[2] : n <= 4 ? HEAT[3] : HEAT[4];
+function hexToRgba(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+// completions per date for a specific category
+function catCompletionsByDate(tasks: Task[], catId: string): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const t of tasks)
+    if (t.done && t.doneDate && t.catId === catId)
+      map[t.doneDate] = (map[t.doneDate] ?? 0) + 1;
+  return map;
+}
+
+function allCompletionsByDate(tasks: Task[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const t of tasks)
+    if (t.done && t.doneDate) map[t.doneDate] = (map[t.doneDate] ?? 0) + 1;
+  return map;
+}
+
+// Shared cell layout: ~20 weeks up to today, Mon-first columns.
+function buildCells(): { k: string }[] {
+  const dow = (new Date().getDay() + 6) % 7;
+  const totalCells = 19 * 7 + dow + 1;
+  return Array.from({ length: totalCells }, (_, i) => {
+    const d = offsetDate(totalCells - 1 - i);
+    return { k: dateKey(d) };
+  });
+}
+
+function Heatmap({
+  cells,
+  map,
+  color,
+}: {
+  cells: { k: string }[];
+  map: Record<string, number>;
+  color: string;
+}) {
+  const shade = (n: number) => {
+    if (n === 0) return "rgba(127,127,127,0.10)";
+    if (n === 1) return hexToRgba(color, 0.35);
+    if (n === 2) return hexToRgba(color, 0.55);
+    if (n <= 4) return hexToRgba(color, 0.8);
+    return hexToRgba(color, 1);
+  };
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div className="grid w-max grid-flow-col gap-[3px]" style={{ gridTemplateRows: "repeat(7, 12px)" }}>
+        {cells.map(({ k }) => {
+          const n = map[k] ?? 0;
+          return (
+            <div
+              key={k}
+              title={`${k} — ${n} done`}
+              className="h-3 w-3 rounded-[2px]"
+              style={{ background: shade(n) }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
@@ -26,22 +91,17 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 
 export default function ProgressView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const map = completionsByDate(s.tasks);
+  const allMap = allCompletionsByDate(s.tasks);
+  const cells = buildCells();
 
+  // daily bars, last 14 days
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
-  const counts = days.map((d) => map[dateKey(d)] ?? 0);
+  const counts = days.map((d) => allMap[dateKey(d)] ?? 0);
   const max = Math.max(1, ...counts);
 
-  const dow = (new Date().getDay() + 6) % 7;
-  const totalCells = 19 * 7 + dow + 1;
-  const cells = Array.from({ length: totalCells }, (_, i) => {
-    const d = offsetDate(totalCells - 1 - i);
-    const k = dateKey(d);
-    return { k, n: map[k] ?? 0 };
-  });
-
+  // month totals
   const mPrefix = dateKey().slice(0, 7);
-  const monthEntries = Object.entries(map).filter(([k]) => k.startsWith(mPrefix));
+  const monthEntries = Object.entries(allMap).filter(([k]) => k.startsWith(mPrefix));
   const mTotal = monthEntries.reduce((a, [, n]) => a + n, 0);
   const best = monthEntries.reduce<[string, number] | null>(
     (b, e) => (!b || e[1] > b[1] ? (e as [string, number]) : b),
@@ -49,15 +109,15 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
   );
   const avg = monthEntries.length ? (mTotal / monthEntries.length).toFixed(1) : "0";
 
-  const catCounts: Record<string, number> = {};
-  for (const t of s.tasks)
-    if (t.done && t.doneDate?.startsWith(mPrefix))
-      catCounts[t.catId] = (catCounts[t.catId] ?? 0) + 1;
-  const catRows = s.categories
-    .map((c) => ({ c, n: catCounts[c.id] ?? 0 }))
-    .filter((r) => r.n > 0)
-    .sort((a, b) => b.n - a.n);
-  const cmax = Math.max(1, ...catRows.map((r) => r.n));
+  // per-category maps + totals (only categories with any completions)
+  const perCat = s.categories
+    .map((c) => {
+      const map = catCompletionsByDate(s.tasks, c.id);
+      const total = Object.values(map).reduce((a, n) => a + n, 0);
+      return { c, map, total };
+    })
+    .filter((x) => x.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   return (
     <div className="space-y-4">
@@ -90,31 +150,29 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
 
       <Card>
         <Card.Content className="p-4 sm:p-5">
-          <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
-            Monthly — completions
+          <h2 className="font-display mb-1 text-sm font-semibold uppercase tracking-wide text-foreground/60">
+            Completions by category
           </h2>
-          <div className="overflow-x-auto pb-1.5">
-            <div
-              className="grid w-max grid-flow-col gap-[3px]"
-              style={{ gridTemplateRows: "repeat(7, 14px)" }}
-            >
-              {cells.map(({ k, n }) => (
-                <div
-                  key={k}
-                  title={`${k} — ${n} done`}
-                  className="h-3.5 w-3.5 rounded-[3px]"
-                  style={{ background: heatColor(n) }}
-                />
+          <p className="mb-4 text-xs text-foreground/50">Last 20 weeks · each category tracked separately</p>
+
+          {perCat.length === 0 ? (
+            <p className="px-1 py-2 text-[15px] text-foreground/60">
+              Complete some tasks to see per-category activity.
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {perCat.map(({ c, map, total }) => (
+                <div key={c.id}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
+                    <span className="text-sm font-medium">{c.name}</span>
+                    <span className="font-mono-n text-xs text-foreground/50">{total}</span>
+                  </div>
+                  <Heatmap cells={cells} map={map} color={c.color} />
+                </div>
               ))}
             </div>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs text-foreground/60">
-            less
-            {HEAT.map((c, i) => (
-              <span key={i} className="inline-block h-3.5 w-3.5 rounded-[3px]" style={{ background: c }} />
-            ))}
-            more
-          </div>
+          )}
         </Card.Content>
       </Card>
 
@@ -123,38 +181,11 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
           <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
             {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
-          <div
-            className="grid gap-2.5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
-          >
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
             <Stat value={mTotal} label="tasks completed" />
             <Stat value={best ? `${best[1]} (${best[0].slice(8)})` : "–"} label="best day" />
             <Stat value={avg} label="avg / active day" />
           </div>
-
-          <div className="mb-1 mt-4 text-[13px] uppercase tracking-wide text-foreground/60">
-            By category
-          </div>
-          {catRows.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">
-              Complete some tasks to see the breakdown.
-            </p>
-          ) : (
-            catRows.map(({ c, n }) => (
-              <div key={c.id} className="my-2 flex items-center gap-2.5">
-                <span className="w-[110px] shrink-0 truncate text-[13px] text-foreground/70">
-                  {c.name}
-                </span>
-                <div className="h-2.5 flex-1 overflow-hidden rounded-md bg-foreground/[0.08]">
-                  <div
-                    className="h-full rounded-md"
-                    style={{ width: `${(n / cmax) * 100}%`, background: c.color }}
-                  />
-                </div>
-                <span className="font-mono-n w-[30px] text-right text-xs font-semibold">{n}</span>
-              </div>
-            ))
-          )}
         </Card.Content>
       </Card>
     </div>
