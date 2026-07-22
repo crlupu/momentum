@@ -6,6 +6,10 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   type User,
 } from "firebase/auth";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
@@ -79,6 +83,10 @@ function friendlyAuthError(code: string): string {
       return "Too many attempts. Wait a moment and try again.";
     case "auth/network-request-failed":
       return "Network error. Check your connection.";
+    case "auth/unauthorized-domain":
+      return "This site's domain isn't authorized in Firebase. Add it under Authentication → Settings → Authorized domains.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with this email using a different sign-in method.";
     default:
       return "Something went wrong. Please try again.";
   }
@@ -118,6 +126,10 @@ export function useTracker() {
       setAuthReady(true);
       return;
     }
+    // Complete any redirect-based sign-in and surface its errors.
+    getRedirectResult(fb.auth).catch((e) =>
+      setAuthError(friendlyAuthError((e as { code?: string }).code ?? ""))
+    );
     return onAuthStateChanged(fb.auth, (u) => {
       setUser(u);
       setAuthReady(true);
@@ -200,6 +212,34 @@ export function useTracker() {
         await createUserWithEmailAndPassword(fb.auth, email, password);
       } catch (e) {
         setAuthError(friendlyAuthError((e as { code?: string }).code ?? ""));
+      }
+    },
+    signInWithGoogle: async () => {
+      const fb = getFirebase();
+      if (!fb) return;
+      setAuthError(null);
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(fb.auth, provider);
+      } catch (e) {
+        const code = (e as { code?: string }).code ?? "";
+        // User dismissed the popup: stay quiet.
+        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+          return;
+        }
+        // Popups unavailable (some iOS Safari setups): fall back to redirect.
+        if (
+          code === "auth/popup-blocked" ||
+          code === "auth/operation-not-supported-in-this-environment"
+        ) {
+          try {
+            await signInWithRedirect(fb.auth, provider);
+          } catch (e2) {
+            setAuthError(friendlyAuthError((e2 as { code?: string }).code ?? ""));
+          }
+          return;
+        }
+        setAuthError(friendlyAuthError(code));
       }
     },
     signOutUser: async () => {

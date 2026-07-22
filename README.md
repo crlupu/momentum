@@ -24,7 +24,8 @@ config. To enable cross-device sync:
 3. Paste them into `lib/firebaseConfig.ts` (replace the `YOUR_…` placeholders),
    or set the `NEXT_PUBLIC_FIREBASE_*` env vars (see `.env.local.example`).
    These values are public by design — safe to commit.
-4. **Enable Authentication** → Sign-in method → **Email/Password** → Enable.
+4. **Enable Authentication** → Sign-in method → enable **Google** (set a
+   support email when prompted) and, if you want it, **Email/Password**.
 5. **Create Firestore** → Build → Firestore Database → Create database →
    Start in production mode.
 6. **Publish security rules**: copy `firestore.rules` into the Rules tab and
