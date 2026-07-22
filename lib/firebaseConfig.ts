@@ -21,12 +21,12 @@ const fromEnv = {
 
 // 👇 PASTE YOUR CONFIG HERE (replace the YOUR_… placeholders)
 const hardcoded = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyCxfHgWe-GA8mIDsXE9JYn5jt1eWRdPFIk",
+  authDomain: "momentum-b9c86.firebaseapp.com",
+  projectId: "momentum-b9c86",
+  storageBucket: "momentum-b9c86.firebasestorage.app",
+  messagingSenderId: "924083476427",
+  appId: "1:924083476427:web:94eec7d88eb4b589e1884e",
 };
 
 export const firebaseConfig = {
