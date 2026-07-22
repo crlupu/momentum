@@ -65,10 +65,10 @@ function ProgressRing({
         dominantBaseline="central"
         textAnchor="middle"
         className="fill-foreground font-mono-n"
-        fontSize="11"
+        fontSize={pct === 100 ? 8.5 : 10}
         fontWeight="600"
       >
-        {pct}
+        {pct}%
       </text>
     </svg>
   );
@@ -110,15 +110,23 @@ function CardBody({
         (dragging ? "opacity-90 shadow-lg ring-2 ring-primary/40" : "")
       }
     >
-      {hasTarget && !editing && (
-        <button
-          className="absolute right-2 top-2"
-          aria-label="Edit progress"
-          onClick={() => setEditing(true)}
-        >
-          <ProgressRing current={b.current ?? 0} target={b.target ?? 1} color={c.color} />
-        </button>
-      )}
+      <div className="absolute right-2 top-2">
+        {hasTarget && !editing ? (
+          <button aria-label="Edit progress" onClick={() => setEditing(true)}>
+            <ProgressRing current={b.current ?? 0} target={b.target ?? 1} color={c.color} />
+          </button>
+        ) : !editing ? (
+          <Button
+            size="sm"
+            variant="outline"
+            isIconOnly
+            aria-label="Set progress target"
+            onPress={() => setEditing(true)}
+          >
+            <Target className="h-4 w-4" />
+          </Button>
+        ) : null}
+      </div>
 
       <div className="mb-2 flex items-start gap-1.5 pr-11">
         <button
@@ -195,11 +203,6 @@ function CardBody({
         ) : (
           <Button size="md" variant="primary" onPress={() => tracker.setCardStatus(b.id, "done")}>
             <Check className="h-4 w-4" /> Done
-          </Button>
-        )}
-        {!hasTarget && !editing && (
-          <Button size="md" variant="outline" isIconOnly aria-label="Set progress target" onPress={() => setEditing(true)}>
-            <Target className="h-4 w-4" />
           </Button>
         )}
         <Button
