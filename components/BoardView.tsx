@@ -22,7 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Card, Chip, Input } from "@heroui/react";
-import { Check, GripVertical, Plus, Repeat, RotateCcw, X } from "lucide-react";
+import { Check, GripVertical, Plus, Repeat, RotateCcw, Target, X } from "lucide-react";
 import { Tracker, BoardStatus, BoardCard, FREQ_LABEL, FREQ_ORDER } from "@/lib/tracker";
 
 const COLUMNS: { status: BoardStatus; label: string }[] = [
@@ -30,6 +30,49 @@ const COLUMNS: { status: BoardStatus; label: string }[] = [
   { status: "progress", label: "In progress" },
   { status: "done", label: "Done" },
 ];
+
+function ProgressRing({
+  current,
+  target,
+  color,
+}: {
+  current: number;
+  target: number;
+  color: string;
+}) {
+  const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0;
+  const r = 15;
+  const circ = 2 * Math.PI * r;
+  return (
+    <svg width="42" height="42" viewBox="0 0 42 42" aria-label={`${pct}% complete`}>
+      <circle cx="21" cy="21" r={r} fill="none" stroke="currentColor" className="text-foreground/10" strokeWidth="4" />
+      <circle
+        cx="21"
+        cy="21"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - pct / 100)}
+        transform="rotate(-90 21 21)"
+        style={{ transition: "stroke-dashoffset .25s ease" }}
+      />
+      <text
+        x="21"
+        y="21"
+        dominantBaseline="central"
+        textAnchor="middle"
+        className="fill-foreground font-mono-n"
+        fontSize="11"
+        fontWeight="600"
+      >
+        {pct}
+      </text>
+    </svg>
+  );
+}
 
 function CardBody({
   b,
@@ -45,14 +88,39 @@ function CardBody({
   const c = tracker.cat(b.catId);
   const freq = tracker.freqOf(b);
   const done = b.status === "done";
+  const hasTarget = typeof b.target === "number" && b.target > 0;
+
+  const [editing, setEditing] = useState(false);
+  const [current, setCurrent] = useState(String(b.current ?? ""));
+  const [target, setTarget] = useState(String(b.target ?? ""));
+
+  const saveProgress = () => {
+    tracker.setCardProgress(
+      b.id,
+      current === "" ? null : Number(current),
+      target === "" ? null : Number(target)
+    );
+    setEditing(false);
+  };
+
   return (
     <div
       className={
-        "rounded-lg border border-foreground/10 bg-card p-3 shadow-sm " +
+        "relative rounded-lg border border-foreground/10 bg-card p-3 shadow-sm " +
         (dragging ? "opacity-90 shadow-lg ring-2 ring-primary/40" : "")
       }
     >
-      <div className="mb-2 flex items-start gap-1.5">
+      {hasTarget && !editing && (
+        <button
+          className="absolute right-2 top-2"
+          aria-label="Edit progress"
+          onClick={() => setEditing(true)}
+        >
+          <ProgressRing current={b.current ?? 0} target={b.target ?? 1} color={c.color} />
+        </button>
+      )}
+
+      <div className="mb-2 flex items-start gap-1.5 pr-11">
         <button
           aria-label="Drag to move"
           className="mt-0.5 cursor-grab touch-none text-foreground/30 hover:text-foreground/60 active:cursor-grabbing"
@@ -64,11 +132,12 @@ function CardBody({
           {b.title}
         </div>
       </div>
-      <div className="flex items-center gap-2 pl-[22px]">
+
+      <div className="mb-2.5 flex flex-wrap items-center gap-2 pl-[22px]">
         <Chip
           size="sm"
           variant="soft"
-          className="mr-auto cursor-pointer"
+          className="cursor-pointer"
           onClick={() => tracker.cycleCardCat(b.id)}
         >
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
@@ -80,33 +149,66 @@ function CardBody({
             {FREQ_LABEL[freq]}
           </span>
         )}
+        {hasTarget && (
+          <span className="font-mono-n text-[11px] text-foreground/50">
+            {b.current ?? 0} / {b.target}
+          </span>
+        )}
+      </div>
+
+      {editing && (
+        <div className="mb-2.5 flex flex-wrap items-end gap-2 pl-[22px]">
+          <label className="text-[11px] text-foreground/60">
+            Current
+            <Input
+              type="number"
+              aria-label="Current value"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              className="mt-0.5 h-9 w-24"
+            />
+          </label>
+          <label className="text-[11px] text-foreground/60">
+            Target
+            <Input
+              type="number"
+              aria-label="Target value"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className="mt-0.5 h-9 w-24"
+            />
+          </label>
+          <Button size="sm" variant="primary" onPress={saveProgress}>
+            Save
+          </Button>
+          <Button size="sm" variant="ghost" onPress={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pl-[22px]">
         {done ? (
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label="Reopen (mark not done)"
-            onPress={() => tracker.setCardStatus(b.id, "progress")}
-          >
-            <RotateCcw className="h-4 w-4" />
+          <Button size="md" variant="outline" onPress={() => tracker.setCardStatus(b.id, "progress")}>
+            <RotateCcw className="h-4 w-4" /> Reopen
           </Button>
         ) : (
-          <Button
-            size="sm"
-            variant="primary"
-            isIconOnly
-            aria-label="Mark done"
-            onPress={() => tracker.setCardStatus(b.id, "done")}
-          >
-            <Check className="h-4 w-4" />
+          <Button size="md" variant="primary" onPress={() => tracker.setCardStatus(b.id, "done")}>
+            <Check className="h-4 w-4" /> Done
+          </Button>
+        )}
+        {!hasTarget && !editing && (
+          <Button size="md" variant="outline" isIconOnly aria-label="Set progress target" onPress={() => setEditing(true)}>
+            <Target className="h-4 w-4" />
           </Button>
         )}
         <Button
-          size="sm"
+          size="md"
           variant="ghost"
           isIconOnly
           aria-label="Delete card"
           onPress={() => tracker.deleteCard(b.id)}
+          className="ml-auto"
         >
           <X className="h-4 w-4" />
         </Button>

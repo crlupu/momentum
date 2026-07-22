@@ -33,14 +33,20 @@ function allCompletionsByDate(board: BoardCard[]): Record<string, number> {
   return map;
 }
 
-// Shared cell layout: ~20 weeks up to today, Mon-first columns.
-function buildCells(): { k: string }[] {
-  const dow = (new Date().getDay() + 6) % 7;
-  const totalCells = 19 * 7 + dow + 1;
-  return Array.from({ length: totalCells }, (_, i) => {
-    const d = offsetDate(totalCells - 1 - i);
-    return { k: dateKey(d) };
-  });
+// Cells for the current calendar month, laid out as week columns (Mon-first
+// rows). Leading/trailing padding days are null.
+function buildMonthCells(): (string | null)[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const lead = (first.getDay() + 6) % 7; // Mon = 0
+  const cells: (string | null)[] = [];
+  for (let i = 0; i < lead; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(dateKey(new Date(year, month, d)));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
 }
 
 function Heatmap({
@@ -48,7 +54,7 @@ function Heatmap({
   map,
   color,
 }: {
-  cells: { k: string }[];
+  cells: (string | null)[];
   map: Record<string, number>;
   color: string;
 }) {
@@ -62,7 +68,8 @@ function Heatmap({
   return (
     <div className="overflow-x-auto pb-1">
       <div className="grid w-max grid-flow-col gap-[3px]" style={{ gridTemplateRows: "repeat(7, 12px)" }}>
-        {cells.map(({ k }) => {
+        {cells.map((k, i) => {
+          if (k === null) return <div key={`pad-${i}`} className="h-3 w-3" />;
           const n = map[k] ?? 0;
           return (
             <div
@@ -92,7 +99,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 export default function ProgressView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const allMap = allCompletionsByDate(s.board);
-  const cells = buildCells();
+  const cells = buildMonthCells();
 
   // daily bars, last 14 days
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
@@ -109,10 +116,12 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
   );
   const avg = monthEntries.length ? (mTotal / monthEntries.length).toFixed(1) : "0";
 
-  // per-category maps + totals (only categories with any completions)
+  // per-category maps + totals for THIS MONTH (only categories with completions)
   const perCat = s.categories
     .map((c) => {
-      const map = catCompletionsByDate(s.board, c.id);
+      const full = catCompletionsByDate(s.board, c.id);
+      const map: Record<string, number> = {};
+      for (const [k, n] of Object.entries(full)) if (k.startsWith(mPrefix)) map[k] = n;
       const total = Object.values(map).reduce((a, n) => a + n, 0);
       return { c, map, total };
     })
@@ -153,7 +162,7 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
           <h2 className="font-display mb-1 text-sm font-semibold uppercase tracking-wide text-foreground/60">
             Completions by category
           </h2>
-          <p className="mb-4 text-xs text-foreground/50">Last 20 weeks · each category tracked separately</p>
+          <p className="mb-4 text-xs text-foreground/50">This month · each category tracked separately</p>
 
           {perCat.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-foreground/60">

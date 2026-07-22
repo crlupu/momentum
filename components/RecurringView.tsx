@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
 import { Repeat, X } from "lucide-react";
-import { CatChip } from "./CatChip";
 import {
   Tracker,
   Frequency,
@@ -84,31 +83,37 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
 
             <div>
               <div className="mb-1.5 text-xs text-foreground/50">Category</div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {s.categories.map((c) => (
-                  <CatChip
+                  <Button
                     key={c.id}
-                    category={c}
+                    size="md"
+                    variant={catId === c.id ? "primary" : "outline"}
                     onPress={() => setCatId(c.id)}
-                    selected={catId === c.id}
-                  />
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ background: c.color }}
+                      aria-hidden
+                    />
+                    {c.name}
+                  </Button>
                 ))}
               </div>
             </div>
 
             <div>
               <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {FREQUENCIES.map((f) => (
-                  <Chip
+                  <Button
                     key={f}
-                    size="sm"
-                    variant={freq === f ? "primary" : "soft"}
-                    className="cursor-pointer"
-                    onClick={() => setFreq(f)}
+                    size="md"
+                    variant={freq === f ? "primary" : "outline"}
+                    onPress={() => setFreq(f)}
                   >
-                    <Chip.Label>{FREQ_LABEL[f]}</Chip.Label>
-                  </Chip>
+                    {FREQ_LABEL[f]}
+                  </Button>
                 ))}
               </div>
             </div>

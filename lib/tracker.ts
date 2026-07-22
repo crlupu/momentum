@@ -48,6 +48,8 @@ export type BoardCard = {
   status: BoardStatus;
   recurringId?: string;
   doneDate?: string | null;
+  current?: number;
+  target?: number;
 };
 
 export type TrackerState = {
@@ -126,6 +128,8 @@ function migrate(raw: unknown): TrackerState {
     status: c.status ?? "planned",
     recurringId: c.recurringId,
     doneDate: c.doneDate ?? null,
+    current: typeof c.current === "number" ? c.current : undefined,
+    target: typeof c.target === "number" ? c.target : undefined,
   }));
 
   return { categories, recurring, board };
@@ -420,6 +424,24 @@ export function useTracker() {
                     : c.status === "done"
                     ? null
                     : c.doneDate ?? null,
+              }
+            : c
+        ),
+      })),
+
+    setCardProgress: (id: string, current: number | null, target: number | null) =>
+      update((s) => ({
+        ...s,
+        board: s.board.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                current:
+                  current != null && Number.isFinite(current) && current >= 0
+                    ? current
+                    : undefined,
+                target:
+                  target != null && Number.isFinite(target) && target > 0 ? target : undefined,
               }
             : c
         ),
