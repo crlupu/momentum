@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+body {
+  font-family: "Inter", -apple-system, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.font-display {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+}
+
+.font-mono-n {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
