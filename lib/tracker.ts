@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  type User,
+} from "firebase/auth";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { getFirebase, isFirebaseConfigured } from "./firebase";
 
 export type Category = { id: string; name: string; color: string };
 export type Task = {
@@ -52,10 +61,41 @@ export function dateKey(d: Date = new Date()): string {
   );
 }
 
+function friendlyAuthError(code: string): string {
+  switch (code) {
+    case "auth/invalid-email":
+      return "That email address doesn't look right.";
+    case "auth/missing-password":
+      return "Enter a password.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters.";
+    case "auth/email-already-in-use":
+      return "An account with that email already exists — sign in instead.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Email or password is incorrect.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Network error. Check your connection.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+}
+
 export function useTracker() {
   const [state, setState] = useState<TrackerState | null>(null);
-  const loaded = useRef(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(!isFirebaseConfigured);
+  const [authError, setAuthError] = useState<string | null>(null);
 
+  const loaded = useRef(false);
+  const stateRef = useRef<TrackerState | null>(null);
+  const remoteApplied = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 1) instant paint from localStorage cache
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -67,26 +107,111 @@ export function useTracker() {
   }, []);
 
   useEffect(() => {
-    if (loaded.current && state) {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(state));
-      } catch (e) {
-        console.error("Could not save", e);
-      }
-    }
+    stateRef.current = state;
   }, [state]);
+
+  // 2) auth state
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+    const fb = getFirebase();
+    if (!fb) {
+      setAuthReady(true);
+      return;
+    }
+    return onAuthStateChanged(fb.auth, (u) => {
+      setUser(u);
+      setAuthReady(true);
+    });
+  }, []);
+
+  // 3) live Firestore sync while signed in
+  useEffect(() => {
+    if (!isFirebaseConfigured || !user) return;
+    const fb = getFirebase();
+    if (!fb) return;
+    const ref = doc(fb.db, "users", user.uid);
+    return onSnapshot(ref, (snap) => {
+      if (snap.metadata.hasPendingWrites) return; // ignore our own echo
+      if (snap.exists()) {
+        const data = snap.data().state as TrackerState | undefined;
+        if (data) {
+          remoteApplied.current = true;
+          setState(data);
+        }
+      } else {
+        setDoc(ref, { state: stateRef.current ?? DEFAULT_STATE, updated: Date.now() }).catch(
+          (e) => console.error("seed failed", e)
+        );
+      }
+    });
+  }, [user]);
+
+  // 4) persist: localStorage always; Firestore (debounced) when signed in
+  useEffect(() => {
+    if (!loaded.current || !state) return;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error("cache write failed", e);
+    }
+    if (remoteApplied.current) {
+      remoteApplied.current = false; // came FROM Firestore — don't echo back
+      return;
+    }
+    if (isFirebaseConfigured && user) {
+      const fb = getFirebase();
+      if (!fb) return;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        setDoc(doc(fb.db, "users", user.uid), { state, updated: Date.now() }).catch((e) =>
+          console.error("sync write failed", e)
+        );
+      }, 400);
+    }
+  }, [state, user]);
 
   const update = (fn: (s: TrackerState) => TrackerState) =>
     setState((s) => (s ? fn(s) : s));
 
   return {
     state,
+
+    // ---- auth ----
+    firebaseConfigured: isFirebaseConfigured,
+    user,
+    authReady,
+    authError,
+    clearAuthError: () => setAuthError(null),
+    signIn: async (email: string, password: string) => {
+      const fb = getFirebase();
+      if (!fb) return;
+      setAuthError(null);
+      try {
+        await signInWithEmailAndPassword(fb.auth, email, password);
+      } catch (e) {
+        setAuthError(friendlyAuthError((e as { code?: string }).code ?? ""));
+      }
+    },
+    signUp: async (email: string, password: string) => {
+      const fb = getFirebase();
+      if (!fb) return;
+      setAuthError(null);
+      try {
+        await createUserWithEmailAndPassword(fb.auth, email, password);
+      } catch (e) {
+        setAuthError(friendlyAuthError((e as { code?: string }).code ?? ""));
+      }
+    },
+    signOutUser: async () => {
+      const fb = getFirebase();
+      if (!fb) return;
+      await signOut(fb.auth);
+      setState(DEFAULT_STATE);
+    },
+
+    // ---- data ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? {
-        id: "",
-        name: "–",
-        color: "#8A94A3",
-      },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8A94A3" },
 
     addTask: (title: string, catId: string) =>
       update((s) => ({
@@ -101,9 +226,7 @@ export function useTracker() {
       update((s) => ({
         ...s,
         tasks: s.tasks.map((t) =>
-          t.id === id
-            ? { ...t, done: !t.done, doneDate: !t.done ? dateKey() : null }
-            : t
+          t.id === id ? { ...t, done: !t.done, doneDate: !t.done ? dateKey() : null } : t
         ),
       })),
 
@@ -131,20 +254,14 @@ export function useTracker() {
         state?.board.some((b) => b.catId === id)
       )
         return false;
-      update((s) => ({
-        ...s,
-        categories: s.categories.filter((c) => c.id !== id),
-      }));
+      update((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) }));
       return true;
     },
 
     addCard: (title: string, status: BoardStatus) =>
       update((s) => ({
         ...s,
-        board: [
-          ...s.board,
-          { id: uid(), title, catId: s.categories[0]?.id ?? "", status },
-        ],
+        board: [...s.board, { id: uid(), title, catId: s.categories[0]?.id ?? "", status }],
       })),
 
     moveCard: (id: string, dir: -1 | 1) =>
