@@ -22,8 +22,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Card, Chip, Input } from "@heroui/react";
-import { ChevronLeft, ChevronRight, GripVertical, Plus, X } from "lucide-react";
-import { Tracker, BoardStatus, BoardCard } from "@/lib/tracker";
+import { Check, GripVertical, Plus, Repeat, RotateCcw, X } from "lucide-react";
+import { Tracker, BoardStatus, BoardCard, FREQ_LABEL, FREQ_ORDER } from "@/lib/tracker";
 
 const COLUMNS: { status: BoardStatus; label: string }[] = [
   { status: "planned", label: "Planned" },
@@ -43,6 +43,8 @@ function CardBody({
   handleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }) {
   const c = tracker.cat(b.catId);
+  const freq = tracker.freqOf(b);
+  const done = b.status === "done";
   return (
     <div
       className={
@@ -58,42 +60,47 @@ function CardBody({
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className={"flex-1 text-[15px] " + (b.status === "done" ? "text-foreground/45 line-through" : "")}>
+        <div className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>
           {b.title}
         </div>
       </div>
       <div className="flex items-center gap-2 pl-[22px]">
-        <span className="mr-auto">
-          <Chip
+        <Chip
+          size="sm"
+          variant="soft"
+          className="mr-auto cursor-pointer"
+          onClick={() => tracker.cycleCardCat(b.id)}
+        >
+          <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
+          <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
+        </Chip>
+        {freq && (
+          <span className="flex items-center gap-1 text-[11px] text-foreground/50">
+            <Repeat className="h-3 w-3" />
+            {FREQ_LABEL[freq]}
+          </span>
+        )}
+        {done ? (
+          <Button
             size="sm"
-            variant="soft"
-            className="cursor-pointer"
-            onClick={() => tracker.cycleCardCat(b.id)}
+            variant="outline"
+            isIconOnly
+            aria-label="Reopen (mark not done)"
+            onPress={() => tracker.setCardStatus(b.id, "progress")}
           >
-            <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-            <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
-          </Chip>
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label="Move to previous column"
-          isDisabled={b.status === "planned"}
-          onPress={() => tracker.moveCard(b.id, -1)}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label="Move to next column"
-          isDisabled={b.status === "done"}
-          onPress={() => tracker.moveCard(b.id, 1)}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="primary"
+            isIconOnly
+            aria-label="Mark done"
+            onPress={() => tracker.setCardStatus(b.id, "done")}
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           size="sm"
           variant="ghost"
@@ -123,6 +130,14 @@ function SortableCard({ b, tracker }: { b: BoardCard; tracker: Tracker }) {
   );
 }
 
+function SubHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 mt-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/40">
+      {children}
+    </div>
+  );
+}
+
 function Column({
   status,
   label,
@@ -145,6 +160,18 @@ function Column({
     setTitle("");
   };
 
+  // In progress splits into recurring (sorted by frequency) then other tasks.
+  let ordered = cards;
+  let split: { recurring: BoardCard[]; other: BoardCard[] } | null = null;
+  if (status === "progress") {
+    const recurring = cards
+      .filter((c) => tracker.freqOf(c) !== null)
+      .sort((a, b) => FREQ_ORDER[tracker.freqOf(a)!] - FREQ_ORDER[tracker.freqOf(b)!]);
+    const other = cards.filter((c) => tracker.freqOf(c) === null);
+    split = { recurring, other };
+    ordered = [...recurring, ...other];
+  }
+
   return (
     <Card className={isOver ? "ring-2 ring-primary/40" : ""}>
       <Card.Content className="p-3.5">
@@ -156,14 +183,30 @@ function Column({
         </h3>
 
         <div ref={setNodeRef} className="min-h-[8px]">
-          <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {cards.map((b) => (
-              <SortableCard key={b.id} b={b} tracker={tracker} />
-            ))}
+          <SortableContext items={ordered.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {split ? (
+              <>
+                <SubHeader>Recurring</SubHeader>
+                {split.recurring.length === 0 ? (
+                  <p className="mb-2 px-1 text-xs text-foreground/40">Nothing recurring here.</p>
+                ) : (
+                  split.recurring.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
+                )}
+                <div className="my-3 h-px bg-foreground/10" />
+                <SubHeader>Other</SubHeader>
+                {split.other.length === 0 ? (
+                  <p className="mb-2 px-1 text-xs text-foreground/40">No other tasks.</p>
+                ) : (
+                  split.other.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
+                )}
+              </>
+            ) : (
+              ordered.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
+            )}
           </SortableContext>
         </div>
 
-        <form onSubmit={submit} className="mt-1 flex gap-1.5">
+        <form onSubmit={submit} className="mt-2 flex gap-1.5">
           <Input
             aria-label={`Add card to ${label}`}
             placeholder="Add…"
@@ -193,8 +236,6 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
   const cardsByStatus = (st: BoardStatus) => board.filter((b) => b.status === st);
   const activeCard = board.find((b) => b.id === activeId) ?? null;
 
-  const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
-
   const onDragEnd = (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
@@ -205,22 +246,18 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
     const moving = board.find((b) => b.id === activeCardId);
     if (!moving) return;
 
-    // Resolve the target column.
     let targetStatus: BoardStatus;
     const overCard = board.find((b) => b.id === overId);
     if (overId.startsWith("col:")) targetStatus = overId.slice(4) as BoardStatus;
     else if (overCard) targetStatus = overCard.status;
     else return;
 
-    // Group cards per column, preserving order.
     const cols: Record<BoardStatus, BoardCard[]> = {
       planned: cardsByStatus("planned"),
       progress: cardsByStatus("progress"),
       done: cardsByStatus("done"),
     };
-    // Remove the moving card from its current column.
     cols[moving.status] = cols[moving.status].filter((c) => c.id !== activeCardId);
-    // Insert into the target column at the hovered position (or end).
     const target = cols[targetStatus];
     let index = target.length;
     if (overCard && overCard.id !== activeCardId) {
@@ -236,7 +273,7 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
-      onDragStart={onDragStart}
+      onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >

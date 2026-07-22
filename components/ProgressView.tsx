@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@heroui/react";
-import { Tracker, Task, dateKey } from "@/lib/tracker";
+import { Tracker, BoardCard, dateKey } from "@/lib/tracker";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -18,18 +18,18 @@ function hexToRgba(hex: string, a: number): string {
 }
 
 // completions per date for a specific category
-function catCompletionsByDate(tasks: Task[], catId: string): Record<string, number> {
+function catCompletionsByDate(board: BoardCard[], catId: string): Record<string, number> {
   const map: Record<string, number> = {};
-  for (const t of tasks)
-    if (t.done && t.doneDate && t.catId === catId)
-      map[t.doneDate] = (map[t.doneDate] ?? 0) + 1;
+  for (const c of board)
+    if (c.status === "done" && c.doneDate && c.catId === catId)
+      map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
   return map;
 }
 
-function allCompletionsByDate(tasks: Task[]): Record<string, number> {
+function allCompletionsByDate(board: BoardCard[]): Record<string, number> {
   const map: Record<string, number> = {};
-  for (const t of tasks)
-    if (t.done && t.doneDate) map[t.doneDate] = (map[t.doneDate] ?? 0) + 1;
+  for (const c of board)
+    if (c.status === "done" && c.doneDate) map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
   return map;
 }
 
@@ -91,7 +91,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 
 export default function ProgressView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const allMap = allCompletionsByDate(s.tasks);
+  const allMap = allCompletionsByDate(s.board);
   const cells = buildCells();
 
   // daily bars, last 14 days
@@ -112,7 +112,7 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
   // per-category maps + totals (only categories with any completions)
   const perCat = s.categories
     .map((c) => {
-      const map = catCompletionsByDate(s.tasks, c.id);
+      const map = catCompletionsByDate(s.board, c.id);
       const total = Object.values(map).reduce((a, n) => a + n, 0);
       return { c, map, total };
     })

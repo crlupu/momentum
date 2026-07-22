@@ -6,13 +6,13 @@ import { LogOut } from "lucide-react";
 import { useTracker } from "@/lib/tracker";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { AuthGate } from "@/components/AuthGate";
-import TodayView from "@/components/TodayView";
+import RecurringView from "@/components/RecurringView";
 import BoardView from "@/components/BoardView";
 import ProgressView from "@/components/ProgressView";
 
 export default function Home() {
   const tracker = useTracker();
-  const [tab, setTab] = useState("today");
+  const [tab, setTab] = useState("recurring");
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "short",
@@ -50,13 +50,13 @@ export default function Home() {
           ) : (
             <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(String(key))}>
               <Tabs.List className="mb-4">
-                <Tabs.Tab id="today">Today</Tabs.Tab>
+                <Tabs.Tab id="recurring">Recurring</Tabs.Tab>
                 <Tabs.Tab id="board">Board</Tabs.Tab>
                 <Tabs.Tab id="progress">Progress</Tabs.Tab>
               </Tabs.List>
 
-              <Tabs.Panel id="today">
-                <TodayView tracker={tracker} />
+              <Tabs.Panel id="recurring">
+                <RecurringView tracker={tracker} />
               </Tabs.Panel>
               <Tabs.Panel id="board">
                 <BoardView tracker={tracker} />
