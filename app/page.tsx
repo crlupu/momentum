@@ -1,62 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Tabs } from "@heroui/react";
-import { LogOut } from "lucide-react";
+import { Card } from "@heroui/react";
 import { useTracker } from "@/lib/tracker";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { AuthGate } from "@/components/AuthGate";
-import RecurringView from "@/components/RecurringView";
-import BoardView from "@/components/BoardView";
+import { Sidebar } from "@/components/Sidebar";
+import { Modal } from "@/components/Modal";
+import { GoalForm, RecurringForm, CategoriesCard } from "@/components/Forms";
+import GoalsView from "@/components/GoalsView";
+import RecurringList from "@/components/RecurringList";
+import Charts from "@/components/Charts";
 
 export default function Home() {
   const tracker = useTracker();
-  const [tab, setTab] = useState("recurring");
-
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [recurringOpen, setRecurringOpen] = useState(false);
 
   return (
-    <div className="mx-auto max-w-[980px] px-4 pb-12 sm:px-5">
-      <header className="flex items-center justify-between pt-5">
-        <div className="flex items-baseline gap-2.5">
-          <h1 className="font-display text-2xl font-bold tracking-tight">Momentum</h1>
-          <span className="font-mono-n text-[13px] text-foreground/60">{today}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeSwitch />
-          {tracker.user && (
-            <Button size="sm" variant="ghost" isIconOnly aria-label="Sign out" onPress={() => tracker.signOutUser()}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen">
+      <Sidebar
+        tracker={tracker}
+        onAddGoal={() => setGoalOpen(true)}
+        onAddRecurring={() => setRecurringOpen(true)}
+      />
 
-      <AuthGate tracker={tracker}>
-        <div className="pt-4">
+      <main className="md:ml-60">
+        <AuthGate tracker={tracker}>
           {!tracker.state ? (
-            <p className="text-foreground/60">Loading…</p>
+            <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
-            <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(String(key))}>
-              <Tabs.List className="mb-4">
-                <Tabs.Tab id="recurring">Recurring</Tabs.Tab>
-                <Tabs.Tab id="tasks">Tasks</Tabs.Tab>
-              </Tabs.List>
+            <div className="mx-auto max-w-4xl space-y-10 px-4 py-6 sm:px-6">
+              <section id="goals" className="scroll-mt-6">
+                <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
+              </section>
 
-              <Tabs.Panel id="recurring">
-                <RecurringView tracker={tracker} />
-              </Tabs.Panel>
-              <Tabs.Panel id="tasks">
-                <BoardView tracker={tracker} />
-              </Tabs.Panel>
-            </Tabs>
+              <section id="recurring" className="scroll-mt-6">
+                <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
+              </section>
+
+              <section id="charts" className="scroll-mt-6">
+                <h2 className="font-display mb-4 text-2xl font-bold tracking-tight">Progress</h2>
+                <Charts tracker={tracker} />
+              </section>
+
+              <section>
+                <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Categories</h2>
+                <Card>
+                  <Card.Content className="p-4 sm:p-5">
+                    <CategoriesCard tracker={tracker} />
+                  </Card.Content>
+                </Card>
+              </section>
+            </div>
           )}
-        </div>
-      </AuthGate>
+        </AuthGate>
+      </main>
+
+      <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
+        <GoalForm tracker={tracker} onDone={() => setGoalOpen(false)} />
+      </Modal>
+      <Modal open={recurringOpen} onClose={() => setRecurringOpen(false)} title="New recurring task">
+        <RecurringForm tracker={tracker} onDone={() => setRecurringOpen(false)} />
+      </Modal>
     </div>
   );
 }

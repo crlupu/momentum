@@ -29,8 +29,6 @@ export const FREQ_ORDER: Record<Frequency, number> = {
   daily: 0, weekly: 1, biweekly: 2, monthly: 3,
 };
 
-// A recurring task is a simple checkable habit; lastDone tracks the last time
-// it was ticked, used to decide whether it's "done" for the current period.
 export type RecurringTask = {
   id: string;
   title: string;
@@ -39,23 +37,23 @@ export type RecurringTask = {
   lastDone: string | null;
 };
 
-export type BoardStatus = "planned" | "progress" | "done";
-export type BoardCard = {
+// A goal is a progress-tracked objective (e.g. "Read Atomic Habits" 132/396).
+export type Goal = {
   id: string;
   title: string;
   catId: string;
-  status: BoardStatus;
-  doneDate?: string | null;
   current?: number;
   target?: number;
+  done: boolean;
+  doneDate?: string | null;
 };
 
 export type Completion = { date: string; catId: string };
 
 export type TrackerState = {
   categories: Category[];
+  goals: Goal[];
   recurring: RecurringTask[];
-  board: BoardCard[];
   completions: Completion[];
 };
 
@@ -76,8 +74,8 @@ const DEFAULT_CATEGORIES: Category[] = [
 
 const DEFAULT_STATE: TrackerState = {
   categories: DEFAULT_CATEGORIES,
+  goals: [],
   recurring: [],
-  board: [],
   completions: [],
 };
 
@@ -99,7 +97,6 @@ function daysSinceEpoch(key: string): number {
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
 }
 
-// A stable key identifying which "period" a date belongs to, per frequency.
 export function periodKey(freq: Frequency, key: string): string {
   switch (freq) {
     case "daily":
@@ -117,7 +114,11 @@ export function isRecurringDone(r: RecurringTask, today: string = dateKey()): bo
   return !!r.lastDone && periodKey(r.freq, r.lastDone) === periodKey(r.freq, today);
 }
 
-// Normalize any stored shape (including earlier models) to the current one.
+export function goalPct(g: Goal): number {
+  if (!g.target || g.target <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round(((g.current ?? 0) / g.target) * 100)));
+}
+
 function migrate(raw: unknown): TrackerState {
   const s = (raw ?? {}) as Record<string, unknown>;
   const categories = Array.isArray(s.categories)
@@ -134,39 +135,29 @@ function migrate(raw: unknown): TrackerState {
       }))
     : [];
 
-  let board: BoardCard[] = Array.isArray(s.board) ? (s.board as BoardCard[]) : [];
-  // Old per-day tasks → board cards.
-  if (Array.isArray(s.tasks)) {
-    for (const t of s.tasks as Array<Record<string, unknown>>) {
-      board.push({
-        id: (t.id as string) ?? uid(),
-        title: t.title as string,
-        catId: t.catId as string,
-        status: t.done ? "done" : "planned",
-        doneDate: t.done ? ((t.doneDate as string) ?? null) : null,
-      });
-    }
-  }
-  board = board.map((c) => ({
-    id: c.id,
-    title: c.title,
-    catId: c.catId,
-    status: c.status ?? "planned",
-    doneDate: c.doneDate ?? null,
-    current: typeof c.current === "number" ? c.current : undefined,
-    target: typeof c.target === "number" ? c.target : undefined,
+  // Goals come from `goals`, or the older `board`/`tasks` shapes.
+  const rawGoals: Array<Record<string, unknown>> = Array.isArray(s.goals)
+    ? (s.goals as Array<Record<string, unknown>>)
+    : Array.isArray(s.board)
+    ? (s.board as Array<Record<string, unknown>>)
+    : Array.isArray(s.tasks)
+    ? (s.tasks as Array<Record<string, unknown>>)
+    : [];
+  const goals: Goal[] = rawGoals.map((g) => ({
+    id: (g.id as string) ?? uid(),
+    title: g.title as string,
+    catId: g.catId as string,
+    current: typeof g.current === "number" ? g.current : undefined,
+    target: typeof g.target === "number" ? g.target : undefined,
+    done: typeof g.done === "boolean" ? g.done : g.status === "done",
+    doneDate: (g.doneDate as string) ?? null,
   }));
 
-  // Completions log: use existing, else seed from previously-completed cards.
-  let completions: Completion[] = Array.isArray(s.completions)
+  const completions: Completion[] = Array.isArray(s.completions)
     ? (s.completions as Completion[])
     : [];
-  if (!Array.isArray(s.completions)) {
-    for (const c of board)
-      if (c.status === "done" && c.doneDate) completions.push({ date: c.doneDate, catId: c.catId });
-  }
 
-  return { categories, recurring, board, completions };
+  return { categories, goals, recurring, completions };
 }
 
 function friendlyAuthError(code: string): string {
@@ -339,7 +330,6 @@ export function useTracker() {
   return {
     state,
 
-    // ---- auth ----
     firebaseConfigured: isFirebaseConfigured,
     user,
     authReady,
@@ -393,11 +383,64 @@ export function useTracker() {
       setState(DEFAULT_STATE);
     },
 
-    // ---- lookups ----
     cat: (id: string): Category =>
       state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8A94A3" },
 
-    // ---- recurring (checkbox habits) ----
+    // ---- goals ----
+    addGoal: (title: string, catId: string, current: number | null, target: number | null) =>
+      update((s) => ({
+        ...s,
+        goals: [
+          ...s.goals,
+          {
+            id: uid(),
+            title,
+            catId,
+            current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
+            target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+            done: false,
+            doneDate: null,
+          },
+        ],
+      })),
+
+    setGoalProgress: (id: string, current: number | null, target: number | null) =>
+      update((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === id
+            ? {
+                ...g,
+                current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
+                target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+              }
+            : g
+        ),
+      })),
+
+    toggleGoalDone: (id: string) =>
+      update((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === id ? { ...g, done: !g.done, doneDate: !g.done ? dateKey() : null } : g
+        ),
+      })),
+
+    cycleGoalCat: (id: string) =>
+      update((s) => ({
+        ...s,
+        goals: s.goals.map((g) => {
+          if (g.id !== id) return g;
+          const i = s.categories.findIndex((c) => c.id === g.catId);
+          const next = s.categories[(i + 1) % s.categories.length];
+          return { ...g, catId: next?.id ?? g.catId };
+        }),
+      })),
+
+    deleteGoal: (id: string) =>
+      update((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+
+    // ---- recurring ----
     addRecurring: (title: string, catId: string, freq: Frequency) =>
       update((s) => ({
         ...s,
@@ -410,7 +453,6 @@ export function useTracker() {
         const r = s.recurring.find((x) => x.id === id);
         if (!r) return s;
         if (isRecurringDone(r, today)) {
-          // uncheck: remove one completion logged for its lastDone date
           const dd = r.lastDone;
           let removed = false;
           const completions = s.completions.filter((c) => {
@@ -449,83 +491,17 @@ export function useTracker() {
     deleteCategory: (id: string): boolean => {
       if (
         state?.recurring.some((r) => r.catId === id) ||
-        state?.board.some((b) => b.catId === id)
+        state?.goals.some((g) => g.catId === id)
       )
         return false;
       update((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) }));
       return true;
     },
-
-    // ---- board (tasks) ----
-    addCard: (title: string, status: BoardStatus) =>
-      update((s) => ({
-        ...s,
-        board: [
-          ...s.board,
-          { id: uid(), title, catId: s.categories[0]?.id ?? "", status, doneDate: null },
-        ],
-      })),
-
-    setBoard: (next: BoardCard[]) =>
-      update((s) => {
-        const prev = new Map(s.board.map((c) => [c.id, c]));
-        const stamped = next.map((c) => {
-          const p = prev.get(c.id);
-          if (c.status === "done" && (!p || p.status !== "done")) return { ...c, doneDate: dateKey() };
-          if (c.status !== "done" && p && p.status === "done") return { ...c, doneDate: null };
-          return c;
-        });
-        return { ...s, board: stamped };
-      }),
-
-    setCardStatus: (id: string, status: BoardStatus) =>
-      update((s) => ({
-        ...s,
-        board: s.board.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                status,
-                doneDate:
-                  status === "done" ? dateKey() : c.status === "done" ? null : c.doneDate ?? null,
-              }
-            : c
-        ),
-      })),
-
-    setCardProgress: (id: string, current: number | null, target: number | null) =>
-      update((s) => ({
-        ...s,
-        board: s.board.map((c) =>
-          c.id === id
-            ? {
-                ...c,
-                current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
-                target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
-              }
-            : c
-        ),
-      })),
-
-    cycleCardCat: (id: string) =>
-      update((s) => ({
-        ...s,
-        board: s.board.map((b) => {
-          if (b.id !== id) return b;
-          const i = s.categories.findIndex((c) => c.id === b.catId);
-          const next = s.categories[(i + 1) % s.categories.length];
-          return { ...b, catId: next?.id ?? b.catId };
-        }),
-      })),
-
-    deleteCard: (id: string) =>
-      update((s) => ({ ...s, board: s.board.filter((b) => b.id !== id) })),
   };
 }
 
 export type Tracker = ReturnType<typeof useTracker>;
 
-// ---- derived stats (from the completions log) ----
 export function completionsByDate(completions: Completion[]): Record<string, number> {
   const map: Record<string, number> = {};
   for (const c of completions) map[c.date] = (map[c.date] ?? 0) + 1;
