@@ -25,19 +25,18 @@ export const FREQ_LABEL: Record<Frequency, string> = {
   biweekly: "Every 2 weeks",
   monthly: "Monthly",
 };
-export const FREQ_DAYS: Record<Frequency, number> = {
-  daily: 1, weekly: 7, biweekly: 14, monthly: 30,
-};
 export const FREQ_ORDER: Record<Frequency, number> = {
   daily: 0, weekly: 1, biweekly: 2, monthly: 3,
 };
 
+// A recurring task is a simple checkable habit; lastDone tracks the last time
+// it was ticked, used to decide whether it's "done" for the current period.
 export type RecurringTask = {
   id: string;
   title: string;
   catId: string;
   freq: Frequency;
-  nextDue: string; // YYYY-MM-DD
+  lastDone: string | null;
 };
 
 export type BoardStatus = "planned" | "progress" | "done";
@@ -46,16 +45,18 @@ export type BoardCard = {
   title: string;
   catId: string;
   status: BoardStatus;
-  recurringId?: string;
   doneDate?: string | null;
   current?: number;
   target?: number;
 };
 
+export type Completion = { date: string; catId: string };
+
 export type TrackerState = {
   categories: Category[];
   recurring: RecurringTask[];
   board: BoardCard[];
+  completions: Completion[];
 };
 
 export const CAT_COLORS = [
@@ -77,6 +78,7 @@ const DEFAULT_STATE: TrackerState = {
   categories: DEFAULT_CATEGORIES,
   recurring: [],
   board: [],
+  completions: [],
 };
 
 export const uid = () =>
@@ -92,23 +94,48 @@ export function dateKey(d: Date = new Date()): string {
   );
 }
 
-function addDays(key: string, n: number): string {
+function daysSinceEpoch(key: string): number {
   const [y, m, d] = key.split("-").map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + n);
-  return dateKey(dt);
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
 }
 
-// Normalize any stored shape (including the old "tasks" model) to the current one.
+// A stable key identifying which "period" a date belongs to, per frequency.
+export function periodKey(freq: Frequency, key: string): string {
+  switch (freq) {
+    case "daily":
+      return key;
+    case "weekly":
+      return "w" + Math.floor(daysSinceEpoch(key) / 7);
+    case "biweekly":
+      return "b" + Math.floor(daysSinceEpoch(key) / 14);
+    case "monthly":
+      return key.slice(0, 7);
+  }
+}
+
+export function isRecurringDone(r: RecurringTask, today: string = dateKey()): boolean {
+  return !!r.lastDone && periodKey(r.freq, r.lastDone) === periodKey(r.freq, today);
+}
+
+// Normalize any stored shape (including earlier models) to the current one.
 function migrate(raw: unknown): TrackerState {
   const s = (raw ?? {}) as Record<string, unknown>;
   const categories = Array.isArray(s.categories)
     ? (s.categories as Category[])
     : DEFAULT_CATEGORIES;
-  const recurring = Array.isArray(s.recurring) ? (s.recurring as RecurringTask[]) : [];
-  let board: BoardCard[] = Array.isArray(s.board) ? (s.board as BoardCard[]) : [];
 
-  // Old model: convert per-day tasks into board cards.
+  const recurring: RecurringTask[] = Array.isArray(s.recurring)
+    ? (s.recurring as Array<Record<string, unknown>>).map((r) => ({
+        id: (r.id as string) ?? uid(),
+        title: r.title as string,
+        catId: r.catId as string,
+        freq: (r.freq as Frequency) ?? "daily",
+        lastDone: (r.lastDone as string) ?? null,
+      }))
+    : [];
+
+  let board: BoardCard[] = Array.isArray(s.board) ? (s.board as BoardCard[]) : [];
+  // Old per-day tasks → board cards.
   if (Array.isArray(s.tasks)) {
     for (const t of s.tasks as Array<Record<string, unknown>>) {
       board.push({
@@ -120,43 +147,26 @@ function migrate(raw: unknown): TrackerState {
       });
     }
   }
-
   board = board.map((c) => ({
     id: c.id,
     title: c.title,
     catId: c.catId,
     status: c.status ?? "planned",
-    recurringId: c.recurringId,
     doneDate: c.doneDate ?? null,
     current: typeof c.current === "number" ? c.current : undefined,
     target: typeof c.target === "number" ? c.target : undefined,
   }));
 
-  return { categories, recurring, board };
-}
+  // Completions log: use existing, else seed from previously-completed cards.
+  let completions: Completion[] = Array.isArray(s.completions)
+    ? (s.completions as Completion[])
+    : [];
+  if (!Array.isArray(s.completions)) {
+    for (const c of board)
+      if (c.status === "done" && c.doneDate) completions.push({ date: c.doneDate, catId: c.catId });
+  }
 
-// On load, materialize any recurring tasks that are due into Planned.
-function regenerate(s: TrackerState): TrackerState {
-  const today = dateKey();
-  const board = [...s.board];
-  const recurring = s.recurring.map((r) => {
-    if ((r.nextDue || today) > today) return r;
-    const hasActive = board.some((b) => b.recurringId === r.id && b.status !== "done");
-    if (!hasActive) {
-      board.push({
-        id: uid(),
-        title: r.title,
-        catId: r.catId,
-        status: "planned",
-        recurringId: r.id,
-        doneDate: null,
-      });
-    }
-    let nextDue = r.nextDue || today;
-    while (nextDue <= today) nextDue = addDays(nextDue, FREQ_DAYS[r.freq]);
-    return { ...r, nextDue };
-  });
-  return { ...s, board, recurring };
+  return { categories, recurring, board, completions };
 }
 
 function friendlyAuthError(code: string): string {
@@ -204,11 +214,9 @@ export function useTracker() {
     try {
       const raw = localStorage.getItem(KEY);
       const parsed = raw ? JSON.parse(raw) : null;
-      // Support both the { state, updated } wrapper and the old bare state.
       const rawState = parsed && parsed.state ? parsed.state : parsed ?? DEFAULT_STATE;
-      lastUpdated.current =
-        parsed && typeof parsed.updated === "number" ? parsed.updated : 0;
-      setState(regenerate(migrate(rawState)));
+      lastUpdated.current = parsed && typeof parsed.updated === "number" ? parsed.updated : 0;
+      setState(migrate(rawState));
     } catch {
       setState(DEFAULT_STATE);
     }
@@ -239,8 +247,6 @@ export function useTracker() {
     });
   }, []);
 
-  // Live Firestore sync. The newest copy wins, decided by `updated` timestamp,
-  // so a fresh local change is never clobbered by a stale remote snapshot.
   useEffect(() => {
     if (!isFirebaseConfigured || !user) return;
     const fb = getFirebase();
@@ -254,12 +260,10 @@ export function useTracker() {
           const data = snap.data();
           const remoteUpdated = typeof data.updated === "number" ? data.updated : 0;
           if (remoteUpdated > lastUpdated.current && data.state) {
-            // Remote is newer (e.g. another device) — apply it.
             remoteApplied.current = true;
             lastUpdated.current = remoteUpdated;
             setState(migrate(data.state));
           } else if (remoteUpdated < lastUpdated.current && stateRef.current) {
-            // Local is newer — push it up so remote catches up.
             setDoc(ref, { state: stateRef.current, updated: lastUpdated.current }).catch((e) =>
               console.error("sync write failed", e)
             );
@@ -276,26 +280,20 @@ export function useTracker() {
     );
   }, [user]);
 
-  // Persist on every data change: localStorage synchronously (survives reload),
-  // Firestore debounced. Only real data changes bump the timestamp.
   useEffect(() => {
     if (!loaded.current || !state) return;
-
     const fromRemote = remoteApplied.current;
     if (fromRemote) remoteApplied.current = false;
-
     if (!fromRemote) {
       if (initialLoad.current) initialLoad.current = false;
       else lastUpdated.current = Date.now();
     }
-
     const payload = { state, updated: lastUpdated.current };
     try {
       localStorage.setItem(KEY, JSON.stringify(payload));
     } catch (e) {
       console.error("cache write failed", e);
     }
-
     if (!fromRemote && isFirebaseConfigured && userRef.current) {
       const fb = getFirebase();
       if (!fb) return;
@@ -309,7 +307,6 @@ export function useTracker() {
     }
   }, [state]);
 
-  // Flush any pending write when the page is hidden/closed.
   useEffect(() => {
     const flush = () => {
       if (saveTimer.current) {
@@ -318,12 +315,11 @@ export function useTracker() {
       }
       if (isFirebaseConfigured && userRef.current && stateRef.current) {
         const fb = getFirebase();
-        if (fb) {
+        if (fb)
           setDoc(doc(fb.db, "users", userRef.current.uid), {
             state: stateRef.current,
             updated: lastUpdated.current,
           }).catch(() => {});
-        }
       }
     };
     const onVis = () => {
@@ -401,35 +397,44 @@ export function useTracker() {
     cat: (id: string): Category =>
       state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8A94A3" },
 
-    freqOf: (card: BoardCard): Frequency | null => {
-      if (!card.recurringId) return null;
-      const r = state?.recurring.find((x) => x.id === card.recurringId);
-      return r ? r.freq : null;
-    },
-
-    // ---- recurring ----
+    // ---- recurring (checkbox habits) ----
     addRecurring: (title: string, catId: string, freq: Frequency) =>
+      update((s) => ({
+        ...s,
+        recurring: [...s.recurring, { id: uid(), title, catId, freq, lastDone: null }],
+      })),
+
+    toggleRecurring: (id: string) =>
       update((s) => {
-        const rid = uid();
+        const today = dateKey();
+        const r = s.recurring.find((x) => x.id === id);
+        if (!r) return s;
+        if (isRecurringDone(r, today)) {
+          // uncheck: remove one completion logged for its lastDone date
+          const dd = r.lastDone;
+          let removed = false;
+          const completions = s.completions.filter((c) => {
+            if (!removed && c.date === dd && c.catId === r.catId) {
+              removed = true;
+              return false;
+            }
+            return true;
+          });
+          return {
+            ...s,
+            recurring: s.recurring.map((x) => (x.id === id ? { ...x, lastDone: null } : x)),
+            completions,
+          };
+        }
         return {
           ...s,
-          recurring: [
-            ...s.recurring,
-            { id: rid, title, catId, freq, nextDue: addDays(dateKey(), FREQ_DAYS[freq]) },
-          ],
-          board: [
-            ...s.board,
-            { id: uid(), title, catId, status: "planned", recurringId: rid, doneDate: null },
-          ],
+          recurring: s.recurring.map((x) => (x.id === id ? { ...x, lastDone: today } : x)),
+          completions: [...s.completions, { date: today, catId: r.catId }],
         };
       }),
 
     deleteRecurring: (id: string) =>
-      update((s) => ({
-        ...s,
-        recurring: s.recurring.filter((r) => r.id !== id),
-        board: s.board.filter((b) => !(b.recurringId === id && b.status !== "done")),
-      })),
+      update((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
 
     // ---- categories ----
     addCategory: (name: string) =>
@@ -451,7 +456,7 @@ export function useTracker() {
       return true;
     },
 
-    // ---- board ----
+    // ---- board (tasks) ----
     addCard: (title: string, status: BoardStatus) =>
       update((s) => ({
         ...s,
@@ -461,16 +466,13 @@ export function useTracker() {
         ],
       })),
 
-    // Replace whole board (used by drag & drop); stamps doneDate on transitions.
     setBoard: (next: BoardCard[]) =>
       update((s) => {
         const prev = new Map(s.board.map((c) => [c.id, c]));
         const stamped = next.map((c) => {
           const p = prev.get(c.id);
-          if (c.status === "done" && (!p || p.status !== "done"))
-            return { ...c, doneDate: dateKey() };
-          if (c.status !== "done" && p && p.status === "done")
-            return { ...c, doneDate: null };
+          if (c.status === "done" && (!p || p.status !== "done")) return { ...c, doneDate: dateKey() };
+          if (c.status !== "done" && p && p.status === "done") return { ...c, doneDate: null };
           return c;
         });
         return { ...s, board: stamped };
@@ -485,11 +487,7 @@ export function useTracker() {
                 ...c,
                 status,
                 doneDate:
-                  status === "done"
-                    ? dateKey()
-                    : c.status === "done"
-                    ? null
-                    : c.doneDate ?? null,
+                  status === "done" ? dateKey() : c.status === "done" ? null : c.doneDate ?? null,
               }
             : c
         ),
@@ -502,12 +500,8 @@ export function useTracker() {
           c.id === id
             ? {
                 ...c,
-                current:
-                  current != null && Number.isFinite(current) && current >= 0
-                    ? current
-                    : undefined,
-                target:
-                  target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+                current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
+                target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
               }
             : c
         ),
@@ -531,24 +525,21 @@ export function useTracker() {
 
 export type Tracker = ReturnType<typeof useTracker>;
 
-// ---- derived stats (computed from completed board cards) ----
-export function completionsByDate(board: BoardCard[]): Record<string, number> {
+// ---- derived stats (from the completions log) ----
+export function completionsByDate(completions: Completion[]): Record<string, number> {
   const map: Record<string, number> = {};
-  for (const c of board)
-    if (c.status === "done" && c.doneDate) map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
+  for (const c of completions) map[c.date] = (map[c.date] ?? 0) + 1;
   return map;
 }
 
-export function catCompletionsByDate(board: BoardCard[], catId: string): Record<string, number> {
+export function catCompletionsByDate(completions: Completion[], catId: string): Record<string, number> {
   const map: Record<string, number> = {};
-  for (const c of board)
-    if (c.status === "done" && c.doneDate && c.catId === catId)
-      map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
+  for (const c of completions) if (c.catId === catId) map[c.date] = (map[c.date] ?? 0) + 1;
   return map;
 }
 
-export function streak(board: BoardCard[]): number {
-  const map = completionsByDate(board);
+export function streak(completions: Completion[]): number {
+  const map = completionsByDate(completions);
   let s = 0;
   const d = new Date();
   if (!map[dateKey(d)]) d.setDate(d.getDate() - 1);

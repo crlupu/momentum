@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@heroui/react";
-import { Tracker, BoardCard, dateKey } from "@/lib/tracker";
+import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -17,31 +17,13 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
-// completions per date for a specific category
-function catCompletionsByDate(board: BoardCard[], catId: string): Record<string, number> {
-  const map: Record<string, number> = {};
-  for (const c of board)
-    if (c.status === "done" && c.doneDate && c.catId === catId)
-      map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
-  return map;
-}
-
-function allCompletionsByDate(board: BoardCard[]): Record<string, number> {
-  const map: Record<string, number> = {};
-  for (const c of board)
-    if (c.status === "done" && c.doneDate) map[c.doneDate] = (map[c.doneDate] ?? 0) + 1;
-  return map;
-}
-
-// Cells for the current calendar month, laid out as week columns (Mon-first
-// rows). Leading/trailing padding days are null.
+// Current calendar month laid out as week columns (Mon-first rows); null = pad.
 function buildMonthCells(): (string | null)[] {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
-  const first = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const lead = (first.getDay() + 6) % 7; // Mon = 0
+  const lead = (new Date(year, month, 1).getDay() + 6) % 7;
   const cells: (string | null)[] = [];
   for (let i = 0; i < lead; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(dateKey(new Date(year, month, d)));
@@ -96,17 +78,16 @@ function Stat({ value, label }: { value: string | number; label: string }) {
   );
 }
 
-export default function ProgressView({ tracker }: { tracker: Tracker }) {
+export default function Charts({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const allMap = allCompletionsByDate(s.board);
+  const completions: Completion[] = s.completions;
+  const allMap = completionsByDate(completions);
   const cells = buildMonthCells();
 
-  // daily bars, last 14 days
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const counts = days.map((d) => allMap[dateKey(d)] ?? 0);
   const max = Math.max(1, ...counts);
 
-  // month totals
   const mPrefix = dateKey().slice(0, 7);
   const monthEntries = Object.entries(allMap).filter(([k]) => k.startsWith(mPrefix));
   const mTotal = monthEntries.reduce((a, [, n]) => a + n, 0);
@@ -116,10 +97,9 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
   );
   const avg = monthEntries.length ? (mTotal / monthEntries.length).toFixed(1) : "0";
 
-  // per-category maps + totals for THIS MONTH (only categories with completions)
   const perCat = s.categories
     .map((c) => {
-      const full = catCompletionsByDate(s.board, c.id);
+      const full = catCompletionsByDate(completions, c.id);
       const map: Record<string, number> = {};
       for (const [k, n] of Object.entries(full)) if (k.startsWith(mPrefix)) map[k] = n;
       const total = Object.values(map).reduce((a, n) => a + n, 0);
@@ -163,10 +143,9 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
             Completions by category
           </h2>
           <p className="mb-4 text-xs text-foreground/50">This month · each category tracked separately</p>
-
           {perCat.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-foreground/60">
-              Complete some tasks to see per-category activity.
+              Check off some recurring tasks to see activity.
             </p>
           ) : (
             <div className="space-y-5">
@@ -191,7 +170,7 @@ export default function ProgressView({ tracker }: { tracker: Tracker }) {
             {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
           <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
-            <Stat value={mTotal} label="tasks completed" />
+            <Stat value={mTotal} label="completions" />
             <Stat value={best ? `${best[1]} (${best[0].slice(8)})` : "–"} label="best day" />
             <Stat value={avg} label="avg / active day" />
           </div>

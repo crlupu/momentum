@@ -22,8 +22,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Card, Chip, Input } from "@heroui/react";
-import { Check, GripVertical, Plus, Repeat, RotateCcw, Target, X } from "lucide-react";
-import { Tracker, BoardStatus, BoardCard, FREQ_LABEL, FREQ_ORDER } from "@/lib/tracker";
+import { Check, GripVertical, Plus, RotateCcw, Target, X } from "lucide-react";
+import { Tracker, BoardStatus, BoardCard } from "@/lib/tracker";
 
 const COLUMNS: { status: BoardStatus; label: string }[] = [
   { status: "planned", label: "Planned" },
@@ -31,15 +31,7 @@ const COLUMNS: { status: BoardStatus; label: string }[] = [
   { status: "done", label: "Done" },
 ];
 
-function ProgressRing({
-  current,
-  target,
-  color,
-}: {
-  current: number;
-  target: number;
-  color: string;
-}) {
+function ProgressRing({ current, target, color }: { current: number; target: number; color: string }) {
   const pct = target > 0 ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0;
   const r = 15;
   const circ = 2 * Math.PI * r;
@@ -86,7 +78,6 @@ function CardBody({
   handleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }) {
   const c = tracker.cat(b.catId);
-  const freq = tracker.freqOf(b);
   const done = b.status === "done";
   const hasTarget = typeof b.target === "number" && b.target > 0;
 
@@ -116,13 +107,7 @@ function CardBody({
             <ProgressRing current={b.current ?? 0} target={b.target ?? 1} color={c.color} />
           </button>
         ) : !editing ? (
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label="Set progress target"
-            onPress={() => setEditing(true)}
-          >
+          <Button size="sm" variant="outline" isIconOnly aria-label="Set progress target" onPress={() => setEditing(true)}>
             <Target className="h-4 w-4" />
           </Button>
         ) : null}
@@ -142,21 +127,10 @@ function CardBody({
       </div>
 
       <div className="mb-2.5 flex flex-wrap items-center gap-2 pl-[22px]">
-        <Chip
-          size="sm"
-          variant="soft"
-          className="cursor-pointer"
-          onClick={() => tracker.cycleCardCat(b.id)}
-        >
+        <Chip size="sm" variant="soft" className="cursor-pointer" onClick={() => tracker.cycleCardCat(b.id)}>
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
           <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
         </Chip>
-        {freq && (
-          <span className="flex items-center gap-1 text-[11px] text-foreground/50">
-            <Repeat className="h-3 w-3" />
-            {FREQ_LABEL[freq]}
-          </span>
-        )}
         {hasTarget && (
           <span className="font-mono-n text-[11px] text-foreground/50">
             {b.current ?? 0} / {b.target}
@@ -221,9 +195,7 @@ function CardBody({
 }
 
 function SortableCard({ b, tracker }: { b: BoardCard; tracker: Tracker }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: b.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: b.id });
   return (
     <div
       ref={setNodeRef}
@@ -231,14 +203,6 @@ function SortableCard({ b, tracker }: { b: BoardCard; tracker: Tracker }) {
       className="mb-2.5"
     >
       <CardBody b={b} tracker={tracker} handleProps={{ ...attributes, ...listeners }} />
-    </div>
-  );
-}
-
-function SubHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-2 mt-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/40">
-      {children}
     </div>
   );
 }
@@ -265,18 +229,6 @@ function Column({
     setTitle("");
   };
 
-  // In progress splits into recurring (sorted by frequency) then other tasks.
-  let ordered = cards;
-  let split: { recurring: BoardCard[]; other: BoardCard[] } | null = null;
-  if (status === "progress") {
-    const recurring = cards
-      .filter((c) => tracker.freqOf(c) !== null)
-      .sort((a, b) => FREQ_ORDER[tracker.freqOf(a)!] - FREQ_ORDER[tracker.freqOf(b)!]);
-    const other = cards.filter((c) => tracker.freqOf(c) === null);
-    split = { recurring, other };
-    ordered = [...recurring, ...other];
-  }
-
   return (
     <Card className={isOver ? "ring-2 ring-primary/40" : ""}>
       <Card.Content className="p-3.5">
@@ -288,26 +240,10 @@ function Column({
         </h3>
 
         <div ref={setNodeRef} className="min-h-[8px]">
-          <SortableContext items={ordered.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-            {split ? (
-              <>
-                <SubHeader>Recurring</SubHeader>
-                {split.recurring.length === 0 ? (
-                  <p className="mb-2 px-1 text-xs text-foreground/40">Nothing recurring here.</p>
-                ) : (
-                  split.recurring.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
-                )}
-                <div className="my-3 h-px bg-foreground/10" />
-                <SubHeader>Other</SubHeader>
-                {split.other.length === 0 ? (
-                  <p className="mb-2 px-1 text-xs text-foreground/40">No other tasks.</p>
-                ) : (
-                  split.other.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
-                )}
-              </>
-            ) : (
-              ordered.map((b) => <SortableCard key={b.id} b={b} tracker={tracker} />)
-            )}
+          <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            {cards.map((b) => (
+              <SortableCard key={b.id} b={b} tracker={tracker} />
+            ))}
           </SortableContext>
         </div>
 
@@ -345,7 +281,6 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
     setActiveId(null);
     const { active, over } = e;
     if (!over) return;
-
     const activeCardId = String(active.id);
     const overId = String(over.id);
     const moving = board.find((b) => b.id === activeCardId);
@@ -370,7 +305,6 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
       if (i >= 0) index = i;
     }
     target.splice(index, 0, { ...moving, status: targetStatus });
-
     tracker.setBoard([...cols.planned, ...cols.progress, ...cols.done]);
   };
 
@@ -384,18 +318,10 @@ export default function BoardView({ tracker }: { tracker: Tracker }) {
     >
       <div className="grid gap-3.5 md:grid-cols-3">
         {COLUMNS.map((c) => (
-          <Column
-            key={c.status}
-            status={c.status}
-            label={c.label}
-            cards={cardsByStatus(c.status)}
-            tracker={tracker}
-          />
+          <Column key={c.status} status={c.status} label={c.label} cards={cardsByStatus(c.status)} tracker={tracker} />
         ))}
       </div>
-      <DragOverlay>
-        {activeCard ? <CardBody b={activeCard} tracker={tracker} dragging /> : null}
-      </DragOverlay>
+      <DragOverlay>{activeCard ? <CardBody b={activeCard} tracker={tracker} dragging /> : null}</DragOverlay>
     </DndContext>
   );
 }

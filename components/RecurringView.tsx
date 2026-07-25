@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
-import { Repeat, X } from "lucide-react";
+import { Check, X } from "lucide-react";
+import Charts from "./Charts";
 import {
   Tracker,
   Frequency,
@@ -10,6 +11,7 @@ import {
   FREQ_LABEL,
   FREQ_ORDER,
   dateKey,
+  isRecurringDone,
   streak,
 } from "@/lib/tracker";
 
@@ -32,9 +34,11 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
   const [newCat, setNewCat] = useState("");
 
   const today = dateKey();
-  const doneToday = s.board.filter((b) => b.status === "done" && b.doneDate === today).length;
+  const doneToday = s.completions.filter((c) => c.date === today).length;
 
-  const recurring = [...s.recurring].sort((a, b) => FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq]);
+  const recurring = [...s.recurring].sort(
+    (a, b) => FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] || a.title.localeCompare(b.title)
+  );
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -58,7 +62,7 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
         <Card.Content className="p-4 sm:p-5">
           <div className="grid grid-cols-3 gap-2.5">
             <Stat value={doneToday} label="done today" />
-            <Stat value={streak(s.board)} label="day streak" />
+            <Stat value={streak(s.completions)} label="day streak" />
             <Stat value={s.recurring.length} label="recurring" />
           </div>
         </Card.Content>
@@ -66,21 +70,69 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
 
       <Card>
         <Card.Content className="p-4 sm:p-5">
-          <h2 className="font-display mb-1 text-sm font-semibold uppercase tracking-wide text-foreground/60">
-            New recurring task
+          <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
+            Recurring tasks
           </h2>
-          <p className="mb-3 text-xs text-foreground/50">
-            Added to the board under Planned, and re-added on its schedule.
-          </p>
 
-          <form onSubmit={submit} className="flex flex-col gap-3">
+          {recurring.length === 0 ? (
+            <p className="px-1 py-2 text-[15px] text-foreground/60">
+              None yet — add one below.
+            </p>
+          ) : (
+            <ul className="list-none p-0">
+              {recurring.map((r) => {
+                const c = tracker.cat(r.catId);
+                const done = isRecurringDone(r, today);
+                return (
+                  <li
+                    key={r.id}
+                    className="flex items-center gap-3 border-b border-foreground/10 px-1 py-3 last:border-b-0"
+                  >
+                    <button
+                      aria-label={done ? "Mark not done" : "Mark done"}
+                      onClick={() => tracker.toggleRecurring(r.id)}
+                      className={
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors " +
+                        (done
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-foreground/25 bg-transparent")
+                      }
+                    >
+                      {done && <Check className="h-4 w-4" strokeWidth={3} />}
+                    </button>
+                    <span
+                      className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}
+                    >
+                      {r.title}
+                    </span>
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: c.color }}
+                      aria-hidden
+                    />
+                    <span className="text-xs text-foreground/60">{FREQ_LABEL[r.freq]}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label={`Delete ${r.title}`}
+                      onPress={() => tracker.deleteRecurring(r.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
             <Input
               aria-label="Task title"
-              placeholder="What should recur?"
+              placeholder="Add a recurring task…"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
-
             <div>
               <div className="mb-1.5 text-xs text-foreground/50">Category</div>
               <div className="flex flex-wrap gap-2">
@@ -91,17 +143,12 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
                     variant={catId === c.id ? "primary" : "outline"}
                     onPress={() => setCatId(c.id)}
                   >
-                    <span
-                      className="inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ background: c.color }}
-                      aria-hidden
-                    />
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
                     {c.name}
                   </Button>
                 ))}
               </div>
             </div>
-
             <div>
               <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
               <div className="flex flex-wrap gap-2">
@@ -117,54 +164,14 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
                 ))}
               </div>
             </div>
-
-            <Button type="submit" variant="primary" className="mt-1 self-start">
+            <Button type="submit" variant="primary" className="self-start">
               Add recurring task
             </Button>
           </form>
         </Card.Content>
       </Card>
 
-      <Card>
-        <Card.Content className="p-4 sm:p-5">
-          <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
-            Your recurring tasks
-          </h2>
-          {recurring.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">None yet.</p>
-          ) : (
-            <ul className="list-none p-0">
-              {recurring.map((r) => {
-                const c = tracker.cat(r.catId);
-                return (
-                  <li
-                    key={r.id}
-                    className="flex items-center gap-3 border-b border-foreground/10 px-1 py-3 last:border-b-0"
-                  >
-                    <Repeat className="h-4 w-4 shrink-0 text-foreground/40" aria-hidden />
-                    <span className="flex-1 text-[15px]">{r.title}</span>
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: c.color }}
-                      aria-hidden
-                    />
-                    <span className="text-xs text-foreground/60">{FREQ_LABEL[r.freq]}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      aria-label={`Delete recurring task ${r.title}`}
-                      onPress={() => tracker.deleteRecurring(r.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card.Content>
-      </Card>
+      <Charts tracker={tracker} />
 
       <Card>
         <Card.Content className="p-4 sm:p-5">
@@ -174,11 +181,7 @@ export default function RecurringView({ tracker }: { tracker: Tracker }) {
           <div className="flex flex-wrap items-center gap-2">
             {s.categories.map((c) => (
               <Chip key={c.id} size="sm" variant="soft">
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ background: c.color }}
-                  aria-hidden
-                />
+                <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                 <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
                 <button
                   aria-label={`Delete category ${c.name}`}

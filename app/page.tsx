@@ -8,7 +8,6 @@ import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { AuthGate } from "@/components/AuthGate";
 import RecurringView from "@/components/RecurringView";
 import BoardView from "@/components/BoardView";
-import ProgressView from "@/components/ProgressView";
 
 export default function Home() {
   const tracker = useTracker();
@@ -30,13 +29,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <ThemeSwitch />
           {tracker.user && (
-            <Button
-              size="sm"
-              variant="ghost"
-              isIconOnly
-              aria-label="Sign out"
-              onPress={() => tracker.signOutUser()}
-            >
+            <Button size="sm" variant="ghost" isIconOnly aria-label="Sign out" onPress={() => tracker.signOutUser()}>
               <LogOut className="h-4 w-4" />
             </Button>
           )}
@@ -51,18 +44,14 @@ export default function Home() {
             <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(String(key))}>
               <Tabs.List className="mb-4">
                 <Tabs.Tab id="recurring">Recurring</Tabs.Tab>
-                <Tabs.Tab id="board">Board</Tabs.Tab>
-                <Tabs.Tab id="progress">Progress</Tabs.Tab>
+                <Tabs.Tab id="tasks">Tasks</Tabs.Tab>
               </Tabs.List>
 
               <Tabs.Panel id="recurring">
                 <RecurringView tracker={tracker} />
               </Tabs.Panel>
-              <Tabs.Panel id="board">
+              <Tabs.Panel id="tasks">
                 <BoardView tracker={tracker} />
-              </Tabs.Panel>
-              <Tabs.Panel id="progress">
-                <ProgressView tracker={tracker} />
               </Tabs.Panel>
             </Tabs>
           )}
