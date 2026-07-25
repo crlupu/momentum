@@ -47,6 +47,12 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                 const done = isRecurringDone(r, today);
                 return (
                   <li key={r.id} className="flex items-center gap-3 border-b border-foreground/10 px-1 py-3 last:border-b-0">
+                    <span className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>{r.title}</span>
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
+                    <span className="text-xs text-foreground/60">{FREQ_LABEL[r.freq]}</span>
+                    <Button size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onPress={() => tracker.deleteRecurring(r.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
                     <button
                       aria-label={done ? "Mark not done" : "Mark done"}
                       onClick={() => tracker.toggleRecurring(r.id)}
@@ -57,12 +63,6 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                     >
                       {done && <Check className="h-4 w-4" strokeWidth={3} />}
                     </button>
-                    <span className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>{r.title}</span>
-                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-                    <span className="text-xs text-foreground/60">{FREQ_LABEL[r.freq]}</span>
-                    <Button size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onPress={() => tracker.deleteRecurring(r.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
                   </li>
                 );
               })}

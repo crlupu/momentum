@@ -50,17 +50,17 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
         )}
 
         {editing && (
-          <div className="mt-3 flex flex-wrap items-end gap-2">
-            <label className="text-[11px] text-foreground/60">
+          <div className="mt-3 flex flex-col gap-2">
+            <label className="block text-[11px] text-foreground/60">
               Current
-              <Input type="number" aria-label="Current value" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5 h-9 w-24" />
+              <Input type="number" aria-label="Current value" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5 w-full" />
             </label>
-            <label className="text-[11px] text-foreground/60">
+            <label className="block text-[11px] text-foreground/60">
               Target
-              <Input type="number" aria-label="Target value" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5 h-9 w-24" />
+              <Input type="number" aria-label="Target value" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5 w-full" />
             </label>
-            <Button size="sm" variant="primary" onPress={save}>Save</Button>
-            <Button size="sm" variant="ghost" onPress={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" variant="primary" onPress={save} className="w-full">Save</Button>
+            <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">Cancel</Button>
           </div>
         )}
 
@@ -117,7 +117,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
           </Card.Content>
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
           {active.map((g) => (
             <GoalCard key={g.id} g={g} tracker={tracker} />
           ))}
@@ -127,7 +127,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       {done.length > 0 && (
         <>
           <div className="mb-3 mt-6 text-[13px] uppercase tracking-wide text-foreground/40">Completed</div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
             {done.map((g) => (
               <GoalCard key={g.id} g={g} tracker={tracker} />
             ))}

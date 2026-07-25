@@ -24,7 +24,7 @@ export default function Home() {
         onAddRecurring={() => setRecurringOpen(true)}
       />
 
-      <main className="md:ml-60">
+      <main>
         <AuthGate tracker={tracker}>
           {!tracker.state ? (
             <p className="p-6 text-foreground/60">Loading…</p>
