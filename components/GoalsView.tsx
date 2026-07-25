@@ -87,13 +87,18 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   );
 }
 
+function ColumnHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">{children}</div>
+  );
+}
+
 export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
   const s = tracker.state!;
-  const active = s.goals.filter((g) => !g.done);
   const done = s.goals.filter((g) => g.done);
-  const avg = active.length
-    ? Math.round(active.reduce((a, g) => a + goalPct(g), 0) / active.length)
-    : 0;
+  const active = s.goals.filter((g) => !g.done);
+  const todo = active.filter((g) => (g.current ?? 0) <= 0);
+  const inProgress = active.filter((g) => (g.current ?? 0) > 0);
 
   return (
     <div>
@@ -101,7 +106,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight">Goals</h2>
           <p className="mt-0.5 text-sm text-foreground/60">
-            {active.length} active · {done.length} done · {avg}% avg progress
+            {todo.length} to do · {inProgress.length} in progress · {done.length} done
           </p>
         </div>
         <Button variant="primary" onPress={onAdd}>
@@ -117,10 +122,27 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
           </Card.Content>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {active.map((g) => (
-            <GoalCard key={g.id} g={g} tracker={tracker} />
-          ))}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <ColumnHeader>To do</ColumnHeader>
+            <div className="space-y-3">
+              {todo.length === 0 ? (
+                <p className="px-1 text-sm text-foreground/40">Nothing to do.</p>
+              ) : (
+                todo.map((g) => <GoalCard key={g.id} g={g} tracker={tracker} />)
+              )}
+            </div>
+          </div>
+          <div>
+            <ColumnHeader>In progress</ColumnHeader>
+            <div className="space-y-3">
+              {inProgress.length === 0 ? (
+                <p className="px-1 text-sm text-foreground/40">Nothing in progress.</p>
+              ) : (
+                inProgress.map((g) => <GoalCard key={g.id} g={g} tracker={tracker} />)
+              )}
+            </div>
+          </div>
         </div>
       )}
 

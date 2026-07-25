@@ -1,14 +1,26 @@
 "use client";
 
-import { Button, Card, Chip } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 import { Check, Plus, X } from "lucide-react";
 import { Tracker, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, streak } from "@/lib/tracker";
 
-function Stat({ value, label }: { value: string | number; label: string }) {
+function hexToRgba(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  return `rgba(${parseInt(h.slice(0, 2), 16)}, ${parseInt(h.slice(2, 4), 16)}, ${parseInt(h.slice(4, 6), 16)}, ${a})`;
+}
+
+function Circle({ value, label, color }: { value: number; label: string; color: string }) {
   return (
-    <div className="rounded-lg bg-foreground/[0.04] px-3 py-2.5">
-      <div className="font-mono-n text-2xl font-semibold" style={{ color: "#F5A524" }}>{value}</div>
-      <div className="text-xs text-foreground/60">{label}</div>
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="flex h-12 w-12 items-center justify-center rounded-full border-2"
+        style={{ borderColor: color, background: hexToRgba(color, 0.12) }}
+      >
+        <span className="font-mono-n text-base font-bold" style={{ color }}>
+          {value}
+        </span>
+      </div>
+      <span className="text-center text-[10px] leading-tight text-foreground/60">{label}</span>
     </div>
   );
 }
@@ -16,7 +28,12 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
   const s = tracker.state!;
   const today = dateKey();
-  const doneToday = s.completions.filter((c) => c.date === today).length;
+
+  const doneCount = s.recurring.filter((r) => isRecurringDone(r, today)).length;
+  const notDone = s.recurring.length - doneCount;
+  const total = s.recurring.length;
+  const strk = streak(s.completions);
+
   const recurring = [...s.recurring].sort(
     (a, b) => FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] || a.title.localeCompare(b.title)
   );
@@ -32,10 +49,11 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
 
       <Card>
         <Card.Content className="px-3 py-3 sm:px-4">
-          <div className="mb-4 grid grid-cols-3 gap-2.5">
-            <Stat value={doneToday} label="done today" />
-            <Stat value={streak(s.completions)} label="day streak" />
-            <Stat value={s.recurring.length} label="recurring" />
+          <div className="mb-4 grid grid-cols-4 gap-1">
+            <Circle value={doneCount} label="done today" color="#17C964" />
+            <Circle value={notDone} label="not done" color="#EAB308" />
+            <Circle value={total} label="total" color="#8A94A3" />
+            <Circle value={strk} label="day streak" color="#7828C8" />
           </div>
 
           {recurring.length === 0 ? (
@@ -46,10 +64,10 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                 const c = tracker.cat(r.catId);
                 const done = isRecurringDone(r, today);
                 return (
-                  <li key={r.id} className="flex items-center gap-3 border-b border-foreground/10 px-1 py-3 last:border-b-0">
+                  <li key={r.id} className="flex items-center gap-2 border-b border-foreground/10 px-1 py-3 last:border-b-0">
                     <span className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>{r.title}</span>
                     <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-                    <span className="text-xs text-foreground/60">{FREQ_LABEL[r.freq]}</span>
+                    <span className="text-[11px] text-foreground/60">{FREQ_LABEL[r.freq]}</span>
                     <Button size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onPress={() => tracker.deleteRecurring(r.id)}>
                       <X className="h-4 w-4" />
                     </Button>
