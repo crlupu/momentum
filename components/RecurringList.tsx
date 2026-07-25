@@ -24,14 +24,14 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   return (
     <div>
       <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display text-2xl font-bold tracking-tight">Recurring tasks</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight">Recurring</h2>
         <Button variant="outline" onPress={onAdd}>
           <Plus className="h-4 w-4" /> New
         </Button>
       </div>
 
       <Card>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="px-3 py-3 sm:px-4">
           <div className="mb-4 grid grid-cols-3 gap-2.5">
             <Stat value={doneToday} label="done today" />
             <Stat value={streak(s.completions)} label="day streak" />

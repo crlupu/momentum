@@ -29,14 +29,16 @@ export default function Home() {
           {!tracker.state ? (
             <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
-            <div className="mx-auto max-w-4xl space-y-10 px-4 py-6 sm:px-6">
-              <section id="goals" className="scroll-mt-6">
-                <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
-              </section>
+            <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-3">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                <section id="goals" className="scroll-mt-6 lg:col-span-2">
+                  <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
+                </section>
 
-              <section id="recurring" className="scroll-mt-6">
-                <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
-              </section>
+                <section id="recurring" className="scroll-mt-6 lg:col-span-1">
+                  <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
+                </section>
+              </div>
 
               <section id="charts" className="scroll-mt-6">
                 <h2 className="font-display mb-4 text-2xl font-bold tracking-tight">Progress</h2>

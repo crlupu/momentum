@@ -47,18 +47,19 @@ function Heatmap({
     if (n <= 4) return hexToRgba(color, 0.8);
     return hexToRgba(color, 1);
   };
+  const CELL = 34;
   return (
     <div className="overflow-x-auto pb-1">
-      <div className="grid w-max grid-flow-col gap-[3px]" style={{ gridTemplateRows: "repeat(7, 12px)" }}>
+      <div className="grid w-max grid-flow-col gap-1" style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}>
         {cells.map((k, i) => {
-          if (k === null) return <div key={`pad-${i}`} className="h-3 w-3" />;
+          if (k === null) return <div key={`pad-${i}`} style={{ width: CELL, height: CELL }} />;
           const n = map[k] ?? 0;
           return (
             <div
               key={k}
               title={`${k} — ${n} done`}
-              className="h-3 w-3 rounded-[2px]"
-              style={{ background: shade(n) }}
+              className="rounded-[5px]"
+              style={{ width: CELL, height: CELL, background: shade(n) }}
             />
           );
         })}

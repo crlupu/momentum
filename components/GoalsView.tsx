@@ -22,7 +22,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
   return (
     <Card>
-      <Card.Content className="p-4 sm:p-5">
+      <Card.Content className="px-3 py-3 sm:px-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className={"font-display text-base font-semibold " + (g.done ? "text-foreground/45 line-through" : "")}>
@@ -40,7 +40,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               )}
             </div>
           </div>
-          {hasTarget && <ProgressRing pct={pct} color={c.color} size={56} />}
+          {hasTarget && <ProgressRing pct={pct} color={c.color} size={48} />}
         </div>
 
         {hasTarget && (
@@ -117,7 +117,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
           </Card.Content>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {active.map((g) => (
             <GoalCard key={g.id} g={g} tracker={tracker} />
           ))}
@@ -127,7 +127,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       {done.length > 0 && (
         <>
           <div className="mb-3 mt-6 text-[13px] uppercase tracking-wide text-foreground/40">Completed</div>
-          <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {done.map((g) => (
               <GoalCard key={g.id} g={g} tracker={tracker} />
             ))}
