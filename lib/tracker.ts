@@ -222,6 +222,10 @@ export function useTracker() {
   const initialLoad = useRef(true);
   const lastUpdated = useRef(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // true once this signed-in user's cloud doc has been read at least once
+  const remoteSynced = useRef(false);
+  // skips persisting a state change (used for the sign-out reset)
+  const suppressPersist = useRef(false);
 
   useEffect(() => {
     try {
@@ -264,11 +268,13 @@ export function useTracker() {
     if (!isFirebaseConfigured || !user) return;
     const fb = getFirebase();
     if (!fb) return;
+    remoteSynced.current = false;
     const ref = doc(fb.db, "users", user.uid);
     return onSnapshot(
       ref,
       (snap) => {
         if (snap.metadata.hasPendingWrites) return;
+        remoteSynced.current = true;
         if (snap.exists()) {
           const data = snap.data();
           const remoteUpdated = typeof data.updated === "number" ? data.updated : 0;
@@ -297,6 +303,10 @@ export function useTracker() {
 
   useEffect(() => {
     if (!loaded.current || !state) return;
+    if (suppressPersist.current) {
+      suppressPersist.current = false;
+      return;
+    }
     const fromRemote = remoteApplied.current;
     if (fromRemote) remoteApplied.current = false;
     if (!fromRemote) {
@@ -309,7 +319,9 @@ export function useTracker() {
     } catch (e) {
       console.error("cache write failed", e);
     }
-    if (!fromRemote && isFirebaseConfigured && userRef.current) {
+    // Only write to the cloud once we've read this user's doc, otherwise a
+    // freshly-opened (empty) tab could overwrite good cloud data.
+    if (!fromRemote && isFirebaseConfigured && userRef.current && remoteSynced.current) {
       const fb = getFirebase();
       if (!fb) return;
       const uidStr = userRef.current.uid;
@@ -331,7 +343,7 @@ export function useTracker() {
         clearTimeout(saveTimer.current);
         saveTimer.current = null;
       }
-      if (isFirebaseConfigured && userRef.current && stateRef.current) {
+      if (isFirebaseConfigured && userRef.current && stateRef.current && remoteSynced.current) {
         const fb = getFirebase();
         if (fb)
           setDoc(
@@ -407,7 +419,35 @@ export function useTracker() {
     signOutUser: async () => {
       const fb = getFirebase();
       if (!fb) return;
+
+      // 1) Flush any pending debounced write BEFORE signing out, so the last
+      //    edits reach the cloud rather than being dropped.
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      if (userRef.current && stateRef.current && remoteSynced.current) {
+        try {
+          await setDoc(
+            doc(fb.db, "users", userRef.current.uid),
+            clean({ state: stateRef.current, updated: lastUpdated.current })
+          );
+        } catch (e) {
+          console.error("final sync before sign-out failed", e);
+        }
+      }
+
+      // 2) Clear local state WITHOUT persisting it anywhere. Writing the empty
+      //    default state would otherwise overwrite the cloud copy.
+      suppressPersist.current = true;
       await signOut(fb.auth);
+      try {
+        localStorage.removeItem(KEY);
+      } catch {
+        /* ignore */
+      }
+      lastUpdated.current = 0;
+      remoteSynced.current = false;
       setState(DEFAULT_STATE);
     },
 
