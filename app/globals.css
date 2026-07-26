@@ -8,9 +8,8 @@
 }
 
 /* ============================================================
-   Andina / Netsuite inventory look — light glassmorphism
-   Gray gradient backdrop · frosted translucent cards
-   Acid-yellow + orange feature blocks · Urbanist
+   Premium warm-neutral aesthetic (Linear / Stripe / Arc)
+   Soft mesh gradient · glassmorphism · low contrast
    ============================================================ */
 
 /* Light (default) */
@@ -18,21 +17,21 @@
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: rgba(255, 255, 255, 0.4);
-  --foreground: #201f1a;
+  --background: rgba(255, 255, 255, 0.28);
+  --foreground: #33322c;
 
-  --surface: rgba(255, 255, 255, 0.55);
-  --surface-foreground: #201f1a;
-  --surface-secondary: rgba(255, 255, 255, 0.42);
-  --surface-tertiary: rgba(255, 255, 255, 0.3);
+  --surface: rgba(255, 255, 255, 0.28);
+  --surface-foreground: #33322c;
+  --surface-secondary: rgba(255, 255, 255, 0.22);
+  --surface-tertiary: rgba(255, 255, 255, 0.16);
 
-  --overlay: #f3f2ec;
-  --overlay-foreground: #201f1a;
+  --overlay: #f4f1ea;
+  --overlay-foreground: #33322c;
 
-  --muted: #5b5952;
+  --muted: #6f6d63;
 
-  --border: rgba(255, 255, 255, 0.55);
-  --separator: rgba(0, 0, 0, 0.08);
+  --border: rgba(255, 255, 255, 0.35);
+  --separator: rgba(0, 0, 0, 0.06);
 
   --accent: #f0e430;
   --accent-foreground: #1a1a08;
@@ -41,29 +40,29 @@
   --warning: #f5883f;
   --danger: #e5484d;
 
-  --radius: 0.875rem;
-  --surface-shadow: 0 4px 22px rgba(30, 28, 20, 0.1);
+  --radius: 1rem;
+  --surface-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
 }
 
 /* Dark */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: rgba(30, 30, 34, 0.5);
-  --foreground: #ececee;
+  --background: rgba(32, 32, 36, 0.4);
+  --foreground: #e7e6e2;
 
-  --surface: rgba(40, 40, 46, 0.55);
-  --surface-foreground: #ececee;
-  --surface-secondary: rgba(48, 48, 54, 0.5);
-  --surface-tertiary: rgba(56, 56, 62, 0.5);
+  --surface: rgba(42, 42, 47, 0.42);
+  --surface-foreground: #e7e6e2;
+  --surface-secondary: rgba(50, 50, 56, 0.4);
+  --surface-tertiary: rgba(58, 58, 64, 0.4);
 
-  --overlay: #1e1e22;
-  --overlay-foreground: #ececee;
+  --overlay: #212024;
+  --overlay-foreground: #e7e6e2;
 
-  --muted: #9a9aa2;
+  --muted: #9a988f;
 
   --border: rgba(255, 255, 255, 0.1);
-  --separator: rgba(255, 255, 255, 0.08);
+  --separator: rgba(255, 255, 255, 0.07);
 
   --accent: #f0e430;
   --accent-foreground: #1a1a08;
@@ -72,51 +71,104 @@
   --warning: #f5883f;
   --danger: #f87171;
 
-  --radius: 0.875rem;
-  --surface-shadow: 0 4px 22px rgba(0, 0, 0, 0.4);
+  --radius: 1rem;
+  --surface-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 body {
   font-family: "Urbanist", -apple-system, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
-  /* Gray gradient backdrop sampled from the reference */
-  background: linear-gradient(152deg, #cfc9bb 0%, #bdbab1 46%, #a8a7a3 100%) fixed;
+  /* Base background */
+  background: linear-gradient(135deg, #f2efe8 0%, #ece8e1 40%, #e6e2da 100%) fixed;
 }
 
 html.dark body {
-  background: linear-gradient(152deg, #2b2c30 0%, #202024 52%, #151518 100%) fixed;
+  background: linear-gradient(135deg, #201f23 0%, #1a191d 50%, #151417 100%) fixed;
 }
+
+/* ---- Mesh gradient: oversized blurred radial blobs ---- */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg-mesh .blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(220px);
+  will-change: transform;
+  animation: drift 32s ease-in-out infinite;
+}
+.b1 { width: 820px; height: 820px; top: -14%; left: -8%;  background: #f8f3e4; opacity: 0.42; animation-duration: 34s; }
+.b2 { width: 700px; height: 700px; top: 6%;   right: -10%; background: #e8e1d4; opacity: 0.38; animation-duration: 38s; animation-delay: -6s; }
+.b3 { width: 760px; height: 760px; bottom: -16%; left: 8%; background: #ddd6cb; opacity: 0.32; animation-duration: 30s; animation-delay: -12s; }
+.b4 { width: 620px; height: 620px; bottom: 2%;  right: 4%;  background: #efe9de; opacity: 0.40; animation-duration: 36s; animation-delay: -4s; }
+.b5 { width: 560px; height: 560px; top: 38%;  left: 42%;   background: #d5cec3; opacity: 0.26; animation-duration: 28s; animation-delay: -9s; }
+.b6 { width: 700px; height: 700px; top: 58%;  left: -6%;   background: #f8f3e4; opacity: 0.30; animation-duration: 40s; animation-delay: -14s; }
+
+html.dark .bg-mesh { display: none; }
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3%, -4%) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-mesh .blob { animation: none; }
+}
+
+/* ---- Noise layer: monochrome grain to kill banding ---- */
+.bg-noise {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.02;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html.dark .bg-noise { display: none; }
 
 .font-display {
   font-family: "Urbanist", sans-serif;
   letter-spacing: -0.01em;
 }
-
 .font-mono-n {
   font-family: "Urbanist", sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Cards: frosted glass — translucent surface + blur + hairline edge */
+/* ---- Glassmorphism cards ---- */
 .card {
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(24px) saturate(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 22px;
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.05),
+    inset 0 2px 8px rgba(255, 255, 255, 0.45);
+}
+html.dark .card {
+  background: rgba(42, 42, 47, 0.42);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 2px rgba(255, 255, 255, 0.06);
 }
 .card--transparent {
   border: 0;
 }
 
-/* Inputs: a touch of frost too, so nothing is flat default */
 input {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* Buttons: full pill / circular */
+/* Buttons: soft pills */
 .button {
   border-radius: 9999px;
 }

@@ -25,6 +25,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="text-foreground">
+        <div className="bg-mesh" aria-hidden>
+          <span className="blob b1" />
+          <span className="blob b2" />
+          <span className="blob b3" />
+          <span className="blob b4" />
+          <span className="blob b5" />
+          <span className="blob b6" />
+        </div>
+        <div className="bg-noise" aria-hidden />
         <Providers>{children}</Providers>
       </body>
     </html>
