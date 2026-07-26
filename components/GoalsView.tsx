@@ -64,7 +64,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
           </div>
         )}
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onPress={() => setEditing((v) => !v)}>
             {hasTarget ? <SlidersHorizontal className="h-4 w-4" /> : <Target className="h-4 w-4" />}
             {hasTarget ? "Update" : "Set target"}
@@ -122,7 +122,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
           </Card.Content>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <ColumnHeader>To do</ColumnHeader>
             <div className="space-y-3">
