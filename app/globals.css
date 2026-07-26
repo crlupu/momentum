@@ -9,35 +9,68 @@
 }
 
 /* ============================================================
-   Cargo TMS design system
-   Urbanist type · flat surfaces · acid-lime accent
+   NetSuite CRM Dashboard design system
+   Urbanist type · dark, high-contrast dashboard · warm accent
    ============================================================ */
 
-/* Light (default) */
+/* Dark (default showcase look) */
 :root,
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f1218;
+  --foreground: #eaecef;
+
+  --surface: #171b22;
+  --surface-foreground: #eaecef;
+  --surface-secondary: #1d222b;
+  --surface-tertiary: #232935;
+
+  --overlay: #171b22;
+  --overlay-foreground: #eaecef;
+
+  --muted: #8a93a3;
+
+  --border: #262c37;
+  --separator: #222833;
+
+  /* Brand / primary — bold warm orange with near-black text */
+  --accent: #ff7a3d;
+  --accent-foreground: #1a1206;
+
+  --success: #2fbe7e;
+  --warning: #ffb020;
+  --danger: #f87171;
+
+  --radius: 0.75rem;
+
+  --surface-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Light (warm-neutral variant for the toggle) */
 .light,
 [data-theme="light"] {
-  --background: #f4f5f7;
-  --foreground: #181b20;
+  color-scheme: light;
+  --background: #f6f6f4;
+  --foreground: #1a1d23;
 
   --surface: #ffffff;
-  --surface-foreground: #181b20;
-  --surface-secondary: #f7f8fa;
-  --surface-tertiary: #f1f3f5;
+  --surface-foreground: #1a1d23;
+  --surface-secondary: #f4f3f0;
+  --surface-tertiary: #ecebe6;
 
   --overlay: #ffffff;
-  --overlay-foreground: #181b20;
+  --overlay-foreground: #1a1d23;
 
-  --muted: #7a828e;
+  --muted: #6e7480;
 
-  --border: #e7e9ee;
-  --separator: #eceef2;
+  --border: #e7e5e0;
+  --separator: #eceae5;
 
-  /* Brand / primary — bright acid lime with near-black text */
-  --accent: #c8f135;
-  --accent-foreground: #171a12;
+  --accent: #ff7a3d;
+  --accent-foreground: #1a1206;
 
-  --success: #22c55e;
+  --success: #16a34a;
   --warning: #f5a524;
   --danger: #ef4444;
 
@@ -45,37 +78,6 @@
 
   --surface-shadow:
     0 1px 2px 0 rgba(16, 24, 40, 0.04), 0 1px 3px 0 rgba(16, 24, 40, 0.06);
-}
-
-/* Dark */
-.dark,
-[data-theme="dark"] {
-  --background: #14161b;
-  --foreground: #e9ebf0;
-
-  --surface: #1b1e25;
-  --surface-foreground: #e9ebf0;
-  --surface-secondary: #20242c;
-  --surface-tertiary: #262b34;
-
-  --overlay: #1b1e25;
-  --overlay-foreground: #e9ebf0;
-
-  --muted: #98a0ad;
-
-  --border: #2a2e37;
-  --separator: #262a32;
-
-  --accent: #c8f135;
-  --accent-foreground: #171a12;
-
-  --success: #22c55e;
-  --warning: #f5a524;
-  --danger: #f87171;
-
-  --radius: 0.75rem;
-
-  --surface-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
 body {
