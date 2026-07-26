@@ -47,22 +47,32 @@ function Heatmap({
     if (n <= 4) return hexToRgba(color, 0.8);
     return hexToRgba(color, 1);
   };
-  const CELL = 34;
+  const CELL = 32;
+  const WD = ["M", "T", "W", "T", "F", "S", "S"];
   return (
     <div className="overflow-x-auto pb-1">
-      <div className="grid w-max grid-flow-col gap-1" style={{ gridTemplateRows: `repeat(7, ${CELL}px)` }}>
-        {cells.map((k, i) => {
-          if (k === null) return <div key={`pad-${i}`} style={{ width: CELL, height: CELL }} />;
-          const n = map[k] ?? 0;
-          return (
-            <div
-              key={k}
-              title={`${k} — ${n} done`}
-              className="rounded-[5px]"
-              style={{ width: CELL, height: CELL, background: shade(n) }}
-            />
-          );
-        })}
+      <div className="w-max">
+        <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
+          {WD.map((d, i) => (
+            <div key={i} className="text-center text-[10px] font-medium text-foreground/40">
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
+          {cells.map((k, i) => {
+            if (k === null) return <div key={`pad-${i}`} style={{ width: CELL, height: CELL }} />;
+            const n = map[k] ?? 0;
+            return (
+              <div
+                key={k}
+                title={`${k} — ${n} done`}
+                className="rounded-[6px]"
+                style={{ width: CELL, height: CELL, background: shade(n) }}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

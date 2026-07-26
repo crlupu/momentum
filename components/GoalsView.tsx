@@ -149,9 +149,31 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       {done.length > 0 && (
         <>
           <div className="mb-3 mt-6 text-[13px] uppercase tracking-wide text-foreground/40">Completed</div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {done.map((g) => (
-              <GoalCard key={g.id} g={g} tracker={tracker} />
+              <Card key={g.id}>
+                <Card.Content className="flex items-center gap-2 px-3 py-2">
+                  <span className="flex-1 truncate text-[15px] text-foreground/45 line-through">{g.title}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    isIconOnly
+                    aria-label="Reopen goal"
+                    onPress={() => tracker.toggleGoalDone(g.id)}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    isIconOnly
+                    aria-label="Delete goal"
+                    onPress={() => tracker.deleteGoal(g.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </Card.Content>
+              </Card>
             ))}
           </div>
         </>
