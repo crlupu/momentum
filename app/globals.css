@@ -80,7 +80,12 @@ body {
   font-family: "Urbanist", -apple-system, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
-  background: var(--background);
+  /* gray-olive gradient backdrop */
+  background: linear-gradient(150deg, #3a3c32 0%, #2b2d25 45%, #1c1d18 100%) fixed;
+}
+
+html.light body {
+  background: linear-gradient(150deg, #e9e9df 0%, #dedecf 50%, #d2d2c2 100%) fixed;
 }
 
 .font-display {
