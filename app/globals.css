@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* Map the Tailwind color utilities our components use onto HeroUI tokens. */
 @theme {
   --color-card: var(--surface);
   --color-primary: var(--accent);
@@ -9,72 +8,72 @@
 }
 
 /* ============================================================
-   NetSuite CRM Dashboard design system
-   Urbanist type · dark, high-contrast dashboard · warm accent
+   Rondesignlab inventory dashboard look
+   Urbanist · near-black dashboard · acid-yellow primary + orange
    ============================================================ */
 
-/* Dark (default showcase look) */
+/* Dark (default) */
 :root,
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #0f1218;
-  --foreground: #eaecef;
+  --background: #0f0f10;
+  --foreground: #ececee;
 
-  --surface: #171b22;
-  --surface-foreground: #eaecef;
-  --surface-secondary: #1d222b;
-  --surface-tertiary: #232935;
+  --surface: #1a1a1d;
+  --surface-foreground: #ececee;
+  --surface-secondary: #202024;
+  --surface-tertiary: #26262b;
 
-  --overlay: #171b22;
-  --overlay-foreground: #eaecef;
+  --overlay: #1a1a1d;
+  --overlay-foreground: #ececee;
 
-  --muted: #8a93a3;
+  --muted: #8e8f95;
 
-  --border: #262c37;
-  --separator: #222833;
+  --border: #2a2a2e;
+  --separator: #242427;
 
-  /* Brand / primary — bold warm orange with near-black text */
-  --accent: #ff7a3d;
-  --accent-foreground: #1a1206;
+  /* Brand / primary — acid yellow with near-black text */
+  --accent: #e2f04a;
+  --accent-foreground: #1a1a0e;
 
   --success: #2fbe7e;
-  --warning: #ffb020;
+  --warning: #f5843a;
   --danger: #f87171;
 
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  --surface-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+  --surface-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Light (warm-neutral variant for the toggle) */
+/* Light (warm-neutral variant) */
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #f6f6f4;
-  --foreground: #1a1d23;
+  --background: #f6f6f3;
+  --foreground: #1a1a1d;
 
   --surface: #ffffff;
-  --surface-foreground: #1a1d23;
-  --surface-secondary: #f4f3f0;
-  --surface-tertiary: #ecebe6;
+  --surface-foreground: #1a1a1d;
+  --surface-secondary: #f3f3ef;
+  --surface-tertiary: #eceae4;
 
   --overlay: #ffffff;
-  --overlay-foreground: #1a1d23;
+  --overlay-foreground: #1a1a1d;
 
-  --muted: #6e7480;
+  --muted: #6e7078;
 
-  --border: #e7e5e0;
-  --separator: #eceae5;
+  --border: #e6e5df;
+  --separator: #ecebe5;
 
-  --accent: #ff7a3d;
-  --accent-foreground: #1a1206;
+  --accent: #e2f04a;
+  --accent-foreground: #1a1a0e;
 
   --success: #16a34a;
-  --warning: #f5a524;
+  --warning: #f5843a;
   --danger: #ef4444;
 
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
   --surface-shadow:
     0 1px 2px 0 rgba(16, 24, 40, 0.04), 0 1px 3px 0 rgba(16, 24, 40, 0.06);
@@ -96,11 +95,16 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Design-system cards: crisp hairline border + refined rounding */
+/* Cards: crisp hairline border, generous rounding */
 .card {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 22px;
 }
 .card--transparent {
   border: 0;
+}
+
+/* Buttons: full pill / circular, like the design */
+.button {
+  border-radius: 9999px;
 }
