@@ -95,3 +95,12 @@ body {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+/* Design-system cards: crisp hairline border + refined rounding */
+.card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+.card--transparent {
+  border: 0;
+}
