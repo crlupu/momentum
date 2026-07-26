@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
+import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
 const CARD = "#f0e430"; // yellow block
@@ -86,12 +87,13 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
   const latest = data.length ? data[data.length - 1] : null;
   const [kg, setKg] = useState("");
 
-  const submit = (e: FormEvent) => {
+  const { pending, run } = usePending();
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const v = Number(kg);
-    if (!Number.isFinite(v) || v <= 0) return;
-    tracker.addWeight(v);
-    setKg("");
+    if (!Number.isFinite(v) || v <= 0 || pending) return;
+    const ok = await run(() => tracker.addWeight(v));
+    if (ok) setKg("");
   };
 
   return (
@@ -116,7 +118,13 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
             onChange={(e) => setKg(e.target.value)}
             className="flex-1"
           />
-          <Button type="submit" variant="primary" style={{ background: INK, color: CARD }}>
+          <Button
+            type="submit"
+            variant="primary"
+            isDisabled={pending}
+            className={pending ? "is-pending" : ""}
+            style={{ background: INK, color: CARD }}
+          >
             Add
           </Button>
         </form>

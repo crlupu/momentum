@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
+import { ActionButton, usePending } from "./ActionButton";
 import { Check, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
 import { Tracker, Goal, goalPct } from "@/lib/tracker";
@@ -15,9 +16,12 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const [current, setCurrent] = useState(String(g.current ?? ""));
   const [target, setTarget] = useState(String(g.target ?? ""));
 
-  const save = () => {
-    tracker.setGoalProgress(g.id, current === "" ? null : Number(current), target === "" ? null : Number(target));
-    setEditing(false);
+  const { pending, run } = usePending();
+  const save = async () => {
+    const ok = await run(() =>
+      tracker.setGoalProgress(g.id, current === "" ? null : Number(current), target === "" ? null : Number(target))
+    );
+    if (ok) setEditing(false);
   };
 
   return (
@@ -29,7 +33,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               {g.title}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <Chip size="sm" variant="soft" className="cursor-pointer" onClick={() => tracker.cycleGoalCat(g.id)}>
+              <Chip size="sm" variant="soft" className="cursor-pointer" onClick={() => void tracker.cycleGoalCat(g.id)}>
                 <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                 <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
               </Chip>
@@ -59,7 +63,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               Target
               <Input type="number" aria-label="Target value" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5 w-full" />
             </label>
-            <Button size="sm" variant="primary" onPress={save} className="w-full">Save</Button>
+            <Button size="sm" variant="primary" onPress={() => void save()} isDisabled={pending} className={"w-full " + (pending ? "is-pending" : "")}>Save</Button>
             <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">Cancel</Button>
           </div>
         )}
@@ -70,17 +74,17 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
             {hasTarget ? "Update" : "Set target"}
           </Button>
           {g.done ? (
-            <Button size="sm" variant="outline" onPress={() => tracker.toggleGoalDone(g.id)}>
+            <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
               <RotateCcw className="h-4 w-4" /> Reopen
-            </Button>
+            </ActionButton>
           ) : (
-            <Button size="sm" variant="primary" onPress={() => tracker.toggleGoalDone(g.id)}>
+            <ActionButton size="sm" variant="primary" onAction={() => tracker.toggleGoalDone(g.id)}>
               <Check className="h-4 w-4" /> Done
-            </Button>
+            </ActionButton>
           )}
-          <Button size="sm" variant="ghost" isIconOnly aria-label="Delete goal" onPress={() => tracker.deleteGoal(g.id)} className="ml-auto">
+          <ActionButton size="sm" variant="ghost" isIconOnly aria-label="Delete goal" onAction={() => tracker.deleteGoal(g.id)} className="ml-auto">
             <X className="h-4 w-4" />
-          </Button>
+          </ActionButton>
         </div>
       </Card.Content>
     </Card>
@@ -155,24 +159,24 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
                 <Card.Content className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span className="flex-1 truncate text-[15px] text-foreground/45 line-through">{g.title}</span>
-                    <Button
+                    <ActionButton
                       size="sm"
                       variant="outline"
                       isIconOnly
                       aria-label="Reopen goal"
-                      onPress={() => tracker.toggleGoalDone(g.id)}
+                      onAction={() => tracker.toggleGoalDone(g.id)}
                     >
                       <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </ActionButton>
+                    <ActionButton
                       size="sm"
                       variant="ghost"
                       isIconOnly
                       aria-label="Delete goal"
-                      onPress={() => tracker.deleteGoal(g.id)}
+                      onAction={() => tracker.deleteGoal(g.id)}
                     >
                       <X className="h-4 w-4" />
-                    </Button>
+                    </ActionButton>
                   </div>
                 </Card.Content>
               </Card>

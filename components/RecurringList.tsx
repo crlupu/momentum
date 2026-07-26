@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card } from "@heroui/react";
+import { ActionButton, usePending } from "./ActionButton";
 import { Check, Plus, X } from "lucide-react";
 import { Tracker, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, streak } from "@/lib/tracker";
 
@@ -22,6 +23,24 @@ function Circle({ value, label, color }: { value: number; label: string; color: 
       </div>
       <span className="text-center text-[10px] leading-tight text-foreground/60">{label}</span>
     </div>
+  );
+}
+
+function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {
+  const { pending, run } = usePending();
+  return (
+    <button
+      aria-label={done ? "Mark not done" : "Mark done"}
+      disabled={pending}
+      onClick={() => void run(() => tracker.toggleRecurring(id))}
+      className={
+        "relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors " +
+        (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 bg-transparent") +
+        (pending ? " is-pending is-pending-box" : "")
+      }
+    >
+      {done && <Check className="h-4 w-4" strokeWidth={3} />}
+    </button>
   );
 }
 
@@ -68,19 +87,10 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                     <span className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>{r.title}</span>
                     <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                     <span className="text-[11px] text-foreground/60">{FREQ_LABEL[r.freq]}</span>
-                    <Button size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onPress={() => tracker.deleteRecurring(r.id)}>
+                    <ActionButton size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onAction={() => tracker.deleteRecurring(r.id)}>
                       <X className="h-4 w-4" />
-                    </Button>
-                    <button
-                      aria-label={done ? "Mark not done" : "Mark done"}
-                      onClick={() => tracker.toggleRecurring(r.id)}
-                      className={
-                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors " +
-                        (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 bg-transparent")
-                      }
-                    >
-                      {done && <Check className="h-4 w-4" strokeWidth={3} />}
-                    </button>
+                    </ActionButton>
+                    <RecurringCheckbox tracker={tracker} id={r.id} done={done} />
                   </li>
                 );
               })}

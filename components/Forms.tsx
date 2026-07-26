@@ -3,16 +3,30 @@
 import { FormEvent, useState } from "react";
 import { Button, Chip, Input } from "@heroui/react";
 import { X } from "lucide-react";
+import { ActionButton, usePending } from "./ActionButton";
 import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL } from "@/lib/tracker";
 
-function CatPicker({ tracker, catId, setCatId }: { tracker: Tracker; catId: string; setCatId: (id: string) => void }) {
+function CatPicker({
+  tracker,
+  catId,
+  setCatId,
+}: {
+  tracker: Tracker;
+  catId: string;
+  setCatId: (id: string) => void;
+}) {
   const s = tracker.state!;
   return (
     <div>
       <div className="mb-1.5 text-xs text-foreground/50">Category</div>
       <div className="flex flex-wrap gap-2">
         {s.categories.map((c) => (
-          <Button key={c.id} size="sm" variant={catId === c.id ? "primary" : "outline"} onPress={() => setCatId(c.id)}>
+          <Button
+            key={c.id}
+            size="sm"
+            variant={catId === c.id ? "primary" : "outline"}
+            onPress={() => setCatId(c.id)}
+          >
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
             {c.name}
           </Button>
@@ -28,13 +42,21 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
+  const { pending, run } = usePending();
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
-    if (!t) return;
-    tracker.addGoal(t, catId || s.categories[0]?.id, current === "" ? null : Number(current), target === "" ? null : Number(target));
-    onDone();
+    if (!t || pending) return;
+    const ok = await run(() =>
+      tracker.addGoal(
+        t,
+        catId || s.categories[0]?.id,
+        current === "" ? null : Number(current),
+        target === "" ? null : Number(target)
+      )
+    );
+    if (ok) onDone(); // close only when the database confirmed the write
   };
 
   return (
@@ -51,7 +73,9 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
           <Input type="number" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
         </label>
       </div>
-      <Button type="submit" variant="primary" className="mt-1">Add goal</Button>
+      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
+        Add goal
+      </Button>
     </form>
   );
 }
@@ -61,13 +85,14 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [freq, setFreq] = useState<Frequency>("daily");
+  const { pending, run } = usePending();
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
-    if (!t) return;
-    tracker.addRecurring(t, catId || s.categories[0]?.id, freq);
-    onDone();
+    if (!t || pending) return;
+    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq));
+    if (ok) onDone();
   };
 
   return (
@@ -84,7 +109,9 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
           ))}
         </div>
       </div>
-      <Button type="submit" variant="primary" className="mt-1">Add recurring task</Button>
+      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
+        Add recurring task
+      </Button>
     </form>
   );
 }
@@ -92,26 +119,42 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
 export function CategoriesCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [newCat, setNewCat] = useState("");
-  const submit = (e: FormEvent) => {
+  const { pending, run } = usePending();
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const n = newCat.trim();
-    if (!n) return;
-    tracker.addCategory(n);
-    setNewCat("");
+    if (!n || pending) return;
+    const ok = await run(() => tracker.addCategory(n));
+    if (ok) setNewCat("");
   };
+
+  const remove = async (id: string, name: string) => {
+    if (tracker.categoryInUse(id)) {
+      alert("This category is in use. Remove or reassign its items first.");
+      return;
+    }
+    setBusyId(id);
+    try {
+      await tracker.deleteCategory(id);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
         {s.categories.map((c) => (
-          <Chip key={c.id} size="sm" variant="soft">
+          <Chip key={c.id} size="sm" variant="soft" className={busyId === c.id ? "is-pending" : ""}>
             <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
             <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
             <button
               aria-label={`Delete category ${c.name}`}
-              className="ml-1 text-foreground/50 hover:text-foreground"
-              onClick={() => {
-                if (!tracker.deleteCategory(c.id)) alert("This category is in use. Remove or reassign its items first.");
-              }}
+              className="ml-1 text-foreground/50 hover:text-foreground disabled:opacity-40"
+              disabled={busyId === c.id}
+              onClick={() => void remove(c.id, c.name)}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -120,7 +163,9 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </div>
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
-        <Button type="submit" variant="secondary">Add</Button>
+        <Button type="submit" variant="secondary" className={pending ? "is-pending" : ""} isDisabled={pending}>
+          Add
+        </Button>
       </form>
     </div>
   );

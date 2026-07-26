@@ -123,3 +123,47 @@ html:not(.dark) .card {
 .button {
   border-radius: 9999px;
 }
+
+/* ---- Pending state: cycling border while a write is in flight ---- */
+.is-pending {
+  position: relative;
+  cursor: progress;
+  opacity: 1 !important;
+}
+.is-pending::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 250deg,
+    currentColor 320deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: cycle-border 0.9s linear infinite;
+  pointer-events: none;
+}
+/* Square-ish pending target (e.g. the recurring checkbox) */
+.is-pending-box::after {
+  border-radius: 10px;
+}
+@keyframes cycle-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-pending::after {
+    animation-duration: 2.4s;
+  }
+}

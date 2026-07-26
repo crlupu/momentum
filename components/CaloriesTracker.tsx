@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
+import { usePending } from "./ActionButton";
 import { Tracker, dateKey } from "@/lib/tracker";
 
 const CARD = "#f5883f"; // orange block
@@ -39,12 +40,13 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   const counts = days.map((d) => totals[dateKey(d)] ?? 0);
   const max = Math.max(1, ...counts);
 
-  const submit = (e: FormEvent) => {
+  const { pending, run } = usePending();
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const v = Number(kcal);
-    if (!Number.isFinite(v) || v <= 0) return;
-    tracker.addCalories(v);
-    setKcal("");
+    if (!Number.isFinite(v) || v <= 0 || pending) return;
+    const ok = await run(() => tracker.addCalories(v));
+    if (ok) setKcal("");
   };
 
   return (
@@ -64,7 +66,13 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
             onChange={(e) => setKcal(e.target.value)}
             className="flex-1"
           />
-          <Button type="submit" variant="primary" style={{ background: INK, color: CARD }}>
+          <Button
+            type="submit"
+            variant="primary"
+            isDisabled={pending}
+            className={pending ? "is-pending" : ""}
+            style={{ background: INK, color: CARD }}
+          >
             Add
           </Button>
         </form>

@@ -218,15 +218,13 @@ export function useTracker() {
   const loaded = useRef(false);
   const stateRef = useRef<TrackerState | null>(null);
   const userRef = useRef<User | null>(null);
-  const remoteApplied = useRef(false);
-  const initialLoad = useRef(true);
   const lastUpdated = useRef(0);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // true once this signed-in user's cloud doc has been read at least once
   const remoteSynced = useRef(false);
-  // skips persisting a state change (used for the sign-out reset)
+  // skips caching a state change (used for the sign-out reset)
   const suppressPersist = useRef(false);
 
+  // ---- load cached copy for first paint ----
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -248,6 +246,7 @@ export function useTracker() {
     userRef.current = user;
   }, [user]);
 
+  // ---- auth ----
   useEffect(() => {
     if (!isFirebaseConfigured) return;
     const fb = getFirebase();
@@ -264,6 +263,7 @@ export function useTracker() {
     });
   }, []);
 
+  // ---- live cloud subscription: the database is the source of truth ----
   useEffect(() => {
     if (!isFirebaseConfigured || !user) return;
     const fb = getFirebase();
@@ -273,108 +273,102 @@ export function useTracker() {
     return onSnapshot(
       ref,
       (snap) => {
-        if (snap.metadata.hasPendingWrites) return;
+        if (snap.metadata.hasPendingWrites) return; // our own write, not yet acked
         remoteSynced.current = true;
         if (snap.exists()) {
           const data = snap.data();
           const remoteUpdated = typeof data.updated === "number" ? data.updated : 0;
-          if (remoteUpdated > lastUpdated.current && data.state) {
-            remoteApplied.current = true;
+          if (data.state && remoteUpdated !== lastUpdated.current) {
             lastUpdated.current = remoteUpdated;
             setState(migrate(data.state));
-          } else if (remoteUpdated < lastUpdated.current && stateRef.current) {
-            setDoc(ref, clean({ state: stateRef.current, updated: lastUpdated.current })).catch((e) => {
-              console.error("sync write failed", e);
-              setSyncError("Changes aren't syncing to the cloud.");
-            });
           }
         } else {
-          const updated = lastUpdated.current || Date.now();
-          lastUpdated.current = updated;
-          setDoc(ref, clean({ state: stateRef.current ?? DEFAULT_STATE, updated })).catch((e) => {
-            console.error("seed failed", e);
-            setSyncError("Couldn't create your cloud record.");
-          });
+          // no cloud record yet — seed it from whatever is on screen
+          const updated = Date.now();
+          setDoc(ref, clean({ state: stateRef.current ?? DEFAULT_STATE, updated }))
+            .then(() => {
+              lastUpdated.current = updated;
+              setSyncError(null);
+            })
+            .catch((e) => {
+              console.error("seed failed", e);
+              setSyncError("Couldn't create your cloud record.");
+            });
         }
       },
-      (err) => console.error("snapshot error", err)
+      (err) => {
+        console.error("snapshot error", err);
+        setSyncError("Can't read your data from the cloud.");
+      }
     );
   }, [user]);
 
+  // ---- cache to localStorage for fast first paint (never the source of truth) ----
   useEffect(() => {
     if (!loaded.current || !state) return;
     if (suppressPersist.current) {
       suppressPersist.current = false;
       return;
     }
-    const fromRemote = remoteApplied.current;
-    if (fromRemote) remoteApplied.current = false;
-    if (!fromRemote) {
-      if (initialLoad.current) initialLoad.current = false;
-      else lastUpdated.current = Date.now();
-    }
-    const payload = { state, updated: lastUpdated.current };
     try {
-      localStorage.setItem(KEY, JSON.stringify(payload));
+      localStorage.setItem(KEY, JSON.stringify({ state, updated: lastUpdated.current }));
     } catch (e) {
       console.error("cache write failed", e);
     }
-    // Only write to the cloud once we've read this user's doc, otherwise a
-    // freshly-opened (empty) tab could overwrite good cloud data.
-    if (!fromRemote && isFirebaseConfigured && userRef.current && remoteSynced.current) {
-      const fb = getFirebase();
-      if (!fb) return;
-      const uidStr = userRef.current.uid;
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        setDoc(doc(fb.db, "users", uidStr), clean(payload))
-          .then(() => setSyncError(null))
-          .catch((e) => {
-            console.error("sync write failed", e);
-            setSyncError("Changes aren't syncing to the cloud.");
-          });
-      }, 250);
-    }
   }, [state]);
 
-  useEffect(() => {
-    const flush = () => {
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        saveTimer.current = null;
-      }
-      if (isFirebaseConfigured && userRef.current && stateRef.current && remoteSynced.current) {
-        const fb = getFirebase();
-        if (fb)
-          setDoc(
-            doc(fb.db, "users", userRef.current.uid),
-            clean({ state: stateRef.current, updated: lastUpdated.current })
-          ).catch(() => {});
-      }
-    };
-    const onVis = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-    window.addEventListener("pagehide", flush);
-    document.addEventListener("visibilitychange", onVis);
-    return () => {
-      window.removeEventListener("pagehide", flush);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, []);
+  /**
+   * Applies a change by WRITING IT TO THE DATABASE FIRST. The on-screen state is
+   * only updated once the write is acknowledged, so the UI always reflects what
+   * is actually stored. Resolves true on success, false on failure.
+   */
+  const commit = async (fn: (s: TrackerState) => TrackerState): Promise<boolean> => {
+    const base = stateRef.current;
+    if (!base) return false;
+    const next = fn(base);
 
-  const update = (fn: (s: TrackerState) => TrackerState) =>
-    setState((s) => (s ? fn(s) : s));
+    // Local-only mode (Firebase not configured, or signed out): commit directly.
+    if (!isFirebaseConfigured || !userRef.current) {
+      lastUpdated.current = Date.now();
+      setState(next);
+      return true;
+    }
+
+    const fb = getFirebase();
+    if (!fb) return false;
+
+    // Don't write until we've read the cloud copy, or we could clobber it.
+    if (!remoteSynced.current) {
+      setSyncError("Still connecting to the cloud — try again in a moment.");
+      return false;
+    }
+
+    const updated = Date.now();
+    try {
+      await setDoc(doc(fb.db, "users", userRef.current.uid), clean({ state: next, updated }));
+      lastUpdated.current = updated;
+      setState(next);
+      setSyncError(null);
+      return true;
+    } catch (e) {
+      console.error("save failed", e);
+      setSyncError("Couldn't save to the cloud. Your change was not applied.");
+      return false;
+    }
+  };
 
   return {
     state,
 
+    // ---- auth ----
     firebaseConfigured: isFirebaseConfigured,
     user,
     authReady,
     authError,
     syncError,
     clearAuthError: () => setAuthError(null),
+    clearSyncError: () => setSyncError(null),
+
     signIn: async (email: string, password: string) => {
       const fb = getFirebase();
       if (!fb) return;
@@ -419,26 +413,8 @@ export function useTracker() {
     signOutUser: async () => {
       const fb = getFirebase();
       if (!fb) return;
-
-      // 1) Flush any pending debounced write BEFORE signing out, so the last
-      //    edits reach the cloud rather than being dropped.
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        saveTimer.current = null;
-      }
-      if (userRef.current && stateRef.current && remoteSynced.current) {
-        try {
-          await setDoc(
-            doc(fb.db, "users", userRef.current.uid),
-            clean({ state: stateRef.current, updated: lastUpdated.current })
-          );
-        } catch (e) {
-          console.error("final sync before sign-out failed", e);
-        }
-      }
-
-      // 2) Clear local state WITHOUT persisting it anywhere. Writing the empty
-      //    default state would otherwise overwrite the cloud copy.
+      // Every change is already written, so nothing to flush. Clear the screen
+      // WITHOUT persisting the empty state anywhere.
       suppressPersist.current = true;
       await signOut(fb.auth);
       try {
@@ -451,12 +427,16 @@ export function useTracker() {
       setState(DEFAULT_STATE);
     },
 
+    // ---- lookups ----
     cat: (id: string): Category =>
       state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8A94A3" },
 
+    categoryInUse: (id: string): boolean =>
+      !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),
+
     // ---- goals ----
     addGoal: (title: string, catId: string, current: number | null, target: number | null) =>
-      update((s) => ({
+      commit((s) => ({
         ...s,
         goals: [
           ...s.goals,
@@ -473,7 +453,7 @@ export function useTracker() {
       })),
 
     setGoalProgress: (id: string, current: number | null, target: number | null) =>
-      update((s) => ({
+      commit((s) => ({
         ...s,
         goals: s.goals.map((g) =>
           g.id === id
@@ -487,7 +467,7 @@ export function useTracker() {
       })),
 
     toggleGoalDone: (id: string) =>
-      update((s) => ({
+      commit((s) => ({
         ...s,
         goals: s.goals.map((g) =>
           g.id === id ? { ...g, done: !g.done, doneDate: !g.done ? dateKey() : null } : g
@@ -495,7 +475,7 @@ export function useTracker() {
       })),
 
     cycleGoalCat: (id: string) =>
-      update((s) => ({
+      commit((s) => ({
         ...s,
         goals: s.goals.map((g) => {
           if (g.id !== id) return g;
@@ -505,18 +485,17 @@ export function useTracker() {
         }),
       })),
 
-    deleteGoal: (id: string) =>
-      update((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+    deleteGoal: (id: string) => commit((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
 
     // ---- recurring ----
     addRecurring: (title: string, catId: string, freq: Frequency) =>
-      update((s) => ({
+      commit((s) => ({
         ...s,
         recurring: [...s.recurring, { id: uid(), title, catId, freq, lastDone: null }],
       })),
 
     toggleRecurring: (id: string) =>
-      update((s) => {
+      commit((s) => {
         const today = dateKey();
         const r = s.recurring.find((x) => x.id === id);
         if (!r) return s;
@@ -544,11 +523,24 @@ export function useTracker() {
       }),
 
     deleteRecurring: (id: string) =>
-      update((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
+      commit((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
 
-    // ---- weight log (one entry per day, upsert) ----
+    // ---- categories ----
+    addCategory: (name: string) =>
+      commit((s) => ({
+        ...s,
+        categories: [
+          ...s.categories,
+          { id: uid(), name, color: CAT_COLORS[s.categories.length % CAT_COLORS.length] },
+        ],
+      })),
+
+    deleteCategory: (id: string) =>
+      commit((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) })),
+
+    // ---- weight ----
     addWeight: (kg: number) =>
-      update((s) => {
+      commit((s) => {
         if (!Number.isFinite(kg) || kg <= 0) return s;
         const today = dateKey();
         const exists = s.weights.some((w) => w.date === today);
@@ -559,38 +551,12 @@ export function useTracker() {
         return { ...s, weights };
       }),
 
-    deleteWeight: (date: string) =>
-      update((s) => ({ ...s, weights: s.weights.filter((w) => w.date !== date) })),
-
-    // ---- calorie log (multiple entries per day, summed) ----
+    // ---- calories ----
     addCalories: (kcal: number) =>
-      update((s) => {
+      commit((s) => {
         if (!Number.isFinite(kcal) || kcal <= 0) return s;
         return { ...s, calories: [...s.calories, { id: uid(), date: dateKey(), kcal: Math.round(kcal) }] };
       }),
-
-    deleteCalorie: (id: string) =>
-      update((s) => ({ ...s, calories: s.calories.filter((e) => e.id !== id) })),
-
-    // ---- categories ----
-    addCategory: (name: string) =>
-      update((s) => ({
-        ...s,
-        categories: [
-          ...s.categories,
-          { id: uid(), name, color: CAT_COLORS[s.categories.length % CAT_COLORS.length] },
-        ],
-      })),
-
-    deleteCategory: (id: string): boolean => {
-      if (
-        state?.recurring.some((r) => r.catId === id) ||
-        state?.goals.some((g) => g.catId === id)
-      )
-        return false;
-      update((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) }));
-      return true;
-    },
   };
 }
 
