@@ -8,32 +8,63 @@
 }
 
 /* ============================================================
-   Rondesignlab inventory dashboard look
-   Urbanist · near-black dashboard · acid-yellow primary + orange
+   Andina / Netsuite inventory look — light glassmorphism
+   Gray gradient backdrop · frosted translucent cards
+   Acid-yellow + orange feature blocks · Urbanist
    ============================================================ */
 
-/* Dark (default) */
+/* Light (default) */
 :root,
+.light,
+[data-theme="light"] {
+  color-scheme: light;
+  --background: rgba(255, 255, 255, 0.4);
+  --foreground: #201f1a;
+
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-foreground: #201f1a;
+  --surface-secondary: rgba(255, 255, 255, 0.42);
+  --surface-tertiary: rgba(255, 255, 255, 0.3);
+
+  --overlay: #f3f2ec;
+  --overlay-foreground: #201f1a;
+
+  --muted: #5b5952;
+
+  --border: rgba(255, 255, 255, 0.55);
+  --separator: rgba(0, 0, 0, 0.08);
+
+  --accent: #f0e430;
+  --accent-foreground: #1a1a08;
+
+  --success: #16a34a;
+  --warning: #f5883f;
+  --danger: #e5484d;
+
+  --radius: 0.875rem;
+  --surface-shadow: 0 4px 22px rgba(30, 28, 20, 0.1);
+}
+
+/* Dark */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #0f0f10;
+  --background: rgba(30, 30, 34, 0.5);
   --foreground: #ececee;
 
-  --surface: #212127;
+  --surface: rgba(40, 40, 46, 0.55);
   --surface-foreground: #ececee;
-  --surface-secondary: #2a2a31;
-  --surface-tertiary: #31313a;
+  --surface-secondary: rgba(48, 48, 54, 0.5);
+  --surface-tertiary: rgba(56, 56, 62, 0.5);
 
-  --overlay: #212127;
+  --overlay: #1e1e22;
   --overlay-foreground: #ececee;
 
-  --muted: #8e8f95;
+  --muted: #9a9aa2;
 
-  --border: #2a2a2e;
-  --separator: #242427;
+  --border: rgba(255, 255, 255, 0.1);
+  --separator: rgba(255, 255, 255, 0.08);
 
-  /* Brand / primary — acid yellow with near-black text */
   --accent: #f0e430;
   --accent-foreground: #1a1a08;
 
@@ -42,46 +73,19 @@
   --danger: #f87171;
 
   --radius: 0.875rem;
-
-  --surface-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-}
-
-/* Light (warm-neutral variant) */
-.light,
-[data-theme="light"] {
-  color-scheme: light;
-  --background: #f6f6f3;
-  --foreground: #1a1a1d;
-
-  --surface: #ffffff;
-  --surface-foreground: #1a1a1d;
-  --surface-secondary: #f3f3ef;
-  --surface-tertiary: #eceae4;
-
-  --overlay: #ffffff;
-  --overlay-foreground: #1a1a1d;
-
-  --muted: #6e7078;
-
-  --border: #e6e5df;
-  --separator: #ecebe5;
-
-  --accent: #f0e430;
-  --accent-foreground: #1a1a08;
-
-  --success: #16a34a;
-  --warning: #f5883f;
-  --danger: #ef4444;
-
-  --radius: 0.875rem;
-
-  --surface-shadow:
-    0 1px 2px 0 rgba(16, 24, 40, 0.04), 0 1px 3px 0 rgba(16, 24, 40, 0.06);
+  --surface-shadow: 0 4px 22px rgba(0, 0, 0, 0.4);
 }
 
 body {
   font-family: "Urbanist", -apple-system, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  min-height: 100dvh;
+  /* Gray gradient backdrop sampled from the reference */
+  background: linear-gradient(152deg, #cfc9bb 0%, #bdbab1 46%, #a8a7a3 100%) fixed;
+}
+
+html.dark body {
+  background: linear-gradient(152deg, #2b2c30 0%, #202024 52%, #151518 100%) fixed;
 }
 
 .font-display {
@@ -95,22 +99,24 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Cards: crisp hairline border, generous rounding */
+/* Cards: frosted glass — translucent surface + blur + hairline edge */
 .card {
   border: 1px solid var(--border);
   border-radius: 22px;
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
 }
 .card--transparent {
   border: 0;
 }
 
-/* Buttons: full pill / circular, like the design */
-.button {
-  border-radius: 9999px;
+/* Inputs: a touch of frost too, so nothing is flat default */
+input {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-/* App backdrop — warm gradient echoing the reference screenshot */
-body {
-  min-height: 100dvh;
-  background: radial-gradient(120% 90% at 0% 0%, #34363a 0%, #24262a 45%, #191a1d 100%) fixed;
+/* Buttons: full pill / circular */
+.button {
+  border-radius: 9999px;
 }
