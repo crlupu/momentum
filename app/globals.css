@@ -108,3 +108,9 @@ body {
 .button {
   border-radius: 9999px;
 }
+
+/* App backdrop — warm gradient echoing the reference screenshot */
+body {
+  min-height: 100dvh;
+  background: radial-gradient(120% 90% at 0% 0%, #26251a 0%, #17160f 42%, #0d0d0b 100%) fixed;
+}

@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input } from "@heroui/react";
+import { Button, Input } from "@heroui/react";
 import { Tracker } from "@/lib/tracker";
 
-const LINE = "#F5A524";
+const CARD = "#e2f04a"; // yellow block
+const INK = "#1a1a0e"; // dark text/line on the block
 
 function WeightChart({ data }: { data: { date: string; kg: number }[] }) {
   const W = 300;
@@ -20,37 +21,34 @@ function WeightChart({ data }: { data: { date: string; kg: number }[] }) {
 
   const x = (i: number) => (n <= 1 ? (W - pad.l - pad.r) / 2 + pad.l : pad.l + (i * (W - pad.l - pad.r)) / (n - 1));
   const y = (kg: number) => H - pad.b - ((kg - lo) / (hi - lo)) * (H - pad.t - pad.b);
-
   const pts = data.map((d, i) => `${x(i)},${y(d.kg)}`).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="overflow-visible" role="img" aria-label="Weight over time">
-      {/* y guides */}
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Weight over time">
       {[hi, (hi + lo) / 2, lo].map((v, i) => {
         const yy = y(v);
         return (
           <g key={i}>
-            <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke="currentColor" className="text-foreground/10" strokeWidth="1" />
-            <text x={pad.l - 5} y={yy + 3} textAnchor="end" className="fill-foreground/40 font-mono-n" fontSize="9">
+            <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke="rgba(0,0,0,0.12)" strokeWidth="1" />
+            <text x={pad.l - 5} y={yy + 3} textAnchor="end" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
               {v.toFixed(1)}
             </text>
           </g>
         );
       })}
-      {n > 1 && <polyline points={pts} fill="none" stroke={LINE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+      {n > 1 && <polyline points={pts} fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
       {data.map((d, i) => (
-        <circle key={d.date} cx={x(i)} cy={y(d.kg)} r="3" fill={LINE}>
+        <circle key={d.date} cx={x(i)} cy={y(d.kg)} r="3" fill={INK}>
           <title>{`${d.date}: ${d.kg} kg`}</title>
         </circle>
       ))}
-      {/* first & last date labels */}
       {n >= 1 && (
         <>
-          <text x={x(0)} y={H - 6} textAnchor="middle" className="fill-foreground/40 font-mono-n" fontSize="9">
+          <text x={x(0)} y={H - 6} textAnchor="middle" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
             {data[0].date.slice(5)}
           </text>
           {n > 1 && (
-            <text x={x(n - 1)} y={H - 6} textAnchor="middle" className="fill-foreground/40 font-mono-n" fontSize="9">
+            <text x={x(n - 1)} y={H - 6} textAnchor="middle" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
               {data[n - 1].date.slice(5)}
             </text>
           )}
@@ -85,28 +83,30 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
         )}
       </div>
 
-      <Card>
-        <Card.Content className="px-3 py-3 sm:px-4">
-          <form onSubmit={submit} className="mb-3 flex gap-2">
-            <Input
-              type="number"
-              step="0.1"
-              aria-label="Weight in kg"
-              placeholder="kg today…"
-              value={kg}
-              onChange={(e) => setKg(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" variant="primary">Add</Button>
-          </form>
+      <div className="rounded-[22px] p-4 sm:p-5" style={{ background: CARD, color: INK }}>
+        <form onSubmit={submit} className="mb-3 flex gap-2">
+          <Input
+            type="number"
+            step="0.1"
+            aria-label="Weight in kg"
+            placeholder="kg today…"
+            value={kg}
+            onChange={(e) => setKg(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="submit" variant="primary" style={{ background: INK, color: CARD }}>
+            Add
+          </Button>
+        </form>
 
-          {data.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">Add today&apos;s weight to start the chart.</p>
-          ) : (
-            <WeightChart data={data} />
-          )}
-        </Card.Content>
-      </Card>
+        {data.length === 0 ? (
+          <p className="px-1 py-2 text-[15px]" style={{ color: "rgba(0,0,0,0.6)" }}>
+            Add today&apos;s weight to start the chart.
+          </p>
+        ) : (
+          <WeightChart data={data} />
+        )}
+      </div>
     </div>
   );
 }

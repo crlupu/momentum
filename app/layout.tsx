@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-background text-foreground">
+      <body className="text-foreground">
         <Providers>{children}</Providers>
       </body>
     </html>

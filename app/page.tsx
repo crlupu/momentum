@@ -7,7 +7,6 @@ import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";
 import { Modal } from "@/components/Modal";
 import { GoalForm, RecurringForm, CategoriesCard } from "@/components/Forms";
-import HeroCards from "@/components/HeroCards";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
 import WeightTracker from "@/components/WeightTracker";
@@ -33,8 +32,6 @@ export default function Home() {
             <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
             <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-3">
-              <HeroCards tracker={tracker} />
-
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <section id="goals" className="scroll-mt-6 lg:col-span-2">
                   <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
