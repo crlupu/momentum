@@ -49,21 +49,21 @@
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #f4f3ef;
-  --foreground: #171717;
+  --background: rgba(255, 255, 255, 0.35);
+  --foreground: #26261f;
 
-  --surface: #ffffff;
-  --surface-foreground: #171717;
-  --surface-secondary: #f1f0eb;
-  --surface-tertiary: #e9e8e2;
+  --surface: rgba(255, 255, 255, 0.45);
+  --surface-foreground: #26261f;
+  --surface-secondary: rgba(255, 255, 255, 0.32);
+  --surface-tertiary: rgba(255, 255, 255, 0.24);
 
   --overlay: #ffffff;
   --overlay-foreground: #171717;
 
   --muted: #6f6f6a;
 
-  --border: #e5e4de;
-  --separator: #ecebe6;
+  --border: rgba(255, 255, 255, 0.55);
+  --separator: rgba(0, 0, 0, 0.07);
 
   --accent: #f0e430;
   --accent-foreground: #131308;
@@ -80,12 +80,12 @@ body {
   font-family: "Urbanist", -apple-system, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
-  /* gray-olive gradient backdrop */
-  background: linear-gradient(150deg, #3a3c32 0%, #2b2d25 45%, #1c1d18 100%) fixed;
+  /* light gray-olive gradient: olive-gray mix fading into light gray */
+  background: linear-gradient(150deg, #dcddd0 0%, #d8d8d1 40%, #d6d6d4 100%) fixed;
 }
 
-html.light body {
-  background: linear-gradient(150deg, #e9e9df 0%, #dedecf 50%, #d2d2c2 100%) fixed;
+html.dark body {
+  background: linear-gradient(150deg, #3a3c32 0%, #2b2d25 45%, #1c1d18 100%) fixed;
 }
 
 .font-display {
@@ -105,8 +105,14 @@ html.light body {
   border: 1px solid var(--border);
   border-radius: 24px;
   box-shadow: var(--surface-shadow);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+}
+
+html:not(.dark) .card {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  box-shadow: 0 8px 28px rgba(40, 42, 30, 0.08);
 }
 .card--transparent {
   border: 0;
