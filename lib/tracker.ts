@@ -52,12 +52,15 @@ export type Completion = { date: string; catId: string };
 
 export type WeightEntry = { date: string; kg: number };
 
+export type CalorieEntry = { id: string; date: string; kcal: number };
+
 export type TrackerState = {
   categories: Category[];
   goals: Goal[];
   recurring: RecurringTask[];
   completions: Completion[];
   weights: WeightEntry[];
+  calories: CalorieEntry[];
 };
 
 export const CAT_COLORS = [
@@ -81,6 +84,7 @@ const DEFAULT_STATE: TrackerState = {
   recurring: [],
   completions: [],
   weights: [],
+  calories: [],
 };
 
 export const uid = () =>
@@ -165,7 +169,11 @@ function migrate(raw: unknown): TrackerState {
     ? (s.weights as WeightEntry[])
     : [];
 
-  return { categories, goals, recurring, completions, weights };
+  const calories: CalorieEntry[] = Array.isArray(s.calories)
+    ? (s.calories as CalorieEntry[])
+    : [];
+
+  return { categories, goals, recurring, completions, weights, calories };
 }
 
 function friendlyAuthError(code: string): string {
@@ -501,6 +509,16 @@ export function useTracker() {
 
     deleteWeight: (date: string) =>
       update((s) => ({ ...s, weights: s.weights.filter((w) => w.date !== date) })),
+
+    // ---- calorie log (multiple entries per day, summed) ----
+    addCalories: (kcal: number) =>
+      update((s) => {
+        if (!Number.isFinite(kcal) || kcal <= 0) return s;
+        return { ...s, calories: [...s.calories, { id: uid(), date: dateKey(), kcal: Math.round(kcal) }] };
+      }),
+
+    deleteCalorie: (id: string) =>
+      update((s) => ({ ...s, calories: s.calories.filter((e) => e.id !== id) })),
 
     // ---- categories ----
     addCategory: (name: string) =>

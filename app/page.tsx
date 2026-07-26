@@ -10,6 +10,7 @@ import { GoalForm, RecurringForm, CategoriesCard } from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
 import WeightTracker from "@/components/WeightTracker";
+import CaloriesTracker from "@/components/CaloriesTracker";
 import Charts from "@/components/Charts";
 
 export default function Home() {
@@ -39,6 +40,7 @@ export default function Home() {
                 <section id="recurring" className="scroll-mt-6 space-y-5 lg:col-span-1">
                   <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
                   <WeightTracker tracker={tracker} />
+                  <CaloriesTracker tracker={tracker} />
                 </section>
               </div>
 
