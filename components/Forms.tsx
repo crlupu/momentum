@@ -24,7 +24,8 @@ function CatPicker({
           <Button
             key={c.id}
             size="sm"
-            variant={catId === c.id ? "primary" : "outline"}
+            variant="outline"
+            className={catId === c.id ? "pill-selected" : ""}
             onPress={() => setCatId(c.id)}
           >
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
@@ -103,7 +104,13 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
         <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
         <div className="flex flex-wrap gap-2">
           {FREQUENCIES.map((f) => (
-            <Button key={f} size="sm" variant={freq === f ? "primary" : "outline"} onPress={() => setFreq(f)}>
+            <Button
+              key={f}
+              size="sm"
+              variant="outline"
+              className={freq === f ? "pill-selected" : ""}
+              onPress={() => setFreq(f)}
+            >
               {FREQ_LABEL[f]}
             </Button>
           ))}
@@ -163,7 +170,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </div>
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
-        <Button type="submit" variant="secondary" className={pending ? "is-pending" : ""} isDisabled={pending}>
+        <Button type="submit" variant="primary" className={pending ? "is-pending" : ""} isDisabled={pending}>
           Add
         </Button>
       </form>
