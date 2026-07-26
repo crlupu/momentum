@@ -4,8 +4,8 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
 import { Tracker } from "@/lib/tracker";
 
-const CARD = "#e2f04a"; // yellow block
-const INK = "#1a1a0e"; // dark text/line on the block
+const CARD = "#f0e430"; // yellow block
+const INK = "#1a1a08"; // dark text/line on the block
 
 function WeightChart({ data }: { data: { date: string; kg: number }[] }) {
   const W = 300;

@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
 import { Tracker, dateKey } from "@/lib/tracker";
 
-const CARD = "#f5843a"; // orange block
+const CARD = "#f5883f"; // orange block
 const INK = "#1a1206"; // dark ink on the block
 
 function offsetDate(days: number): Date {

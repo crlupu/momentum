@@ -34,11 +34,11 @@
   --separator: #242427;
 
   /* Brand / primary — acid yellow with near-black text */
-  --accent: #e2f04a;
-  --accent-foreground: #1a1a0e;
+  --accent: #f0e430;
+  --accent-foreground: #1a1a08;
 
   --success: #2fbe7e;
-  --warning: #f5843a;
+  --warning: #f5883f;
   --danger: #f87171;
 
   --radius: 0.875rem;
@@ -66,11 +66,11 @@
   --border: #e6e5df;
   --separator: #ecebe5;
 
-  --accent: #e2f04a;
-  --accent-foreground: #1a1a0e;
+  --accent: #f0e430;
+  --accent-foreground: #1a1a08;
 
   --success: #16a34a;
-  --warning: #f5843a;
+  --warning: #f5883f;
   --danger: #ef4444;
 
   --radius: 0.875rem;
