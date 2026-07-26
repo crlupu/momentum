@@ -32,6 +32,15 @@ export default function Home() {
             <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
             <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-3">
+              {tracker.syncError && (
+                <div
+                  role="alert"
+                  className="rounded-2xl border px-4 py-3 text-sm"
+                  style={{ borderColor: "rgba(229,72,77,0.4)", background: "rgba(229,72,77,0.12)" }}
+                >
+                  {tracker.syncError} Your data is still saved on this device.
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <section id="goals" className="scroll-mt-6 lg:col-span-2">
                   <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />

@@ -176,6 +176,11 @@ function migrate(raw: unknown): TrackerState {
   return { categories, goals, recurring, completions, weights, calories };
 }
 
+/** Strips `undefined` values — Firestore rejects them outright. */
+function clean<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 function friendlyAuthError(code: string): string {
   switch (code) {
     case "auth/invalid-email":
@@ -208,6 +213,7 @@ export function useTracker() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(!isFirebaseConfigured);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const loaded = useRef(false);
   const stateRef = useRef<TrackerState | null>(null);
@@ -271,16 +277,18 @@ export function useTracker() {
             lastUpdated.current = remoteUpdated;
             setState(migrate(data.state));
           } else if (remoteUpdated < lastUpdated.current && stateRef.current) {
-            setDoc(ref, { state: stateRef.current, updated: lastUpdated.current }).catch((e) =>
-              console.error("sync write failed", e)
-            );
+            setDoc(ref, clean({ state: stateRef.current, updated: lastUpdated.current })).catch((e) => {
+              console.error("sync write failed", e);
+              setSyncError("Changes aren't syncing to the cloud.");
+            });
           }
         } else {
           const updated = lastUpdated.current || Date.now();
           lastUpdated.current = updated;
-          setDoc(ref, { state: stateRef.current ?? DEFAULT_STATE, updated }).catch((e) =>
-            console.error("seed failed", e)
-          );
+          setDoc(ref, clean({ state: stateRef.current ?? DEFAULT_STATE, updated })).catch((e) => {
+            console.error("seed failed", e);
+            setSyncError("Couldn't create your cloud record.");
+          });
         }
       },
       (err) => console.error("snapshot error", err)
@@ -307,9 +315,12 @@ export function useTracker() {
       const uidStr = userRef.current.uid;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        setDoc(doc(fb.db, "users", uidStr), payload).catch((e) =>
-          console.error("sync write failed", e)
-        );
+        setDoc(doc(fb.db, "users", uidStr), clean(payload))
+          .then(() => setSyncError(null))
+          .catch((e) => {
+            console.error("sync write failed", e);
+            setSyncError("Changes aren't syncing to the cloud.");
+          });
       }, 250);
     }
   }, [state]);
@@ -323,10 +334,10 @@ export function useTracker() {
       if (isFirebaseConfigured && userRef.current && stateRef.current) {
         const fb = getFirebase();
         if (fb)
-          setDoc(doc(fb.db, "users", userRef.current.uid), {
-            state: stateRef.current,
-            updated: lastUpdated.current,
-          }).catch(() => {});
+          setDoc(
+            doc(fb.db, "users", userRef.current.uid),
+            clean({ state: stateRef.current, updated: lastUpdated.current })
+          ).catch(() => {});
       }
     };
     const onVis = () => {
@@ -350,6 +361,7 @@ export function useTracker() {
     user,
     authReady,
     authError,
+    syncError,
     clearAuthError: () => setAuthError(null),
     signIn: async (email: string, password: string) => {
       const fb = getFirebase();
