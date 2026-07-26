@@ -50,11 +50,14 @@ export type Goal = {
 
 export type Completion = { date: string; catId: string };
 
+export type WeightEntry = { date: string; kg: number };
+
 export type TrackerState = {
   categories: Category[];
   goals: Goal[];
   recurring: RecurringTask[];
   completions: Completion[];
+  weights: WeightEntry[];
 };
 
 export const CAT_COLORS = [
@@ -77,6 +80,7 @@ const DEFAULT_STATE: TrackerState = {
   goals: [],
   recurring: [],
   completions: [],
+  weights: [],
 };
 
 export const uid = () =>
@@ -157,7 +161,11 @@ function migrate(raw: unknown): TrackerState {
     ? (s.completions as Completion[])
     : [];
 
-  return { categories, goals, recurring, completions };
+  const weights: WeightEntry[] = Array.isArray(s.weights)
+    ? (s.weights as WeightEntry[])
+    : [];
+
+  return { categories, goals, recurring, completions, weights };
 }
 
 function friendlyAuthError(code: string): string {
@@ -477,6 +485,22 @@ export function useTracker() {
 
     deleteRecurring: (id: string) =>
       update((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
+
+    // ---- weight log (one entry per day, upsert) ----
+    addWeight: (kg: number) =>
+      update((s) => {
+        if (!Number.isFinite(kg) || kg <= 0) return s;
+        const today = dateKey();
+        const exists = s.weights.some((w) => w.date === today);
+        const weights = exists
+          ? s.weights.map((w) => (w.date === today ? { ...w, kg } : w))
+          : [...s.weights, { date: today, kg }];
+        weights.sort((a, b) => a.date.localeCompare(b.date));
+        return { ...s, weights };
+      }),
+
+    deleteWeight: (date: string) =>
+      update((s) => ({ ...s, weights: s.weights.filter((w) => w.date !== date) })),
 
     // ---- categories ----
     addCategory: (name: string) =>

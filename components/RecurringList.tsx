@@ -13,10 +13,10 @@ function Circle({ value, label, color }: { value: number; label: string; color: 
   return (
     <div className="flex flex-col items-center gap-1">
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-full border-2"
+        className="flex h-7 w-7 items-center justify-center rounded-full border"
         style={{ borderColor: color, background: hexToRgba(color, 0.12) }}
       >
-        <span className="font-mono-n text-base font-bold" style={{ color }}>
+        <span className="font-mono-n text-[13px] font-medium" style={{ color }}>
           {value}
         </span>
       </div>
