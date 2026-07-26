@@ -2,58 +2,80 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
-import { Tracker } from "@/lib/tracker";
+import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
 const CARD = "#f0e430"; // yellow block
-const INK = "#1a1a08"; // dark text/line on the block
+const INK = "#1a1a08"; // dark ink on the block
+const GRID = "rgba(0,0,0,0.12)";
+const LABEL = "rgba(0,0,0,0.5)";
 
-function WeightChart({ data }: { data: { date: string; kg: number }[] }) {
+function lastNDays(n: number): Date[] {
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (n - 1 - i));
+    return d;
+  });
+}
+
+/** Always-visible 7-day chart. Days without an entry are simply gaps. */
+function WeightChart({ weights }: { weights: WeightEntry[] }) {
   const W = 300;
-  const H = 130;
-  const pad = { l: 30, r: 10, t: 12, b: 20 };
-  const n = data.length;
-  const kgs = data.map((d) => d.kg);
-  const min = Math.min(...kgs);
-  const max = Math.max(...kgs);
-  const span = max - min || 1;
-  const lo = min - span * 0.15;
-  const hi = max + span * 0.15;
+  const H = 140;
+  const pad = { l: 32, r: 12, t: 14, b: 22 };
 
-  const x = (i: number) => (n <= 1 ? (W - pad.l - pad.r) / 2 + pad.l : pad.l + (i * (W - pad.l - pad.r)) / (n - 1));
+  const days = lastNDays(7);
+  const byDate = new Map(weights.map((w) => [w.date, w.kg]));
+  const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
+  const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
+
+  // Y range: fit the visible week, or a neutral placeholder when empty.
+  let lo = 0;
+  let hi = 1;
+  if (present.length) {
+    const kgs = present.map((p) => p.kg);
+    const min = Math.min(...kgs);
+    const max = Math.max(...kgs);
+    const span = max - min || 2;
+    lo = min - span * 0.25;
+    hi = max + span * 0.25;
+  }
+
+  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / 6;
   const y = (kg: number) => H - pad.b - ((kg - lo) / (hi - lo)) * (H - pad.t - pad.b);
-  const pts = data.map((d, i) => `${x(i)},${y(d.kg)}`).join(" ");
+
+  const gridYs = [pad.t, (pad.t + (H - pad.b)) / 2, H - pad.b];
+  const pts = present.map((p) => `${x(p.i)},${y(p.kg)}`).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Weight over time">
-      {[hi, (hi + lo) / 2, lo].map((v, i) => {
-        const yy = y(v);
-        return (
-          <g key={i}>
-            <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke="rgba(0,0,0,0.12)" strokeWidth="1" />
-            <text x={pad.l - 5} y={yy + 3} textAnchor="end" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
-              {v.toFixed(1)}
-            </text>
-          </g>
-        );
-      })}
-      {n > 1 && <polyline points={pts} fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-      {data.map((d, i) => (
-        <circle key={d.date} cx={x(i)} cy={y(d.kg)} r="3" fill={INK}>
-          <title>{`${d.date}: ${d.kg} kg`}</title>
-        </circle>
-      ))}
-      {n >= 1 && (
-        <>
-          <text x={x(0)} y={H - 6} textAnchor="middle" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
-            {data[0].date.slice(5)}
-          </text>
-          {n > 1 && (
-            <text x={x(n - 1)} y={H - 6} textAnchor="middle" fill="rgba(0,0,0,0.5)" className="font-mono-n" fontSize="9">
-              {data[n - 1].date.slice(5)}
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Weight over the last 7 days">
+      {/* grid + y labels (labels only when there's data to scale to) */}
+      {gridYs.map((yy, idx) => (
+        <g key={idx}>
+          <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke={GRID} strokeWidth="1" />
+          {present.length > 0 && (
+            <text x={pad.l - 6} y={yy + 3} textAnchor="end" fill={LABEL} className="font-mono-n" fontSize="9">
+              {(idx === 0 ? hi : idx === 1 ? (hi + lo) / 2 : lo).toFixed(1)}
             </text>
           )}
-        </>
+        </g>
+      ))}
+
+      {/* line through logged days */}
+      {present.length > 1 && (
+        <polyline points={pts} fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       )}
+      {present.map((p) => (
+        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill={INK}>
+          <title>{`${p.date}: ${p.kg} kg`}</title>
+        </circle>
+      ))}
+
+      {/* x labels: every day of the window */}
+      {series.map((p, i) => (
+        <text key={p.date} x={x(i)} y={H - 7} textAnchor="middle" fill={LABEL} className="font-mono-n" fontSize="9">
+          {Number(p.date.slice(8))}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -99,13 +121,10 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
 
-        {data.length === 0 ? (
-          <p className="px-1 py-2 text-[15px]" style={{ color: "rgba(0,0,0,0.6)" }}>
-            Add today&apos;s weight to start the chart.
-          </p>
-        ) : (
-          <WeightChart data={data} />
-        )}
+        <div className="mb-1 text-[11px] font-semibold" style={{ color: "rgba(0,0,0,0.55)" }}>
+          Last 7 days
+        </div>
+        <WeightChart weights={data} />
       </div>
     </div>
   );
