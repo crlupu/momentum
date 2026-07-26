@@ -20,12 +20,12 @@
   --background: #0f0f10;
   --foreground: #ececee;
 
-  --surface: #1a1a1d;
+  --surface: #212127;
   --surface-foreground: #ececee;
-  --surface-secondary: #202024;
-  --surface-tertiary: #26262b;
+  --surface-secondary: #2a2a31;
+  --surface-tertiary: #31313a;
 
-  --overlay: #1a1a1d;
+  --overlay: #212127;
   --overlay-foreground: #ececee;
 
   --muted: #8e8f95;

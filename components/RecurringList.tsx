@@ -42,7 +42,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display text-lg font-bold tracking-tight">Recurring</h2>
-        <Button variant="outline" onPress={onAdd}>
+        <Button variant="primary" onPress={onAdd}>
           <Plus className="h-4 w-4" /> New
         </Button>
       </div>
