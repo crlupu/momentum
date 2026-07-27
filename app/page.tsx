@@ -72,7 +72,7 @@ export default function Home() {
 
               <section id="charts" className="scroll-mt-6">
                 <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-                  <span className="sec-dot" style={{ background: "var(--sec-charts)" }} aria-hidden />
+                  <span className="sec-dot" style={{ background: "var(--grad-teal)" }} aria-hidden />
                   Progress
                 </h2>
                 <Charts tracker={tracker} />
@@ -84,7 +84,7 @@ export default function Home() {
 
               <section id="config">
                 <h2 className="font-display mb-4 flex items-center gap-2.5 text-xl font-bold tracking-tight">
-                  <span className="sec-dot" style={{ background: "var(--sec-config)" }} aria-hidden />
+                  <span className="sec-dot" style={{ background: "var(--grad-magenta)" }} aria-hidden />
                   Configuration
                 </h2>
                 {/* Two explicit columns: each card sits straight under the one

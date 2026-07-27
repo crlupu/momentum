@@ -69,7 +69,11 @@ function SubtaskRow({
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
         <div
           className="h-full rounded-full"
-          style={{ width: `${pct}%`, background: color, transition: "width .3s ease" }}
+          style={{
+            width: `${pct}%`,
+            backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${color} 60%, #8a3ffc 100%)`,
+            transition: "width .3s ease",
+          }}
         />
       </div>
 
@@ -304,7 +308,11 @@ function GoalCard({
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
             <div
               className="h-full rounded-full"
-              style={{ width: `${pct}%`, background: c.color, transition: "width .3s ease" }}
+              style={{
+                width: `${pct}%`,
+                backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${c.color} 60%, #8a3ffc 100%)`,
+                transition: "width .3s ease",
+              }}
             />
           </div>
         )}
@@ -497,7 +505,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       <div className="mb-4 flex items-end justify-between">
         <div>
           <h2 className="font-display flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-            <span className="sec-dot" style={{ background: "var(--sec-goals)" }} aria-hidden />
+            <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
             Goals
           </h2>
           <p className="mt-0.5 text-sm text-foreground/60">

@@ -49,7 +49,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <span className="sec-dot" style={{ background: "var(--sec-todos)" }} aria-hidden />
+        <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
         To do
       </h2>
 

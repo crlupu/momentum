@@ -17,10 +17,16 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
+    // .ico first for the browser tab, then the transparent PNGs and the SVG
+    // mark, which stays crisp on high-density displays.
     icon: [
+      { url: `${BASE}/favicon.ico`, sizes: "any" },
       { url: `${BASE}/icons/favicon-32.png`, sizes: "32x32", type: "image/png" },
       { url: `${BASE}/icons/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${BASE}/icons/icon-512.png`, sizes: "512x512", type: "image/png" },
+      { url: `${BASE}/logo.svg`, type: "image/svg+xml" },
     ],
+    shortcut: [{ url: `${BASE}/favicon.ico` }],
     apple: [{ url: `${BASE}/icons/apple-touch-icon.png`, sizes: "180x180" }],
   },
 };

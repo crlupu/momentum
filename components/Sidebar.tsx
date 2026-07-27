@@ -31,7 +31,7 @@ function TopStat({
     <span
       className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap text-foreground"
       style={{
-        background: `color-mix(in srgb, ${bg} 22%, transparent)`,
+        backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${bg} 32%, transparent), color-mix(in srgb, ${bg} 12%, transparent))`,
         boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bg} 45%, transparent)`,
       }}
     >
