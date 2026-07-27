@@ -1,10 +1,47 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Chip, Input } from "@heroui/react";
-import { X } from "lucide-react";
+import { Button, Input } from "@heroui/react";
+import { DeleteButton } from "./DeleteButton";
 import { ActionButton, usePending } from "./ActionButton";
 import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, RecurringTask } from "@/lib/tracker";
+
+function GroupPicker({
+  tracker,
+  groupId,
+  setGroupId,
+}: {
+  tracker: Tracker;
+  groupId: string;
+  setGroupId: (id: string) => void;
+}) {
+  const s = tracker.state!;
+  return (
+    <div>
+      <div className="mb-1.5 text-xs text-foreground/50">
+        Group (optional) — doing one task in a group covers the rest
+      </div>
+      <select
+        aria-label="Group"
+        value={groupId}
+        onChange={(e) => setGroupId(e.target.value)}
+        className="h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground"
+      >
+        <option value="">No group</option>
+        {s.recurringGroups.map((g) => (
+          <option key={g.id} value={g.id}>
+            {g.name}
+          </option>
+        ))}
+      </select>
+      {s.recurringGroups.length === 0 && (
+        <p className="mt-1.5 text-xs text-foreground/45">
+          Create groups in the Groups section below.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function CatPicker({
   tracker,
@@ -86,14 +123,14 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [freq, setFreq] = useState<Frequency>("daily");
-  const [group, setGroup] = useState("");
+  const [groupId, setGroupId] = useState("");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
     if (!t || pending) return;
-    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq, group));
+    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq, groupId));
     if (ok) onDone();
   };
 
@@ -117,32 +154,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
           ))}
         </div>
       </div>
-      <div>
-        <div className="mb-1.5 text-xs text-foreground/50">
-          Group (optional) — doing one task in a group covers the rest
-        </div>
-        <Input
-          aria-label="Group name"
-          placeholder="e.g. Workout"
-          value={group}
-          onChange={(e) => setGroup(e.target.value)}
-        />
-        {s.recurringGroups.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {s.recurringGroups.map((g) => (
-              <Button
-                key={g.id}
-                size="sm"
-                variant="outline"
-                className={group.toLowerCase() === g.name.toLowerCase() ? "pill-selected" : ""}
-                onPress={() => setGroup(group.toLowerCase() === g.name.toLowerCase() ? "" : g.name)}
-              >
-                {g.name}
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
+      <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
       <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
         Add recurring task
@@ -164,9 +176,7 @@ export function RecurringEditForm({
   const [title, setTitle] = useState(task.title);
   const [catId, setCatId] = useState(task.catId);
   const [freq, setFreq] = useState<Frequency>(task.freq);
-  const [group, setGroup] = useState(
-    s.recurringGroups.find((g) => g.id === task.groupId)?.name ?? ""
-  );
+  const [groupId, setGroupId] = useState(task.groupId ?? "");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
@@ -174,7 +184,7 @@ export function RecurringEditForm({
     const t = title.trim();
     if (!t || pending) return;
     const ok = await run(() =>
-      tracker.updateRecurring(task.id, { title: t, catId, freq, groupName: group })
+      tracker.updateRecurring(task.id, { title: t, catId, freq, groupId })
     );
     if (ok) onDone();
   };
@@ -199,35 +209,23 @@ export function RecurringEditForm({
           ))}
         </div>
       </div>
-      <div>
-        <div className="mb-1.5 text-xs text-foreground/50">
-          Group (optional) — doing one task in a group covers the rest
-        </div>
-        <Input
-          aria-label="Group name"
-          placeholder="e.g. Workout"
-          value={group}
-          onChange={(e) => setGroup(e.target.value)}
-        />
-        {s.recurringGroups.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {s.recurringGroups.map((g) => (
-              <Button
-                key={g.id}
-                size="sm"
-                variant="outline"
-                className={group.toLowerCase() === g.name.toLowerCase() ? "pill-selected" : ""}
-                onPress={() => setGroup(group.toLowerCase() === g.name.toLowerCase() ? "" : g.name)}
-              >
-                {g.name}
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
+      <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
+
       <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
         Save changes
       </Button>
+
+      <div className="mt-1 border-t border-foreground/10 pt-3">
+        <DeleteButton
+          what={`the recurring task "${task.title}"`}
+          fullWidth
+          onDelete={async () => {
+            const ok = await tracker.deleteRecurring(task.id);
+            if (ok) onDone();
+            return ok;
+          }}
+        />
+      </div>
     </form>
   );
 }
@@ -236,7 +234,6 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [newCat, setNewCat] = useState("");
   const { pending, run } = usePending();
-  const [busyId, setBusyId] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -246,39 +243,82 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
     if (ok) setNewCat("");
   };
 
-  const remove = async (id: string, name: string) => {
-    if (tracker.categoryInUse(id)) {
-      alert("This category is in use. Remove or reassign its items first.");
-      return;
-    }
-    setBusyId(id);
-    try {
-      await tracker.deleteCategory(id);
-    } finally {
-      setBusyId(null);
-    }
+  return (
+    <div>
+      <ul className="list-none divide-y divide-foreground/10 p-0">
+        {s.categories.map((c) => (
+          <li key={c.id} className="flex items-center gap-2 py-2">
+            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden />
+            <span className="flex-1 truncate text-[15px]">{c.name}</span>
+            <DeleteButton
+              what={`the category "${c.name}"`}
+              onDelete={async () => {
+                if (tracker.categoryInUse(c.id)) {
+                  alert("This category is in use. Remove or reassign its items first.");
+                  return false;
+                }
+                return tracker.deleteCategory(c.id);
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+      <form onSubmit={submit} className="mt-3 flex gap-2">
+        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
+        <Button type="submit" variant="primary" className={pending ? "is-pending" : ""} isDisabled={pending}>
+          Add
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export function GroupsCard({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [newGroup, setNewGroup] = useState("");
+  const { pending, run } = usePending();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const n = newGroup.trim();
+    if (!n || pending) return;
+    const ok = await run(() => tracker.addGroup(n));
+    if (ok) setNewGroup("");
   };
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
-        {s.categories.map((c) => (
-          <Chip key={c.id} size="sm" variant="soft" className={busyId === c.id ? "is-pending" : ""}>
-            <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-            <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
-            <button
-              aria-label={`Delete category ${c.name}`}
-              className="ml-1 text-foreground/50 hover:text-foreground disabled:opacity-40"
-              disabled={busyId === c.id}
-              onClick={() => void remove(c.id, c.name)}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </Chip>
-        ))}
-      </div>
+      {s.recurringGroups.length === 0 ? (
+        <p className="py-1 text-[15px] text-foreground/60">
+          No groups yet. Tasks in a group cover each other — e.g. Legs / Push / Pull day.
+        </p>
+      ) : (
+        <ul className="list-none divide-y divide-foreground/10 p-0">
+          {s.recurringGroups.map((g) => {
+            const count = s.recurring.filter((r) => r.groupId === g.id).length;
+            return (
+              <li key={g.id} className="flex items-center gap-2 py-2">
+                <span className="flex-1 truncate text-[15px]">{g.name}</span>
+                <span className="font-mono-n shrink-0 text-xs text-foreground/50">
+                  {count} task{count === 1 ? "" : "s"}
+                </span>
+                <DeleteButton
+                  what={`the group "${g.name}"`}
+                  onDelete={async () => {
+                    if (tracker.groupInUse(g.id)) {
+                      alert("This group is in use. Move its tasks out of the group first.");
+                      return false;
+                    }
+                    return tracker.deleteGroup(g.id);
+                  }}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <form onSubmit={submit} className="mt-3 flex gap-2">
-        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
+        <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="flex-1" />
         <Button type="submit" variant="primary" className={pending ? "is-pending" : ""} isDisabled={pending}>
           Add
         </Button>

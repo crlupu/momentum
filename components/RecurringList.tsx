@@ -1,8 +1,8 @@
 "use client";
 
 import { Button, Card } from "@heroui/react";
-import { ActionButton, usePending } from "./ActionButton";
-import { Check, Pencil, Plus, X } from "lucide-react";
+import { usePending } from "./ActionButton";
+import { Check, Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "./Modal";
 import { RecurringEditForm } from "./Forms";
@@ -117,9 +117,6 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <ActionButton size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onAction={() => tracker.deleteRecurring(r.id)}>
-                      <X className="h-4 w-4" />
-                    </ActionButton>
                     <RecurringCheckbox tracker={tracker} id={r.id} done={done} />
                   </li>
                 );

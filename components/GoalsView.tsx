@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
+import { DeleteButton } from "./DeleteButton";
 import { Check, ListPlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
 import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
@@ -50,15 +51,6 @@ function SubtaskRow({
         <span className="font-mono-n shrink-0 text-[11px] text-foreground/50">
           {hasTarget ? `${t.current ?? 0}/${t.target}` : "—"}
         </span>
-        <ActionButton
-          size="sm"
-          variant="ghost"
-          isIconOnly
-          aria-label={`Delete subtask ${t.title}`}
-          onAction={() => tracker.deleteSubtask(goalId, t.id)}
-        >
-          <X className="h-3.5 w-3.5" />
-        </ActionButton>
       </div>
 
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
@@ -102,6 +94,11 @@ function SubtaskRow({
           <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">
             Cancel
           </Button>
+          <DeleteButton
+            what={`the subtask "${t.title}"`}
+            fullWidth
+            onDelete={() => tracker.deleteSubtask(goalId, t.id)}
+          />
         </div>
       )}
     </li>
@@ -296,9 +293,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               <Check className="h-4 w-4" /> Done
             </ActionButton>
           )}
-          <ActionButton size="sm" variant="ghost" isIconOnly aria-label="Delete goal" onAction={() => tracker.deleteGoal(g.id)} className="ml-auto">
-            <X className="h-4 w-4" />
-          </ActionButton>
+          <DeleteButton what={`the goal "${g.title}"`} className="ml-auto" onDelete={() => tracker.deleteGoal(g.id)} />
         </div>
 
           </>
@@ -385,15 +380,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
                     >
                       <RotateCcw className="h-4 w-4" />
                     </ActionButton>
-                    <ActionButton
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      aria-label="Delete goal"
-                      onAction={() => tracker.deleteGoal(g.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </ActionButton>
+                    <DeleteButton what={`the goal "${g.title}"`} onDelete={() => tracker.deleteGoal(g.id)} />
                   </div>
                 </Card.Content>
               </Card>

@@ -6,7 +6,7 @@ import { useTracker } from "@/lib/tracker";
 import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";
 import { Modal } from "@/components/Modal";
-import { GoalForm, RecurringForm, CategoriesCard } from "@/components/Forms";
+import { GoalForm, RecurringForm, CategoriesCard, GroupsCard } from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
 import WeightTracker from "@/components/WeightTracker";
@@ -58,13 +58,23 @@ export default function Home() {
                 <Charts tracker={tracker} />
               </section>
 
-              <section>
-                <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Categories</h2>
-                <Card>
-                  <Card.Content className="p-4 sm:p-5">
-                    <CategoriesCard tracker={tracker} />
-                  </Card.Content>
-                </Card>
+              <section className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Categories</h2>
+                  <Card>
+                    <Card.Content className="p-4 sm:p-5">
+                      <CategoriesCard tracker={tracker} />
+                    </Card.Content>
+                  </Card>
+                </div>
+                <div>
+                  <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Groups</h2>
+                  <Card>
+                    <Card.Content className="p-4 sm:p-5">
+                      <GroupsCard tracker={tracker} />
+                    </Card.Content>
+                  </Card>
+                </div>
               </section>
             </div>
           )}
