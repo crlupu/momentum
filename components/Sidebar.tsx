@@ -6,7 +6,6 @@ import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut 
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
-import { readableText } from "@/lib/color";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
@@ -26,15 +25,23 @@ function TopStat({
   label: string;
   bg: string;
 }) {
-  // Gradient chips always carry white; solid chips derive their ink.
-  const fg = bg.startsWith("#") ? readableText(bg) : "#ffffff";
+  // Every stat carries the same text colour; the category reads from the
+  // tinted background and its dot, not from the type.
   return (
     <span
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap"
-      style={{ background: bg, color: fg }}
+      className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap text-foreground"
+      style={{
+        background: `color-mix(in srgb, ${bg} 22%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bg} 45%, transparent)`,
+      }}
     >
+      <span
+        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: bg }}
+        aria-hidden
+      />
       <span className="font-mono-n text-sm font-bold leading-none">{value}</span>
-      <span className="text-[10px] font-semibold leading-none">{label}</span>
+      <span className="text-[10px] font-semibold leading-none opacity-70">{label}</span>
     </span>
   );
 }
@@ -154,39 +161,25 @@ export function Sidebar({
 
   return (
     <>
-      {/* Top bar. Below lg it carries the menu button and logo; at lg+ the
-          rail owns those, and the bar shifts right to sit beside it. */}
-      <div className="glass-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3 lg:ml-64">
+      {/* Top bar: menu button, logo, stats. The menu is always an overlay. */}
+      <div className="glass-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3">
         <button
           aria-label="Open menu"
           onClick={() => setOpen(true)}
-          className="text-foreground/80 hover:text-foreground lg:hidden"
+          className="text-foreground/80 hover:text-foreground"
         >
           <Menu className="h-6 w-6" />
         </button>
-        <span className="flex shrink-0 items-center gap-2 lg:hidden">
+        <span className="flex shrink-0 items-center gap-2">
           <Logo className="h-4 w-auto" />
           <span className="font-display text-lg font-bold tracking-tight">Momentum</span>
         </span>
         <TopStats tracker={tracker} />
       </div>
 
-      {/* Persistent rail from lg up */}
-      <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-foreground/10 lg:block"
-        style={{ background: "var(--surface)", color: "var(--surface-foreground)" }}
-      >
-        <SidebarInner
-          tracker={tracker}
-          onAddGoal={onAddGoal}
-          onAddRecurring={onAddRecurring}
-          onNavigate={go}
-        />
-      </aside>
-
-      {/* Overlay drawer below lg */}
+      {/* Overlay drawer */}
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-40">
           <div className="glass-blanket absolute inset-0" onClick={() => setOpen(false)} aria-hidden />
           <aside
             className="glass-overlay absolute inset-y-0 left-0 w-64 max-w-[85vw]"

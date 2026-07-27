@@ -64,6 +64,11 @@
   --blanket: rgba(22, 22, 22, 0.5);
   --overlay-shadow: 0 8px 24px rgba(22, 22, 22, 0.2);
 
+  /* fields need to read as inputs against the card they sit on */
+  --field-bg: #ffffff;
+  --field-border: #8d8d8d;
+  --field-placeholder: #6f6f6f;
+
   /* per-section accents, from the icon family */
   --sec-goals: #0f62fe;      /* blue    */
   --sec-recurring: #009d9a;  /* teal    */
@@ -133,6 +138,11 @@
 
   --blanket: rgba(22, 22, 22, 0.7);
   --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+
+  /* one step lighter than the card, so the field is visible on it */
+  --field-bg: #393939;
+  --field-border: #6f6f6f;
+  --field-placeholder: #a8a8a8;
 
   --sec-goals: #4589ff;
   --sec-recurring: #08bdba;
@@ -309,9 +319,38 @@ body::before {
   min-block-size: 0;
 }
 
-/* Inputs sit in flex rows beside their add button */
+/* Inputs sit in flex rows beside their add button.
+   Carbon fields are bottom-border-only and use the same fill as the layer
+   they sit on, which makes them disappear inside our cards — so they get a
+   real background and a full border here. */
 .cds--form-item { flex: 1 1 auto; }
-.cds--text-input { block-size: 2.5rem; }
+
+.cds--text-input,
+.cds--text-area,
+.cds--select-input,
+.cds--number input[type="number"] {
+  block-size: 2.5rem;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  color: var(--foreground);
+}
+.cds--text-input:hover,
+.cds--text-area:hover,
+.cds--select-input:hover {
+  border-color: var(--foreground);
+}
+.cds--text-input:focus,
+.cds--text-area:focus,
+.cds--select-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-color: transparent;
+}
+.cds--text-input::placeholder,
+.cds--text-area::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
 
 /* Tags carry no outer margin in dense lists */
 .cds--tag { margin: 0; max-inline-size: none; }
