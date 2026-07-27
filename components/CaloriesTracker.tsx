@@ -6,10 +6,10 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey } from "@/lib/tracker";
 
-const CARD = "#f8e6a0"; // ADS yellow subtler
-const INK = "#533f04"; // ADS yellow ink
-const INK_SUBTLE = "rgba(83,63,4,0.75)";
-const INK_FAINT = "rgba(83,63,4,0.18)";
+/** ADS chart teal — matches the kcal stat in the sidebar. */
+const ACCENT = "#2898bd";
+const LABEL = "var(--muted)";
+const TRACK = "var(--default)";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -59,7 +59,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
         <span className="font-mono-n text-sm text-foreground/60">{todayTotal} kcal today</span>
       </div>
 
-      <div className="rounded-[22px] p-4 sm:p-5" style={{ background: CARD, color: INK }}>
+      <div className="card p-4 sm:p-5">
         <form onSubmit={submit} className="mb-3 flex gap-2">
           <Input
             type="number"
@@ -76,19 +76,20 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
             aria-label="Add"
             isDisabled={pending}
             className={pending ? "is-pending" : ""}
-            style={{ background: INK, color: CARD }}
           >
             <Plus className="h-4 w-4" />
           </Button>
         </form>
 
         <div className="mb-1 flex items-baseline gap-2">
-          <span className="font-mono-n text-xl font-bold">{weekAvg}</span>
-          <span className="text-xs" style={{ color: INK_SUBTLE }}>avg kcal/day · this week</span>
+          <span className="font-mono-n text-xl font-bold" style={{ color: ACCENT }}>
+            {weekAvg}
+          </span>
+          <span className="text-xs" style={{ color: LABEL }}>avg kcal/day · this week</span>
         </div>
 
         {s.calories.length === 0 ? (
-          <p className="px-1 py-2 text-[15px]" style={{ color: INK_SUBTLE }}>
+          <p className="px-1 py-2 text-[15px]" style={{ color: LABEL }}>
             Add entries to see daily totals.
           </p>
         ) : (
@@ -100,10 +101,10 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[22px] rounded-t"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
-                    background: counts[i] ? INK : INK_FAINT,
+                    background: counts[i] ? ACCENT : TRACK,
                   }}
                 />
-                <span className="text-[9px]" style={{ color: INK_SUBTLE }}>{d.getDate()}</span>
+                <span className="text-[9px]" style={{ color: LABEL }}>{d.getDate()}</span>
               </div>
             ))}
           </div>

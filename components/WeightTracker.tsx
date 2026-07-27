@@ -6,10 +6,10 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
-const CARD = "#cce0ff"; // ADS blue subtler
-const INK = "#09326c"; // ADS blue ink
-const GRID = "rgba(9,50,108,0.15)";
-const LABEL = "rgba(9,50,108,0.65)";
+/** ADS chart purple — matches the weight stat in the sidebar. */
+const ACCENT = "#803fa5";
+const GRID = "var(--border)";
+const LABEL = "var(--muted)";
 
 function lastNDays(n: number): Date[] {
   return Array.from({ length: n }, (_, i) => {
@@ -64,10 +64,10 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
 
       {/* line through logged days */}
       {present.length > 1 && (
-        <polyline points={pts} fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={pts} fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       )}
       {present.map((p) => (
-        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill={INK}>
+        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill={ACCENT}>
           <title>{`${p.date}: ${p.kg} kg`}</title>
         </circle>
       ))}
@@ -108,7 +108,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
         )}
       </div>
 
-      <div className="rounded-[22px] p-4 sm:p-5" style={{ background: CARD, color: INK }}>
+      <div className="card p-4 sm:p-5">
         <form onSubmit={submit} className="mb-3 flex gap-2">
           <Input
             type="number"
@@ -126,7 +126,6 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
             aria-label="Add"
             isDisabled={pending}
             className={pending ? "is-pending" : ""}
-            style={{ background: INK, color: CARD }}
           >
             <Plus className="h-4 w-4" />
           </Button>
