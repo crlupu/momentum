@@ -98,8 +98,8 @@ export type TrackerState = {
 };
 
 export const CAT_COLORS = [
-  "#1ea97b", "#72c613", "#2180e6", "#044b39",
-  "#264b04", "#053438", "#c8efc1", "#bdf0ec",
+  "#357de8", "#22a06b", "#af59e1", "#c75300",
+  "#2898bd", "#ae2e24", "#803fa5", "#1c2b42",
 ];
 
 function hslToHex(h: number, sat: number, light: number): string {
@@ -131,20 +131,27 @@ export function nextCategoryColor(existing: { color: string }[]): string {
 const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c1", name: "Work", color: "#2180e6" },
-  { id: "c2", name: "Pressio", color: "#1ea97b" },
-  { id: "c3", name: "Learning", color: "#264b04" },
-  { id: "c4", name: "Gym", color: "#72c613" },
-  { id: "c5", name: "Personal", color: "#bdf0ec" },
+  { id: "c1", name: "Work", color: "#357de8" },
+  { id: "c2", name: "Pressio", color: "#22a06b" },
+  { id: "c3", name: "Learning", color: "#af59e1" },
+  { id: "c4", name: "Gym", color: "#ae2e24" },
+  { id: "c5", name: "Personal", color: "#c75300" },
 ];
 
-/** Old (pre-palette) default colours → their brand-palette replacements. */
+/** Colours from earlier themes → their Atlassian-palette replacements. */
 const LEGACY_CATEGORY_COLORS: Record<string, string> = {
-  "#006fee": "#2180e6",
-  "#17c964": "#1ea97b",
-  "#7828c8": "#264b04",
-  "#f31260": "#72c613",
-  "#f5a524": "#bdf0ec",
+  // original HeroUI defaults
+  "#006fee": "#357de8",
+  "#17c964": "#22a06b",
+  "#7828c8": "#af59e1",
+  "#f31260": "#ae2e24",
+  "#f5a524": "#c75300",
+  // interim green-brand defaults
+  "#2180e6": "#357de8",
+  "#1ea97b": "#22a06b",
+  "#264b04": "#af59e1",
+  "#72c613": "#ae2e24",
+  "#bdf0ec": "#c75300",
 };
 
 const DEFAULT_STATE: TrackerState = {
@@ -620,7 +627,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#4f7264" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#63666b" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),

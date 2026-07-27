@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
-const CARD = "#c8efc1"; // pale mint block
-const INK = "#044b39"; // deep green ink on the block
+const CARD = "#cce0ff"; // ADS blue subtler
+const INK = "#09326c"; // ADS blue ink
 const GRID = "rgba(0,0,0,0.12)";
 const LABEL = "rgba(0,0,0,0.5)";
 

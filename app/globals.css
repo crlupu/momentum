@@ -8,8 +8,9 @@
 }
 
 /* ============================================================
-   Green brand dashboard system
-   Flat surfaces · mint/lime palette · deep-forest accent · Outfit
+   Atlassian Design System theme
+   White canvas · Atlassian Blue #1868DB · ink neutrals ·
+   semantic chart family · subtle hairlines · 6px controls
    ============================================================ */
 
 /* Light (default) */
@@ -17,97 +18,103 @@
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #eff7ee;
-  --foreground: #044b39;
+  --background: #f7f8f9;   /* elevation.surface.sunken */
+  --foreground: #101214;   /* ink */
 
   --surface: #ffffff;
-  --surface-foreground: #044b39;
-  --surface-secondary: #f2faf1;
-  --surface-tertiary: #e7f4e5;
+  --surface-foreground: #101214;
+  --surface-secondary: #f7f8f9;
+  --surface-tertiary: #f1f2f4;
 
   --overlay: #ffffff;
-  --overlay-foreground: #044b39;
+  --overlay-foreground: #101214;
 
-  --muted: #4f7264;
+  --muted: #63666b;        /* ink subtlest */
 
-  --border: #dbebd8;
-  --separator: #e4f1e2;
+  --border: #dddee1;       /* hairline */
+  --separator: #eaebee;
 
-  /* deep forest green drives calls to action */
-  --accent: #044b39;
+  /* Atlassian Blue drives calls to action */
+  --accent: #1868db;
   --accent-foreground: #ffffff;
 
-  --success: #1ea97b;
-  --warning: #72c613;
-  /* the palette has no red; a semantic danger tone is kept for destructive actions */
-  --danger: #b3261e;
+  --success: #22a06b;
+  --warning: #c75300;
+  --danger: #ae2e24;
 
-  --radius: 1.25rem;
-  --surface-shadow: 0 1px 2px rgba(4, 75, 57, 0.06);
+  --selected-bg: #e9f2fe;  /* color.background.selected */
+  --selected-fg: #1558bc;
 
-  --default: rgba(4, 75, 57, 0.08);
-  --default-foreground: #044b39;
-  --pill-fg: #eff7ee;
+  --radius: 0.5rem;
+  --surface-shadow: 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+
+  --default: rgba(9, 30, 66, 0.06); /* color.background.neutral */
+  --default-foreground: #292a2e;
+  --pill-fg: #ffffff;
 }
 
 /* Dark */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #053438;
-  --foreground: #e6f4ec;
+  --background: #161a1d;
+  --foreground: #b6c2cf;
 
-  --surface: #0a4247;
-  --surface-foreground: #e6f4ec;
-  --surface-secondary: #0d4b50;
-  --surface-tertiary: #115458;
+  --surface: #1d2125;
+  --surface-foreground: #b6c2cf;
+  --surface-secondary: #22272b;
+  --surface-tertiary: #282e33;
 
-  --overlay: #0a4247;
-  --overlay-foreground: #e6f4ec;
+  --overlay: #22272b;
+  --overlay-foreground: #b6c2cf;
 
-  --muted: #9ec4b6;
+  --muted: #8c9bab;
 
-  --border: #14565b;
-  --separator: #114c51;
+  --border: rgba(166, 197, 226, 0.16);
+  --separator: rgba(166, 197, 226, 0.12);
 
-  --accent: #72c613;
-  --accent-foreground: #10250a;
+  --accent: #579dff;
+  --accent-foreground: #1d2125;
 
-  --success: #1ea97b;
-  --warning: #cbf39d;
-  --danger: #b3261e;
+  --success: #4bce97;
+  --warning: #fea362;
+  --danger: #f87168;
 
-  --radius: 1.25rem;
-  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --selected-bg: #1c2b41;
+  --selected-fg: #579dff;
 
-  --default: rgba(255, 255, 255, 0.1);
-  --default-foreground: #e6f4ec;
-  --pill-fg: #053438;
+  --radius: 0.5rem;
+  --surface-shadow: 0 1px 1px rgba(3, 4, 4, 0.5), 0 0 1px rgba(3, 4, 4, 0.5);
+
+  --default: rgba(161, 189, 217, 0.08);
+  --default-foreground: #b6c2cf;
+  --pill-fg: #1d2125;
 }
 
 body {
-  font-family: "Outfit", -apple-system, system-ui, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu",
+    "Helvetica Neue", sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
   background: var(--background);
 }
 
 .font-display {
-  font-family: "Outfit", sans-serif;
-  letter-spacing: -0.015em;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.008em;
 }
 
 .font-mono-n {
-  font-family: "Outfit", sans-serif;
+  font-family: "Inter", -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Flat, generously rounded panels — no glass */
+/* Cards: white surface, hairline border, ADS raised shadow */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 26px;
+  border-radius: 8px;
   box-shadow: var(--surface-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -117,36 +124,36 @@ body {
   box-shadow: none;
 }
 
-/* Pill buttons, as in the reference */
+/* Controls: Atlassian's 6px corner, no pills */
 .button {
-  border-radius: 9999px;
+  border-radius: 6px;
 }
 
-/* Selected option pills are solid black (the reference's active state) */
+/* Selected option: ADS selected state (subtle blue fill, brand text) */
 .pill-selected {
-  --button-bg: var(--foreground);
-  --button-bg-hover: var(--foreground);
-  --button-bg-pressed: var(--foreground);
-  --button-fg: var(--pill-fg);
-  border-color: transparent !important;
+  --button-bg: var(--selected-bg);
+  --button-bg-hover: var(--selected-bg);
+  --button-bg-pressed: var(--selected-bg);
+  --button-fg: var(--selected-fg);
+  border-color: var(--accent) !important;
   font-weight: 600;
 }
 
-/* Positive action: muted sage */
+/* Positive action: ADS green */
 .btn-success {
-  --button-bg: #1ea97b;
-  --button-bg-hover: #1a9169;
-  --button-bg-pressed: #1a9169;
+  --button-bg: #22a06b;
+  --button-bg-hover: #1f845a;
+  --button-bg-pressed: #216e4e;
   --button-fg: #ffffff;
   border-color: transparent !important;
 }
 
-/* Inverted button: solid dark with light text */
+/* Primary/inverted action: Atlassian Blue bold */
 .btn-invert {
-  --button-bg: var(--foreground);
-  --button-bg-hover: var(--foreground);
-  --button-bg-pressed: var(--foreground);
-  --button-fg: var(--pill-fg);
+  --button-bg: var(--accent);
+  --button-bg-hover: #1558bc;
+  --button-bg-pressed: #123263;
+  --button-fg: var(--accent-foreground);
   border-color: transparent !important;
 }
 
@@ -188,7 +195,7 @@ body {
   z-index: 2;
 }
 .is-pending.button::after {
-  border-radius: 9999px;
+  border-radius: 6px;
 }
 @keyframes run-border {
   to {
@@ -212,12 +219,12 @@ body {
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(4, 75, 57, 0.25) transparent;
+  scrollbar-color: rgba(9, 30, 66, 0.25) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(4, 75, 57, 0.25);
+  background: rgba(9, 30, 66, 0.25);
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
