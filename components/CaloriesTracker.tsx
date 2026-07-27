@@ -8,6 +8,8 @@ import { Tracker, dateKey } from "@/lib/tracker";
 
 const CARD = "#f8e6a0"; // ADS yellow subtler
 const INK = "#533f04"; // ADS yellow ink
+const INK_SUBTLE = "rgba(83,63,4,0.75)";
+const INK_FAINT = "rgba(83,63,4,0.18)";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -82,11 +84,11 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
 
         <div className="mb-1 flex items-baseline gap-2">
           <span className="font-mono-n text-xl font-bold">{weekAvg}</span>
-          <span className="text-xs" style={{ color: "rgba(0,0,0,0.6)" }}>avg kcal/day · this week</span>
+          <span className="text-xs" style={{ color: INK_SUBTLE }}>avg kcal/day · this week</span>
         </div>
 
         {s.calories.length === 0 ? (
-          <p className="px-1 py-2 text-[15px]" style={{ color: "rgba(0,0,0,0.6)" }}>
+          <p className="px-1 py-2 text-[15px]" style={{ color: INK_SUBTLE }}>
             Add entries to see daily totals.
           </p>
         ) : (
@@ -98,10 +100,10 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[22px] rounded-t"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
-                    background: counts[i] ? INK : "rgba(0,0,0,0.18)",
+                    background: counts[i] ? INK : INK_FAINT,
                   }}
                 />
-                <span className="text-[9px]" style={{ color: "rgba(0,0,0,0.55)" }}>{d.getDate()}</span>
+                <span className="text-[9px]" style={{ color: INK_SUBTLE }}>{d.getDate()}</span>
               </div>
             ))}
           </div>

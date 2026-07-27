@@ -41,7 +41,7 @@ function Heatmap({
   color: string;
 }) {
   const shade = (n: number) => {
-    if (n === 0) return "rgba(127,127,127,0.10)";
+    if (n === 0) return "var(--default)";
     if (n === 1) return hexToRgba(color, 0.35);
     if (n === 2) return hexToRgba(color, 0.55);
     if (n <= 4) return hexToRgba(color, 0.8);
@@ -148,7 +148,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[34px] rounded-t-md"
                   style={{
                     height: Math.max(3, (counts[i] / max) * 110),
-                    background: counts[i] ? "#22a06b" : "rgba(127,127,127,0.15)",
+                    background: counts[i] ? "#22a06b" : "var(--default)",
                   }}
                 />
                 <span className="text-[10px] text-foreground/50 whitespace-nowrap">

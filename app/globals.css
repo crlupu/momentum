@@ -51,6 +51,9 @@
   --default: rgba(9, 30, 66, 0.06); /* color.background.neutral */
   --default-foreground: #292a2e;
   --pill-fg: #ffffff;
+
+  --blanket: rgba(9, 30, 66, 0.54);        /* color.blanket */
+  --overlay-shadow: 0 8px 12px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31);
 }
 
 /* Dark */
@@ -89,6 +92,9 @@
   --default: rgba(161, 189, 217, 0.08);
   --default-foreground: #b6c2cf;
   --pill-fg: #1d2125;
+
+  --blanket: rgba(3, 4, 4, 0.62);
+  --overlay-shadow: 0 8px 12px rgba(3, 4, 4, 0.36), 0 0 1px rgba(3, 4, 4, 0.5);
 }
 
 body {

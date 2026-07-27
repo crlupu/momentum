@@ -45,7 +45,11 @@ export default function Home() {
                 <div
                   role="alert"
                   className="rounded-2xl border px-4 py-3 text-sm"
-                  style={{ borderColor: "rgba(229,72,77,0.4)", background: "rgba(229,72,77,0.12)" }}
+                  style={{
+                    borderColor: "color-mix(in srgb, var(--danger) 45%, transparent)",
+                    background: "color-mix(in srgb, var(--danger) 12%, transparent)",
+                    color: "var(--danger)",
+                  }}
                 >
                   {tracker.syncError} Your data is still saved on this device.
                 </div>

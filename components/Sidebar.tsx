@@ -114,7 +114,7 @@ export function Sidebar({
               color: "var(--overlay-foreground)",
               backdropFilter: "none",
               WebkitBackdropFilter: "none",
-              boxShadow: "0 0 60px rgba(0,0,0,0.45)",
+              boxShadow: "var(--overlay-shadow)",
             }}
           >
             <div className="flex h-full flex-col gap-1 p-4">

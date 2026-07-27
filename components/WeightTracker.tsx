@@ -8,8 +8,8 @@ import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
 const CARD = "#cce0ff"; // ADS blue subtler
 const INK = "#09326c"; // ADS blue ink
-const GRID = "rgba(0,0,0,0.12)";
-const LABEL = "rgba(0,0,0,0.5)";
+const GRID = "rgba(9,50,108,0.15)";
+const LABEL = "rgba(9,50,108,0.65)";
 
 function lastNDays(n: number): Date[] {
   return Array.from({ length: n }, (_, i) => {
@@ -132,7 +132,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
 
-        <div className="mb-1 text-[11px] font-semibold" style={{ color: "rgba(0,0,0,0.55)" }}>
+        <div className="mb-1 text-[11px] font-semibold" style={{ color: LABEL }}>
           Last 7 days
         </div>
         <WeightChart weights={data} />
