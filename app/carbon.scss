@@ -1,11 +1,24 @@
-/* IBM Carbon styles, themed to follow next-themes' html class */
-@use "@carbon/react" with (
+@use "sass:meta";
+
+/* Configure Carbon before anything else loads its config module. */
+@use "@carbon/react/scss/config" with (
   $css--font-face: false,
   $use-flexbox-grid: false
 );
 @use "@carbon/react/scss/themes";
 @use "@carbon/react/scss/theme";
 
+/* Carbon is emitted into a cascade layer.
+   Carbon ships the Meyer reset — it targets `div`, `h1`–`h6`, `p` and friends
+   with `margin: 0; padding: 0; font-size: 100%` — and Carbon's CSS is entirely
+   unlayered. Unlayered rules beat layered ones regardless of specificity, so
+   without this layer Carbon's reset silently overrode every Tailwind utility
+   in the app (p-4, text-lg, gap-3 and the rest). */
+@layer carbon {
+  @include meta.load-css("@carbon/react");
+}
+
+/* Theme custom properties stay unlayered so they always resolve. */
 html.light {
   @include theme.theme(themes.$g10);
 }
