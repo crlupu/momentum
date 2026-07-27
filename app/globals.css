@@ -74,7 +74,7 @@
 
   --success: #16a34a;
   --warning: #f5883f;
-  --danger: #e5484d;
+  --danger: #d13a3f;
 
   --radius: 1rem;
   --surface-shadow: 0 8px 24px rgba(20, 20, 20, 0.08);
@@ -231,9 +231,9 @@ html:not(.dark) .card {
 
 /* Positive-action accent (e.g. "Mark as done") */
 .btn-success {
-  --button-bg: var(--success);
-  --button-bg-hover: var(--success);
-  --button-bg-pressed: var(--success);
+  --button-bg: #0f8a48;
+  --button-bg-hover: #0e7a40;
+  --button-bg-pressed: #0e7a40;
   --button-fg: #ffffff;
   border-color: transparent !important;
 }

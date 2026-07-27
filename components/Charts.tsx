@@ -124,8 +124,20 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
       <Card>
         <Card.Content className="p-4 sm:p-5">
           <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
-            Daily — last 14 days
+            {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
+          <div
+            className="grid gap-2.5"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
+          >
+            <Stat value={mTotal} label="completions" />
+            <Stat value={best ? `${best[1]} (${best[0].slice(8)})` : "–"} label="best day" />
+            <Stat value={avg} label="avg / active day" />
+          </div>
+
+          <div className="mt-4 border-t border-foreground/10 pt-3 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+            Daily — last 14 days
+          </div>
           <div className="flex h-[150px] items-end gap-1.5 pt-2">
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
@@ -175,18 +187,6 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
         </Card.Content>
       </Card>
 
-      <Card>
-        <Card.Content className="p-4 sm:p-5">
-          <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
-            {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-          </h2>
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
-            <Stat value={mTotal} label="completions" />
-            <Stat value={best ? `${best[1]} (${best[0].slice(8)})` : "–"} label="best day" />
-            <Stat value={avg} label="avg / active day" />
-          </div>
-        </Card.Content>
-      </Card>
     </div>
   );
 }
