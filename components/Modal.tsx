@@ -39,16 +39,10 @@ export function Modal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="absolute inset-0" style={{ background: "var(--blanket)" }} onClick={onClose} aria-hidden />
+      <div className="glass-blanket absolute inset-0" onClick={onClose} aria-hidden />
       <div
-        className="relative z-10 max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl border border-foreground/10 p-5"
-        style={{
-          background: "var(--overlay)",
-          color: "var(--overlay-foreground)",
-          backdropFilter: "none",
-          WebkitBackdropFilter: "none",
-          boxShadow: "var(--overlay-shadow)",
-        }}
+        className="glass-overlay relative z-10 max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl p-5"
+        style={{ color: "var(--overlay-foreground)" }}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold">{title}</h2>

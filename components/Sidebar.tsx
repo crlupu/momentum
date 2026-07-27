@@ -92,7 +92,7 @@ export function Sidebar({
   return (
     <>
       {/* Top bar with menu button — always visible; the menu is an overlay. */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-foreground/10 bg-background/90 px-4 py-3 backdrop-blur">
+      <div className="glass-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3">
         <button aria-label="Open menu" onClick={() => setOpen(true)} className="text-foreground/80 hover:text-foreground">
           <Menu className="h-6 w-6" />
         </button>
@@ -106,16 +106,10 @@ export function Sidebar({
       {/* Overlay drawer */}
       {open && (
         <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} aria-hidden />
+          <div className="glass-blanket absolute inset-0" onClick={() => setOpen(false)} aria-hidden />
           <aside
-            className="absolute inset-y-0 left-0 w-64 border-r border-foreground/10"
-            style={{
-              background: "var(--overlay)",
-              color: "var(--overlay-foreground)",
-              backdropFilter: "none",
-              WebkitBackdropFilter: "none",
-              boxShadow: "var(--overlay-shadow)",
-            }}
+            className="glass-overlay absolute inset-y-0 left-0 w-64"
+            style={{ color: "var(--overlay-foreground)" }}
           >
             <div className="flex h-full flex-col gap-1 p-4">
               <div className="mb-4 flex items-center justify-between px-1">
