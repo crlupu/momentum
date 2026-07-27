@@ -61,6 +61,14 @@ export type Goal = {
   subtasks?: Subtask[];
 };
 
+/** A one-off task: just a title and a tick. */
+export type TodoItem = {
+  id: string;
+  title: string;
+  done: boolean;
+  doneDate?: string | null;
+};
+
 export type Completion = {
   date: string;
   catId: string;
@@ -79,6 +87,7 @@ export type TrackerState = {
   goals: Goal[];
   recurring: RecurringTask[];
   recurringGroups: RecurringGroup[];
+  todos: TodoItem[];
   completions: Completion[];
   weights: WeightEntry[];
   calories: CalorieEntry[];
@@ -104,6 +113,7 @@ const DEFAULT_STATE: TrackerState = {
   goals: [],
   recurring: [],
   recurringGroups: [],
+  todos: [],
   completions: [],
   weights: [],
   calories: [],
@@ -252,6 +262,15 @@ function migrate(raw: unknown): TrackerState {
       : [],
   }));
 
+  const todos: TodoItem[] = Array.isArray(s.todos)
+    ? (s.todos as Array<Record<string, unknown>>).map((t) => ({
+        id: (t.id as string) ?? uid(),
+        title: t.title as string,
+        done: !!t.done,
+        doneDate: (t.doneDate as string) ?? null,
+      }))
+    : [];
+
   const completions: Completion[] = Array.isArray(s.completions)
     ? (s.completions as Completion[])
     : [];
@@ -264,7 +283,16 @@ function migrate(raw: unknown): TrackerState {
     ? (s.calories as CalorieEntry[])
     : [];
 
-  return { categories, goals, recurring, recurringGroups, completions, weights, calories };
+  return {
+    categories,
+    goals,
+    recurring,
+    recurringGroups,
+    todos,
+    completions,
+    weights,
+    calories,
+  };
 }
 
 /** Strips `undefined` values — Firestore rejects them outright. */
@@ -795,6 +823,24 @@ export function useTracker() {
 
     deleteCategory: (id: string) =>
       commit((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) })),
+
+    // ---- to-dos ----
+    addTodo: (title: string) =>
+      commit((s) => ({
+        ...s,
+        todos: [...s.todos, { id: uid(), title: title.trim(), done: false, doneDate: null }],
+      })),
+
+    toggleTodo: (id: string) =>
+      commit((s) => ({
+        ...s,
+        todos: s.todos.map((t) =>
+          t.id === id ? { ...t, done: !t.done, doneDate: !t.done ? dateKey() : null } : t
+        ),
+      })),
+
+    deleteTodo: (id: string) =>
+      commit((s) => ({ ...s, todos: s.todos.filter((t) => t.id !== id) })),
 
     // ---- recurring groups ----
     groupInUse: (id: string): boolean => !!state?.recurring.some((r) => r.groupId === id),

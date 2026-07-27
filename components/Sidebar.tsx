@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { Menu, X, Target, Repeat, BarChart3, Plus, LogOut } from "lucide-react";
+import { Menu, X, Target, Repeat, BarChart3, ScrollText, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Tracker, dateKey, isRecurringDone, recurringUnits } from "@/lib/tracker";
 
@@ -10,6 +10,7 @@ const NAV = [
   { id: "goals", label: "Goals", icon: Target },
   { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "charts", label: "Progress", icon: BarChart3 },
+  { id: "log", label: "Log", icon: ScrollText },
 ];
 
 /** One top-bar stat: the figure, then a filled colour-coded label beside it. */
@@ -44,6 +45,7 @@ function TopStats({ tracker }: { tracker: Tracker }) {
   const done = units.filter((u) => u.done).length;
   const notDone = units.length - done;
 
+  const openTodos = st.todos.filter((t) => !t.done).length;
   const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
   const kcalToday = st.calories
     .filter((e) => e.date === today)
@@ -53,6 +55,7 @@ function TopStats({ tracker }: { tracker: Tracker }) {
     <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
       <TopStat value={done} label="done today" bg="#17C964" fg="#04250f" />
       <TopStat value={notDone} label="not done" bg="#EAB308" fg="#231a00" />
+      <TopStat value={openTodos} label="to do" bg="#006FEE" fg="#eaf3ff" />
       <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#f0e430" fg="#1a1a08" />
       <TopStat value={kcalToday} label="kcal today" bg="#f5883f" fg="#1a1206" />
     </div>

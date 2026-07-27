@@ -9,9 +9,11 @@ import { Modal } from "@/components/Modal";
 import { GoalForm, RecurringForm, CategoriesCard, GroupsCard, RecurringManageCard } from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
+import TodoList from "@/components/TodoList";
 import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
 import Charts from "@/components/Charts";
+import CompletionLog from "@/components/CompletionLog";
 
 export default function Home() {
   const tracker = useTracker();
@@ -48,6 +50,7 @@ export default function Home() {
 
                 <section id="recurring" className="scroll-mt-6 space-y-5 lg:col-span-1">
                   <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
+                  <TodoList tracker={tracker} />
                   <WeightTracker tracker={tracker} />
                   <CaloriesTracker tracker={tracker} />
                 </section>
@@ -56,6 +59,10 @@ export default function Home() {
               <section id="charts" className="scroll-mt-6">
                 <h2 className="font-display mb-4 text-2xl font-bold tracking-tight">Progress</h2>
                 <Charts tracker={tracker} />
+              </section>
+
+              <section id="log" className="scroll-mt-6">
+                <CompletionLog tracker={tracker} />
               </section>
 
               <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
