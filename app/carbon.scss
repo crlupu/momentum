@@ -8,6 +8,12 @@
 @use "@carbon/react/scss/themes";
 @use "@carbon/react/scss/theme";
 
+/* Layer order matters here. Tailwind's preflight (@layer base) resets padding
+   and borders on every element; Carbon must sit above it so its components keep
+   their internal spacing, but below Tailwind's utilities so app classes win. */
+@layer theme, base, carbon, components, utilities;
+
+
 /* Carbon is emitted into a cascade layer.
    Carbon ships the Meyer reset — it targets `div`, `h1`–`h6`, `p` and friends
    with `margin: 0; padding: 0; font-size: 100%` — and Carbon's CSS is entirely

@@ -93,6 +93,10 @@
   --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
   --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
   --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
+  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
+  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
+  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
 
   /* ambient wash — what the frosted surfaces refract */
   --wash-1: rgba(15, 98, 254, 0.14);    /* blue 60    */
@@ -324,15 +328,16 @@ body::before {
   font-weight: 600;
 }
 
-/* Positive action: Carbon green */
+/* Positive action: green→teal gradient */
 .btn-success.cds--btn,
 .btn-success {
-  background: #24a148 !important;
-  background-image: none !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
+  background-color: #24a148;
+  background-image: var(--grad-success);
+  color: #ffffff;
+  border-color: transparent;
 }
-.btn-success.cds--btn:hover { background: #198038 !important; }
+.btn-success.cds--btn:hover { filter: brightness(1.12); }
+.btn-success.cds--btn:active { filter: brightness(0.9); }
 
 /* Buttons carry the fill-icon gradients */
 .cds--btn--primary,
@@ -369,8 +374,33 @@ body::before {
   color: var(--foreground);
 }
 
-/* Danger stays flat — a gradient would soften a destructive action */
-.cds--btn--danger { background-image: none; }
+/* Delete: red→deep-red gradient. It joins the gradient system without
+   drifting away from "destructive". */
+.cds--btn--danger {
+  background-color: #da1e28;
+  background-image: var(--grad-danger);
+  color: #ffffff;
+  border-color: transparent;
+}
+.cds--btn--danger:hover { filter: brightness(1.12); }
+.cds--btn--danger:active { filter: brightness(0.9); }
+
+/* Edit and other icon-only outline buttons: frosted square that lights up
+   in accent blue on hover. */
+.cds--btn--tertiary.btn-icon-only,
+.cds--btn--ghost.btn-icon-only {
+  background-color: color-mix(in srgb, var(--foreground) 9%, transparent);
+  background-image: none;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  backdrop-filter: blur(8px);
+}
+.cds--btn--tertiary.btn-icon-only:hover,
+.cds--btn--ghost.btn-icon-only:hover {
+  background-color: color-mix(in srgb, #4589ff 24%, transparent);
+  border-color: #4589ff;
+  color: #ffffff;
+}
 
 /* ------------------------------------------------------------------
    Carbon sizing overrides.
@@ -435,9 +465,16 @@ input[type="date"],
 select,
 textarea {
   block-size: 2.5rem;
+  padding-inline: 0.75rem;
+  padding-block: 0;
   background: var(--field-bg);
   border: 1px solid var(--field-border);
   color: var(--foreground);
+}
+textarea.cds--text-area,
+textarea {
+  block-size: auto;
+  padding-block: 0.5rem;
 }
 .cds--text-input:hover,
 .cds--text-area:hover,
