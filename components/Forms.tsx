@@ -86,13 +86,14 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [freq, setFreq] = useState<Frequency>("daily");
+  const [group, setGroup] = useState("");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
     if (!t || pending) return;
-    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq));
+    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq, group));
     if (ok) onDone();
   };
 
@@ -116,6 +117,33 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
           ))}
         </div>
       </div>
+      <div>
+        <div className="mb-1.5 text-xs text-foreground/50">
+          Group (optional) — doing one task in a group covers the rest
+        </div>
+        <Input
+          aria-label="Group name"
+          placeholder="e.g. Workout"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+        />
+        {s.recurringGroups.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {s.recurringGroups.map((g) => (
+              <Button
+                key={g.id}
+                size="sm"
+                variant="outline"
+                className={group.toLowerCase() === g.name.toLowerCase() ? "pill-selected" : ""}
+                onPress={() => setGroup(group.toLowerCase() === g.name.toLowerCase() ? "" : g.name)}
+              >
+                {g.name}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
         Add recurring task
       </Button>

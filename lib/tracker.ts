@@ -29,12 +29,16 @@ export const FREQ_ORDER: Record<Frequency, number> = {
   daily: 0, weekly: 1, biweekly: 2, monthly: 3,
 };
 
+/** A set of interchangeable recurring tasks: doing one covers the whole set. */
+export type RecurringGroup = { id: string; name: string };
+
 export type RecurringTask = {
   id: string;
   title: string;
   catId: string;
   freq: Frequency;
   lastDone: string | null;
+  groupId?: string;
 };
 
 /** A step inside a goal, with its own optional current/target. */
@@ -57,7 +61,14 @@ export type Goal = {
   subtasks?: Subtask[];
 };
 
-export type Completion = { date: string; catId: string };
+export type Completion = {
+  date: string;
+  catId: string;
+  /** Set when the completion came from a group — one entry per group, not per task. */
+  groupId?: string;
+  /** Which task was actually ticked. */
+  taskId?: string;
+};
 
 export type WeightEntry = { date: string; kg: number };
 
@@ -67,6 +78,7 @@ export type TrackerState = {
   categories: Category[];
   goals: Goal[];
   recurring: RecurringTask[];
+  recurringGroups: RecurringGroup[];
   completions: Completion[];
   weights: WeightEntry[];
   calories: CalorieEntry[];
@@ -91,6 +103,7 @@ const DEFAULT_STATE: TrackerState = {
   categories: DEFAULT_CATEGORIES,
   goals: [],
   recurring: [],
+  recurringGroups: [],
   completions: [],
   weights: [],
   calories: [],
@@ -129,6 +142,25 @@ export function periodKey(freq: Frequency, key: string): string {
 
 export function isRecurringDone(r: RecurringTask, today: string = dateKey()): boolean {
   return !!r.lastDone && periodKey(r.freq, r.lastDone) === periodKey(r.freq, today);
+}
+
+/**
+ * Counting units for stats: an ungrouped task counts once, and a whole group
+ * counts once (doing any member covers the group).
+ */
+export function recurringUnits(
+  recurring: RecurringTask[],
+  today: string = dateKey()
+): { key: string; done: boolean }[] {
+  const seen = new Set<string>();
+  const units: { key: string; done: boolean }[] = [];
+  for (const r of recurring) {
+    const key = r.groupId ?? r.id;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    units.push({ key, done: isRecurringDone(r, today) });
+  }
+  return units;
 }
 
 export function subtaskPct(t: Subtask): number {
@@ -179,7 +211,12 @@ function migrate(raw: unknown): TrackerState {
         catId: r.catId as string,
         freq: (r.freq as Frequency) ?? "daily",
         lastDone: (r.lastDone as string) ?? null,
+        groupId: (r.groupId as string) ?? undefined,
       }))
+    : [];
+
+  const recurringGroups: RecurringGroup[] = Array.isArray(s.recurringGroups)
+    ? (s.recurringGroups as RecurringGroup[])
     : [];
 
   // Goals come from `goals`, or the older `board`/`tasks` shapes.
@@ -220,7 +257,7 @@ function migrate(raw: unknown): TrackerState {
     ? (s.calories as CalorieEntry[])
     : [];
 
-  return { categories, goals, recurring, completions, weights, calories };
+  return { categories, goals, recurring, recurringGroups, completions, weights, calories };
 }
 
 /** Strips `undefined` values — Firestore rejects them outright. */
@@ -598,22 +635,47 @@ export function useTracker() {
       })),
 
     // ---- recurring ----
-    addRecurring: (title: string, catId: string, freq: Frequency) =>
-      commit((s) => ({
-        ...s,
-        recurring: [...s.recurring, { id: uid(), title, catId, freq, lastDone: null }],
-      })),
+    addRecurring: (title: string, catId: string, freq: Frequency, groupName?: string) =>
+      commit((s) => {
+        const name = (groupName ?? "").trim();
+        let groups = s.recurringGroups;
+        let groupId: string | undefined;
+        if (name) {
+          const existing = groups.find((g) => g.name.toLowerCase() === name.toLowerCase());
+          if (existing) {
+            groupId = existing.id;
+          } else {
+            groupId = uid();
+            groups = [...groups, { id: groupId, name }];
+          }
+        }
+        return {
+          ...s,
+          recurringGroups: groups,
+          recurring: [...s.recurring, { id: uid(), title, catId, freq, lastDone: null, groupId }],
+        };
+      }),
 
     toggleRecurring: (id: string) =>
       commit((s) => {
         const today = dateKey();
         const r = s.recurring.find((x) => x.id === id);
         if (!r) return s;
+
+        // Doing any member of a group covers every member of that group.
+        const members = r.groupId ? s.recurring.filter((x) => x.groupId === r.groupId) : [r];
+        const memberIds = new Set(members.map((m) => m.id));
+
         if (isRecurringDone(r, today)) {
-          const dd = r.lastDone;
+          // Un-tick: clear the whole group and drop its single completion.
+          const doneDate = r.lastDone;
           let removed = false;
           const completions = s.completions.filter((c) => {
-            if (!removed && c.date === dd && c.catId === r.catId) {
+            if (removed || c.date !== doneDate) return true;
+            const isThisUnit = r.groupId
+              ? c.groupId === r.groupId
+              : !c.groupId && (c.taskId === r.id || (c.taskId === undefined && c.catId === r.catId));
+            if (isThisUnit) {
               removed = true;
               return false;
             }
@@ -621,19 +683,36 @@ export function useTracker() {
           });
           return {
             ...s,
-            recurring: s.recurring.map((x) => (x.id === id ? { ...x, lastDone: null } : x)),
+            recurring: s.recurring.map((x) =>
+              memberIds.has(x.id) ? { ...x, lastDone: null } : x
+            ),
             completions,
           };
         }
+
+        // Tick: mark every member done, log ONE completion for the unit.
         return {
           ...s,
-          recurring: s.recurring.map((x) => (x.id === id ? { ...x, lastDone: today } : x)),
-          completions: [...s.completions, { date: today, catId: r.catId }],
+          recurring: s.recurring.map((x) =>
+            memberIds.has(x.id) ? { ...x, lastDone: today } : x
+          ),
+          completions: [
+            ...s.completions,
+            { date: today, catId: r.catId, groupId: r.groupId, taskId: r.id },
+          ],
         };
       }),
 
     deleteRecurring: (id: string) =>
-      commit((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
+      commit((s) => {
+        const recurring = s.recurring.filter((r) => r.id !== id);
+        const used = new Set(recurring.map((r) => r.groupId).filter(Boolean) as string[]);
+        return {
+          ...s,
+          recurring,
+          recurringGroups: s.recurringGroups.filter((g) => used.has(g.id)),
+        };
+      }),
 
     // ---- categories ----
     addCategory: (name: string) =>

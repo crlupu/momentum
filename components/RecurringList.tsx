@@ -3,7 +3,7 @@
 import { Button, Card } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
 import { Check, Plus, X } from "lucide-react";
-import { Tracker, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, streak } from "@/lib/tracker";
+import { Tracker, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, recurringUnits, streak } from "@/lib/tracker";
 
 function hexToRgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
@@ -48,13 +48,18 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   const s = tracker.state!;
   const today = dateKey();
 
-  const doneCount = s.recurring.filter((r) => isRecurringDone(r, today)).length;
-  const notDone = s.recurring.length - doneCount;
-  const total = s.recurring.length;
+  const units = recurringUnits(s.recurring, today);
+  const doneCount = units.filter((u) => u.done).length;
+  const notDone = units.length - doneCount;
+  const total = units.length;
   const strk = streak(s.completions);
 
+  const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
   const recurring = [...s.recurring].sort(
-    (a, b) => FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] || a.title.localeCompare(b.title)
+    (a, b) =>
+      FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] ||
+      groupName(a.groupId).localeCompare(groupName(b.groupId)) ||
+      a.title.localeCompare(b.title)
   );
 
   return (
@@ -89,7 +94,14 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                 const done = isRecurringDone(r, today);
                 return (
                   <li key={r.id} className="flex items-center gap-2 border-b border-foreground/10 px-1 py-3 last:border-b-0">
-                    <span className={"flex-1 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>{r.title}</span>
+                    <span className={"flex-1 min-w-0 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>
+                      <span className="truncate">{r.title}</span>
+                      {r.groupId && (
+                        <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
+                          {groupName(r.groupId)}
+                        </span>
+                      )}
+                    </span>
                     <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                     <span className="text-[11px] text-foreground/60">{FREQ_LABEL[r.freq]}</span>
                     <ActionButton size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onAction={() => tracker.deleteRecurring(r.id)}>
