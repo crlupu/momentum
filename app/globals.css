@@ -87,10 +87,19 @@
   --scale-5: #002d9c;
 
 
-  /* Carbon light is austere: no wash */
-  --wash-1: rgba(0, 0, 0, 0);
-  --wash-2: rgba(0, 0, 0, 0);
-  --wash-3: rgba(0, 0, 0, 0);
+  /* ambient wash — what the frosted surfaces refract */
+  --wash-1: rgba(15, 98, 254, 0.14);    /* blue 60    */
+  --wash-2: rgba(138, 63, 252, 0.12);   /* purple 60  */
+  --wash-3: rgba(17, 146, 232, 0.10);   /* cyan 60    */
+
+  /* ---- glass layer ---- */
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-hairline: rgba(22, 22, 22, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 4px 24px rgba(22, 22, 22, 0.1), 0 1px 2px rgba(22, 22, 22, 0.06);
+  --glass-blur: 18px;
 }
 
 /* Dark (default): stock Carbon g100 */
@@ -161,9 +170,18 @@
 
 
   /* pure black canvas — colour lives in the shapes, not a glow */
-  --wash-1: rgba(0, 0, 0, 0);
-  --wash-2: rgba(0, 0, 0, 0);
-  --wash-3: rgba(0, 0, 0, 0);
+  --wash-1: rgba(15, 98, 254, 0.22);
+  --wash-2: rgba(138, 63, 252, 0.18);
+  --wash-3: rgba(17, 146, 232, 0.14);
+
+  /* ---- glass layer ---- */
+  --glass-bg: rgba(38, 38, 38, 0.62);
+  --glass-bg-strong: rgba(38, 38, 38, 0.86);
+  --glass-border: rgba(244, 244, 244, 0.14);
+  --glass-hairline: rgba(244, 244, 244, 0.1);
+  --glass-highlight: rgba(244, 244, 244, 0.12);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --glass-blur: 18px;
 }
 
 body {
@@ -199,45 +217,81 @@ body::before {
   font-feature-settings: "tnum";
 }
 
-/* Carbon tiles: flat, square, hairline-bordered */
+/* Carbon tiles, rendered as frosted glass over the ambient wash.
+   Square geometry is kept — this is Carbon with a glass surface, not a
+   different design language. */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 0;
-  box-shadow: var(--surface-shadow);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
 }
 
-.card.card--default { background: var(--surface); }
-.card.card--secondary { background: var(--surface-secondary); }
-.card.card--tertiary { background: var(--surface-tertiary); }
+/* Specular top edge — what reads as "glass" rather than merely translucent */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding-top: 1px;
+  background: linear-gradient(to bottom, var(--glass-highlight), transparent 40%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.card.card--default { background: var(--glass-bg); }
+.card.card--secondary,
+.card.card--tertiary { background: var(--glass-bg-strong); }
 
 .card--transparent,
 .card.card--transparent {
   background: transparent;
   border: 0;
   box-shadow: none;
-}
-
-/* Overlay surfaces (modal, drawer): solid tiles above the blanket */
-.glass-overlay {
-  background: var(--overlay);
-  border: 1px solid var(--border);
-  box-shadow: var(--overlay-shadow);
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+}
+.card--transparent::before,
+.card.card--transparent::before { display: none; }
+
+/* Overlay surfaces (modal, drawer): heavier frost above the blanket */
+.glass-overlay {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--overlay-shadow), var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(170%);
 }
 
-/* Dim behind overlays: flat, no blur */
+/* Scrim behind overlays: dimmed and lightly blurred */
 .glass-blanket {
   background: var(--blanket);
+  backdrop-filter: blur(6px);
 }
 
-/* App bar: solid strip with a hairline */
+/* Frosted app bar */
 .glass-bar {
-  background: var(--background);
-  border-bottom: 1px solid var(--border);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-hairline);
+  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+}
+
+/* Where backdrop-filter is unsupported, fall back to opaque Carbon surfaces
+   so nothing becomes unreadable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card,
+  .card.card--default,
+  .glass-bar { background: var(--surface); border-color: var(--border); }
+  .card.card--secondary { background: var(--surface-secondary); }
+  .card.card--tertiary { background: var(--surface-tertiary); }
+  .glass-overlay { background: var(--overlay); }
+  .card::before { display: none; }
 }
 
 /* Controls: Carbon's square buttons */
