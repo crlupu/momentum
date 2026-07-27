@@ -502,7 +502,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       <div className="mb-4 flex items-end justify-between">
         <div>
           <h2 className="font-display flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-            <span className="sec-dot" style={{ background: "var(--sec-goals)" }} aria-hidden />
+            <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
             Goals
           </h2>
           <p className="mt-0.5 text-sm text-foreground/60">

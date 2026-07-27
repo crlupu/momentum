@@ -56,7 +56,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-calories)" }} aria-hidden />
+          <span className="sec-dot" style={{ background: "var(--grad-pink)" }} aria-hidden />
           Calories
         </h2>
         <span className="font-mono-n text-sm text-foreground/60">{todayTotal} kcal today</span>
@@ -104,7 +104,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[22px] rounded-t"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
-                    background: counts[i] ? ACCENT : TRACK,
+                    background: counts[i] ? "var(--grad-teal-up)" : TRACK,
                   }}
                 />
                 <span className="text-[9px]" style={{ color: LABEL }}>{d.getDate()}</span>

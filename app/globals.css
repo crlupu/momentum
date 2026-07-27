@@ -77,31 +77,38 @@
   --scale-4: #0f62fe;
   --scale-5: #002d9c;
 
+
+  /* fill-icon gradient families */
+  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
+  --grad-pink: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
+  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
+  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+
   /* Carbon light is austere: no wash */
   --wash-1: rgba(0, 0, 0, 0);
   --wash-2: rgba(0, 0, 0, 0);
   --wash-3: rgba(0, 0, 0, 0);
 }
 
-/* Dark: Carbon g100, the document's canvas */
+/* Dark (default): the photo's pure-black canvas */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #161616;   /* gray 100 */
+  --background: #000000;
   --foreground: #f4f4f4;
 
-  --surface: #262626;      /* layer 01 */
+  --surface: #121212;
   --surface-foreground: #f4f4f4;
-  --surface-secondary: #333333;
-  --surface-tertiary: #393939;
+  --surface-secondary: #1c1c1c;
+  --surface-tertiary: #262626;
 
-  --overlay: #262626;
+  --overlay: #121212;
   --overlay-foreground: #f4f4f4;
 
   --muted: #8d8d8d;        /* gray 50 */
 
-  --border: #393939;
-  --separator: #2e2e2e;
+  --border: #262626;
+  --separator: #1c1c1c;
 
   --accent: #0f62fe;
   --accent-foreground: #ffffff;
@@ -126,7 +133,7 @@
   --default-foreground: #f4f4f4;
   --pill-fg: #161616;
 
-  --blanket: rgba(22, 22, 22, 0.7);
+  --blanket: rgba(0, 0, 0, 0.72);
   --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   --sec-goals: #4589ff;
@@ -144,10 +151,17 @@
   --scale-4: #0f62fe;
   --scale-5: #78a9ff;
 
-  /* the artwork's gradient panels, as a faint glow on black */
-  --wash-1: rgba(15, 98, 254, 0.10);
-  --wash-2: rgba(138, 63, 252, 0.08);
-  --wash-3: rgba(238, 83, 150, 0.05);
+
+  /* fill-icon gradient families */
+  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
+  --grad-pink: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
+  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
+  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+
+  /* pure black canvas — colour lives in the shapes, not a glow */
+  --wash-1: rgba(0, 0, 0, 0);
+  --wash-2: rgba(0, 0, 0, 0);
+  --wash-3: rgba(0, 0, 0, 0);
 }
 
 body {
@@ -249,21 +263,28 @@ body::before {
   border-color: transparent !important;
 }
 
-/* Primary action: IBM Blue with Carbon's own hover/active steps */
-.btn-invert {
+/* Primary action: the blue→purple fill-icon gradient */
+.btn-invert,
+.button--primary {
   --button-bg: var(--accent);
   --button-bg-hover: #0353e9;
   --button-bg-pressed: #002d9c;
   --button-fg: var(--accent-foreground);
   border-color: transparent !important;
+  background-image: var(--grad-primary);
 }
+.btn-invert:hover,
+.button--primary:hover { filter: brightness(1.1); }
+.btn-invert:active,
+.button--primary:active { filter: brightness(0.92); }
+.button--danger { background-image: none; }
 
-/* Section marker chip */
+/* Section marker: a gradient circle, echoing the fill icons */
 .sec-dot {
   display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 0;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
   flex: none;
 }
 

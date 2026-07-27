@@ -50,6 +50,13 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Weight over the last 7 days">
+      <defs>
+        <linearGradient id="weight-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#4589ff" />
+          <stop offset="0.55" stopColor="#0f62fe" />
+          <stop offset="1" stopColor="#8a3ffc" />
+        </linearGradient>
+      </defs>
       {/* grid + y labels (labels only when there's data to scale to) */}
       {gridYs.map((yy, idx) => (
         <g key={idx}>
@@ -64,7 +71,7 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
 
       {/* line through logged days */}
       {present.length > 1 && (
-        <polyline points={pts} fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={pts} fill="none" stroke="url(#weight-grad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       )}
       {present.map((p) => (
         <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill={ACCENT}>
@@ -101,7 +108,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-weight)" }} aria-hidden />
+          <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
           Weight
         </h2>
         {latest && (
