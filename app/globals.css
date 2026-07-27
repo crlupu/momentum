@@ -619,3 +619,35 @@ textarea,
 button {
   font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+/* Separates the right-hand column from the goals board.
+   Stacked layouts get a horizontal rule above it; from lg up, where the two
+   sit side by side, it becomes a vertical rule that fades out at both ends. */
+.side-panel {
+  position: relative;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--separator);
+}
+
+@media (min-width: 1024px) {
+  .side-panel {
+    padding-top: 0;
+    padding-left: 2rem;
+    border-top: 0;
+  }
+  .side-panel::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--border) 8%,
+      var(--border) 92%,
+      transparent
+    );
+    pointer-events: none;
+  }
+}

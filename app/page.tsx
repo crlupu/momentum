@@ -54,12 +54,15 @@ export default function Home() {
                   {tracker.syncError} Your data is still saved on this device.
                 </div>
               )}
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-8">
                 <section id="goals" className="scroll-mt-6 lg:col-span-2">
                   <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
                 </section>
 
-                <section id="recurring" className="scroll-mt-6 space-y-5 lg:col-span-1">
+                <section
+                  id="recurring"
+                  className="side-panel scroll-mt-6 space-y-5 lg:col-span-1"
+                >
                   <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
                   <TodoList tracker={tracker} />
                   <WeightTracker tracker={tracker} />
