@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
-/** Deep forest — matches the weight stat in the sidebar. */
-const ACCENT = "#044b39";
+/** Section accent; follows the theme so it stays visible on dark. */
+const ACCENT = "var(--sec-weight)";
 const GRID = "var(--border)";
 const LABEL = "var(--muted)";
 
@@ -100,7 +100,10 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display text-lg font-bold tracking-tight">Weight</h2>
+        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
+          <span className="sec-dot" style={{ background: "var(--sec-weight)" }} aria-hidden />
+          Weight
+        </h2>
         {latest && (
           <span className="font-mono-n text-sm text-foreground/60">
             {latest.kg} kg · {latest.date.slice(5)}

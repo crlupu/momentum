@@ -48,7 +48,10 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <h2 className="font-display mb-4 text-lg font-bold tracking-tight">To do</h2>
+      <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-bold tracking-tight">
+        <span className="sec-dot" style={{ background: "var(--sec-todos)" }} aria-hidden />
+        To do
+      </h2>
 
       <Card>
         <Card.Content className="px-3 py-3 sm:px-4">

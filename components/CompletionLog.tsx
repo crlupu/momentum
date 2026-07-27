@@ -94,7 +94,10 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Log</h2>
+      <h2 className="font-display mb-4 flex items-center gap-2.5 text-xl font-bold tracking-tight">
+        <span className="sec-dot" style={{ background: "var(--sec-log)" }} aria-hidden />
+        Log
+      </h2>
       <Card>
         <Card.Content className="p-4 sm:p-5">
           {entries.length === 0 ? (

@@ -9,11 +9,11 @@ import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tr
 import { readableText } from "@/lib/color";
 
 const NAV = [
-  { id: "goals", label: "Goals", icon: Target },
-  { id: "recurring", label: "Recurring", icon: Repeat },
-  { id: "charts", label: "Progress", icon: BarChart3 },
-  { id: "log", label: "Log", icon: ScrollText },
-  { id: "config", label: "Configuration", icon: Settings },
+  { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
+  { id: "recurring", label: "Recurring", icon: Repeat, color: "var(--sec-recurring)" },
+  { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
+  { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
+  { id: "config", label: "Configuration", icon: Settings, color: "var(--sec-config)" },
 ];
 
 /** One top-bar stat: the figure, then a filled colour-coded label beside it. */
@@ -140,7 +140,7 @@ export function Sidebar({
                     onClick={() => go(n.id)}
                     className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[15px] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground"
                   >
-                    <n.icon className="h-4 w-4" />
+                    <n.icon className="h-4 w-4" style={{ color: n.color }} />
                     {n.label}
                   </button>
                 ))}

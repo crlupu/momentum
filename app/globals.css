@@ -40,8 +40,15 @@
 
   --success: #1ea97b;
   --warning: #72c613;
-  /* the palette has no red; the darkest olive carries destructive actions */
-  --danger: #264b04;
+
+  /* Brand red, built on the palette's own saturation/lightness curve
+     (same family as #72C613 and #2180E6) so it sits with the greens. */
+  --danger: #cc2819;
+  --danger-hover: #a32014;
+  --danger-foreground: #ffffff;
+  --danger-soft: #f7c4bf;
+  --danger-soft-hover: #f2ada6;
+  --danger-soft-foreground: #490e09;
 
   --selected-bg: #c8efc1;
   --selected-fg: #044b39;
@@ -64,6 +71,23 @@
   --glass-highlight: rgba(255, 255, 255, 0.9);
   --glass-shadow: 0 4px 24px rgba(4, 75, 57, 0.10), 0 1px 2px rgba(4, 75, 57, 0.06);
   --glass-blur: 18px;
+
+  /* per-section accents, so each area of the app reads as its own colour */
+  --sec-goals: #264b04;
+  --sec-recurring: #1ea97b;
+  --sec-todos: #2180e6;
+  --sec-weight: #044b39;
+  --sec-calories: #72c613;
+  --sec-charts: #1ea97b;
+  --sec-log: #2180e6;
+  --sec-config: #053438;
+
+  /* low-to-high intensity ramp for charts */
+  --scale-1: #c8efc1;
+  --scale-2: #cbf39d;
+  --scale-3: #72c613;
+  --scale-4: #1ea97b;
+  --scale-5: #044b39;
 
   /* ambient wash: lime, pale lime and green, straight from the palette */
   --wash-1: rgba(114, 198, 19, 0.30);    /* #72C613 */
@@ -96,8 +120,13 @@
 
   --success: #1ea97b;
   --warning: #cbf39d;
-  /* no red in the palette; pale lime is the most legible destructive tone here */
-  --danger: #cbf39d;
+
+  --danger: #e5392b;
+  --danger-hover: #cc2819;
+  --danger-foreground: #ffffff;
+  --danger-soft: rgba(229, 57, 43, 0.24);
+  --danger-soft-hover: rgba(229, 57, 43, 0.34);
+  --danger-soft-foreground: #f7c4bf;
 
   --selected-bg: rgba(200, 239, 193, 0.16);
   --selected-fg: #cbf39d;
@@ -120,6 +149,23 @@
   --glass-highlight: rgba(200, 239, 193, 0.14);
   --glass-shadow: 0 4px 24px rgba(5, 52, 56, 0.45), 0 1px 2px rgba(5, 52, 56, 0.4);
   --glass-blur: 18px;
+
+  /* section accents lighten on dark so they stay visible */
+  --sec-goals: #cbf39d;
+  --sec-recurring: #1ea97b;
+  --sec-todos: #2180e6;
+  --sec-weight: #c8efc1;
+  --sec-calories: #72c613;
+  --sec-charts: #1ea97b;
+  --sec-log: #2180e6;
+  --sec-config: #bdf0ec;
+
+  /* ramp runs the other way on a dark canvas */
+  --scale-1: #044b39;
+  --scale-2: #1ea97b;
+  --scale-3: #72c613;
+  --scale-4: #cbf39d;
+  --scale-5: #c8efc1;
 
   --wash-1: rgba(114, 198, 19, 0.18);
   --wash-2: rgba(203, 243, 157, 0.10);
@@ -351,3 +397,12 @@ body::before {
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Section marker: a small colour chip that identifies each area of the app */
+.sec-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
+  flex: none;
+}

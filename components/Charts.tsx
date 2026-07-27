@@ -78,15 +78,33 @@ function Heatmap({
   );
 }
 
-function Stat({ value, label }: { value: string | number; label: string }) {
+function Stat({
+  value,
+  label,
+  color,
+}: {
+  value: string | number;
+  label: string;
+  color: string;
+}) {
   return (
-    <div className="rounded-lg bg-foreground/[0.04] px-3 py-2.5">
-      <div className="font-mono-n text-2xl font-semibold" style={{ color: "#1ea97b" }}>
+    <div
+      className="rounded-lg px-3 py-2.5"
+      style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
+    >
+      <div className="font-mono-n text-2xl font-semibold" style={{ color }}>
         {value}
       </div>
       <div className="text-xs text-foreground/60">{label}</div>
     </div>
   );
+}
+
+/** Busier days climb the palette ramp instead of every bar being one green. */
+function rampStep(n: number, max: number): string {
+  if (n <= 0) return "var(--default)";
+  const step = Math.min(5, Math.max(1, Math.ceil((n / max) * 5)));
+  return `var(--scale-${step})`;
 }
 
 export default function Charts({ tracker }: { tracker: Tracker }) {
@@ -130,9 +148,13 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
             className="grid gap-2.5"
             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
           >
-            <Stat value={mTotal} label="completions" />
-            <Stat value={best ? `${best[1]} (${best[0].slice(8)})` : "–"} label="best day" />
-            <Stat value={avg} label="avg / active day" />
+            <Stat value={mTotal} label="completions" color="#1ea97b" />
+            <Stat
+              value={best ? `${best[1]} (${best[0].slice(8)})` : "–"}
+              label="best day"
+              color="#72c613"
+            />
+            <Stat value={avg} label="avg / active day" color="#2180e6" />
           </div>
 
           <div className="mt-4 border-t border-foreground/10 pt-3 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
@@ -141,14 +163,17 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
           <div className="flex h-[150px] items-end gap-1.5 pt-2">
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                <span className="font-mono-n text-[11px] font-semibold" style={{ color: "#1ea97b" }}>
+                <span
+                  className="font-mono-n text-[11px] font-semibold"
+                  style={{ color: rampStep(counts[i], max) }}
+                >
                   {counts[i] || ""}
                 </span>
                 <div
                   className="w-full max-w-[34px] rounded-t-md"
                   style={{
                     height: Math.max(3, (counts[i] / max) * 110),
-                    background: counts[i] ? "#1ea97b" : "var(--default)",
+                    background: rampStep(counts[i], max),
                   }}
                 />
                 <span className="text-[10px] text-foreground/50 whitespace-nowrap">

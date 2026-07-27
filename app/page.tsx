@@ -68,7 +68,10 @@ export default function Home() {
               </div>
 
               <section id="charts" className="scroll-mt-6">
-                <h2 className="font-display mb-4 text-2xl font-bold tracking-tight">Progress</h2>
+                <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
+                  <span className="sec-dot" style={{ background: "var(--sec-charts)" }} aria-hidden />
+                  Progress
+                </h2>
                 <Charts tracker={tracker} />
               </section>
 
@@ -77,7 +80,10 @@ export default function Home() {
               </section>
 
               <section id="config">
-                <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Configuration</h2>
+                <h2 className="font-display mb-4 flex items-center gap-2.5 text-xl font-bold tracking-tight">
+                  <span className="sec-dot" style={{ background: "var(--sec-config)" }} aria-hidden />
+                  Configuration
+                </h2>
                 {/* Two explicit columns: each card sits straight under the one
                     above it, without CSS multi-column (which breaks scrollable
                     lists in Safari). */}

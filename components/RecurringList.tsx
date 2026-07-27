@@ -39,7 +39,10 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   return (
     <div>
       <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display text-lg font-bold tracking-tight">Recurring</h2>
+        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
+          <span className="sec-dot" style={{ background: "var(--sec-recurring)" }} aria-hidden />
+          Recurring
+        </h2>
         <Button variant="primary" onPress={onAdd}>
           <Plus className="h-4 w-4" /> New
         </Button>
