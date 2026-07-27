@@ -33,13 +33,17 @@ function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string
       aria-label={done ? "Mark not done" : "Mark done"}
       disabled={pending}
       onClick={() => void run(() => tracker.toggleRecurring(id))}
-      className={
-        "relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 transition-colors " +
-        (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 bg-transparent") +
-        (pending ? " is-pending is-pending-box" : "")
-      }
+      className="-m-2 flex shrink-0 items-center justify-center p-2"
     >
-      {done && <Check className="h-4 w-4" strokeWidth={3} />}
+      <span
+        className={
+          "flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 transition-colors " +
+          (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent") +
+          (pending ? " is-pending" : "")
+        }
+      >
+        {done && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
+      </span>
     </button>
   );
 }
@@ -102,13 +106,13 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                         </span>
                       )}
                     </span>
-                    <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
+                    <span className="flex w-24 shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
                       <span
-                        className="inline-block h-2 w-2 rounded-full"
+                        className="inline-block h-2 w-2 shrink-0 rounded-full"
                         style={{ background: c.color }}
                         aria-hidden
                       />
-                      {c.name}
+                      <span className="truncate">{c.name}</span>
                     </span>
                     <RecurringCheckbox tracker={tracker} id={r.id} done={done} />
                   </li>
