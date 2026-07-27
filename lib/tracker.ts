@@ -98,8 +98,8 @@ export type TrackerState = {
 };
 
 export const CAT_COLORS = [
-  "#1ea97b", "#72c613", "#2180e6", "#044b39",
-  "#264b04", "#053438", "#c8efc1", "#bdf0ec",
+  "#e0761b", "#1e3a1e", "#a6a9be", "#b8c2c2",
+  "#0e0e0e", "#b25410", "#7fa97f", "#4a4e66",
 ];
 
 /** Picks a colour no existing category is already using. */
@@ -115,27 +115,33 @@ export function nextCategoryColor(existing: { color: string }[]): string {
 const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c1", name: "Work", color: "#2180e6" },
-  { id: "c2", name: "Pressio", color: "#1ea97b" },
-  { id: "c3", name: "Learning", color: "#264b04" },
-  { id: "c4", name: "Gym", color: "#72c613" },
-  { id: "c5", name: "Personal", color: "#c8efc1" },
+  { id: "c1", name: "Work", color: "#a6a9be" },
+  { id: "c2", name: "Pressio", color: "#1e3a1e" },
+  { id: "c3", name: "Learning", color: "#0e0e0e" },
+  { id: "c4", name: "Gym", color: "#e0761b" },
+  { id: "c5", name: "Personal", color: "#b8c2c2" },
 ];
 
-/** Colours from earlier themes → their brand-palette replacements. */
+/** Colours from every earlier theme → their Neo Retro replacements. */
 const LEGACY_CATEGORY_COLORS: Record<string, string> = {
   // original HeroUI defaults
-  "#006fee": "#2180e6",
-  "#17c964": "#1ea97b",
-  "#7828c8": "#264b04",
-  "#f31260": "#72c613",
-  "#f5a524": "#c8efc1",
+  "#006fee": "#a6a9be",
+  "#17c964": "#1e3a1e",
+  "#7828c8": "#0e0e0e",
+  "#f31260": "#e0761b",
+  "#f5a524": "#b8c2c2",
   // interim Atlassian defaults
-  "#357de8": "#2180e6",
-  "#22a06b": "#1ea97b",
-  "#af59e1": "#264b04",
-  "#ae2e24": "#72c613",
-  "#c75300": "#c8efc1",
+  "#357de8": "#a6a9be",
+  "#22a06b": "#1e3a1e",
+  "#af59e1": "#0e0e0e",
+  "#ae2e24": "#e0761b",
+  "#c75300": "#b8c2c2",
+  // interim green-brand defaults
+  "#2180e6": "#a6a9be",
+  "#1ea97b": "#1e3a1e",
+  "#264b04": "#0e0e0e",
+  "#72c613": "#e0761b",
+  "#c8efc1": "#b8c2c2",
 };
 
 const DEFAULT_STATE: TrackerState = {
@@ -611,7 +617,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#053438" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#4a4e66" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),

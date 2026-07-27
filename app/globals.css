@@ -8,180 +8,157 @@
 }
 
 /* ============================================================
-   Augment green brand, with a glass surface layer
-   Deep forest ink and CTAs, lime and mint accents; panels are
-   frosted surfaces over a lime-to-yellow ambient wash.
+   Neo Retro modular system
+   Black and cream, burnt orange accent, deep green, muted
+   metallics · flat modular tiles · Archivo Black display type
    ============================================================ */
 
-/* Light (default) */
+/* Light (default): cream paper */
 :root,
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #044b39;
+  --background: #f0efea;
+  --foreground: #0e0e0e;
 
   --surface: #ffffff;
-  --surface-foreground: #044b39;
-  --surface-secondary: #c8efc1;
-  --surface-tertiary: #bdf0ec;
+  --surface-foreground: #0e0e0e;
+  --surface-secondary: #e8e6de;
+  --surface-tertiary: #dfddd3;
 
   --overlay: #ffffff;
-  --overlay-foreground: #044b39;
+  --overlay-foreground: #0e0e0e;
 
-  /* tints are alphas of palette swatches, never new hues */
-  --muted: rgba(4, 75, 57, 0.66);
+  --muted: rgba(14, 14, 14, 0.62);
 
-  --border: #c8efc1;
-  --separator: rgba(200, 239, 193, 0.7);
+  --border: rgba(14, 14, 14, 0.14);
+  --separator: rgba(14, 14, 14, 0.09);
 
-  --accent: #044b39;
-  --accent-foreground: #ffffff;
+  /* burnt orange with black ink — the poster treatment */
+  --accent: #e0761b;
+  --accent-foreground: #0e0e0e;
 
-  --success: #1ea97b;
-  --warning: #72c613;
+  --success: #1e3a1e;
+  --warning: #e0761b;
 
-  /* Brand red, built on the palette's own saturation/lightness curve
-     (same family as #72C613 and #2180E6) so it sits with the greens. */
-  --danger: #cc2819;
-  --danger-hover: #a32014;
+  /* retro red-orange for destructive actions */
+  --danger: #c6301c;
+  --danger-hover: #9e2616;
   --danger-foreground: #ffffff;
-  --danger-soft: #f7c4bf;
-  --danger-soft-hover: #f2ada6;
-  --danger-soft-foreground: #490e09;
+  --danger-soft: #f3c7bc;
+  --danger-soft-hover: #edb2a3;
+  --danger-soft-foreground: #55150b;
 
-  --selected-bg: #c8efc1;
-  --selected-fg: #044b39;
+  --selected-bg: #0e0e0e;
+  --selected-fg: #f0efea;
 
-  --radius: 0.5rem;
-  --surface-shadow: 0 1px 1px rgba(4, 75, 57, 0.18), 0 0 1px rgba(4, 75, 57, 0.24);
+  --radius: 0.875rem;
+  --surface-shadow: 0 1px 0 rgba(14, 14, 14, 0.06);
 
-  --default: rgba(4, 75, 57, 0.08);
-  --default-foreground: #044b39;
-  --pill-fg: #ffffff;
+  --default: rgba(14, 14, 14, 0.07);
+  --default-foreground: #0e0e0e;
+  --pill-fg: #f0efea;
 
-  --blanket: rgba(5, 52, 56, 0.55);
-  --overlay-shadow: 0 8px 12px rgba(4, 75, 57, 0.14), 0 0 1px rgba(4, 75, 57, 0.28);
+  --blanket: rgba(14, 14, 14, 0.6);
+  --overlay-shadow: 0 16px 40px rgba(14, 14, 14, 0.22);
 
-  /* ---- glass layer ---- */
-  --glass-bg: rgba(255, 255, 255, 0.66);
-  --glass-bg-strong: rgba(255, 255, 255, 0.84);
-  --glass-border: rgba(255, 255, 255, 0.72);
-  --glass-hairline: rgba(4, 75, 57, 0.08);
-  --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 4px 24px rgba(4, 75, 57, 0.10), 0 1px 2px rgba(4, 75, 57, 0.06);
-  --glass-blur: 18px;
+  /* per-section accents */
+  --sec-goals: #e0761b;
+  --sec-recurring: #1e3a1e;
+  --sec-todos: #4a4e66;   /* steel, deepened for cream */
+  --sec-weight: #5c6a6a;  /* silver, deepened for cream */
+  --sec-calories: #b25410;
+  --sec-charts: #1e3a1e;
+  --sec-log: #4a4e66;
+  --sec-config: #0e0e0e;
 
-  /* per-section accents, so each area of the app reads as its own colour */
-  --sec-goals: #264b04;
-  --sec-recurring: #1ea97b;
-  --sec-todos: #2180e6;
-  --sec-weight: #044b39;
-  --sec-calories: #72c613;
-  --sec-charts: #1ea97b;
-  --sec-log: #2180e6;
-  --sec-config: #053438;
+  /* intensity ramp: cream → orange → black */
+  --scale-1: #e4e0d3;
+  --scale-2: #efc79e;
+  --scale-3: #e0761b;
+  --scale-4: #8a4a12;
+  --scale-5: #0e0e0e;
 
-  /* low-to-high intensity ramp for charts */
-  --scale-1: #c8efc1;
-  --scale-2: #cbf39d;
-  --scale-3: #72c613;
-  --scale-4: #1ea97b;
-  --scale-5: #044b39;
-
-  /* ambient wash: lime, pale lime and green, straight from the palette */
-  --wash-1: rgba(114, 198, 19, 0.30);    /* #72C613 */
-  --wash-2: rgba(203, 243, 157, 0.55);   /* #CBF39D */
-  --wash-3: rgba(30, 169, 123, 0.20);    /* #1EA97B */
+  /* the hero gradient, as a faint canvas wash */
+  --wash-1: rgba(30, 58, 30, 0.12);
+  --wash-2: rgba(224, 118, 27, 0.12);
+  --wash-3: rgba(184, 194, 194, 0.18);
 }
 
-/* Dark */
+/* Dark: the black canvas from the artwork */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #053438;
-  --foreground: #c8efc1;
+  --background: #0a0a0a;
+  --foreground: #f0efea;
 
-  --surface: #044b39;
-  --surface-foreground: #c8efc1;
-  --surface-secondary: rgba(30, 169, 123, 0.16);
-  --surface-tertiary: rgba(30, 169, 123, 0.24);
+  --surface: #161616;
+  --surface-foreground: #f0efea;
+  --surface-secondary: #1f1f1f;
+  --surface-tertiary: #292929;
 
-  --overlay: #044b39;
-  --overlay-foreground: #c8efc1;
+  --overlay: #161616;
+  --overlay-foreground: #f0efea;
 
-  --muted: rgba(200, 239, 193, 0.7);
+  --muted: rgba(240, 239, 234, 0.6);
 
-  --border: rgba(200, 239, 193, 0.18);
-  --separator: rgba(200, 239, 193, 0.12);
+  --border: rgba(240, 239, 234, 0.14);
+  --separator: rgba(240, 239, 234, 0.09);
 
-  --accent: #72c613;
-  --accent-foreground: #053438;
+  --accent: #e0761b;
+  --accent-foreground: #0e0e0e;
 
-  --success: #1ea97b;
-  --warning: #cbf39d;
+  --success: #7fa97f;
+  --warning: #f0a05c;
 
-  --danger: #e5392b;
-  --danger-hover: #cc2819;
+  --danger: #e5472b;
+  --danger-hover: #c6301c;
   --danger-foreground: #ffffff;
-  --danger-soft: rgba(229, 57, 43, 0.24);
-  --danger-soft-hover: rgba(229, 57, 43, 0.34);
-  --danger-soft-foreground: #f7c4bf;
+  --danger-soft: rgba(229, 71, 43, 0.22);
+  --danger-soft-hover: rgba(229, 71, 43, 0.32);
+  --danger-soft-foreground: #f3c7bc;
 
-  --selected-bg: rgba(200, 239, 193, 0.16);
-  --selected-fg: #cbf39d;
+  --selected-bg: #f0efea;
+  --selected-fg: #0e0e0e;
 
-  --radius: 0.5rem;
-  --surface-shadow: 0 1px 1px rgba(5, 52, 56, 0.5), 0 0 1px rgba(5, 52, 56, 0.5);
+  --radius: 0.875rem;
+  --surface-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 
-  --default: rgba(200, 239, 193, 0.1);
-  --default-foreground: #c8efc1;
-  --pill-fg: #053438;
+  --default: rgba(240, 239, 234, 0.09);
+  --default-foreground: #f0efea;
+  --pill-fg: #0e0e0e;
 
-  --blanket: rgba(5, 52, 56, 0.66);
-  --overlay-shadow: 0 8px 12px rgba(5, 52, 56, 0.44), 0 0 1px rgba(5, 52, 56, 0.5);
+  --blanket: rgba(0, 0, 0, 0.68);
+  --overlay-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 
-  /* ---- glass layer ---- */
-  --glass-bg: rgba(4, 75, 57, 0.62);
-  --glass-bg-strong: rgba(4, 75, 57, 0.84);
-  --glass-border: rgba(200, 239, 193, 0.16);
-  --glass-hairline: rgba(200, 239, 193, 0.12);
-  --glass-highlight: rgba(200, 239, 193, 0.14);
-  --glass-shadow: 0 4px 24px rgba(5, 52, 56, 0.45), 0 1px 2px rgba(5, 52, 56, 0.4);
-  --glass-blur: 18px;
+  --sec-goals: #e0761b;
+  --sec-recurring: #7fa97f;
+  --sec-todos: #a6a9be;
+  --sec-weight: #b8c2c2;
+  --sec-calories: #f0a05c;
+  --sec-charts: #7fa97f;
+  --sec-log: #a6a9be;
+  --sec-config: #f0efea;
 
-  /* section accents lighten on dark so they stay visible */
-  --sec-goals: #cbf39d;
-  --sec-recurring: #1ea97b;
-  --sec-todos: #2180e6;
-  --sec-weight: #c8efc1;
-  --sec-calories: #72c613;
-  --sec-charts: #1ea97b;
-  --sec-log: #2180e6;
-  --sec-config: #bdf0ec;
+  --scale-1: #2a2a2a;
+  --scale-2: #5a3a1c;
+  --scale-3: #b25410;
+  --scale-4: #e0761b;
+  --scale-5: #f0a05c;
 
-  /* ramp runs the other way on a dark canvas */
-  --scale-1: #044b39;
-  --scale-2: #1ea97b;
-  --scale-3: #72c613;
-  --scale-4: #cbf39d;
-  --scale-5: #c8efc1;
-
-  --wash-1: rgba(114, 198, 19, 0.18);
-  --wash-2: rgba(203, 243, 157, 0.10);
-  --wash-3: rgba(30, 169, 123, 0.18);
+  --wash-1: rgba(30, 58, 30, 0.30);
+  --wash-2: rgba(224, 118, 27, 0.14);
+  --wash-3: rgba(0, 0, 0, 0);
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Ubuntu",
-    "Helvetica Neue", sans-serif;
+  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
   background: var(--background);
 }
 
-/* Ambient colour wash: gives the frosted surfaces something to refract.
-   Fixed and non-interactive, so it never affects layout or hit-testing. */
+/* The hero's green-to-orange gradient, kept as a quiet backdrop */
 body::before {
   content: "";
   position: fixed;
@@ -189,141 +166,107 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(42rem 42rem at 12% 8%, var(--wash-1), transparent 60%),
-    radial-gradient(38rem 38rem at 88% 22%, var(--wash-2), transparent 60%),
-    radial-gradient(46rem 46rem at 62% 92%, var(--wash-3), transparent 62%);
-  filter: blur(30px);
+    radial-gradient(48rem 40rem at 8% 0%, var(--wash-1), transparent 62%),
+    radial-gradient(44rem 40rem at 96% 12%, var(--wash-2), transparent 62%),
+    radial-gradient(40rem 40rem at 60% 100%, var(--wash-3), transparent 62%);
+  filter: blur(24px);
 }
 
+/* Display type: heavy retro grotesque */
 .font-display {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: -0.008em;
+  font-family: "Archivo Black", "Space Grotesk", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.005em;
 }
 
 .font-mono-n {
-  font-family: "Inter", -apple-system, sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Cards: frosted glass over the ambient wash, ADS geometry retained */
+/* Modular tiles: flat, solid, hairline-bordered */
 .card {
-  position: relative;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-/* Specular top edge — the cue that reads as "glass" rather than "translucent" */
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding-top: 1px;
-  background: linear-gradient(to bottom, var(--glass-highlight), transparent 42%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* HeroUI variant classes ship opaque fills — re-point them at the glass */
-.card.card--default {
-  background: var(--glass-bg);
-}
-.card.card--secondary,
-.card.card--tertiary {
-  background: var(--glass-bg-strong);
-}
+.card.card--default { background: var(--surface); }
+.card.card--secondary { background: var(--surface-secondary); }
+.card.card--tertiary { background: var(--surface-tertiary); }
 
 .card--transparent,
 .card.card--transparent {
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+/* Overlay surfaces (modal, drawer): solid tiles above the blanket */
+.glass-overlay {
+  background: var(--overlay);
+  border: 1px solid var(--border);
+  box-shadow: var(--overlay-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.card--transparent::before,
-.card.card--transparent::before { display: none; }
 
-/* Frosted overlay surfaces: modals and the mobile drawer */
-.glass-overlay {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--overlay-shadow), var(--glass-shadow);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-}
-
-/* Scrim behind overlays: tinted and blurred rather than flat black */
+/* Dim behind overlays: flat, no blur */
 .glass-blanket {
   background: var(--blanket);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
-/* Frosted app bar */
+/* App bar: solid strip with a hairline */
 .glass-bar {
-  background: var(--glass-bg);
-  border-bottom: 1px solid var(--glass-hairline);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
-/* Where the browser can't blur, fall back to opaque ADS surfaces so nothing
-   becomes unreadable. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .card, .card.card--default, .glass-bar {
-    background: var(--surface);
-    border-color: var(--border);
-  }
-  .card.card--secondary { background: var(--surface-secondary); }
-  .card.card--tertiary { background: var(--surface-tertiary); }
-  .glass-overlay { background: var(--overlay); }
-  .card::before { display: none; }
-}
-
-/* Controls: Atlassian's 6px corner, no pills */
+/* Controls: chunky rounded rectangles */
 .button {
-  border-radius: 6px;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
-/* Selected option: ADS selected state (subtle blue fill, brand text) */
+/* Selected option: inverted tile — black on cream, cream on black */
 .pill-selected {
   --button-bg: var(--selected-bg);
   --button-bg-hover: var(--selected-bg);
   --button-bg-pressed: var(--selected-bg);
   --button-fg: var(--selected-fg);
-  border-color: var(--accent) !important;
+  border-color: transparent !important;
   font-weight: 600;
 }
 
-/* Positive action: ADS green */
+/* Positive action: deep green */
 .btn-success {
-  --button-bg: #1ea97b;
-  --button-bg-hover: #044b39;
-  --button-bg-pressed: #053438;
-  --button-fg: #ffffff;
+  --button-bg: #1e3a1e;
+  --button-bg-hover: #162c16;
+  --button-bg-pressed: #102310;
+  --button-fg: #f0efea;
   border-color: transparent !important;
 }
 
-/* Primary/inverted action: Atlassian Blue bold */
+/* Primary action: burnt orange with black ink */
 .btn-invert {
   --button-bg: var(--accent);
-  --button-bg-hover: #053438;
-  --button-bg-pressed: #264b04;
+  --button-bg-hover: #c4640f;
+  --button-bg-pressed: #a85408;
   --button-fg: var(--accent-foreground);
   border-color: transparent !important;
+}
+
+/* Section marker chip */
+.sec-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 3px;
+  flex: none;
 }
 
 /* ---- Pending state: running border while a write is in flight ---- */
@@ -364,7 +307,7 @@ body::before {
   z-index: 2;
 }
 .is-pending.button::after {
-  border-radius: 6px;
+  border-radius: 10px;
 }
 @keyframes run-border {
   to {
@@ -388,21 +331,12 @@ body::before {
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(4, 75, 57, 0.25) transparent;
+  scrollbar-color: rgba(14, 14, 14, 0.3) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(4, 75, 57, 0.25);
+  background: rgba(14, 14, 14, 0.3);
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
-
-/* Section marker: a small colour chip that identifies each area of the app */
-.sec-dot {
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 3px;
-  flex: none;
-}

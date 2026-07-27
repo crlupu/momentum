@@ -148,13 +148,13 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
             className="grid gap-2.5"
             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
           >
-            <Stat value={mTotal} label="completions" color="#1ea97b" />
+            <Stat value={mTotal} label="completions" color="var(--sec-goals)" />
             <Stat
               value={best ? `${best[1]} (${best[0].slice(8)})` : "–"}
               label="best day"
-              color="#72c613"
+              color="var(--sec-charts)"
             />
-            <Stat value={avg} label="avg / active day" color="#2180e6" />
+            <Stat value={avg} label="avg / active day" color="var(--sec-log)" />
           </div>
 
           <div className="mt-4 border-t border-foreground/10 pt-3 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
