@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
-/** ADS chart purple — matches the weight stat in the sidebar. */
-const ACCENT = "#803fa5";
+/** Deep forest — matches the weight stat in the sidebar. */
+const ACCENT = "#044b39";
 const GRID = "var(--border)";
 const LABEL = "var(--muted)";
 

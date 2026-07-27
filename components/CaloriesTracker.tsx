@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey } from "@/lib/tracker";
 
-/** ADS chart teal — matches the kcal stat in the sidebar. */
-const ACCENT = "#2898bd";
+/** Lime — matches the kcal stat in the sidebar. */
+const ACCENT = "#72c613";
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 

@@ -8,9 +8,9 @@
 }
 
 /* ============================================================
-   Atlassian Design System theme, with a glass surface layer
-   ADS colour, type and spacing throughout; panels are rendered
-   as translucent frosted surfaces over an ambient wash.
+   Augment green brand, with a glass surface layer
+   Deep forest ink and CTAs, lime and mint accents; panels are
+   frosted surfaces over a lime-to-yellow ambient wash.
    ============================================================ */
 
 /* Light (default) */
@@ -18,110 +18,111 @@
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #f7f8f9;   /* elevation.surface.sunken */
-  --foreground: #101214;   /* ink */
+  --background: #ffffff;
+  --foreground: #044b39;   /* deep forest ink */
 
   --surface: #ffffff;
-  --surface-foreground: #101214;
-  --surface-secondary: #f7f8f9;
-  --surface-tertiary: #f1f2f4;
+  --surface-foreground: #044b39;
+  --surface-secondary: #f2faf1;
+  --surface-tertiary: #e7f4e5;
 
   --overlay: #ffffff;
-  --overlay-foreground: #101214;
+  --overlay-foreground: #044b39;
 
-  --muted: #63666b;        /* ink subtlest */
+  --muted: #4f7264;
 
-  --border: #dddee1;       /* hairline */
-  --separator: #eaebee;
+  --border: #dbebd8;
+  --separator: #e4f1e2;
 
-  /* Atlassian Blue drives calls to action */
-  --accent: #1868db;
+  /* deep forest green drives calls to action */
+  --accent: #044b39;
   --accent-foreground: #ffffff;
 
-  --success: #22a06b;
-  --warning: #c75300;
-  --danger: #ae2e24;
+  --success: #1ea97b;
+  --warning: #72c613;
+  /* the palette has no red; a semantic danger tone is kept for destructive actions */
+  --danger: #b3261e;
 
-  --selected-bg: #e9f2fe;  /* color.background.selected */
-  --selected-fg: #1558bc;
+  --selected-bg: #c8efc1;
+  --selected-fg: #044b39;
 
   --radius: 0.5rem;
-  --surface-shadow: 0 1px 1px rgba(9, 30, 66, 0.25), 0 0 1px rgba(9, 30, 66, 0.31);
+  --surface-shadow: 0 1px 1px rgba(4, 75, 57, 0.18), 0 0 1px rgba(4, 75, 57, 0.24);
 
-  --default: rgba(9, 30, 66, 0.06); /* color.background.neutral */
-  --default-foreground: #292a2e;
+  --default: rgba(4, 75, 57, 0.08);
+  --default-foreground: #044b39;
   --pill-fg: #ffffff;
 
-  --blanket: rgba(9, 30, 66, 0.54);        /* color.blanket */
-  --overlay-shadow: 0 8px 12px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.31);
+  --blanket: rgba(4, 75, 57, 0.55);
+  --overlay-shadow: 0 8px 12px rgba(4, 75, 57, 0.14), 0 0 1px rgba(4, 75, 57, 0.28);
 
   /* ---- glass layer ---- */
   --glass-bg: rgba(255, 255, 255, 0.66);
-  --glass-bg-strong: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-hairline: rgba(9, 30, 66, 0.08);
-  --glass-highlight: rgba(255, 255, 255, 0.85);
-  --glass-shadow: 0 4px 24px rgba(9, 30, 66, 0.09), 0 1px 2px rgba(9, 30, 66, 0.07);
+  --glass-bg-strong: rgba(255, 255, 255, 0.84);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-hairline: rgba(4, 75, 57, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 4px 24px rgba(4, 75, 57, 0.10), 0 1px 2px rgba(4, 75, 57, 0.06);
   --glass-blur: 18px;
 
-  /* ambient wash the glass refracts — ADS accent hues, kept faint */
-  --wash-1: rgba(24, 104, 219, 0.20);   /* brand blue   */
-  --wash-2: rgba(128, 63, 165, 0.16);   /* chart purple */
-  --wash-3: rgba(40, 152, 189, 0.16);   /* chart teal   */
+  /* ambient wash: the lime-to-yellow gradient from the reference hero */
+  --wash-1: rgba(114, 198, 19, 0.30);    /* lime   */
+  --wash-2: rgba(233, 240, 150, 0.55);   /* yellow glow */
+  --wash-3: rgba(30, 169, 123, 0.20);    /* green  */
 }
 
 /* Dark */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #161a1d;
-  --foreground: #b6c2cf;
+  --background: #053438;
+  --foreground: #e6f4ec;
 
-  --surface: #1d2125;
-  --surface-foreground: #b6c2cf;
-  --surface-secondary: #22272b;
-  --surface-tertiary: #282e33;
+  --surface: #0a4247;
+  --surface-foreground: #e6f4ec;
+  --surface-secondary: #0d4b50;
+  --surface-tertiary: #115458;
 
-  --overlay: #22272b;
-  --overlay-foreground: #b6c2cf;
+  --overlay: #0a4247;
+  --overlay-foreground: #e6f4ec;
 
-  --muted: #8c9bab;
+  --muted: #9ec4b6;
 
-  --border: rgba(166, 197, 226, 0.16);
-  --separator: rgba(166, 197, 226, 0.12);
+  --border: rgba(200, 239, 193, 0.18);
+  --separator: rgba(200, 239, 193, 0.12);
 
-  --accent: #579dff;
-  --accent-foreground: #1d2125;
+  --accent: #72c613;
+  --accent-foreground: #10250a;
 
-  --success: #4bce97;
-  --warning: #fea362;
-  --danger: #f87168;
+  --success: #1ea97b;
+  --warning: #cbf39d;
+  --danger: #f4877f;
 
-  --selected-bg: #1c2b41;
-  --selected-fg: #579dff;
+  --selected-bg: #0f4a3a;
+  --selected-fg: #cbf39d;
 
   --radius: 0.5rem;
-  --surface-shadow: 0 1px 1px rgba(3, 4, 4, 0.5), 0 0 1px rgba(3, 4, 4, 0.5);
+  --surface-shadow: 0 1px 1px rgba(2, 20, 22, 0.5), 0 0 1px rgba(2, 20, 22, 0.5);
 
-  --default: rgba(161, 189, 217, 0.08);
-  --default-foreground: #b6c2cf;
-  --pill-fg: #1d2125;
+  --default: rgba(200, 239, 193, 0.10);
+  --default-foreground: #e6f4ec;
+  --pill-fg: #053438;
 
-  --blanket: rgba(3, 4, 4, 0.62);
-  --overlay-shadow: 0 8px 12px rgba(3, 4, 4, 0.36), 0 0 1px rgba(3, 4, 4, 0.5);
+  --blanket: rgba(2, 20, 22, 0.62);
+  --overlay-shadow: 0 8px 12px rgba(2, 20, 22, 0.4), 0 0 1px rgba(2, 20, 22, 0.5);
 
   /* ---- glass layer ---- */
-  --glass-bg: rgba(34, 39, 43, 0.62);
-  --glass-bg-strong: rgba(34, 39, 43, 0.82);
-  --glass-border: rgba(166, 197, 226, 0.16);
-  --glass-hairline: rgba(166, 197, 226, 0.12);
-  --glass-highlight: rgba(166, 197, 226, 0.14);
-  --glass-shadow: 0 4px 24px rgba(3, 4, 4, 0.45), 0 1px 2px rgba(3, 4, 4, 0.4);
+  --glass-bg: rgba(10, 66, 71, 0.62);
+  --glass-bg-strong: rgba(10, 66, 71, 0.84);
+  --glass-border: rgba(200, 239, 193, 0.16);
+  --glass-hairline: rgba(200, 239, 193, 0.12);
+  --glass-highlight: rgba(200, 239, 193, 0.14);
+  --glass-shadow: 0 4px 24px rgba(2, 20, 22, 0.45), 0 1px 2px rgba(2, 20, 22, 0.4);
   --glass-blur: 18px;
 
-  --wash-1: rgba(87, 157, 255, 0.20);
-  --wash-2: rgba(175, 89, 225, 0.14);
-  --wash-3: rgba(40, 152, 189, 0.16);
+  --wash-1: rgba(114, 198, 19, 0.18);
+  --wash-2: rgba(203, 243, 157, 0.10);
+  --wash-3: rgba(30, 169, 123, 0.18);
 }
 
 body {
@@ -262,9 +263,9 @@ body::before {
 
 /* Positive action: ADS green */
 .btn-success {
-  --button-bg: #22a06b;
-  --button-bg-hover: #1f845a;
-  --button-bg-pressed: #216e4e;
+  --button-bg: #1ea97b;
+  --button-bg-hover: #1a9169;
+  --button-bg-pressed: #16785a;
   --button-fg: #ffffff;
   border-color: transparent !important;
 }
@@ -272,8 +273,8 @@ body::before {
 /* Primary/inverted action: Atlassian Blue bold */
 .btn-invert {
   --button-bg: var(--accent);
-  --button-bg-hover: #1558bc;
-  --button-bg-pressed: #123263;
+  --button-bg-hover: #053f30;
+  --button-bg-pressed: #043227;
   --button-fg: var(--accent-foreground);
   border-color: transparent !important;
 }
@@ -340,12 +341,12 @@ body::before {
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(9, 30, 66, 0.25) transparent;
+  scrollbar-color: rgba(4, 75, 57, 0.25) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(9, 30, 66, 0.25);
+  background: rgba(4, 75, 57, 0.25);
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
