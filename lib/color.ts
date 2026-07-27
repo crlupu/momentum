@@ -16,7 +16,7 @@ export function contrast(a: string, b: string): number {
 }
 
 const WHITE = "#ffffff";
-const INK = "#0e0e0e";
+const INK = "#161616";
 
 /**
  * Picks the more legible text colour for a given background.

@@ -8,151 +8,150 @@
 }
 
 /* ============================================================
-   Neo Retro modular system
-   Black and cream, burnt orange accent, deep green, muted
-   metallics · flat modular tiles · Archivo Black display type
+   IBM Design Language (Carbon)
+   Gray 100 canvas · IBM Blue 60 · purple/magenta/cyan/teal
+   accent family · IBM Plex · sharp, square geometry
    ============================================================ */
 
-/* Light (default): cream paper */
+/* Light (default): Carbon g10 */
 :root,
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #f0efea;
-  --foreground: #0e0e0e;
+  --background: #f4f4f4;   /* gray 10 */
+  --foreground: #161616;   /* gray 100 */
 
   --surface: #ffffff;
-  --surface-foreground: #0e0e0e;
-  --surface-secondary: #e8e6de;
-  --surface-tertiary: #dfddd3;
+  --surface-foreground: #161616;
+  --surface-secondary: #f4f4f4;
+  --surface-tertiary: #e0e0e0;
 
   --overlay: #ffffff;
-  --overlay-foreground: #0e0e0e;
+  --overlay-foreground: #161616;
 
-  --muted: rgba(14, 14, 14, 0.62);
+  --muted: #525252;        /* gray 70 */
 
-  --border: rgba(14, 14, 14, 0.14);
-  --separator: rgba(14, 14, 14, 0.09);
+  --border: #e0e0e0;       /* gray 20 */
+  --separator: #e8e8e8;
 
-  /* burnt orange with black ink — the poster treatment */
-  --accent: #e0761b;
-  --accent-foreground: #0e0e0e;
+  --accent: #0f62fe;       /* blue 60 */
+  --accent-foreground: #ffffff;
 
-  --success: #1e3a1e;
-  --warning: #e0761b;
+  --success: #24a148;      /* green 50 */
+  --warning: #ff832b;      /* alert orange */
 
-  /* retro red-orange for destructive actions */
-  --danger: #c6301c;
-  --danger-hover: #9e2616;
+  --danger: #da1e28;       /* red 60 */
+  --danger-hover: #ba1b23;
   --danger-foreground: #ffffff;
-  --danger-soft: #f3c7bc;
-  --danger-soft-hover: #edb2a3;
-  --danger-soft-foreground: #55150b;
+  --danger-soft: #ffd7d9;  /* red 20 */
+  --danger-soft-hover: #ffb3b8;
+  --danger-soft-foreground: #750e13;
 
-  --selected-bg: #0e0e0e;
-  --selected-fg: #f0efea;
+  --selected-bg: #161616;  /* high-contrast selection */
+  --selected-fg: #ffffff;
 
-  --radius: 0.875rem;
-  --surface-shadow: 0 1px 0 rgba(14, 14, 14, 0.06);
+  --radius: 0;
+  --surface-shadow: 0 1px 2px rgba(22, 22, 22, 0.08);
 
-  --default: rgba(14, 14, 14, 0.07);
-  --default-foreground: #0e0e0e;
-  --pill-fg: #f0efea;
+  --default: rgba(22, 22, 22, 0.07);
+  --default-foreground: #161616;
+  --pill-fg: #ffffff;
 
-  --blanket: rgba(14, 14, 14, 0.6);
-  --overlay-shadow: 0 16px 40px rgba(14, 14, 14, 0.22);
+  --blanket: rgba(22, 22, 22, 0.5);
+  --overlay-shadow: 0 8px 24px rgba(22, 22, 22, 0.2);
 
-  /* per-section accents */
-  --sec-goals: #e0761b;
-  --sec-recurring: #1e3a1e;
-  --sec-todos: #4a4e66;   /* steel, deepened for cream */
-  --sec-weight: #5c6a6a;  /* silver, deepened for cream */
-  --sec-calories: #b25410;
-  --sec-charts: #1e3a1e;
-  --sec-log: #4a4e66;
-  --sec-config: #0e0e0e;
+  /* per-section accents, from the icon family */
+  --sec-goals: #0f62fe;      /* blue    */
+  --sec-recurring: #009d9a;  /* teal    */
+  --sec-todos: #1192e8;      /* cyan    */
+  --sec-weight: #8a3ffc;     /* purple  */
+  --sec-calories: #ee5396;   /* magenta */
+  --sec-charts: #009d9a;
+  --sec-log: #1192e8;
+  --sec-config: #525252;
 
-  /* intensity ramp: cream → orange → black */
-  --scale-1: #e4e0d3;
-  --scale-2: #efc79e;
-  --scale-3: #e0761b;
-  --scale-4: #8a4a12;
-  --scale-5: #0e0e0e;
+  /* Carbon blue scale */
+  --scale-1: #d0e2ff;
+  --scale-2: #78a9ff;
+  --scale-3: #4589ff;
+  --scale-4: #0f62fe;
+  --scale-5: #002d9c;
 
-  /* the hero gradient, as a faint canvas wash */
-  --wash-1: rgba(30, 58, 30, 0.12);
-  --wash-2: rgba(224, 118, 27, 0.12);
-  --wash-3: rgba(184, 194, 194, 0.18);
-}
-
-/* Dark: the black canvas from the artwork */
-.dark,
-[data-theme="dark"] {
-  color-scheme: dark;
-  --background: #0a0a0a;
-  --foreground: #f0efea;
-
-  --surface: #161616;
-  --surface-foreground: #f0efea;
-  --surface-secondary: #1f1f1f;
-  --surface-tertiary: #292929;
-
-  --overlay: #161616;
-  --overlay-foreground: #f0efea;
-
-  --muted: rgba(240, 239, 234, 0.6);
-
-  --border: rgba(240, 239, 234, 0.14);
-  --separator: rgba(240, 239, 234, 0.09);
-
-  --accent: #e0761b;
-  --accent-foreground: #0e0e0e;
-
-  --success: #7fa97f;
-  --warning: #f0a05c;
-
-  --danger: #e5472b;
-  --danger-hover: #c6301c;
-  --danger-foreground: #ffffff;
-  --danger-soft: rgba(229, 71, 43, 0.22);
-  --danger-soft-hover: rgba(229, 71, 43, 0.32);
-  --danger-soft-foreground: #f3c7bc;
-
-  --selected-bg: #f0efea;
-  --selected-fg: #0e0e0e;
-
-  --radius: 0.875rem;
-  --surface-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
-
-  --default: rgba(240, 239, 234, 0.09);
-  --default-foreground: #f0efea;
-  --pill-fg: #0e0e0e;
-
-  --blanket: rgba(0, 0, 0, 0.68);
-  --overlay-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
-
-  --sec-goals: #e0761b;
-  --sec-recurring: #7fa97f;
-  --sec-todos: #a6a9be;
-  --sec-weight: #b8c2c2;
-  --sec-calories: #f0a05c;
-  --sec-charts: #7fa97f;
-  --sec-log: #a6a9be;
-  --sec-config: #f0efea;
-
-  --scale-1: #2a2a2a;
-  --scale-2: #5a3a1c;
-  --scale-3: #b25410;
-  --scale-4: #e0761b;
-  --scale-5: #f0a05c;
-
-  --wash-1: rgba(30, 58, 30, 0.30);
-  --wash-2: rgba(224, 118, 27, 0.14);
+  /* Carbon light is austere: no wash */
+  --wash-1: rgba(0, 0, 0, 0);
+  --wash-2: rgba(0, 0, 0, 0);
   --wash-3: rgba(0, 0, 0, 0);
 }
 
+/* Dark: Carbon g100, the document's canvas */
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #161616;   /* gray 100 */
+  --foreground: #f4f4f4;
+
+  --surface: #262626;      /* layer 01 */
+  --surface-foreground: #f4f4f4;
+  --surface-secondary: #333333;
+  --surface-tertiary: #393939;
+
+  --overlay: #262626;
+  --overlay-foreground: #f4f4f4;
+
+  --muted: #8d8d8d;        /* gray 50 */
+
+  --border: #393939;
+  --separator: #2e2e2e;
+
+  --accent: #0f62fe;
+  --accent-foreground: #ffffff;
+
+  --success: #42be65;
+  --warning: #ff832b;
+
+  --danger: #fa4d56;       /* red 50 */
+  --danger-hover: #da1e28;
+  --danger-foreground: #161616;
+  --danger-soft: rgba(250, 77, 86, 0.2);
+  --danger-soft-hover: rgba(250, 77, 86, 0.3);
+  --danger-soft-foreground: #ffb3b8;
+
+  --selected-bg: #f4f4f4;
+  --selected-fg: #161616;
+
+  --radius: 0;
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --default: rgba(244, 244, 244, 0.09);
+  --default-foreground: #f4f4f4;
+  --pill-fg: #161616;
+
+  --blanket: rgba(22, 22, 22, 0.7);
+  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+
+  --sec-goals: #4589ff;
+  --sec-recurring: #08bdba;
+  --sec-todos: #33b1ff;
+  --sec-weight: #a56eff;
+  --sec-calories: #ff7eb6;
+  --sec-charts: #08bdba;
+  --sec-log: #33b1ff;
+  --sec-config: #c6c6c6;
+
+  --scale-1: #262626;
+  --scale-2: #002d9c;
+  --scale-3: #0043ce;
+  --scale-4: #0f62fe;
+  --scale-5: #78a9ff;
+
+  /* the artwork's gradient panels, as a faint glow on black */
+  --wash-1: rgba(15, 98, 254, 0.10);
+  --wash-2: rgba(138, 63, 252, 0.08);
+  --wash-3: rgba(238, 83, 150, 0.05);
+}
+
 body {
-  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
   background: var(--background);
@@ -172,24 +171,23 @@ body::before {
   filter: blur(24px);
 }
 
-/* Display type: heavy retro grotesque */
+/* Display type: Plex, tight and confident like the specimen */
 .font-display {
-  font-family: "Archivo Black", "Space Grotesk", sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.005em;
+  font-family: "IBM Plex Sans", sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .font-mono-n {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "IBM Plex Mono", monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Modular tiles: flat, solid, hairline-bordered */
+/* Carbon tiles: flat, square, hairline-bordered */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: var(--surface-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -226,10 +224,10 @@ body::before {
   border-bottom: 1px solid var(--border);
 }
 
-/* Controls: chunky rounded rectangles */
+/* Controls: Carbon's square buttons */
 .button {
-  border-radius: 10px;
-  font-weight: 600;
+  border-radius: 0;
+  font-weight: 500;
 }
 
 /* Selected option: inverted tile — black on cream, cream on black */
@@ -242,20 +240,20 @@ body::before {
   font-weight: 600;
 }
 
-/* Positive action: deep green */
+/* Positive action: Carbon green */
 .btn-success {
-  --button-bg: #1e3a1e;
-  --button-bg-hover: #162c16;
-  --button-bg-pressed: #102310;
-  --button-fg: #f0efea;
+  --button-bg: #24a148;
+  --button-bg-hover: #198038;
+  --button-bg-pressed: #0e6027;
+  --button-fg: #ffffff;
   border-color: transparent !important;
 }
 
-/* Primary action: burnt orange with black ink */
+/* Primary action: IBM Blue with Carbon's own hover/active steps */
 .btn-invert {
   --button-bg: var(--accent);
-  --button-bg-hover: #c4640f;
-  --button-bg-pressed: #a85408;
+  --button-bg-hover: #0353e9;
+  --button-bg-pressed: #002d9c;
   --button-fg: var(--accent-foreground);
   border-color: transparent !important;
 }
@@ -265,7 +263,7 @@ body::before {
   display: inline-block;
   width: 0.6rem;
   height: 0.6rem;
-  border-radius: 3px;
+  border-radius: 0;
   flex: none;
 }
 
@@ -307,7 +305,7 @@ body::before {
   z-index: 2;
 }
 .is-pending.button::after {
-  border-radius: 10px;
+  border-radius: 0;
 }
 @keyframes run-border {
   to {
@@ -331,12 +329,12 @@ body::before {
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(14, 14, 14, 0.3) transparent;
+  scrollbar-color: rgba(82, 82, 82, 0.5) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(14, 14, 14, 0.3);
+  background: rgba(82, 82, 82, 0.5);
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }

@@ -98,8 +98,8 @@ export type TrackerState = {
 };
 
 export const CAT_COLORS = [
-  "#e0761b", "#1e3a1e", "#a6a9be", "#b8c2c2",
-  "#0e0e0e", "#b25410", "#7fa97f", "#4a4e66",
+  "#0f62fe", "#8a3ffc", "#ee5396", "#009d9a",
+  "#1192e8", "#24a148", "#ff832b", "#6929c4",
 ];
 
 /** Picks a colour no existing category is already using. */
@@ -115,33 +115,28 @@ export function nextCategoryColor(existing: { color: string }[]): string {
 const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c1", name: "Work", color: "#a6a9be" },
-  { id: "c2", name: "Pressio", color: "#1e3a1e" },
-  { id: "c3", name: "Learning", color: "#0e0e0e" },
-  { id: "c4", name: "Gym", color: "#e0761b" },
-  { id: "c5", name: "Personal", color: "#b8c2c2" },
+  { id: "c1", name: "Work", color: "#0f62fe" },
+  { id: "c2", name: "Pressio", color: "#009d9a" },
+  { id: "c3", name: "Learning", color: "#8a3ffc" },
+  { id: "c4", name: "Gym", color: "#ee5396" },
+  { id: "c5", name: "Personal", color: "#1192e8" },
 ];
 
-/** Colours from every earlier theme → their Neo Retro replacements. */
+/** Colours from every earlier theme → their IBM-palette replacements. */
 const LEGACY_CATEGORY_COLORS: Record<string, string> = {
-  // original HeroUI defaults
-  "#006fee": "#a6a9be",
-  "#17c964": "#1e3a1e",
-  "#7828c8": "#0e0e0e",
-  "#f31260": "#e0761b",
-  "#f5a524": "#b8c2c2",
-  // interim Atlassian defaults
-  "#357de8": "#a6a9be",
-  "#22a06b": "#1e3a1e",
-  "#af59e1": "#0e0e0e",
-  "#ae2e24": "#e0761b",
-  "#c75300": "#b8c2c2",
-  // interim green-brand defaults
-  "#2180e6": "#a6a9be",
-  "#1ea97b": "#1e3a1e",
-  "#264b04": "#0e0e0e",
-  "#72c613": "#e0761b",
-  "#c8efc1": "#b8c2c2",
+  // roles: Work / Pressio / Learning / Gym / Personal, era by era
+  // HeroUI originals
+  "#006fee": "#0f62fe", "#17c964": "#009d9a", "#7828c8": "#8a3ffc",
+  "#f31260": "#ee5396", "#f5a524": "#1192e8",
+  // Atlassian era
+  "#357de8": "#0f62fe", "#22a06b": "#009d9a", "#af59e1": "#8a3ffc",
+  "#ae2e24": "#ee5396", "#c75300": "#1192e8",
+  // green-brand era
+  "#2180e6": "#0f62fe", "#1ea97b": "#009d9a", "#264b04": "#8a3ffc",
+  "#72c613": "#ee5396", "#c8efc1": "#1192e8",
+  // Neo Retro era
+  "#a6a9be": "#0f62fe", "#1e3a1e": "#009d9a", "#0e0e0e": "#8a3ffc",
+  "#e0761b": "#ee5396", "#b8c2c2": "#1192e8",
 };
 
 const DEFAULT_STATE: TrackerState = {
@@ -617,7 +612,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#4a4e66" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8d8d8d" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),
