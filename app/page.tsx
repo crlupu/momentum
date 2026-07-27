@@ -74,46 +74,54 @@ export default function Home() {
 
               <section id="config">
                 <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Configuration</h2>
-                <div className="columns-1 gap-5 sm:columns-2 xl:columns-4">
-                  <div className="mb-5 break-inside-avoid">
-                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                      Categories
-                    </h3>
-                    <Card>
-                      <Card.Content className="p-4 sm:p-5">
-                        <CategoriesCard tracker={tracker} />
-                      </Card.Content>
-                    </Card>
+                {/* Two explicit columns: each card sits straight under the one
+                    above it, without CSS multi-column (which breaks scrollable
+                    lists in Safari). */}
+                <div className="grid items-start gap-5 lg:grid-cols-2">
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Categories
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <CategoriesCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Groups
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <GroupsCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
                   </div>
-                  <div className="mb-5 break-inside-avoid">
-                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                      Groups
-                    </h3>
-                    <Card>
-                      <Card.Content className="p-4 sm:p-5">
-                        <GroupsCard tracker={tracker} />
-                      </Card.Content>
-                    </Card>
-                  </div>
-                  <div className="mb-5 break-inside-avoid">
-                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                      Manage recurring
-                    </h3>
-                    <Card>
-                      <Card.Content className="p-4 sm:p-5">
-                        <RecurringManageCard tracker={tracker} />
-                      </Card.Content>
-                    </Card>
-                  </div>
-                  <div className="mb-5 break-inside-avoid">
-                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                      Calorie budget
-                    </h3>
-                    <Card>
-                      <Card.Content className="p-4 sm:p-5">
-                        <CalorieBudgetCard tracker={tracker} />
-                      </Card.Content>
-                    </Card>
+
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Manage recurring
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <RecurringManageCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Calorie budget
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <CalorieBudgetCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
                   </div>
                 </div>
               </section>
