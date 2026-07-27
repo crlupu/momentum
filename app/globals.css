@@ -17,71 +17,72 @@
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: #f1eee9;
-  --foreground: #171716;
+  --background: #eff7ee;
+  --foreground: #044b39;
 
-  --surface: #f7f5f1;
-  --surface-foreground: #171716;
-  --surface-secondary: #efece6;
-  --surface-tertiary: #e7e3db;
+  --surface: #ffffff;
+  --surface-foreground: #044b39;
+  --surface-secondary: #f2faf1;
+  --surface-tertiary: #e7f4e5;
 
-  --overlay: #faf8f4;
-  --overlay-foreground: #171716;
+  --overlay: #ffffff;
+  --overlay-foreground: #044b39;
 
-  --muted: #6f6c66;
+  --muted: #4f7264;
 
-  --border: #e4e0d8;
-  --separator: #e9e5dd;
+  --border: #dbebd8;
+  --separator: #e4f1e2;
 
-  /* terracotta drives calls to action */
-  --accent: #cd7c5f;
+  /* deep forest green drives calls to action */
+  --accent: #044b39;
   --accent-foreground: #ffffff;
 
-  --success: #c0d0cd;
-  --warning: #e1dbcf;
-  --danger: #b4544a;
+  --success: #1ea97b;
+  --warning: #72c613;
+  /* the palette has no red; a semantic danger tone is kept for destructive actions */
+  --danger: #b3261e;
 
   --radius: 1.25rem;
-  --surface-shadow: 0 1px 2px rgba(23, 23, 22, 0.04);
+  --surface-shadow: 0 1px 2px rgba(4, 75, 57, 0.06);
 
-  --default: rgba(23, 23, 22, 0.06);
-  --default-foreground: #171716;
-  --pill-fg: #f7f5f1;
+  --default: rgba(4, 75, 57, 0.08);
+  --default-foreground: #044b39;
+  --pill-fg: #eff7ee;
 }
 
 /* Dark */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #141414;
-  --foreground: #ece9e3;
+  --background: #053438;
+  --foreground: #e6f4ec;
 
-  --surface: #1c1c1b;
-  --surface-foreground: #ece9e3;
-  --surface-secondary: #232322;
-  --surface-tertiary: #2b2b29;
+  --surface: #0a4247;
+  --surface-foreground: #e6f4ec;
+  --surface-secondary: #0d4b50;
+  --surface-tertiary: #115458;
 
-  --overlay: #1c1c1b;
-  --overlay-foreground: #ece9e3;
+  --overlay: #0a4247;
+  --overlay-foreground: #e6f4ec;
 
-  --muted: #96938c;
+  --muted: #9ec4b6;
 
-  --border: #2b2b29;
-  --separator: #262625;
+  --border: #14565b;
+  --separator: #114c51;
 
-  --accent: #cd7c5f;
-  --accent-foreground: #ffffff;
+  --accent: #72c613;
+  --accent-foreground: #10250a;
 
-  --success: #7f9b95;
-  --warning: #b9b09f;
-  --danger: #b4544a;
+  --success: #1ea97b;
+  --warning: #cbf39d;
+  --danger: #b3261e;
 
   --radius: 1.25rem;
-  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 
-  --default: rgba(255, 255, 255, 0.08);
-  --default-foreground: #ece9e3;
-  --pill-fg: #171716;
+  --default: rgba(255, 255, 255, 0.1);
+  --default-foreground: #e6f4ec;
+  --pill-fg: #053438;
 }
 
 body {
@@ -133,10 +134,10 @@ body {
 
 /* Positive action: muted sage */
 .btn-success {
-  --button-bg: #c0d0cd;
-  --button-bg-hover: #b3c5c1;
-  --button-bg-pressed: #b3c5c1;
-  --button-fg: #16211f;
+  --button-bg: #1ea97b;
+  --button-bg-hover: #1a9169;
+  --button-bg-pressed: #1a9169;
+  --button-fg: #ffffff;
   border-color: transparent !important;
 }
 
@@ -211,12 +212,12 @@ body {
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(23, 23, 22, 0.25) transparent;
+  scrollbar-color: rgba(4, 75, 57, 0.25) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(23, 23, 22, 0.25);
+  background: rgba(4, 75, 57, 0.25);
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
