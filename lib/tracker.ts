@@ -543,6 +543,16 @@ export function useTracker() {
         ],
       })),
 
+    updateGoal: (id: string, patch: { title?: string; catId?: string }) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === id
+            ? { ...g, title: patch.title?.trim() || g.title, catId: patch.catId ?? g.catId }
+            : g
+        ),
+      })),
+
     setGoalProgress: (id: string, current: number | null, target: number | null) =>
       commit((s) => ({
         ...s,
@@ -605,7 +615,8 @@ export function useTracker() {
       goalId: string,
       subtaskId: string,
       current: number | null,
-      target: number | null
+      target: number | null,
+      title?: string
     ) =>
       commit((s) => ({
         ...s,
@@ -617,6 +628,7 @@ export function useTracker() {
                   t.id === subtaskId
                     ? {
                         ...t,
+                        title: title?.trim() || t.title,
                         current:
                           current != null && Number.isFinite(current) && current >= 0
                             ? current

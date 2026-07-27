@@ -4,13 +4,62 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { Menu, X, Target, Repeat, BarChart3, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
-import { Tracker } from "@/lib/tracker";
+import { Tracker, dateKey, isRecurringDone, recurringUnits } from "@/lib/tracker";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target },
   { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "charts", label: "Progress", icon: BarChart3 },
 ];
+
+/** One top-bar stat: the figure, then a filled colour-coded label beside it. */
+function TopStat({
+  value,
+  label,
+  bg,
+  fg,
+}: {
+  value: string | number;
+  label: string;
+  bg: string;
+  fg: string;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <span className="font-mono-n text-sm font-bold leading-none">{value}</span>
+      <span
+        className="rounded-full px-2 py-[3px] text-[10px] font-semibold leading-none whitespace-nowrap"
+        style={{ background: bg, color: fg }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function TopStats({ tracker }: { tracker: Tracker }) {
+  const st = tracker.state;
+  if (!st) return null;
+
+  const today = dateKey();
+  const units = recurringUnits(st.recurring, today);
+  const done = units.filter((u) => u.done).length;
+  const notDone = units.length - done;
+
+  const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
+  const kcalToday = st.calories
+    .filter((e) => e.date === today)
+    .reduce((a, e) => a + e.kcal, 0);
+
+  return (
+    <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
+      <TopStat value={done} label="done today" bg="#17C964" fg="#04250f" />
+      <TopStat value={notDone} label="not done" bg="#EAB308" fg="#231a00" />
+      <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#f0e430" fg="#1a1a08" />
+      <TopStat value={kcalToday} label="kcal today" bg="#f5883f" fg="#1a1206" />
+    </div>
+  );
+}
 
 export function Sidebar({
   tracker,
@@ -35,7 +84,8 @@ export function Sidebar({
         <button aria-label="Open menu" onClick={() => setOpen(true)} className="text-foreground/80 hover:text-foreground">
           <Menu className="h-6 w-6" />
         </button>
-        <span className="font-display text-lg font-bold tracking-tight">Momentum</span>
+        <span className="font-display shrink-0 text-lg font-bold tracking-tight">Momentum</span>
+        <TopStats tracker={tracker} />
       </div>
 
       {/* Overlay drawer */}

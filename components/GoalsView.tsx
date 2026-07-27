@@ -20,6 +20,7 @@ function SubtaskRow({
   tracker: Tracker;
 }) {
   const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(t.title);
   const [current, setCurrent] = useState(String(t.current ?? ""));
   const [target, setTarget] = useState(String(t.target ?? ""));
   const { pending, run } = usePending();
@@ -32,7 +33,8 @@ function SubtaskRow({
         goalId,
         t.id,
         current === "" ? null : Number(current),
-        target === "" ? null : Number(target)
+        target === "" ? null : Number(target),
+        name
       )
     );
     if (ok) setEditing(false);
@@ -62,6 +64,15 @@ function SubtaskRow({
 
       {editing && (
         <div className="mt-2 flex flex-col gap-2">
+          <label className="block text-[11px] text-foreground/60">
+            Name
+            <Input
+              aria-label="Subtask name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-0.5 w-full"
+            />
+          </label>
           <label className="block text-[11px] text-foreground/60">
             Current
             <Input
@@ -193,14 +204,22 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(g.title);
+  const [catId, setCatId] = useState(g.catId);
   const [current, setCurrent] = useState(String(g.current ?? ""));
   const [target, setTarget] = useState(String(g.target ?? ""));
 
   const { pending, run } = usePending();
   const save = async () => {
-    const ok = await run(() =>
-      tracker.setGoalProgress(g.id, current === "" ? null : Number(current), target === "" ? null : Number(target))
-    );
+    const ok = await run(async () => {
+      const a = await tracker.updateGoal(g.id, { title: name, catId });
+      const b = await tracker.setGoalProgress(
+        g.id,
+        current === "" ? null : Number(current),
+        target === "" ? null : Number(target)
+      );
+      return a && b;
+    });
     if (ok) setEditing(false);
   };
 
@@ -266,6 +285,36 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
         {editing && (
           <div className="mt-3 flex flex-col gap-2">
+            <label className="block text-[11px] text-foreground/60">
+              Name
+              <Input
+                aria-label="Goal name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-0.5 w-full"
+              />
+            </label>
+            <div>
+              <div className="mb-1 text-[11px] text-foreground/60">Category</div>
+              <div className="flex flex-wrap gap-1.5">
+                {tracker.state!.categories.map((cat) => (
+                  <Button
+                    key={cat.id}
+                    size="sm"
+                    variant="outline"
+                    className={catId === cat.id ? "pill-selected" : ""}
+                    onPress={() => setCatId(cat.id)}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: cat.color }}
+                      aria-hidden
+                    />
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <label className="block text-[11px] text-foreground/60">
               Current
               <Input type="number" aria-label="Current value" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5 w-full" />

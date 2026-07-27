@@ -3,28 +3,7 @@
 import { Button, Card } from "@heroui/react";
 import { usePending } from "./ActionButton";
 import { Check, Plus } from "lucide-react";
-import { Tracker, FREQ_ORDER, dateKey, isRecurringDone, recurringUnits, streak } from "@/lib/tracker";
-
-function hexToRgba(hex: string, a: number): string {
-  const h = hex.replace("#", "");
-  return `rgba(${parseInt(h.slice(0, 2), 16)}, ${parseInt(h.slice(2, 4), 16)}, ${parseInt(h.slice(4, 6), 16)}, ${a})`;
-}
-
-function Circle({ value, label, color }: { value: number; label: string; color: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div
-        className="flex h-7 w-7 items-center justify-center rounded-full border"
-        style={{ borderColor: color, background: hexToRgba(color, 0.12) }}
-      >
-        <span className="font-mono-n text-[13px] font-medium" style={{ color }}>
-          {value}
-        </span>
-      </div>
-      <span className="text-center text-[10px] leading-tight text-foreground/60">{label}</span>
-    </div>
-  );
-}
+import { Tracker, FREQ_ORDER, dateKey, isRecurringDone } from "@/lib/tracker";
 
 function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {
   const { pending, run } = usePending();
@@ -52,12 +31,6 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   const s = tracker.state!;
   const today = dateKey();
 
-  const units = recurringUnits(s.recurring, today);
-  const doneCount = units.filter((u) => u.done).length;
-  const notDone = units.length - doneCount;
-  const total = units.length;
-  const strk = streak(s.completions);
-
   const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
   const recurring = [...s.recurring].sort(
     (a, b) =>
@@ -77,12 +50,6 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
 
       <Card>
         <Card.Content className="px-3 py-3 sm:px-4">
-          <div className="mb-4 grid grid-cols-4 gap-1">
-            <Circle value={doneCount} label="done today" color="#17C964" />
-            <Circle value={notDone} label="not done" color="#EAB308" />
-            <Circle value={total} label="total" color="#8A94A3" />
-            <Circle value={strk} label="day streak" color="#7828C8" />
-          </div>
 
           {recurring.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-foreground/60">None yet — add one with the button above.</p>
@@ -97,7 +64,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                 const c = tracker.cat(r.catId);
                 const done = isRecurringDone(r, today);
                 return (
-                  <li key={r.id} className="flex items-center gap-2 border-b border-foreground/10 px-1 py-3 last:border-b-0">
+                  <li key={r.id} className="flex items-center gap-1.5 border-b border-foreground/10 px-1 py-3 last:border-b-0">
                     <span className={"flex-1 min-w-0 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>
                       <span className="truncate">{r.title}</span>
                       {r.groupId && (
@@ -106,7 +73,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                         </span>
                       )}
                     </span>
-                    <span className="flex w-24 shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
+                    <span className="flex w-16 shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
                       <span
                         className="inline-block h-2 w-2 shrink-0 rounded-full"
                         style={{ background: c.color }}
