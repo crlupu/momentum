@@ -234,6 +234,15 @@ html:not(.dark) .card {
   --button-bg: var(--success);
   --button-bg-hover: var(--success);
   --button-bg-pressed: var(--success);
-  --button-fg: #04250f;
+  --button-fg: #ffffff;
+  border-color: transparent !important;
+}
+
+/* Inverted button: dark fill with light text (used for "Close") */
+.btn-invert {
+  --button-bg: var(--foreground);
+  --button-bg-hover: var(--foreground);
+  --button-bg-pressed: var(--foreground);
+  --button-fg: var(--pill-fg);
   border-color: transparent !important;
 }

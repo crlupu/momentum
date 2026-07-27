@@ -393,7 +393,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px]">{r.title}</span>
                   <span className="block text-[11px] text-foreground/50">
-                    {FREQ_LABEL[r.freq]}
+                    {c.name} · {FREQ_LABEL[r.freq]}
                     {r.groupId ? ` · ${groupName(r.groupId)}` : ""}
                   </span>
                 </span>

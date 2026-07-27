@@ -392,7 +392,7 @@ function GoalCard({
               >
                 Save changes
               </Button>
-              <Button size="sm" variant="secondary" onPress={closeEditor} isDisabled={pending}>
+              <Button size="sm" variant="secondary" className="btn-invert" onPress={closeEditor} isDisabled={pending}>
                 Close
               </Button>
             </div>
