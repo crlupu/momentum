@@ -6,6 +6,7 @@ import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut 
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
+import { readableText } from "@/lib/color";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target },
@@ -20,13 +21,13 @@ function TopStat({
   value,
   label,
   bg,
-  fg,
 }: {
   value: string | number;
   label: string;
   bg: string;
-  fg: string;
 }) {
+  // Text colour follows the background, so every badge stays legible.
+  const fg = readableText(bg);
   return (
     <span
       className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap"
@@ -56,17 +57,16 @@ function TopStats({ tracker }: { tracker: Tracker }) {
 
   return (
     <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
-      <TopStat value={done} label="done today" bg="#17C964" fg="#ffffff" />
-      <TopStat value={notDone} label="not done" bg="#EAB308" fg="#ffffff" />
-      <TopStat value={openTodos} label="to do" bg="#006FEE" fg="#ffffff" />
-      <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#f0e430" fg="#ffffff" />
-      <TopStat value={kcalToday} label="kcal today" bg="#f5883f" fg="#ffffff" />
+      <TopStat value={done} label="done today" bg="#17C964" />
+      <TopStat value={notDone} label="not done" bg="#EAB308" />
+      <TopStat value={openTodos} label="to do" bg="#006FEE" />
+      <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#f0e430" />
+      <TopStat value={kcalToday} label="kcal today" bg="#f5883f" />
       {kcalLeft != null && (
         <TopStat
           value={kcalLeft}
           label="kcal left / week"
           bg={kcalLeft >= 0 ? "#17C964" : "#e5484d"}
-          fg="#ffffff"
         />
       )}
     </div>
