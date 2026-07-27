@@ -98,8 +98,8 @@ export type TrackerState = {
 };
 
 export const CAT_COLORS = [
-  "#F5A524", "#17C964", "#006FEE", "#7828C8",
-  "#F31260", "#66AAF9", "#F97316", "#0EA5E9",
+  "#cd7c5f", "#c0d0cd", "#cbcad8", "#e1dbcf",
+  "#8fa8a2", "#a89b86", "#9a93b8", "#b4544a",
 ];
 
 function hslToHex(h: number, sat: number, light: number): string {

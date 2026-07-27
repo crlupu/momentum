@@ -8,130 +8,145 @@
 }
 
 /* ============================================================
-   Netsuite POS case-study aesthetic (Rondesignlab deck)
-   Pure near-black · Urbanist · yellow #F0E430 / orange #F5883F
-   Soft dark panels · pill buttons · generous rounding
+   Warm-cream dashboard system
+   Flat surfaces · muted pastels · terracotta accent · Outfit
    ============================================================ */
 
-/* Dark (default — the deck) */
+/* Light (default) */
 :root,
-.dark,
-[data-theme="dark"] {
-  color-scheme: dark;
-  --background: #050505;
-  --foreground: #f4f4f2;
-
-  --surface: #141414;
-  --surface-foreground: #f4f4f2;
-  --surface-secondary: #1c1c1c;
-  --surface-tertiary: #242424;
-
-  --overlay: #141414;
-  --overlay-foreground: #f4f4f2;
-
-  --muted: #8f8f8c;
-
-  --border: #232323;
-  --separator: #1e1e1e;
-
-  --accent: #f0e430;
-  --accent-foreground: #131308;
-
-  --success: #2fbe7e;
-  --warning: #f5883f;
-  --danger: #f87171;
-
-  --radius: 1rem;
-  --surface-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-
-  --default: rgba(255, 255, 255, 0.14);
-  --default-foreground: #f4f4f2;
-  --pill-fg: #16161a;
-}
-
-/* Light (optional variant via the toggle — warm off-white, same accents) */
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: rgba(255, 255, 255, 0.35);
-  --foreground: #26261f;
+  --background: #f1eee9;
+  --foreground: #171716;
 
-  --surface: rgba(255, 255, 255, 0.45);
-  --surface-foreground: #26261f;
-  --surface-secondary: rgba(255, 255, 255, 0.32);
-  --surface-tertiary: rgba(255, 255, 255, 0.24);
+  --surface: #f7f5f1;
+  --surface-foreground: #171716;
+  --surface-secondary: #efece6;
+  --surface-tertiary: #e7e3db;
 
-  --overlay: #ffffff;
-  --overlay-foreground: #171717;
+  --overlay: #faf8f4;
+  --overlay-foreground: #171716;
 
-  --muted: #6f6f6a;
+  --muted: #6f6c66;
 
-  --border: rgba(255, 255, 255, 0.55);
-  --separator: rgba(0, 0, 0, 0.07);
+  --border: #e4e0d8;
+  --separator: #e9e5dd;
 
-  --accent: #f0e430;
-  --accent-foreground: #131308;
+  /* terracotta drives calls to action */
+  --accent: #cd7c5f;
+  --accent-foreground: #ffffff;
 
-  --success: #16a34a;
-  --warning: #f5883f;
-  --danger: #d13a3f;
+  --success: #c0d0cd;
+  --warning: #e1dbcf;
+  --danger: #b4544a;
 
-  --radius: 1rem;
-  --surface-shadow: 0 8px 24px rgba(20, 20, 20, 0.08);
+  --radius: 1.25rem;
+  --surface-shadow: 0 1px 2px rgba(23, 23, 22, 0.04);
 
-  /* secondary buttons need real presence on the light glass background */
-  --default: rgba(38, 38, 31, 0.1);
-  --default-foreground: #26261f;
-  /* selected option pills: dark, clearly distinct from the yellow CTA */
-  --pill-fg: #f7f6f2;
+  --default: rgba(23, 23, 22, 0.06);
+  --default-foreground: #171716;
+  --pill-fg: #f7f5f1;
+}
+
+/* Dark */
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #141414;
+  --foreground: #ece9e3;
+
+  --surface: #1c1c1b;
+  --surface-foreground: #ece9e3;
+  --surface-secondary: #232322;
+  --surface-tertiary: #2b2b29;
+
+  --overlay: #1c1c1b;
+  --overlay-foreground: #ece9e3;
+
+  --muted: #96938c;
+
+  --border: #2b2b29;
+  --separator: #262625;
+
+  --accent: #cd7c5f;
+  --accent-foreground: #ffffff;
+
+  --success: #7f9b95;
+  --warning: #b9b09f;
+  --danger: #b4544a;
+
+  --radius: 1.25rem;
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --default: rgba(255, 255, 255, 0.08);
+  --default-foreground: #ece9e3;
+  --pill-fg: #171716;
 }
 
 body {
-  font-family: "Urbanist", -apple-system, system-ui, sans-serif;
+  font-family: "Outfit", -apple-system, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   min-height: 100dvh;
-  /* light gray-olive gradient: olive-gray mix fading into light gray */
-  background: linear-gradient(150deg, #dcddd0 0%, #d8d8d1 40%, #d6d6d4 100%) fixed;
-}
-
-html.dark body {
-  background: linear-gradient(150deg, #3a3c32 0%, #2b2d25 45%, #1c1d18 100%) fixed;
+  background: var(--background);
 }
 
 .font-display {
-  font-family: "Urbanist", sans-serif;
-  letter-spacing: -0.01em;
-  font-weight: 600;
+  font-family: "Outfit", sans-serif;
+  letter-spacing: -0.015em;
 }
+
 .font-mono-n {
-  font-family: "Urbanist", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Panels: soft dark cards like the deck — rounded, hairline edge, no glass */
+/* Flat, generously rounded panels — no glass */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 26px;
   box-shadow: var(--surface-shadow);
-}
-
-html:not(.dark) .card {
-  background: rgba(255, 255, 255, 0.45);
-  border-color: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(14px) saturate(1.05);
-  -webkit-backdrop-filter: blur(14px) saturate(1.05);
-  box-shadow: 0 8px 28px rgba(40, 42, 30, 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .card--transparent {
   border: 0;
   box-shadow: none;
 }
 
-/* Buttons: full pills, like the deck's chips and CTAs */
+/* Pill buttons, as in the reference */
 .button {
   border-radius: 9999px;
+}
+
+/* Selected option pills are solid black (the reference's active state) */
+.pill-selected {
+  --button-bg: var(--foreground);
+  --button-bg-hover: var(--foreground);
+  --button-bg-pressed: var(--foreground);
+  --button-fg: var(--pill-fg);
+  border-color: transparent !important;
+  font-weight: 600;
+}
+
+/* Positive action: muted sage */
+.btn-success {
+  --button-bg: #c0d0cd;
+  --button-bg-hover: #b3c5c1;
+  --button-bg-pressed: #b3c5c1;
+  --button-fg: #16211f;
+  border-color: transparent !important;
+}
+
+/* Inverted button: solid dark with light text */
+.btn-invert {
+  --button-bg: var(--foreground);
+  --button-bg-hover: var(--foreground);
+  --button-bg-pressed: var(--foreground);
+  --button-fg: var(--pill-fg);
+  border-color: transparent !important;
 }
 
 /* ---- Pending state: running border while a write is in flight ---- */
@@ -146,8 +161,6 @@ html:not(.dark) .card {
   cursor: progress;
   opacity: 1 !important;
 }
-/* The ring itself stays put; only the gradient's angle travels around it,
-   which is what makes the highlight "run" along the border of a pill. */
 .is-pending::after {
   content: "";
   position: absolute;
@@ -176,16 +189,11 @@ html:not(.dark) .card {
 .is-pending.button::after {
   border-radius: 9999px;
 }
-.is-pending-box::after {
-  border-radius: 12px;
-}
 @keyframes run-border {
   to {
     --ring-angle: 360deg;
   }
 }
-/* Fallback where @property is unavailable: a gentle pulse so there is still
-   clear feedback rather than a frozen ring. */
 @supports not (background: conic-gradient(from var(--ring-angle), red, blue)) {
   .is-pending::after {
     background: currentColor;
@@ -197,52 +205,18 @@ html:not(.dark) .card {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .is-pending::after {
-    animation-duration: 2.4s;
-  }
+  .is-pending::after { animation-duration: 2.4s; }
 }
 
-/* ---- Selected option pills: solid dark, never the same as the yellow CTA ---- */
-.pill-selected {
-  --button-bg: var(--foreground);
-  --button-bg-hover: var(--foreground);
-  --button-bg-pressed: var(--foreground);
-  --button-fg: var(--pill-fg);
-  border-color: transparent !important;
-  font-weight: 600;
-}
-
-/* Recurring list: show ~5 rows, then scroll */
+/* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(127, 127, 127, 0.45) transparent;
+  scrollbar-color: rgba(23, 23, 22, 0.25) transparent;
   overscroll-behavior: contain;
 }
-.recurring-scroll::-webkit-scrollbar {
-  width: 6px;
-}
+.recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.45);
+  background: rgba(23, 23, 22, 0.25);
   border-radius: 999px;
 }
-.recurring-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* Positive-action accent (e.g. "Mark as done") */
-.btn-success {
-  --button-bg: #0f8a48;
-  --button-bg-hover: #0e7a40;
-  --button-bg-pressed: #0e7a40;
-  --button-fg: #ffffff;
-  border-color: transparent !important;
-}
-
-/* Inverted button: dark fill with light text (used for "Close") */
-.btn-invert {
-  --button-bg: var(--foreground);
-  --button-bg-hover: var(--foreground);
-  --button-bg-pressed: var(--foreground);
-  --button-fg: var(--pill-fg);
-  border-color: transparent !important;
-}
+.recurring-scroll::-webkit-scrollbar-track { background: transparent; }

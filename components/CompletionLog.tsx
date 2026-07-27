@@ -18,9 +18,9 @@ type Entry = {
 };
 
 const KIND_COLOR: Record<Entry["kind"], string> = {
-  "To-do": "#006FEE",
-  Goal: "#17C964",
-  Recurring: "#F5A524",
+  "To-do": "#cbcad8",
+  Goal: "#c0d0cd",
+  Recurring: "#cd7c5f",
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {

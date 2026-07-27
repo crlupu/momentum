@@ -6,8 +6,8 @@ import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey } from "@/lib/tracker";
 
-const CARD = "#f5883f"; // orange block
-const INK = "#1a1206"; // dark ink on the block
+const CARD = "#cd7c5f"; // terracotta block
+const INK = "#2a1109"; // dark ink on the block
 
 function offsetDate(days: number): Date {
   const d = new Date();

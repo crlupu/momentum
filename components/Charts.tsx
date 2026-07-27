@@ -81,7 +81,7 @@ function Heatmap({
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
     <div className="rounded-lg bg-foreground/[0.04] px-3 py-2.5">
-      <div className="font-mono-n text-2xl font-semibold" style={{ color: "#F5A524" }}>
+      <div className="font-mono-n text-2xl font-semibold" style={{ color: "#cd7c5f" }}>
         {value}
       </div>
       <div className="text-xs text-foreground/60">{label}</div>
@@ -141,14 +141,14 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
           <div className="flex h-[150px] items-end gap-1.5 pt-2">
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                <span className="font-mono-n text-[11px] font-semibold" style={{ color: "#F5A524" }}>
+                <span className="font-mono-n text-[11px] font-semibold" style={{ color: "#cd7c5f" }}>
                   {counts[i] || ""}
                 </span>
                 <div
                   className="w-full max-w-[34px] rounded-t-md"
                   style={{
                     height: Math.max(3, (counts[i] / max) * 110),
-                    background: counts[i] ? "#F5A524" : "rgba(127,127,127,0.15)",
+                    background: counts[i] ? "#cd7c5f" : "rgba(127,127,127,0.15)",
                   }}
                 />
                 <span className="text-[10px] text-foreground/50 whitespace-nowrap">
