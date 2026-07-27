@@ -5,7 +5,7 @@ import { Button, Card, Chip, Input } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
 import { Check, ListPlus, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
-import { Tracker, Goal, Subtask, goalPct, subtaskPct } from "@/lib/tracker";
+import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
 
 function SubtaskRow({
   goalId,
@@ -190,7 +190,9 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
 function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const c = tracker.cat(g.catId);
   const pct = goalPct(g);
-  const hasTarget = typeof g.target === "number" && g.target > 0;
+  const hasOwnTarget = typeof g.target === "number" && g.target > 0;
+  const showProgress = goalHasProgress(g);
+  const derived = goalIsDerived(g);
 
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState(String(g.current ?? ""));
@@ -217,17 +219,21 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
                 <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                 <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
               </Chip>
-              {hasTarget && (
-                <span className="font-mono-n text-xs text-foreground/50">
-                  {g.current ?? 0} / {g.target}
-                </span>
+              {derived ? (
+                <span className="text-xs text-foreground/50">from subtasks</span>
+              ) : (
+                hasOwnTarget && (
+                  <span className="font-mono-n text-xs text-foreground/50">
+                    {g.current ?? 0} / {g.target}
+                  </span>
+                )
               )}
             </div>
           </div>
-          {hasTarget && <ProgressRing pct={pct} color={c.color} size={48} />}
+          {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
         </div>
 
-        {hasTarget && (
+        {showProgress && (
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.color, transition: "width .3s ease" }} />
           </div>
@@ -260,8 +266,8 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onPress={() => setEditing((v) => !v)}>
-            {hasTarget ? <SlidersHorizontal className="h-4 w-4" /> : <Target className="h-4 w-4" />}
-            {hasTarget ? "Update" : "Set target"}
+            {hasOwnTarget ? <SlidersHorizontal className="h-4 w-4" /> : <Target className="h-4 w-4" />}
+            {hasOwnTarget ? "Update" : "Set target"}
           </Button>
           {g.done ? (
             <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
@@ -291,8 +297,8 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
   const s = tracker.state!;
   const done = s.goals.filter((g) => g.done);
   const active = s.goals.filter((g) => !g.done);
-  const todo = active.filter((g) => (g.current ?? 0) <= 0);
-  const inProgress = active.filter((g) => (g.current ?? 0) > 0);
+  const todo = active.filter((g) => goalPct(g) <= 0);
+  const inProgress = active.filter((g) => goalPct(g) > 0);
 
   return (
     <div>

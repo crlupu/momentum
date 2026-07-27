@@ -136,7 +136,32 @@ export function subtaskPct(t: Subtask): number {
   return Math.max(0, Math.min(100, Math.round(((t.current ?? 0) / t.target) * 100)));
 }
 
+/** Subtasks that actually carry a target (i.e. have a percentage of their own). */
+function measuredSubtasks(g: Goal): Subtask[] {
+  return (g.subtasks ?? []).filter((t) => typeof t.target === "number" && t.target > 0);
+}
+
+/** True when there is any percentage to show at all. */
+export function goalHasProgress(g: Goal): boolean {
+  return measuredSubtasks(g).length > 0 || (typeof g.target === "number" && g.target > 0);
+}
+
+/** True when the shown percentage comes from subtasks rather than the goal itself. */
+export function goalIsDerived(g: Goal): boolean {
+  return measuredSubtasks(g).length > 0;
+}
+
+/**
+ * A goal's percentage.
+ * - No subtasks, or no subtask carries a target → the goal's own current/target.
+ * - At least one subtask carries a target → the average of those subtasks.
+ */
 export function goalPct(g: Goal): number {
+  const measured = measuredSubtasks(g);
+  if (measured.length > 0) {
+    const total = measured.reduce((a, t) => a + subtaskPct(t), 0);
+    return Math.round(total / measured.length);
+  }
   if (!g.target || g.target <= 0) return 0;
   return Math.max(0, Math.min(100, Math.round(((g.current ?? 0) / g.target) * 100)));
 }
