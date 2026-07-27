@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@heroui/react";
 import { Menu, X, Target, Repeat, BarChart3, ScrollText, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
+import { Logo } from "./Logo";
 import { Tracker, dateKey, isRecurringDone, recurringUnits } from "@/lib/tracker";
 
 const NAV = [
@@ -85,7 +86,10 @@ export function Sidebar({
         <button aria-label="Open menu" onClick={() => setOpen(true)} className="text-foreground/80 hover:text-foreground">
           <Menu className="h-6 w-6" />
         </button>
-        <span className="font-display shrink-0 text-lg font-bold tracking-tight">Momentum</span>
+        <span className="flex shrink-0 items-center gap-2">
+          <Logo className="h-4 w-auto" />
+          <span className="font-display text-lg font-bold tracking-tight">Momentum</span>
+        </span>
         <TopStats tracker={tracker} />
       </div>
 
@@ -96,7 +100,10 @@ export function Sidebar({
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-foreground/10 bg-card shadow-2xl">
             <div className="flex h-full flex-col gap-1 p-4">
               <div className="mb-4 flex items-center justify-between px-1">
-                <span className="font-display text-xl font-bold tracking-tight">Momentum</span>
+                <span className="flex items-center gap-2">
+                  <Logo className="h-5 w-auto" />
+                  <span className="font-display text-xl font-bold tracking-tight">Momentum</span>
+                </span>
                 <button aria-label="Close menu" onClick={() => setOpen(false)} className="text-foreground/50 hover:text-foreground">
                   <X className="h-5 w-5" />
                 </button>
