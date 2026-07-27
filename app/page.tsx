@@ -35,12 +35,12 @@ export default function Home() {
         onAddRecurring={() => setRecurringOpen(true)}
       />
 
-      <main>
+      <main className="lg:pl-64">
         <AuthGate tracker={tracker}>
           {!tracker.state ? (
             <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
-            <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-3">
+            <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-4 lg:px-6">
               {tracker.syncError && (
                 <div
                   role="alert"
@@ -87,7 +87,7 @@ export default function Home() {
                 {/* Two explicit columns: each card sits straight under the one
                     above it, without CSS multi-column (which breaks scrollable
                     lists in Safari). */}
-                <div className="grid items-start gap-5 lg:grid-cols-2">
+                <div className="grid items-start gap-5 md:grid-cols-2">
                   <div className="flex flex-col gap-5">
                     <div>
                       <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">

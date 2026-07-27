@@ -176,7 +176,12 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                     background: rampStep(counts[i], max),
                   }}
                 />
-                <span className="text-[10px] text-foreground/50 whitespace-nowrap">
+                <span
+                  className={
+                    "text-[10px] text-foreground/50 whitespace-nowrap " +
+                    (i % 2 ? "hidden sm:inline" : "")
+                  }
+                >
                   {d.getDate()}/{d.getMonth() + 1}
                 </span>
               </div>
@@ -196,7 +201,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
               Check off some recurring tasks to see activity.
             </p>
           ) : (
-            <div className="space-y-5">
+            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))" }}>
               {perCat.map(({ c, map, total }) => (
                 <div key={c.id}>
                   <div className="mb-2 flex items-center gap-2">
