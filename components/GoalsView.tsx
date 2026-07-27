@@ -8,7 +8,6 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
-  ListPlus,
   Pencil,
   Plus,
   RotateCcw,
@@ -153,8 +152,15 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="outline" className="mt-2" onPress={() => setOpen(true)}>
-        <ListPlus className="h-4 w-4" /> Subtask
+      <Button
+        size="sm"
+        variant="outline"
+        isIconOnly
+        aria-label="Add subtask"
+        className="mt-2"
+        onPress={() => setOpen(true)}
+      >
+        <Plus className="h-4 w-4" />
       </Button>
     );
   }
@@ -191,11 +197,13 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
       <Button
         size="sm"
         variant="primary"
+        isIconOnly
+        aria-label="Save subtask"
         onPress={() => void add()}
         isDisabled={pending}
-        className={"w-full " + (pending ? "is-pending" : "")}
+        className={pending ? "is-pending" : ""}
       >
-        Add subtask
+        <Plus className="h-4 w-4" />
       </Button>
       <Button size="sm" variant="ghost" className="w-full" onPress={() => setOpen(false)}>
         Cancel
@@ -230,6 +238,7 @@ function GoalCard({
   const [target, setTarget] = useState(String(g.target ?? ""));
 
   const { pending, run } = usePending();
+
   /** Leaves edit mode and discards any unsaved field changes. */
   const closeEditor = () => {
     setName(g.title);
@@ -250,30 +259,75 @@ function GoalCard({
     );
   };
 
+  const editCat = tracker.cat(catId);
+
   return (
     <Card>
       <Card.Content className="px-3 py-3 sm:px-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className={"font-display text-base font-semibold " + (g.done ? "text-foreground/45 line-through" : "")}>
-              {g.title}
-            </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <Chip size="sm" variant="soft" className="cursor-pointer" onClick={() => void tracker.cycleGoalCat(g.id)}>
-                <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
-                <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
-              </Chip>
-              {derived ? (
-                <span className="text-xs text-foreground/50">from subtasks</span>
-              ) : (
-                hasOwnTarget && (
-                  <span className="font-mono-n text-xs text-foreground/50">
-                    {g.current ?? 0} / {g.target}
-                  </span>
-                )
-              )}
-            </div>
+          <div className="min-w-0 flex-1">
+            {/* The title itself becomes the input while editing. */}
+            {expanded ? (
+              <Input
+                aria-label="Goal name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full font-semibold"
+              />
+            ) : (
+              <div
+                className={
+                  "font-display text-base font-semibold " +
+                  (g.done ? "text-foreground/45 line-through" : "")
+                }
+              >
+                {g.title}
+              </div>
+            )}
+
+            {/* …and the category chip becomes the picker. */}
+            {expanded ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tracker.state!.categories.map((cat) => (
+                  <Button
+                    key={cat.id}
+                    size="sm"
+                    variant="outline"
+                    className={catId === cat.id ? "pill-selected" : ""}
+                    onPress={() => setCatId(cat.id)}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: cat.color }}
+                      aria-hidden
+                    />
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <Chip size="sm" variant="soft">
+                  <span
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ background: c.color }}
+                    aria-hidden
+                  />
+                  <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
+                </Chip>
+                {derived ? (
+                  <span className="text-xs text-foreground/50">from subtasks</span>
+                ) : (
+                  hasOwnTarget && (
+                    <span className="font-mono-n text-xs text-foreground/50">
+                      {g.current ?? 0} / {g.target}
+                    </span>
+                  )
+                )}
+              </div>
+            )}
           </div>
+
           <div className="flex shrink-0 items-center gap-1">
             <Button
               size="sm"
@@ -285,13 +339,18 @@ function GoalCard({
             >
               <Pencil className="h-4 w-4" />
             </Button>
-            {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
+            {showProgress && (
+              <ProgressRing pct={pct} color={expanded ? editCat.color : c.color} size={48} />
+            )}
           </div>
         </div>
 
         {showProgress && (
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.color, transition: "width .3s ease" }} />
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${pct}%`, background: c.color, transition: "width .3s ease" }}
+            />
           </div>
         )}
 
@@ -303,39 +362,12 @@ function GoalCard({
           </ul>
         )}
 
+        {/* Adding a subtask sits directly under the list it belongs to. */}
+        {expanded && <AddSubtask goalId={g.id} tracker={tracker} />}
+
         {expanded && (
-          <>
-            <div className="mt-3 flex flex-col gap-2 border-t border-foreground/10 pt-3">
-              <label className="block text-[11px] text-foreground/60">
-                Name
-                <Input
-                  aria-label="Goal name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-0.5 w-full"
-                />
-              </label>
-              <div>
-                <div className="mb-1 text-[11px] text-foreground/60">Category</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {tracker.state!.categories.map((cat) => (
-                    <Button
-                      key={cat.id}
-                      size="sm"
-                      variant="outline"
-                      className={catId === cat.id ? "pill-selected" : ""}
-                      onPress={() => setCatId(cat.id)}
-                    >
-                      <span
-                        className="inline-block h-2 w-2 rounded-full"
-                        style={{ background: cat.color }}
-                        aria-hidden
-                      />
-                      {cat.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <div className="mt-3 border-t border-foreground/10 pt-3">
+            <div className="grid grid-cols-2 gap-2">
               <label className="block text-[11px] text-foreground/60">
                 Current
                 <Input
@@ -356,67 +388,69 @@ function GoalCard({
                   className="mt-0.5 w-full"
                 />
               </label>
-              {onMove && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-foreground/60">Order</span>
-                  <ActionButton
-                    size="sm"
-                    variant="outline"
-                    isIconOnly
-                    aria-label="Move goal up"
-                    isDisabled={!canMoveUp}
-                    onAction={() => onMove(-1)}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </ActionButton>
-                  <ActionButton
-                    size="sm"
-                    variant="outline"
-                    isIconOnly
-                    aria-label="Move goal down"
-                    isDisabled={!canMoveDown}
-                    onAction={() => onMove(1)}
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </ActionButton>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onPress={() => void save()}
-                  isDisabled={pending}
-                  className={"flex-1 " + (pending ? "is-pending" : "")}
-                >
-                  Save changes
-                </Button>
-                <Button size="sm" variant="outline" onPress={closeEditor} isDisabled={pending}>
-                  Close
-                </Button>
-              </div>
             </div>
 
-            <AddSubtask goalId={g.id} tracker={tracker} />
+            {/* Primary: commit or discard. */}
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="primary"
+                onPress={() => void save()}
+                isDisabled={pending}
+                className={"flex-1 " + (pending ? "is-pending" : "")}
+              >
+                Save changes
+              </Button>
+              <Button size="sm" variant="outline" onPress={closeEditor} isDisabled={pending}>
+                Close
+              </Button>
+            </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            {/* Secondary: status on the left, ordering and removal on the right. */}
+            <div className="mt-2 flex items-center gap-2">
               {g.done ? (
                 <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
                   <RotateCcw className="h-4 w-4" /> Reopen
                 </ActionButton>
               ) : (
-                <ActionButton size="sm" variant="primary" onAction={() => tracker.toggleGoalDone(g.id)}>
+                <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
                   <Check className="h-4 w-4" /> Done
                 </ActionButton>
               )}
-              <DeleteButton
-                what={`the goal "${g.title}"`}
-                className="ml-auto"
-                onDelete={() => tracker.deleteGoal(g.id)}
-              />
+
+              <div className="ml-auto flex items-center gap-1">
+                {onMove && (
+                  <>
+                    <ActionButton
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="Move goal up"
+                      isDisabled={!canMoveUp}
+                      onAction={() => onMove(-1)}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </ActionButton>
+                    <ActionButton
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="Move goal down"
+                      isDisabled={!canMoveDown}
+                      onAction={() => onMove(1)}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </ActionButton>
+                  </>
+                )}
+                <DeleteButton
+                  what={`the goal "${g.title}"`}
+                  iconOnly
+                  onDelete={() => tracker.deleteGoal(g.id)}
+                />
+              </div>
             </div>
-          </>
+          </div>
         )}
       </Card.Content>
     </Card>

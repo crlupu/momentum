@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
@@ -276,8 +276,15 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </ul>
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
-        <Button type="submit" variant="primary" className={pending ? "is-pending" : ""} isDisabled={pending}>
-          Add
+        <Button
+          type="submit"
+          variant="primary"
+          isIconOnly
+          aria-label="Add"
+          className={pending ? "is-pending" : ""}
+          isDisabled={pending}
+        >
+          <Plus className="h-4 w-4" />
         </Button>
       </form>
     </div>
@@ -336,8 +343,15 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
       )}
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="flex-1" />
-        <Button type="submit" variant="primary" className={pending ? "is-pending" : ""} isDisabled={pending}>
-          Add
+        <Button
+          type="submit"
+          variant="primary"
+          isIconOnly
+          aria-label="Add"
+          className={pending ? "is-pending" : ""}
+          isDisabled={pending}
+        >
+          <Plus className="h-4 w-4" />
         </Button>
       </form>
     </div>

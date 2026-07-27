@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
+import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey } from "@/lib/tracker";
 
@@ -69,11 +70,13 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           <Button
             type="submit"
             variant="primary"
+            isIconOnly
+            aria-label="Add"
             isDisabled={pending}
             className={pending ? "is-pending" : ""}
             style={{ background: INK, color: CARD }}
           >
-            Add
+            <Plus className="h-4 w-4" />
           </Button>
         </form>
 
