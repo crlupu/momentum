@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
-import { Check, ListPlus, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
+import { Check, ListPlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
 import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
 
@@ -194,6 +194,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const showProgress = goalHasProgress(g);
   const derived = goalIsDerived(g);
 
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState(String(g.current ?? ""));
   const [target, setTarget] = useState(String(g.target ?? ""));
@@ -247,6 +248,12 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
           </ul>
         )}
 
+        {!expanded ? (
+          <Button size="sm" variant="ghost" className="mt-2" onPress={() => setExpanded(true)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+        ) : (
+          <>
         <AddSubtask goalId={g.id} tracker={tracker} />
 
         {editing && (
@@ -282,6 +289,20 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
             <X className="h-4 w-4" />
           </ActionButton>
         </div>
+
+        <Button
+          size="sm"
+          variant="ghost"
+          className="mt-1"
+          onPress={() => {
+            setEditing(false);
+            setExpanded(false);
+          }}
+        >
+          Close
+        </Button>
+          </>
+        )}
       </Card.Content>
     </Card>
   );

@@ -186,16 +186,23 @@ export function goalIsDerived(g: Goal): boolean {
 /**
  * A goal's percentage.
  * - No subtasks, or no subtask carries a target → the goal's own current/target.
- * - At least one subtask carries a target → the average of those subtasks.
+ * - At least one subtask carries a target → the combined total across those
+ *   subtasks (all progress summed over all targets), so a small subtask being
+ *   part-done can't inflate the whole goal.
+ *
+ * Floored, so the figure never claims more progress than has actually happened
+ * and only reaches 100% when everything really is finished.
  */
 export function goalPct(g: Goal): number {
   const measured = measuredSubtasks(g);
   if (measured.length > 0) {
-    const total = measured.reduce((a, t) => a + subtaskPct(t), 0);
-    return Math.round(total / measured.length);
+    const current = measured.reduce((a, t) => a + Math.min(t.current ?? 0, t.target ?? 0), 0);
+    const target = measured.reduce((a, t) => a + (t.target ?? 0), 0);
+    if (target <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.floor((current / target) * 100)));
   }
   if (!g.target || g.target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round(((g.current ?? 0) / g.target) * 100)));
+  return Math.max(0, Math.min(100, Math.floor(((g.current ?? 0) / g.target) * 100)));
 }
 
 function migrate(raw: unknown): TrackerState {
