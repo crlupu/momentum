@@ -4,7 +4,16 @@ import { useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
-import { Check, ListPlus, Pencil, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  ListPlus,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Target,
+} from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
 import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
 
@@ -195,7 +204,19 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
   );
 }
 
-function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
+function GoalCard({
+  g,
+  tracker,
+  onMove,
+  canMoveUp,
+  canMoveDown,
+}: {
+  g: Goal;
+  tracker: Tracker;
+  onMove?: (dir: -1 | 1) => Promise<unknown>;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+}) {
   const c = tracker.cat(g.catId);
   const pct = goalPct(g);
   const hasOwnTarget = typeof g.target === "number" && g.target > 0;
@@ -335,6 +356,32 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
                   className="mt-0.5 w-full"
                 />
               </label>
+              {onMove && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-foreground/60">Order</span>
+                  <ActionButton
+                    size="sm"
+                    variant="outline"
+                    isIconOnly
+                    aria-label="Move goal up"
+                    isDisabled={!canMoveUp}
+                    onAction={() => onMove(-1)}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </ActionButton>
+                  <ActionButton
+                    size="sm"
+                    variant="outline"
+                    isIconOnly
+                    aria-label="Move goal down"
+                    isDisabled={!canMoveDown}
+                    onAction={() => onMove(1)}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </ActionButton>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -384,6 +431,18 @@ function ColumnHeader({ children }: { children: React.ReactNode }) {
 
 export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
   const s = tracker.state!;
+
+  /** Swaps a goal with its neighbour inside its own column. */
+  const makeMove = (list: Goal[]) => (id: string) => async (dir: -1 | 1) => {
+    const i = list.findIndex((g) => g.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return false;
+    const all = [...s.goals];
+    const a = all.findIndex((g) => g.id === list[i].id);
+    const b = all.findIndex((g) => g.id === list[j].id);
+    [all[a], all[b]] = [all[b], all[a]];
+    return tracker.reorderGoals(all.map((g) => g.id));
+  };
   const done = s.goals.filter((g) => g.done);
   const active = s.goals.filter((g) => !g.done);
   const todo = active.filter((g) => goalPct(g) <= 0);
@@ -418,7 +477,16 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
               {todo.length === 0 ? (
                 <p className="px-1 text-sm text-foreground/40">Nothing to do.</p>
               ) : (
-                todo.map((g) => <GoalCard key={g.id} g={g} tracker={tracker} />)
+                todo.map((g, i) => (
+                  <GoalCard
+                    key={g.id}
+                    g={g}
+                    tracker={tracker}
+                    onMove={makeMove(todo)(g.id)}
+                    canMoveUp={i > 0}
+                    canMoveDown={i < todo.length - 1}
+                  />
+                ))
               )}
             </div>
           </div>
@@ -428,7 +496,16 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
               {inProgress.length === 0 ? (
                 <p className="px-1 text-sm text-foreground/40">Nothing in progress.</p>
               ) : (
-                inProgress.map((g) => <GoalCard key={g.id} g={g} tracker={tracker} />)
+                inProgress.map((g, i) => (
+                  <GoalCard
+                    key={g.id}
+                    g={g}
+                    tracker={tracker}
+                    onMove={makeMove(inProgress)(g.id)}
+                    canMoveUp={i > 0}
+                    canMoveDown={i < inProgress.length - 1}
+                  />
+                ))
               )}
             </div>
           </div>

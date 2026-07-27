@@ -671,6 +671,15 @@ export function useTracker() {
 
     deleteGoal: (id: string) => commit((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
 
+    /** Reorders goals to match the given list of ids. */
+    reorderGoals: (ids: string[]) =>
+      commit((s) => {
+        const byId = new Map(s.goals.map((g) => [g.id, g]));
+        const ordered = ids.map((id) => byId.get(id)).filter(Boolean) as typeof s.goals;
+        const missing = s.goals.filter((g) => !ids.includes(g.id));
+        return { ...s, goals: [...ordered, ...missing] };
+      }),
+
     // ---- subtasks ----
     addSubtask: (goalId: string, title: string, current: number | null, target: number | null) =>
       commit((s) => ({

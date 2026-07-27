@@ -74,8 +74,8 @@ export default function Home() {
 
               <section id="config">
                 <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Configuration</h2>
-                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                  <div>
+                <div className="columns-1 gap-5 sm:columns-2 xl:columns-4">
+                  <div className="mb-5 break-inside-avoid">
                     <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
                       Categories
                     </h3>
@@ -85,7 +85,7 @@ export default function Home() {
                       </Card.Content>
                     </Card>
                   </div>
-                  <div>
+                  <div className="mb-5 break-inside-avoid">
                     <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
                       Groups
                     </h3>
@@ -95,7 +95,7 @@ export default function Home() {
                       </Card.Content>
                     </Card>
                   </div>
-                  <div>
+                  <div className="mb-5 break-inside-avoid">
                     <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
                       Manage recurring
                     </h3>
@@ -105,7 +105,7 @@ export default function Home() {
                       </Card.Content>
                     </Card>
                   </div>
-                  <div>
+                  <div className="mb-5 break-inside-avoid">
                     <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
                       Calorie budget
                     </h3>
