@@ -2,8 +2,11 @@
 
 import { Button, Card } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
-import { Check, Plus, X } from "lucide-react";
-import { Tracker, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, recurringUnits, streak } from "@/lib/tracker";
+import { Check, Pencil, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { Modal } from "./Modal";
+import { RecurringEditForm } from "./Forms";
+import { Tracker, RecurringTask, FREQ_LABEL, FREQ_ORDER, dateKey, isRecurringDone, recurringUnits, streak } from "@/lib/tracker";
 
 function hexToRgba(hex: string, a: number): string {
   const h = hex.replace("#", "");
@@ -46,6 +49,7 @@ function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string
 
 export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
   const s = tracker.state!;
+  const [editTask, setEditTask] = useState<RecurringTask | null>(null);
   const today = dateKey();
 
   const units = recurringUnits(s.recurring, today);
@@ -104,6 +108,15 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                     </span>
                     <span className="inline-block h-2 w-2 rounded-full" style={{ background: c.color }} aria-hidden />
                     <span className="text-[11px] text-foreground/60">{FREQ_LABEL[r.freq]}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label={`Edit ${r.title}`}
+                      onPress={() => setEditTask(r)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <ActionButton size="sm" variant="ghost" isIconOnly aria-label={`Delete ${r.title}`} onAction={() => tracker.deleteRecurring(r.id)}>
                       <X className="h-4 w-4" />
                     </ActionButton>
@@ -115,6 +128,12 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
           )}
         </Card.Content>
       </Card>
+
+      <Modal open={!!editTask} onClose={() => setEditTask(null)} title="Edit recurring task">
+        {editTask && (
+          <RecurringEditForm tracker={tracker} task={editTask} onDone={() => setEditTask(null)} />
+        )}
+      </Modal>
     </div>
   );
 }

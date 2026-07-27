@@ -710,6 +710,48 @@ export function useTracker() {
         };
       }),
 
+    updateRecurring: (
+      id: string,
+      patch: { title?: string; catId?: string; freq?: Frequency; groupName?: string }
+    ) =>
+      commit((s) => {
+        const name = (patch.groupName ?? "").trim();
+        let groups = s.recurringGroups;
+        let groupId: string | undefined;
+        if (name) {
+          const existing = groups.find((g) => g.name.toLowerCase() === name.toLowerCase());
+          if (existing) {
+            groupId = existing.id;
+          } else {
+            groupId = uid();
+            groups = [...groups, { id: groupId, name }];
+          }
+        }
+
+        // Members of a group always share their done-state, so a task joining a
+        // group adopts that group's current state.
+        const joining = groupId && groupId !== s.recurring.find((r) => r.id === id)?.groupId;
+        const groupLastDone = joining
+          ? s.recurring.find((r) => r.groupId === groupId)?.lastDone ?? null
+          : undefined;
+
+        const recurring = s.recurring.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                title: patch.title?.trim() || r.title,
+                catId: patch.catId ?? r.catId,
+                freq: patch.freq ?? r.freq,
+                groupId,
+                lastDone: groupLastDone !== undefined ? groupLastDone : r.lastDone,
+              }
+            : r
+        );
+
+        const used = new Set(recurring.map((r) => r.groupId).filter(Boolean) as string[]);
+        return { ...s, recurring, recurringGroups: groups.filter((g) => used.has(g.id)) };
+      }),
+
     deleteRecurring: (id: string) =>
       commit((s) => {
         const recurring = s.recurring.filter((r) => r.id !== id);

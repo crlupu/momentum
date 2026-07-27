@@ -231,7 +231,22 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               )}
             </div>
           </div>
-          {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              isIconOnly
+              aria-label={expanded ? "Close editing" : "Edit goal"}
+              className={expanded ? "pill-selected" : ""}
+              onPress={() => {
+                setEditing(false);
+                setExpanded((v) => !v);
+              }}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
+          </div>
         </div>
 
         {showProgress && (
@@ -248,11 +263,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
           </ul>
         )}
 
-        {!expanded ? (
-          <Button size="sm" variant="ghost" className="mt-2" onPress={() => setExpanded(true)}>
-            <Pencil className="h-4 w-4" /> Edit
-          </Button>
-        ) : (
+        {expanded && (
           <>
         <AddSubtask goalId={g.id} tracker={tracker} />
 
@@ -290,17 +301,6 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
           </ActionButton>
         </div>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          className="mt-1"
-          onPress={() => {
-            setEditing(false);
-            setExpanded(false);
-          }}
-        >
-          Close
-        </Button>
           </>
         )}
       </Card.Content>

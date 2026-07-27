@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Button, Chip, Input } from "@heroui/react";
 import { X } from "lucide-react";
 import { ActionButton, usePending } from "./ActionButton";
-import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL } from "@/lib/tracker";
+import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, RecurringTask } from "@/lib/tracker";
 
 function CatPicker({
   tracker,
@@ -146,6 +146,87 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
 
       <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
         Add recurring task
+      </Button>
+    </form>
+  );
+}
+
+export function RecurringEditForm({
+  tracker,
+  task,
+  onDone,
+}: {
+  tracker: Tracker;
+  task: RecurringTask;
+  onDone: () => void;
+}) {
+  const s = tracker.state!;
+  const [title, setTitle] = useState(task.title);
+  const [catId, setCatId] = useState(task.catId);
+  const [freq, setFreq] = useState<Frequency>(task.freq);
+  const [group, setGroup] = useState(
+    s.recurringGroups.find((g) => g.id === task.groupId)?.name ?? ""
+  );
+  const { pending, run } = usePending();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const t = title.trim();
+    if (!t || pending) return;
+    const ok = await run(() =>
+      tracker.updateRecurring(task.id, { title: t, catId, freq, groupName: group })
+    );
+    if (ok) onDone();
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <Input aria-label="Task title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
+      <div>
+        <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCIES.map((f) => (
+            <Button
+              key={f}
+              size="sm"
+              variant="outline"
+              className={freq === f ? "pill-selected" : ""}
+              onPress={() => setFreq(f)}
+            >
+              {FREQ_LABEL[f]}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="mb-1.5 text-xs text-foreground/50">
+          Group (optional) — doing one task in a group covers the rest
+        </div>
+        <Input
+          aria-label="Group name"
+          placeholder="e.g. Workout"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+        />
+        {s.recurringGroups.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {s.recurringGroups.map((g) => (
+              <Button
+                key={g.id}
+                size="sm"
+                variant="outline"
+                className={group.toLowerCase() === g.name.toLowerCase() ? "pill-selected" : ""}
+                onPress={() => setGroup(group.toLowerCase() === g.name.toLowerCase() ? "" : g.name)}
+              >
+                {g.name}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
+        Save changes
       </Button>
     </form>
   );
