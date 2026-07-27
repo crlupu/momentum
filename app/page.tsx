@@ -6,7 +6,14 @@ import { useTracker } from "@/lib/tracker";
 import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";
 import { Modal } from "@/components/Modal";
-import { GoalForm, RecurringForm, CategoriesCard, GroupsCard, RecurringManageCard } from "@/components/Forms";
+import {
+  GoalForm,
+  RecurringForm,
+  CategoriesCard,
+  GroupsCard,
+  RecurringManageCard,
+  CalorieBudgetCard,
+} from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
 import TodoList from "@/components/TodoList";
@@ -65,34 +72,52 @@ export default function Home() {
                 <CompletionLog tracker={tracker} />
               </section>
 
-              <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Categories</h2>
-                  <Card>
-                    <Card.Content className="p-4 sm:p-5">
-                      <CategoriesCard tracker={tracker} />
-                    </Card.Content>
-                  </Card>
-                </div>
-                <div>
-                  <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Groups</h2>
-                  <Card>
-                    <Card.Content className="p-4 sm:p-5">
-                      <GroupsCard tracker={tracker} />
-                    </Card.Content>
-                  </Card>
-                </div>
-                <div>
-                  <h2 className="font-display mb-4 text-xl font-bold tracking-tight">
-                    Manage recurring
-                  </h2>
-                  <Card>
-                    <Card.Content className="p-4 sm:p-5">
-                      <RecurringManageCard tracker={tracker} />
-                    </Card.Content>
-                  </Card>
+              <section id="config">
+                <h2 className="font-display mb-4 text-xl font-bold tracking-tight">Configuration</h2>
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                      Categories
+                    </h3>
+                    <Card>
+                      <Card.Content className="p-4 sm:p-5">
+                        <CategoriesCard tracker={tracker} />
+                      </Card.Content>
+                    </Card>
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                      Groups
+                    </h3>
+                    <Card>
+                      <Card.Content className="p-4 sm:p-5">
+                        <GroupsCard tracker={tracker} />
+                      </Card.Content>
+                    </Card>
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                      Manage recurring
+                    </h3>
+                    <Card>
+                      <Card.Content className="p-4 sm:p-5">
+                        <RecurringManageCard tracker={tracker} />
+                      </Card.Content>
+                    </Card>
+                  </div>
+                  <div>
+                    <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                      Calorie budget
+                    </h3>
+                    <Card>
+                      <Card.Content className="p-4 sm:p-5">
+                        <CalorieBudgetCard tracker={tracker} />
+                      </Card.Content>
+                    </Card>
+                  </div>
                 </div>
               </section>
+
             </div>
           )}
         </AuthGate>

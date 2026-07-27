@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
-import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask } from "@/lib/tracker";
+import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek } from "@/lib/tracker";
 
 function GroupPicker({
   tracker,
@@ -408,6 +408,59 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
           <RecurringEditForm tracker={tracker} task={editTask} onDone={() => setEditTask(null)} />
         )}
       </Modal>
+    </div>
+  );
+}
+
+export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [value, setValue] = useState(String(s.calorieBudget ?? ""));
+  const { pending, run } = usePending();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pending) return;
+    const n = value.trim() === "" ? null : Number(value);
+    await run(() => tracker.setCalorieBudget(n));
+  };
+
+  const left = caloriesLeftThisWeek(s.calories, s.calorieBudget);
+
+  return (
+    <div>
+      <p className="mb-3 text-[13px] text-foreground/60">
+        Your daily target. The top bar shows what&apos;s left for the week
+        {s.calorieBudget ? ` (${s.calorieBudget} × 7 = ${s.calorieBudget * 7} kcal)` : ""}.
+      </p>
+
+      <form onSubmit={submit} className="flex gap-2">
+        <Input
+          type="number"
+          aria-label="Daily calorie budget"
+          placeholder="e.g. 2200"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="flex-1"
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          className={pending ? "is-pending" : ""}
+          isDisabled={pending}
+        >
+          Save
+        </Button>
+      </form>
+
+      {left != null && (
+        <p className="mt-3 text-[13px] text-foreground/60">
+          <span className="font-mono-n font-semibold text-foreground">{left}</span> kcal left this
+          week
+        </p>
+      )}
+      {!s.calorieBudget && (
+        <p className="mt-3 text-[13px] text-foreground/45">No budget set.</p>
+      )}
     </div>
   );
 }

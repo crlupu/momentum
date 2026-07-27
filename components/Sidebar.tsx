@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { Menu, X, Target, Repeat, BarChart3, ScrollText, Plus, LogOut } from "lucide-react";
+import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
-import { Tracker, dateKey, isRecurringDone, recurringUnits } from "@/lib/tracker";
+import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target },
   { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "charts", label: "Progress", icon: BarChart3 },
   { id: "log", label: "Log", icon: ScrollText },
+  { id: "config", label: "Configuration", icon: Settings },
 ];
 
 /** One top-bar stat: the figure, then a filled colour-coded label beside it. */
@@ -51,6 +52,7 @@ function TopStats({ tracker }: { tracker: Tracker }) {
   const kcalToday = st.calories
     .filter((e) => e.date === today)
     .reduce((a, e) => a + e.kcal, 0);
+  const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
   return (
     <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
@@ -59,6 +61,14 @@ function TopStats({ tracker }: { tracker: Tracker }) {
       <TopStat value={openTodos} label="to do" bg="#006FEE" fg="#eaf3ff" />
       <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#f0e430" fg="#1a1a08" />
       <TopStat value={kcalToday} label="kcal today" bg="#f5883f" fg="#1a1206" />
+      {kcalLeft != null && (
+        <TopStat
+          value={kcalLeft}
+          label="kcal left / week"
+          bg={kcalLeft >= 0 ? "#17C964" : "#e5484d"}
+          fg={kcalLeft >= 0 ? "#04250f" : "#ffffff"}
+        />
+      )}
     </div>
   );
 }
@@ -96,8 +106,17 @@ export function Sidebar({
       {/* Overlay drawer */}
       {open && (
         <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} aria-hidden />
-          <aside className="absolute inset-y-0 left-0 w-64 border-r border-foreground/10 bg-card shadow-2xl">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} aria-hidden />
+          <aside
+            className="absolute inset-y-0 left-0 w-64 border-r border-foreground/10"
+            style={{
+              background: "var(--overlay)",
+              color: "var(--overlay-foreground)",
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
+              boxShadow: "0 0 60px rgba(0,0,0,0.45)",
+            }}
+          >
             <div className="flex h-full flex-col gap-1 p-4">
               <div className="mb-4 flex items-center justify-between px-1">
                 <span className="flex items-center gap-2">

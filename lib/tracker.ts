@@ -91,6 +91,8 @@ export type TrackerState = {
   completions: Completion[];
   weights: WeightEntry[];
   calories: CalorieEntry[];
+  /** Daily calorie budget, used to work out what's left for the week. */
+  calorieBudget?: number;
 };
 
 export const CAT_COLORS = [
@@ -118,6 +120,26 @@ const DEFAULT_STATE: TrackerState = {
   weights: [],
   calories: [],
 };
+
+/** Monday-based start of the current week, as a YYYY-MM-DD key. */
+export function weekStart(d: Date = new Date()): string {
+  const x = new Date(d);
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return dateKey(x);
+}
+
+/** Calories left in the current week: budget x 7 minus everything logged. */
+export function caloriesLeftThisWeek(
+  calories: CalorieEntry[],
+  budget?: number
+): number | null {
+  if (!budget || budget <= 0) return null;
+  const from = weekStart();
+  const logged = calories
+    .filter((e) => e.date >= from && e.date <= dateKey())
+    .reduce((a, e) => a + e.kcal, 0);
+  return budget * 7 - logged;
+}
 
 export const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -292,6 +314,8 @@ function migrate(raw: unknown): TrackerState {
     completions,
     weights,
     calories,
+    calorieBudget:
+      typeof s.calorieBudget === "number" && s.calorieBudget > 0 ? s.calorieBudget : undefined,
   };
 }
 
@@ -869,6 +893,12 @@ export function useTracker() {
         weights.sort((a, b) => a.date.localeCompare(b.date));
         return { ...s, weights };
       }),
+
+    setCalorieBudget: (kcal: number | null) =>
+      commit((s) => ({
+        ...s,
+        calorieBudget: kcal != null && Number.isFinite(kcal) && kcal > 0 ? Math.round(kcal) : undefined,
+      })),
 
     // ---- calories ----
     addCalories: (kcal: number) =>
