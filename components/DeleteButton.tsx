@@ -17,6 +17,7 @@ export function DeleteButton({
   size = "sm",
   className,
   fullWidth,
+  iconOnly,
 }: {
   /** Name of the thing being deleted, shown in the dialog. */
   what: string;
@@ -25,6 +26,8 @@ export function DeleteButton({
   size?: "sm" | "md" | "lg";
   className?: string;
   fullWidth?: boolean;
+  /** Render just the trash icon (still confirms before deleting). */
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { pending, run } = usePending();
@@ -39,11 +42,13 @@ export function DeleteButton({
       <Button
         size={size}
         variant="danger"
+        isIconOnly={iconOnly}
+        aria-label={iconOnly ? `Delete ${what}` : undefined}
         className={[fullWidth ? "w-full" : "", className].filter(Boolean).join(" ")}
         onPress={() => setOpen(true)}
       >
         <Trash2 className="h-4 w-4" />
-        {label}
+        {!iconOnly && label}
       </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Confirm deletion">

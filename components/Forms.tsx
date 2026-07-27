@@ -2,9 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "@heroui/react";
+import { Pencil } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
+import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
-import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, RecurringTask } from "@/lib/tracker";
+import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask } from "@/lib/tracker";
 
 function GroupPicker({
   tracker,
@@ -211,14 +213,17 @@ export function RecurringEditForm({
       </div>
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
-      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
-        Save changes
-      </Button>
-
-      <div className="mt-1 border-t border-foreground/10 pt-3">
+      <div className="mt-1 flex items-center gap-2">
+        <Button
+          type="submit"
+          variant="primary"
+          className={"flex-1 " + (pending ? "is-pending" : "")}
+          isDisabled={pending}
+        >
+          Save changes
+        </Button>
         <DeleteButton
           what={`the recurring task "${task.title}"`}
-          fullWidth
           onDelete={async () => {
             const ok = await tracker.deleteRecurring(task.id);
             if (ok) onDone();
@@ -252,6 +257,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
             <span className="flex-1 truncate text-[15px]">{c.name}</span>
             <DeleteButton
               what={`the category "${c.name}"`}
+              iconOnly
               onDelete={async () => {
                 if (tracker.categoryInUse(c.id)) {
                   alert("This category is in use. Remove or reassign its items first.");
@@ -304,6 +310,7 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
                 </span>
                 <DeleteButton
                   what={`the group "${g.name}"`}
+                  iconOnly
                   onDelete={async () => {
                     if (tracker.groupInUse(g.id)) {
                       alert("This group is in use. Move its tasks out of the group first.");
@@ -323,6 +330,69 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
           Add
         </Button>
       </form>
+    </div>
+  );
+}
+
+export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [editTask, setEditTask] = useState<RecurringTask | null>(null);
+  const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
+
+  const tasks = [...s.recurring].sort(
+    (a, b) =>
+      FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] ||
+      groupName(a.groupId).localeCompare(groupName(b.groupId)) ||
+      a.title.localeCompare(b.title)
+  );
+
+  return (
+    <div>
+      {tasks.length === 0 ? (
+        <p className="py-1 text-[15px] text-foreground/60">No recurring tasks yet.</p>
+      ) : (
+        <ul className="list-none divide-y divide-foreground/10 p-0">
+          {tasks.map((r) => {
+            const c = tracker.cat(r.catId);
+            return (
+              <li key={r.id} className="flex items-center gap-2 py-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: c.color }}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px]">{r.title}</span>
+                  <span className="block text-[11px] text-foreground/50">
+                    {FREQ_LABEL[r.freq]}
+                    {r.groupId ? ` · ${groupName(r.groupId)}` : ""}
+                  </span>
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isIconOnly
+                  aria-label={`Edit ${r.title}`}
+                  onPress={() => setEditTask(r)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <DeleteButton
+                  what={`the recurring task "${r.title}"`}
+                  iconOnly
+                  onDelete={() => tracker.deleteRecurring(r.id)}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <Modal open={!!editTask} onClose={() => setEditTask(null)} title="Edit recurring task">
+        {editTask && (
+          <RecurringEditForm tracker={tracker} task={editTask} onDone={() => setEditTask(null)} />
+        )}
+      </Modal>
     </div>
   );
 }
