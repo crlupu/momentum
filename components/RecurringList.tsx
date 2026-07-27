@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card } from "@heroui/react";
+import { Button, Card } from "./ui";
 import { usePending } from "./ActionButton";
 import { Check, Plus } from "lucide-react";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";

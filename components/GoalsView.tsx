@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Chip, Input } from "@heroui/react";
+import { Button, Card, Chip, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import {

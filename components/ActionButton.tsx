@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Button } from "@heroui/react";
+import { Button } from "./ui";
 
 /** Minimum time the pending state stays visible, so it never just flashes. */
 const MIN_PENDING_MS = 1000;

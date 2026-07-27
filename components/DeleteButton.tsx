@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@heroui/react";
+import { Button } from "./ui";
 import { Trash2 } from "lucide-react";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";

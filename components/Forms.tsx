@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "@heroui/react";
+import { Button, Input } from "./ui";
 import { Pencil, Plus } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";

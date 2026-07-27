@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@heroui/react";
+import { Card } from "@/components/ui";
 import { useTracker } from "@/lib/tracker";
 import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";

@@ -1,8 +1,8 @@
 "use client";
 
-import { Card } from "@heroui/react";
+import { Card } from "./ui";
 import { RotateCcw } from "lucide-react";
-import { Button } from "@heroui/react";
+import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { Tracker } from "@/lib/tracker";

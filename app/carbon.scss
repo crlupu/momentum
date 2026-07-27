@@ -1,0 +1,28 @@
+/* IBM Carbon styles, themed to follow next-themes' html class */
+@use "@carbon/react" with (
+  $css--font-face: false,
+  $use-flexbox-grid: false
+);
+@use "@carbon/react/scss/themes";
+@use "@carbon/react/scss/theme";
+
+html.light {
+  @include theme.theme(themes.$g10);
+}
+html.dark {
+  @include theme.theme(themes.$g100);
+
+  /* pull g100 down to the artwork's pure black */
+  --cds-background: #000000;
+  --cds-layer: #121212;
+  --cds-layer-01: #121212;
+  --cds-layer-02: #1c1c1c;
+  --cds-layer-hover: #1c1c1c;
+  --cds-layer-hover-01: #1c1c1c;
+  --cds-field: #121212;
+  --cds-field-01: #121212;
+  --cds-field-hover: #1c1c1c;
+  --cds-border-subtle-00: #262626;
+  --cds-border-subtle-01: #262626;
+  --cds-border-strong-01: #393939;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input } from "@heroui/react";
+import { Button, Card, Input } from "./ui";
 import { Tracker } from "@/lib/tracker";
 
 function GoogleIcon() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input } from "@heroui/react";
+import { Button, Card, Input } from "./ui";
 import { Check, Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";

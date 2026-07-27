@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@heroui/react";
+import { Button } from "./ui";
 import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
