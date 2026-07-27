@@ -66,7 +66,7 @@ function TopStats({ tracker }: { tracker: Tracker }) {
         <TopStat
           value={kcalLeft}
           label="kcal left / week"
-          bg={kcalLeft >= 0 ? "#1ea97b" : "#b3261e"}
+          bg={kcalLeft >= 0 ? "#1ea97b" : "#264b04"}
         />
       )}
     </div>

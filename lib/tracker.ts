@@ -102,30 +102,14 @@ export const CAT_COLORS = [
   "#264b04", "#053438", "#c8efc1", "#bdf0ec",
 ];
 
-function hslToHex(h: number, sat: number, light: number): string {
-  const a = (sat / 100) * Math.min(light / 100, 1 - light / 100);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const v = light / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-    return Math.round(255 * v)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
 /** Picks a colour no existing category is already using. */
 export function nextCategoryColor(existing: { color: string }[]): string {
   const used = new Set(existing.map((c) => c.color.toLowerCase()));
   const free = CAT_COLORS.find((c) => !used.has(c.toLowerCase()));
   if (free) return free;
-  // Palette exhausted — walk the colour wheel by the golden angle, which keeps
-  // successive hues far apart, and skip anything already taken.
-  for (let i = existing.length; i < existing.length + 360; i++) {
-    const candidate = hslToHex((i * 137.508) % 360, 68, 55);
-    if (!used.has(candidate.toLowerCase())) return candidate;
-  }
-  return CAT_COLORS[0];
+  // Palette exhausted — cycle through it again rather than generating new hues,
+  // so every category stays on the brand palette even when they repeat.
+  return CAT_COLORS[existing.length % CAT_COLORS.length];
 }
 
 const KEY = "momentum:v1";
@@ -627,7 +611,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#4f7264" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#053438" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),

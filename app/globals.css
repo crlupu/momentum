@@ -19,29 +19,29 @@
 [data-theme="light"] {
   color-scheme: light;
   --background: #ffffff;
-  --foreground: #044b39;   /* deep forest ink */
+  --foreground: #044b39;
 
   --surface: #ffffff;
   --surface-foreground: #044b39;
-  --surface-secondary: #f2faf1;
-  --surface-tertiary: #e7f4e5;
+  --surface-secondary: #c8efc1;
+  --surface-tertiary: #bdf0ec;
 
   --overlay: #ffffff;
   --overlay-foreground: #044b39;
 
-  --muted: #4f7264;
+  /* tints are alphas of palette swatches, never new hues */
+  --muted: rgba(4, 75, 57, 0.66);
 
-  --border: #dbebd8;
-  --separator: #e4f1e2;
+  --border: #c8efc1;
+  --separator: rgba(200, 239, 193, 0.7);
 
-  /* deep forest green drives calls to action */
   --accent: #044b39;
   --accent-foreground: #ffffff;
 
   --success: #1ea97b;
   --warning: #72c613;
-  /* the palette has no red; a semantic danger tone is kept for destructive actions */
-  --danger: #b3261e;
+  /* the palette has no red; the darkest olive carries destructive actions */
+  --danger: #264b04;
 
   --selected-bg: #c8efc1;
   --selected-fg: #044b39;
@@ -53,7 +53,7 @@
   --default-foreground: #044b39;
   --pill-fg: #ffffff;
 
-  --blanket: rgba(4, 75, 57, 0.55);
+  --blanket: rgba(5, 52, 56, 0.55);
   --overlay-shadow: 0 8px 12px rgba(4, 75, 57, 0.14), 0 0 1px rgba(4, 75, 57, 0.28);
 
   /* ---- glass layer ---- */
@@ -65,10 +65,10 @@
   --glass-shadow: 0 4px 24px rgba(4, 75, 57, 0.10), 0 1px 2px rgba(4, 75, 57, 0.06);
   --glass-blur: 18px;
 
-  /* ambient wash: the lime-to-yellow gradient from the reference hero */
-  --wash-1: rgba(114, 198, 19, 0.30);    /* lime   */
-  --wash-2: rgba(233, 240, 150, 0.55);   /* yellow glow */
-  --wash-3: rgba(30, 169, 123, 0.20);    /* green  */
+  /* ambient wash: lime, pale lime and green, straight from the palette */
+  --wash-1: rgba(114, 198, 19, 0.30);    /* #72C613 */
+  --wash-2: rgba(203, 243, 157, 0.55);   /* #CBF39D */
+  --wash-3: rgba(30, 169, 123, 0.20);    /* #1EA97B */
 }
 
 /* Dark */
@@ -76,48 +76,49 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --background: #053438;
-  --foreground: #e6f4ec;
+  --foreground: #c8efc1;
 
-  --surface: #0a4247;
-  --surface-foreground: #e6f4ec;
-  --surface-secondary: #0d4b50;
-  --surface-tertiary: #115458;
+  --surface: #044b39;
+  --surface-foreground: #c8efc1;
+  --surface-secondary: rgba(30, 169, 123, 0.16);
+  --surface-tertiary: rgba(30, 169, 123, 0.24);
 
-  --overlay: #0a4247;
-  --overlay-foreground: #e6f4ec;
+  --overlay: #044b39;
+  --overlay-foreground: #c8efc1;
 
-  --muted: #9ec4b6;
+  --muted: rgba(200, 239, 193, 0.7);
 
   --border: rgba(200, 239, 193, 0.18);
   --separator: rgba(200, 239, 193, 0.12);
 
   --accent: #72c613;
-  --accent-foreground: #10250a;
+  --accent-foreground: #053438;
 
   --success: #1ea97b;
   --warning: #cbf39d;
-  --danger: #f4877f;
+  /* no red in the palette; pale lime is the most legible destructive tone here */
+  --danger: #cbf39d;
 
-  --selected-bg: #0f4a3a;
+  --selected-bg: rgba(200, 239, 193, 0.16);
   --selected-fg: #cbf39d;
 
   --radius: 0.5rem;
-  --surface-shadow: 0 1px 1px rgba(2, 20, 22, 0.5), 0 0 1px rgba(2, 20, 22, 0.5);
+  --surface-shadow: 0 1px 1px rgba(5, 52, 56, 0.5), 0 0 1px rgba(5, 52, 56, 0.5);
 
-  --default: rgba(200, 239, 193, 0.10);
-  --default-foreground: #e6f4ec;
+  --default: rgba(200, 239, 193, 0.1);
+  --default-foreground: #c8efc1;
   --pill-fg: #053438;
 
-  --blanket: rgba(2, 20, 22, 0.62);
-  --overlay-shadow: 0 8px 12px rgba(2, 20, 22, 0.4), 0 0 1px rgba(2, 20, 22, 0.5);
+  --blanket: rgba(5, 52, 56, 0.66);
+  --overlay-shadow: 0 8px 12px rgba(5, 52, 56, 0.44), 0 0 1px rgba(5, 52, 56, 0.5);
 
   /* ---- glass layer ---- */
-  --glass-bg: rgba(10, 66, 71, 0.62);
-  --glass-bg-strong: rgba(10, 66, 71, 0.84);
+  --glass-bg: rgba(4, 75, 57, 0.62);
+  --glass-bg-strong: rgba(4, 75, 57, 0.84);
   --glass-border: rgba(200, 239, 193, 0.16);
   --glass-hairline: rgba(200, 239, 193, 0.12);
   --glass-highlight: rgba(200, 239, 193, 0.14);
-  --glass-shadow: 0 4px 24px rgba(2, 20, 22, 0.45), 0 1px 2px rgba(2, 20, 22, 0.4);
+  --glass-shadow: 0 4px 24px rgba(5, 52, 56, 0.45), 0 1px 2px rgba(5, 52, 56, 0.4);
   --glass-blur: 18px;
 
   --wash-1: rgba(114, 198, 19, 0.18);
@@ -264,8 +265,8 @@ body::before {
 /* Positive action: ADS green */
 .btn-success {
   --button-bg: #1ea97b;
-  --button-bg-hover: #1a9169;
-  --button-bg-pressed: #16785a;
+  --button-bg-hover: #044b39;
+  --button-bg-pressed: #053438;
   --button-fg: #ffffff;
   border-color: transparent !important;
 }
@@ -273,8 +274,8 @@ body::before {
 /* Primary/inverted action: Atlassian Blue bold */
 .btn-invert {
   --button-bg: var(--accent);
-  --button-bg-hover: #053f30;
-  --button-bg-pressed: #043227;
+  --button-bg-hover: #053438;
+  --button-bg-pressed: #264b04;
   --button-fg: var(--accent-foreground);
   border-color: transparent !important;
 }
