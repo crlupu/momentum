@@ -209,6 +209,15 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const [target, setTarget] = useState(String(g.target ?? ""));
 
   const { pending, run } = usePending();
+  /** Leaves edit mode and discards any unsaved field changes. */
+  const closeEditor = () => {
+    setName(g.title);
+    setCatId(g.catId);
+    setCurrent(String(g.current ?? ""));
+    setTarget(String(g.target ?? ""));
+    setExpanded(false);
+  };
+
   const save = async () => {
     await run(() =>
       tracker.saveGoal(g.id, {
@@ -251,7 +260,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               isIconOnly
               aria-label={expanded ? "Close editing" : "Edit goal"}
               className={expanded ? "pill-selected" : ""}
-              onPress={() => setExpanded((v) => !v)}
+              onPress={() => (expanded ? closeEditor() : setExpanded(true))}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -326,15 +335,20 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
                   className="mt-0.5 w-full"
                 />
               </label>
-              <Button
-                size="sm"
-                variant="primary"
-                onPress={() => void save()}
-                isDisabled={pending}
-                className={"w-full " + (pending ? "is-pending" : "")}
-              >
-                Save changes
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onPress={() => void save()}
+                  isDisabled={pending}
+                  className={"flex-1 " + (pending ? "is-pending" : "")}
+                >
+                  Save changes
+                </Button>
+                <Button size="sm" variant="outline" onPress={closeEditor} isDisabled={pending}>
+                  Close
+                </Button>
+              </div>
             </div>
 
             <AddSubtask goalId={g.id} tracker={tracker} />

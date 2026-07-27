@@ -54,7 +54,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
             <ul
               className={
                 "list-none p-0 " +
-                (recurring.length > 5 ? "max-h-[290px] overflow-y-auto pr-1 recurring-scroll" : "")
+                (recurring.length > 5 ? "max-h-[228px] overflow-y-auto pr-1 recurring-scroll" : "")
               }
             >
               {recurring.map((r) => {
