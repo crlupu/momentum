@@ -78,7 +78,12 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
           {recurring.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-foreground/60">None yet — add one with the button above.</p>
           ) : (
-            <ul className="list-none p-0">
+            <ul
+              className={
+                "list-none p-0 " +
+                (recurring.length > 5 ? "max-h-[290px] overflow-y-auto pr-1 recurring-scroll" : "")
+              }
+            >
               {recurring.map((r) => {
                 const c = tracker.cat(r.catId);
                 const done = isRecurringDone(r, today);

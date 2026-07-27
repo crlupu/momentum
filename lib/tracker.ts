@@ -37,6 +37,14 @@ export type RecurringTask = {
   lastDone: string | null;
 };
 
+/** A step inside a goal, with its own optional current/target. */
+export type Subtask = {
+  id: string;
+  title: string;
+  current?: number;
+  target?: number;
+};
+
 // A goal is a progress-tracked objective (e.g. "Read Atomic Habits" 132/396).
 export type Goal = {
   id: string;
@@ -46,6 +54,7 @@ export type Goal = {
   target?: number;
   done: boolean;
   doneDate?: string | null;
+  subtasks?: Subtask[];
 };
 
 export type Completion = { date: string; catId: string };
@@ -122,6 +131,11 @@ export function isRecurringDone(r: RecurringTask, today: string = dateKey()): bo
   return !!r.lastDone && periodKey(r.freq, r.lastDone) === periodKey(r.freq, today);
 }
 
+export function subtaskPct(t: Subtask): number {
+  if (!t.target || t.target <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round(((t.current ?? 0) / t.target) * 100)));
+}
+
 export function goalPct(g: Goal): number {
   if (!g.target || g.target <= 0) return 0;
   return Math.max(0, Math.min(100, Math.round(((g.current ?? 0) / g.target) * 100)));
@@ -159,6 +173,14 @@ function migrate(raw: unknown): TrackerState {
     target: typeof g.target === "number" ? g.target : undefined,
     done: typeof g.done === "boolean" ? g.done : g.status === "done",
     doneDate: (g.doneDate as string) ?? null,
+    subtasks: Array.isArray(g.subtasks)
+      ? (g.subtasks as Array<Record<string, unknown>>).map((t) => ({
+          id: (t.id as string) ?? uid(),
+          title: t.title as string,
+          current: typeof t.current === "number" ? t.current : undefined,
+          target: typeof t.target === "number" ? t.target : undefined,
+        }))
+      : [],
   }));
 
   const completions: Completion[] = Array.isArray(s.completions)
@@ -486,6 +508,69 @@ export function useTracker() {
       })),
 
     deleteGoal: (id: string) => commit((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+
+    // ---- subtasks ----
+    addSubtask: (goalId: string, title: string, current: number | null, target: number | null) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === goalId
+            ? {
+                ...g,
+                subtasks: [
+                  ...(g.subtasks ?? []),
+                  {
+                    id: uid(),
+                    title,
+                    current:
+                      current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
+                    target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+                  },
+                ],
+              }
+            : g
+        ),
+      })),
+
+    setSubtaskProgress: (
+      goalId: string,
+      subtaskId: string,
+      current: number | null,
+      target: number | null
+    ) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === goalId
+            ? {
+                ...g,
+                subtasks: (g.subtasks ?? []).map((t) =>
+                  t.id === subtaskId
+                    ? {
+                        ...t,
+                        current:
+                          current != null && Number.isFinite(current) && current >= 0
+                            ? current
+                            : undefined,
+                        target:
+                          target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+                      }
+                    : t
+                ),
+              }
+            : g
+        ),
+      })),
+
+    deleteSubtask: (goalId: string, subtaskId: string) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === goalId
+            ? { ...g, subtasks: (g.subtasks ?? []).filter((t) => t.id !== subtaskId) }
+            : g
+        ),
+      })),
 
     // ---- recurring ----
     addRecurring: (title: string, catId: string, freq: Frequency) =>

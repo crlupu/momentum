@@ -211,3 +211,20 @@ html:not(.dark) .card {
   border-color: transparent !important;
   font-weight: 600;
 }
+
+/* Recurring list: show ~5 rows, then scroll */
+.recurring-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 127, 127, 0.45) transparent;
+  overscroll-behavior: contain;
+}
+.recurring-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.recurring-scroll::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.45);
+  border-radius: 999px;
+}
+.recurring-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

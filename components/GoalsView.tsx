@@ -3,9 +3,189 @@
 import { useState } from "react";
 import { Button, Card, Chip, Input } from "@heroui/react";
 import { ActionButton, usePending } from "./ActionButton";
-import { Check, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
+import { Check, ListPlus, Plus, RotateCcw, SlidersHorizontal, Target, X } from "lucide-react";
 import { ProgressRing } from "./ProgressRing";
-import { Tracker, Goal, goalPct } from "@/lib/tracker";
+import { Tracker, Goal, Subtask, goalPct, subtaskPct } from "@/lib/tracker";
+
+function SubtaskRow({
+  goalId,
+  t,
+  color,
+  tracker,
+}: {
+  goalId: string;
+  t: Subtask;
+  color: string;
+  tracker: Tracker;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [current, setCurrent] = useState(String(t.current ?? ""));
+  const [target, setTarget] = useState(String(t.target ?? ""));
+  const { pending, run } = usePending();
+  const pct = subtaskPct(t);
+  const hasTarget = typeof t.target === "number" && t.target > 0;
+
+  const save = async () => {
+    const ok = await run(() =>
+      tracker.setSubtaskProgress(
+        goalId,
+        t.id,
+        current === "" ? null : Number(current),
+        target === "" ? null : Number(target)
+      )
+    );
+    if (ok) setEditing(false);
+  };
+
+  return (
+    <li className="py-1.5">
+      <div className="flex items-center gap-1.5">
+        <button
+          className="min-w-0 flex-1 truncate text-left text-[13px]"
+          onClick={() => setEditing((v) => !v)}
+          title="Edit progress"
+        >
+          {t.title}
+        </button>
+        <span className="font-mono-n shrink-0 text-[11px] text-foreground/50">
+          {hasTarget ? `${t.current ?? 0}/${t.target}` : "—"}
+        </span>
+        <ActionButton
+          size="sm"
+          variant="ghost"
+          isIconOnly
+          aria-label={`Delete subtask ${t.title}`}
+          onAction={() => tracker.deleteSubtask(goalId, t.id)}
+        >
+          <X className="h-3.5 w-3.5" />
+        </ActionButton>
+      </div>
+
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, background: color, transition: "width .3s ease" }}
+        />
+      </div>
+
+      {editing && (
+        <div className="mt-2 flex flex-col gap-2">
+          <label className="block text-[11px] text-foreground/60">
+            Current
+            <Input
+              type="number"
+              aria-label="Subtask current value"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              className="mt-0.5 w-full"
+            />
+          </label>
+          <label className="block text-[11px] text-foreground/60">
+            Target
+            <Input
+              type="number"
+              aria-label="Subtask target value"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className="mt-0.5 w-full"
+            />
+          </label>
+          <Button
+            size="sm"
+            variant="primary"
+            onPress={() => void save()}
+            isDisabled={pending}
+            className={"w-full " + (pending ? "is-pending" : "")}
+          >
+            Save
+          </Button>
+          <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">
+            Cancel
+          </Button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [current, setCurrent] = useState("");
+  const [target, setTarget] = useState("");
+  const { pending, run } = usePending();
+
+  const add = async () => {
+    const t = title.trim();
+    if (!t) return;
+    const ok = await run(() =>
+      tracker.addSubtask(
+        goalId,
+        t,
+        current === "" ? null : Number(current),
+        target === "" ? null : Number(target)
+      )
+    );
+    if (ok) {
+      setTitle("");
+      setCurrent("");
+      setTarget("");
+      setOpen(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" className="mt-2" onPress={() => setOpen(true)}>
+        <ListPlus className="h-4 w-4" /> Subtask
+      </Button>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <Input
+        aria-label="Subtask title"
+        placeholder="Subtask title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        autoFocus
+      />
+      <label className="block text-[11px] text-foreground/60">
+        Current
+        <Input
+          type="number"
+          aria-label="Subtask current value"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          className="mt-0.5 w-full"
+        />
+      </label>
+      <label className="block text-[11px] text-foreground/60">
+        Target
+        <Input
+          type="number"
+          aria-label="Subtask target value"
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          className="mt-0.5 w-full"
+        />
+      </label>
+      <Button
+        size="sm"
+        variant="primary"
+        onPress={() => void add()}
+        isDisabled={pending}
+        className={"w-full " + (pending ? "is-pending" : "")}
+      >
+        Add subtask
+      </Button>
+      <Button size="sm" variant="ghost" className="w-full" onPress={() => setOpen(false)}>
+        Cancel
+      </Button>
+    </div>
+  );
+}
 
 function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const c = tracker.cat(g.catId);
@@ -52,6 +232,16 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.color, transition: "width .3s ease" }} />
           </div>
         )}
+
+        {(g.subtasks?.length ?? 0) > 0 && (
+          <ul className="mt-3 list-none divide-y divide-foreground/10 p-0">
+            {(g.subtasks ?? []).map((t) => (
+              <SubtaskRow key={t.id} goalId={g.id} t={t} color={c.color} tracker={tracker} />
+            ))}
+          </ul>
+        )}
+
+        <AddSubtask goalId={g.id} tracker={tracker} />
 
         {editing && (
           <div className="mt-3 flex flex-col gap-2">
