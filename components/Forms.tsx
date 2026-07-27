@@ -250,7 +250,12 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <ul className="list-none divide-y divide-foreground/10 p-0">
+      <ul
+        className={
+          "list-none divide-y divide-foreground/10 p-0 " +
+          (s.categories.length > 5 ? "max-h-[250px] overflow-y-auto pr-1 recurring-scroll" : "")
+        }
+      >
         {s.categories.map((c) => (
           <li key={c.id} className="flex items-center gap-2 py-2">
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden />
@@ -299,7 +304,12 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
           No groups yet. Tasks in a group cover each other — e.g. Legs / Push / Pull day.
         </p>
       ) : (
-        <ul className="list-none divide-y divide-foreground/10 p-0">
+        <ul
+          className={
+            "list-none divide-y divide-foreground/10 p-0 " +
+            (s.recurringGroups.length > 5 ? "max-h-[250px] overflow-y-auto pr-1 recurring-scroll" : "")
+          }
+        >
           {s.recurringGroups.map((g) => {
             const count = s.recurring.filter((r) => r.groupId === g.id).length;
             return (
@@ -351,7 +361,12 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
       {tasks.length === 0 ? (
         <p className="py-1 text-[15px] text-foreground/60">No recurring tasks yet.</p>
       ) : (
-        <ul className="list-none divide-y divide-foreground/10 p-0">
+        <ul
+          className={
+            "list-none divide-y divide-foreground/10 p-0 " +
+            (tasks.length > 5 ? "max-h-[290px] overflow-y-auto pr-1 recurring-scroll" : "")
+          }
+        >
           {tasks.map((r) => {
             const c = tracker.cat(r.catId);
             return (

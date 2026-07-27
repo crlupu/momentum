@@ -44,7 +44,7 @@ function SubtaskRow({
     <li className="py-1.5">
       <div className="flex items-center gap-1.5">
         <button
-          className="min-w-0 flex-1 truncate text-left text-[13px]"
+          className="min-w-0 flex-1 break-words text-left text-[13px]"
           onClick={() => setEditing((v) => !v)}
           title="Edit progress"
         >
@@ -203,7 +203,6 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
   const derived = goalIsDerived(g);
 
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(g.title);
   const [catId, setCatId] = useState(g.catId);
   const [current, setCurrent] = useState(String(g.current ?? ""));
@@ -211,16 +210,14 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
   const { pending, run } = usePending();
   const save = async () => {
-    const ok = await run(async () => {
-      const a = await tracker.updateGoal(g.id, { title: name, catId });
-      const b = await tracker.setGoalProgress(
-        g.id,
-        current === "" ? null : Number(current),
-        target === "" ? null : Number(target)
-      );
-      return a && b;
-    });
-    if (ok) setEditing(false);
+    await run(() =>
+      tracker.saveGoal(g.id, {
+        title: name,
+        catId,
+        current: current === "" ? null : Number(current),
+        target: target === "" ? null : Number(target),
+      })
+    );
   };
 
   return (
@@ -254,10 +251,7 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
               isIconOnly
               aria-label={expanded ? "Close editing" : "Edit goal"}
               className={expanded ? "pill-selected" : ""}
-              onPress={() => {
-                setEditing(false);
-                setExpanded((v) => !v);
-              }}
+              onPress={() => setExpanded((v) => !v)}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -281,70 +275,86 @@ function GoalCard({ g, tracker }: { g: Goal; tracker: Tracker }) {
 
         {expanded && (
           <>
-        <AddSubtask goalId={g.id} tracker={tracker} />
-
-        {editing && (
-          <div className="mt-3 flex flex-col gap-2">
-            <label className="block text-[11px] text-foreground/60">
-              Name
-              <Input
-                aria-label="Goal name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-0.5 w-full"
-              />
-            </label>
-            <div>
-              <div className="mb-1 text-[11px] text-foreground/60">Category</div>
-              <div className="flex flex-wrap gap-1.5">
-                {tracker.state!.categories.map((cat) => (
-                  <Button
-                    key={cat.id}
-                    size="sm"
-                    variant="outline"
-                    className={catId === cat.id ? "pill-selected" : ""}
-                    onPress={() => setCatId(cat.id)}
-                  >
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: cat.color }}
-                      aria-hidden
-                    />
-                    {cat.name}
-                  </Button>
-                ))}
+            <div className="mt-3 flex flex-col gap-2 border-t border-foreground/10 pt-3">
+              <label className="block text-[11px] text-foreground/60">
+                Name
+                <Input
+                  aria-label="Goal name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-0.5 w-full"
+                />
+              </label>
+              <div>
+                <div className="mb-1 text-[11px] text-foreground/60">Category</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {tracker.state!.categories.map((cat) => (
+                    <Button
+                      key={cat.id}
+                      size="sm"
+                      variant="outline"
+                      className={catId === cat.id ? "pill-selected" : ""}
+                      onPress={() => setCatId(cat.id)}
+                    >
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ background: cat.color }}
+                        aria-hidden
+                      />
+                      {cat.name}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              <label className="block text-[11px] text-foreground/60">
+                Current
+                <Input
+                  type="number"
+                  aria-label="Current value"
+                  value={current}
+                  onChange={(e) => setCurrent(e.target.value)}
+                  className="mt-0.5 w-full"
+                />
+              </label>
+              <label className="block text-[11px] text-foreground/60">
+                Target
+                <Input
+                  type="number"
+                  aria-label="Target value"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  className="mt-0.5 w-full"
+                />
+              </label>
+              <Button
+                size="sm"
+                variant="primary"
+                onPress={() => void save()}
+                isDisabled={pending}
+                className={"w-full " + (pending ? "is-pending" : "")}
+              >
+                Save changes
+              </Button>
             </div>
-            <label className="block text-[11px] text-foreground/60">
-              Current
-              <Input type="number" aria-label="Current value" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5 w-full" />
-            </label>
-            <label className="block text-[11px] text-foreground/60">
-              Target
-              <Input type="number" aria-label="Target value" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5 w-full" />
-            </label>
-            <Button size="sm" variant="primary" onPress={() => void save()} isDisabled={pending} className={"w-full " + (pending ? "is-pending" : "")}>Save</Button>
-            <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">Cancel</Button>
-          </div>
-        )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" onPress={() => setEditing((v) => !v)}>
-            {hasOwnTarget ? <SlidersHorizontal className="h-4 w-4" /> : <Target className="h-4 w-4" />}
-            {hasOwnTarget ? "Update" : "Set target"}
-          </Button>
-          {g.done ? (
-            <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
-              <RotateCcw className="h-4 w-4" /> Reopen
-            </ActionButton>
-          ) : (
-            <ActionButton size="sm" variant="primary" onAction={() => tracker.toggleGoalDone(g.id)}>
-              <Check className="h-4 w-4" /> Done
-            </ActionButton>
-          )}
-          <DeleteButton what={`the goal "${g.title}"`} className="ml-auto" onDelete={() => tracker.deleteGoal(g.id)} />
-        </div>
+            <AddSubtask goalId={g.id} tracker={tracker} />
 
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {g.done ? (
+                <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
+                  <RotateCcw className="h-4 w-4" /> Reopen
+                </ActionButton>
+              ) : (
+                <ActionButton size="sm" variant="primary" onAction={() => tracker.toggleGoalDone(g.id)}>
+                  <Check className="h-4 w-4" /> Done
+                </ActionButton>
+              )}
+              <DeleteButton
+                what={`the goal "${g.title}"`}
+                className="ml-auto"
+                onDelete={() => tracker.deleteGoal(g.id)}
+              />
+            </div>
           </>
         )}
       </Card.Content>
@@ -419,7 +429,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
               <Card key={g.id}>
                 <Card.Content className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 truncate text-[15px] text-foreground/45 line-through">{g.title}</span>
+                    <span className="flex-1 break-words text-[15px] text-foreground/45 line-through">{g.title}</span>
                     <ActionButton
                       size="sm"
                       variant="outline"
@@ -429,7 +439,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
                     >
                       <RotateCcw className="h-4 w-4" />
                     </ActionButton>
-                    <DeleteButton what={`the goal "${g.title}"`} onDelete={() => tracker.deleteGoal(g.id)} />
+                    <DeleteButton what={`the goal "${g.title}"`} iconOnly onDelete={() => tracker.deleteGoal(g.id)} />
                   </div>
                 </Card.Content>
               </Card>

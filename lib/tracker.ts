@@ -421,6 +421,7 @@ export function useTracker() {
     // Local-only mode (Firebase not configured, or signed out): commit directly.
     if (!isFirebaseConfigured || !userRef.current) {
       lastUpdated.current = Date.now();
+      stateRef.current = next;
       setState(next);
       return true;
     }
@@ -438,6 +439,10 @@ export function useTracker() {
     try {
       await setDoc(doc(fb.db, "users", userRef.current.uid), clean({ state: next, updated }));
       lastUpdated.current = updated;
+      // Update the ref synchronously: React state lands on the next render, so a
+      // second write issued immediately after this one would otherwise start
+      // from the stale state and undo this change.
+      stateRef.current = next;
       setState(next);
       setSyncError(null);
       return true;
@@ -541,6 +546,32 @@ export function useTracker() {
             doneDate: null,
           },
         ],
+      })),
+
+    /** Saves every editable field of a goal in a single write. */
+    saveGoal: (
+      id: string,
+      patch: { title?: string; catId?: string; current: number | null; target: number | null }
+    ) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === id
+            ? {
+                ...g,
+                title: patch.title?.trim() || g.title,
+                catId: patch.catId ?? g.catId,
+                current:
+                  patch.current != null && Number.isFinite(patch.current) && patch.current >= 0
+                    ? patch.current
+                    : undefined,
+                target:
+                  patch.target != null && Number.isFinite(patch.target) && patch.target > 0
+                    ? patch.target
+                    : undefined,
+              }
+            : g
+        ),
       })),
 
     updateGoal: (id: string, patch: { title?: string; catId?: string }) =>

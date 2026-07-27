@@ -25,15 +25,13 @@ function TopStat({
   fg: string;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
+    <span
+      className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap"
+      style={{ background: bg, color: fg }}
+    >
       <span className="font-mono-n text-sm font-bold leading-none">{value}</span>
-      <span
-        className="rounded-full px-2 py-[3px] text-[10px] font-semibold leading-none whitespace-nowrap"
-        style={{ background: bg, color: fg }}
-      >
-        {label}
-      </span>
-    </div>
+      <span className="text-[10px] font-semibold leading-none">{label}</span>
+    </span>
   );
 }
 

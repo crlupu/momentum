@@ -3,7 +3,7 @@
 import { Button, Card } from "@heroui/react";
 import { usePending } from "./ActionButton";
 import { Check, Plus } from "lucide-react";
-import { Tracker, FREQ_ORDER, dateKey, isRecurringDone } from "@/lib/tracker";
+import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
 
 function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {
   const { pending, run } = usePending();
@@ -32,11 +32,8 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   const today = dateKey();
 
   const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
-  const recurring = [...s.recurring].sort(
-    (a, b) =>
-      FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] ||
-      groupName(a.groupId).localeCompare(groupName(b.groupId)) ||
-      a.title.localeCompare(b.title)
+  const recurring = [...s.recurring].sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
   );
 
   return (
