@@ -87,6 +87,13 @@
   --scale-5: #002d9c;
 
 
+
+  /* Gradient families from the IBM fill app icons */
+  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
+  --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
+  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
+  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+
   /* ambient wash — what the frosted surfaces refract */
   --wash-1: rgba(15, 98, 254, 0.14);    /* blue 60    */
   --wash-2: rgba(138, 63, 252, 0.12);   /* purple 60  */
@@ -170,6 +177,13 @@
 
 
   /* pure black canvas — colour lives in the shapes, not a glow */
+
+  /* Gradient families from the IBM fill app icons */
+  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
+  --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
+  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
+  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+
   --wash-1: rgba(15, 98, 254, 0.22);
   --wash-2: rgba(138, 63, 252, 0.18);
   --wash-3: rgba(17, 146, 232, 0.14);
@@ -320,13 +334,43 @@ body::before {
 }
 .btn-success.cds--btn:hover { background: #198038 !important; }
 
-/* Primary action: stock Carbon Blue 60 — Carbon's own states apply */
+/* Buttons carry the fill-icon gradients */
+.cds--btn--primary,
 .btn-invert.cds--btn,
 .btn-invert {
-  background: var(--cds-button-primary, #0f62fe) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
+  background-image: var(--grad-primary);
+  background-color: #0f62fe;
+  color: #ffffff;
+  border-color: transparent;
 }
+.cds--btn--primary:hover,
+.btn-invert.cds--btn:hover { filter: brightness(1.12); }
+.cds--btn--primary:active,
+.btn-invert.cds--btn:active { filter: brightness(0.9); }
+
+/* Secondary / tertiary keep a readable translucent fill on the glass */
+.cds--btn--secondary {
+  background-image: var(--grad-magenta);
+  background-color: #8a3ffc;
+  color: #ffffff;
+  border-color: transparent;
+}
+.cds--btn--secondary:hover { filter: brightness(1.12); }
+
+.cds--btn--tertiary,
+.cds--btn--ghost {
+  background-color: var(--default);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+.cds--btn--tertiary:hover,
+.cds--btn--ghost:hover {
+  background-color: var(--surface-secondary);
+  color: var(--foreground);
+}
+
+/* Danger stays flat — a gradient would soften a destructive action */
+.cds--btn--danger { background-image: none; }
 
 /* ------------------------------------------------------------------
    Carbon sizing overrides.
@@ -382,7 +426,14 @@ body::before {
 .cds--text-input,
 .cds--text-area,
 .cds--select-input,
-.cds--number input[type="number"] {
+.cds--number input[type="number"],
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select,
+textarea {
   block-size: 2.5rem;
   background: var(--field-bg);
   border: 1px solid var(--field-border);
@@ -390,18 +441,26 @@ body::before {
 }
 .cds--text-input:hover,
 .cds--text-area:hover,
-.cds--select-input:hover {
+.cds--select-input:hover,
+input:hover,
+select:hover,
+textarea:hover {
   border-color: var(--foreground);
 }
 .cds--text-input:focus,
 .cds--text-area:focus,
-.cds--select-input:focus {
+.cds--select-input:focus,
+input:focus,
+select:focus,
+textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-color: transparent;
 }
 .cds--text-input::placeholder,
-.cds--text-area::placeholder {
+.cds--text-area::placeholder,
+input::placeholder,
+textarea::placeholder {
   color: var(--field-placeholder);
   opacity: 1;
 }
@@ -489,3 +548,37 @@ body::before {
   border-radius: 999px;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Category chip: tinted fill from the category colour, uniform text */
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--chip-color) 20%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-color) 45%, transparent);
+}
+.cat-chip__dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 999px;
+  background: var(--chip-color);
+  flex: none;
+}
+
+/* Typography: IBM Plex everywhere, including Carbon's own controls */
+body,
+.cds--btn,
+.cds--text-input,
+.cds--text-area,
+.cds--select-input,
+.cds--tag,
+input,
+select,
+textarea,
+button {
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}

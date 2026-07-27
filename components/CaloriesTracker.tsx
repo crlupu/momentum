@@ -104,7 +104,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[22px] rounded-t"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
-                    background: counts[i] ? ACCENT : TRACK,
+                    background: counts[i] ? "var(--grad-magenta)" : TRACK,
                   }}
                 />
                 <span

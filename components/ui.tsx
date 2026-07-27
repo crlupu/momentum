@@ -12,7 +12,6 @@ import {
   Button as CarbonButton,
   TextInput,
   Tile,
-  Tag,
   Toggle,
 } from "@carbon/react";
 
@@ -131,20 +130,30 @@ export const Card = Object.assign(CardRoot, { Content: CardContent });
 
 /* --------------------------------- Chip --------------------------------- */
 
+/**
+ * Category chip. Carbon's Tag only offers a fixed set of preset colours, so
+ * this renders the app's own chip: a tint of the category colour with a solid
+ * dot, and the same text colour everywhere.
+ */
 function ChipRoot({
   children,
   className,
-  size = "sm",
+  color,
 }: {
   children?: ReactNode;
   className?: string;
+  color?: string;
   size?: "sm" | "md";
   variant?: string;
 }) {
   return (
-    <Tag size={size} type="gray" className={className}>
+    <span
+      className={["cat-chip", className].filter(Boolean).join(" ")}
+      style={{ ["--chip-color" as string]: color ?? "var(--muted)" }}
+    >
+      {color && <span className="cat-chip__dot" aria-hidden />}
       {children}
-    </Tag>
+    </span>
   );
 }
 function ChipLabel({ children, className }: { children?: ReactNode; className?: string }) {

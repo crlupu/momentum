@@ -62,12 +62,27 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
         </g>
       ))}
 
+      <defs>
+        <linearGradient id="weight-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#4589ff" />
+          <stop offset="0.55" stopColor="#0f62fe" />
+          <stop offset="1" stopColor="#8a3ffc" />
+        </linearGradient>
+      </defs>
+
       {/* line through logged days */}
       {present.length > 1 && (
-        <polyline points={pts} fill="none" style={{ stroke: ACCENT }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline
+          points={pts}
+          fill="none"
+          stroke="url(#weight-grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       )}
       {present.map((p) => (
-        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" style={{ fill: ACCENT }}>
+        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill="url(#weight-grad)">
           <title>{`${p.date}: ${p.kg} kg`}</title>
         </circle>
       ))}

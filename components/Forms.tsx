@@ -27,7 +27,7 @@ function GroupPicker({
         aria-label="Group"
         value={groupId}
         onChange={(e) => setGroupId(e.target.value)}
-        className="h-11 w-full rounded-md border border-input bg-background px-3 text-base text-foreground"
+        className="h-11 w-full px-3 text-base"
       >
         <option value="">No group</option>
         {s.recurringGroups.map((g) => (

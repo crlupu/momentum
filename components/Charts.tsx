@@ -100,11 +100,16 @@ function Stat({
   );
 }
 
-/** Busier days climb the palette ramp instead of every bar being one green. */
+/** Busier days climb the palette ramp instead of every bar being one colour. */
 function rampStep(n: number, max: number): string {
   if (n <= 0) return "var(--default)";
   const step = Math.min(5, Math.max(1, Math.ceil((n / max) * 5)));
   return `var(--scale-${step})`;
+}
+
+/** Bars are filled with the fill-icon gradient, scaled by how busy the day was. */
+function barFill(n: number): string {
+  return n > 0 ? "var(--grad-teal-up)" : "var(--default)";
 }
 
 export default function Charts({ tracker }: { tracker: Tracker }) {
@@ -173,7 +178,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                   className="w-full max-w-[34px] rounded-t-md"
                   style={{
                     height: Math.max(3, (counts[i] / max) * 110),
-                    background: rampStep(counts[i], max),
+                    background: barFill(counts[i]),
                   }}
                 />
                 <span

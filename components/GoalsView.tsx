@@ -270,13 +270,8 @@ function GoalCard({
               {g.title}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <Chip size="sm" variant="soft">
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ background: c.color }}
-                  aria-hidden
-                />
-                <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
+              <Chip size="sm" color={c.color}>
+                {c.name}
               </Chip>
               {derived ? (
                 <span className="text-xs text-foreground/50">from subtasks</span>
