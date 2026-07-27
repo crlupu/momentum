@@ -264,19 +264,57 @@ body::before {
   border-color: transparent !important;
 }
 
-/* Icon-only Carbon buttons: center the lucide icon */
-.btn-icon-only.cds--btn {
-  padding-inline: 0;
+/* ------------------------------------------------------------------
+   Carbon sizing overrides.
+   Carbon's controls are built for spacious enterprise forms: buttons
+   carry a 176px min-width, a 320px max-width, a 48px fixed height and
+   space-between alignment (label left, icon right). This app is dense
+   and icon-heavy, so those defaults have to be relaxed.
+   ------------------------------------------------------------------ */
+.cds--btn {
+  min-inline-size: 0;
+  max-inline-size: none;
+  block-size: auto;
+  min-block-size: 2.5rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.875rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
+}
+.cds--btn--sm {
+  min-block-size: 2rem;
+  padding-inline: 0.625rem;
+}
+.cds--btn.justify-start { justify-content: flex-start; }
+.cds--btn.w-full { inline-size: 100%; }
+.cds--btn.flex-1 { flex: 1 1 0%; }
+
+/* Icon-only buttons are square */
+.btn-icon-only.cds--btn {
+  inline-size: 2.5rem;
   min-inline-size: 2.5rem;
+  padding-inline: 0;
+}
+.btn-icon-only.cds--btn--sm {
+  inline-size: 2rem;
+  min-inline-size: 2rem;
+}
+.cds--btn svg { flex: none; }
+
+/* Tiles: the app's cards control their own padding */
+.cds--tile {
+  padding: 0;
+  min-block-size: 0;
 }
 
-/* Carbon buttons meet the app's layout conventions */
-.cds--btn { gap: 0.5rem; }
-.cds--btn.justify-start { justify-content: flex-start; }
-.cds--btn.w-full { max-inline-size: none; inline-size: 100%; }
+/* Inputs sit in flex rows beside their add button */
+.cds--form-item { flex: 1 1 auto; }
+.cds--text-input { block-size: 2.5rem; }
+
+/* Tags carry no outer margin in dense lists */
+.cds--tag { margin: 0; max-inline-size: none; }
 
 /* Section marker: flat palette chip */
 .sec-dot {

@@ -122,7 +122,7 @@ export function Input({
 /* --------------------------------- Card --------------------------------- */
 
 function CardRoot({ children, className }: { children?: ReactNode; className?: string }) {
-  return <Tile className={["card !p-0", className].filter(Boolean).join(" ")}>{children}</Tile>;
+  return <Tile className={["card", className].filter(Boolean).join(" ")}>{children}</Tile>;
 }
 function CardContent({ children, className }: { children?: ReactNode; className?: string }) {
   return <div className={className}>{children}</div>;
