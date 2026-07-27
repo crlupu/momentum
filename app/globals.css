@@ -51,7 +51,7 @@
   --danger-soft-hover: #ffb3b8;
   --danger-soft-foreground: #750e13;
 
-  --selected-bg: #161616;  /* high-contrast selection */
+  --selected-bg: #393939;  /* background-inverse (light theme) */
   --selected-fg: #ffffff;
 
   --radius: 0;
@@ -82,37 +82,31 @@
   --scale-5: #002d9c;
 
 
-  /* fill-icon gradient families */
-  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
-  --grad-pink: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
-  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
-  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
-
   /* Carbon light is austere: no wash */
   --wash-1: rgba(0, 0, 0, 0);
   --wash-2: rgba(0, 0, 0, 0);
   --wash-3: rgba(0, 0, 0, 0);
 }
 
-/* Dark (default): the photo's pure-black canvas */
+/* Dark (default): stock Carbon g100 */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #000000;
+  --background: #161616;   /* gray 100 */
   --foreground: #f4f4f4;
 
-  --surface: #121212;
+  --surface: #262626;      /* layer 01 */
   --surface-foreground: #f4f4f4;
-  --surface-secondary: #1c1c1c;
-  --surface-tertiary: #262626;
+  --surface-secondary: #393939;
+  --surface-tertiary: #525252;
 
-  --overlay: #121212;
+  --overlay: #262626;
   --overlay-foreground: #f4f4f4;
 
   --muted: #8d8d8d;        /* gray 50 */
 
-  --border: #262626;
-  --separator: #1c1c1c;
+  --border: #393939;       /* border-subtle-01 */
+  --separator: #2e2e2e;
 
   --accent: #0f62fe;
   --accent-foreground: #ffffff;
@@ -137,7 +131,7 @@
   --default-foreground: #f4f4f4;
   --pill-fg: #161616;
 
-  --blanket: rgba(0, 0, 0, 0.72);
+  --blanket: rgba(22, 22, 22, 0.7);
   --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   --sec-goals: #4589ff;
@@ -155,12 +149,6 @@
   --scale-4: #0f62fe;
   --scale-5: #78a9ff;
 
-
-  /* fill-icon gradient families */
-  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
-  --grad-pink: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
-  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
-  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
 
   /* pure black canvas — colour lives in the shapes, not a glow */
   --wash-1: rgba(0, 0, 0, 0);
@@ -268,16 +256,13 @@ body::before {
 }
 .btn-success.cds--btn:hover { background: #198038 !important; }
 
-/* Primary action: the blue→purple fill-icon gradient on Carbon buttons */
-.cds--btn--primary,
+/* Primary action: stock Carbon Blue 60 — Carbon's own states apply */
+.btn-invert.cds--btn,
 .btn-invert {
-  background-image: var(--grad-primary);
+  background: var(--cds-button-primary, #0f62fe) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
 }
-.cds--btn--primary:hover,
-.btn-invert:hover { filter: brightness(1.1); }
-.cds--btn--primary:active,
-.btn-invert:active { filter: brightness(0.92); }
-.cds--btn--danger { background-image: none; }
 
 /* Icon-only Carbon buttons: center the lucide icon */
 .btn-icon-only.cds--btn {
@@ -293,12 +278,12 @@ body::before {
 .cds--btn.justify-start { justify-content: flex-start; }
 .cds--btn.w-full { max-inline-size: none; inline-size: 100%; }
 
-/* Section marker: a gradient circle, echoing the fill icons */
+/* Section marker: flat palette chip */
 .sec-dot {
   display: inline-block;
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 999px;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 0;
   flex: none;
 }
 
