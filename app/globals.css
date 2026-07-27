@@ -228,3 +228,12 @@ html:not(.dark) .card {
 .recurring-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Positive-action accent (e.g. "Mark as done") */
+.btn-success {
+  --button-bg: var(--success);
+  --button-bg-hover: var(--success);
+  --button-bg-pressed: var(--success);
+  --button-fg: #04250f;
+  border-color: transparent !important;
+}

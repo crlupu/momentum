@@ -59,6 +59,8 @@ export type Goal = {
   done: boolean;
   doneDate?: string | null;
   subtasks?: Subtask[];
+  /** Pinned goals stay at the top of their column. */
+  pinned?: boolean;
 };
 
 /** A one-off task: just a title and a tick. */
@@ -274,6 +276,7 @@ function migrate(raw: unknown): TrackerState {
     target: typeof g.target === "number" ? g.target : undefined,
     done: typeof g.done === "boolean" ? g.done : g.status === "done",
     doneDate: (g.doneDate as string) ?? null,
+    pinned: g.pinned === true ? true : undefined,
     subtasks: Array.isArray(g.subtasks)
       ? (g.subtasks as Array<Record<string, unknown>>).map((t) => ({
           id: (t.id as string) ?? uid(),
@@ -670,6 +673,12 @@ export function useTracker() {
       })),
 
     deleteGoal: (id: string) => commit((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+
+    toggleGoalPin: (id: string) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) => (g.id === id ? { ...g, pinned: g.pinned ? undefined : true } : g)),
+      })),
 
     /** Reorders goals to match the given list of ids. */
     reorderGoals: (ids: string[]) =>

@@ -8,7 +8,10 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ListPlus,
   Pencil,
+  Pin,
+  PinOff,
   Plus,
   RotateCcw,
   Target,
@@ -152,15 +155,8 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
 
   if (!open) {
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        isIconOnly
-        aria-label="Add subtask"
-        className="mt-2"
-        onPress={() => setOpen(true)}
-      >
-        <Plus className="h-4 w-4" />
+      <Button size="sm" variant="outline" className="mt-2" onPress={() => setOpen(true)}>
+        <ListPlus className="h-4 w-4" /> Subtask
       </Button>
     );
   }
@@ -197,13 +193,11 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
       <Button
         size="sm"
         variant="primary"
-        isIconOnly
-        aria-label="Save subtask"
         onPress={() => void add()}
         isDisabled={pending}
-        className={pending ? "is-pending" : ""}
+        className={"w-full " + (pending ? "is-pending" : "")}
       >
-        <Plus className="h-4 w-4" />
+        Add subtask
       </Button>
       <Button size="sm" variant="ghost" className="w-full" onPress={() => setOpen(false)}>
         Cancel
@@ -259,73 +253,41 @@ function GoalCard({
     );
   };
 
-  const editCat = tracker.cat(catId);
-
   return (
     <Card>
       <Card.Content className="px-3 py-3 sm:px-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {/* The title itself becomes the input while editing. */}
-            {expanded ? (
-              <Input
-                aria-label="Goal name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full font-semibold"
-              />
-            ) : (
-              <div
-                className={
-                  "font-display text-base font-semibold " +
-                  (g.done ? "text-foreground/45 line-through" : "")
-                }
-              >
-                {g.title}
-              </div>
-            )}
-
-            {/* …and the category chip becomes the picker. */}
-            {expanded ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {tracker.state!.categories.map((cat) => (
-                  <Button
-                    key={cat.id}
-                    size="sm"
-                    variant="outline"
-                    className={catId === cat.id ? "pill-selected" : ""}
-                    onPress={() => setCatId(cat.id)}
-                  >
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: cat.color }}
-                      aria-hidden
-                    />
-                    {cat.name}
-                  </Button>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <Chip size="sm" variant="soft">
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ background: c.color }}
-                    aria-hidden
-                  />
-                  <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
-                </Chip>
-                {derived ? (
-                  <span className="text-xs text-foreground/50">from subtasks</span>
-                ) : (
-                  hasOwnTarget && (
-                    <span className="font-mono-n text-xs text-foreground/50">
-                      {g.current ?? 0} / {g.target}
-                    </span>
-                  )
-                )}
-              </div>
-            )}
+            <div
+              className={
+                "font-display text-base font-semibold " +
+                (g.done ? "text-foreground/45 line-through" : "")
+              }
+            >
+              {g.pinned && (
+                <Pin className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-foreground/45" aria-label="Pinned" />
+              )}
+              {g.title}
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <Chip size="sm" variant="soft">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: c.color }}
+                  aria-hidden
+                />
+                <Chip.Label className="ml-1.5">{c.name}</Chip.Label>
+              </Chip>
+              {derived ? (
+                <span className="text-xs text-foreground/50">from subtasks</span>
+              ) : (
+                hasOwnTarget && (
+                  <span className="font-mono-n text-xs text-foreground/50">
+                    {g.current ?? 0} / {g.target}
+                  </span>
+                )
+              )}
+            </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
@@ -339,9 +301,7 @@ function GoalCard({
             >
               <Pencil className="h-4 w-4" />
             </Button>
-            {showProgress && (
-              <ProgressRing pct={pct} color={expanded ? editCat.color : c.color} size={48} />
-            )}
+            {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
           </div>
         </div>
 
@@ -367,7 +327,39 @@ function GoalCard({
 
         {expanded && (
           <div className="mt-3 border-t border-foreground/10 pt-3">
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block text-[11px] text-foreground/60">
+              Name
+              <Input
+                aria-label="Goal name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-0.5 w-full"
+              />
+            </label>
+
+            <div className="mt-2">
+              <div className="mb-1 text-[11px] text-foreground/60">Category</div>
+              <div className="flex flex-wrap gap-1.5">
+                {tracker.state!.categories.map((cat) => (
+                  <Button
+                    key={cat.id}
+                    size="sm"
+                    variant="outline"
+                    className={catId === cat.id ? "pill-selected" : ""}
+                    onPress={() => setCatId(cat.id)}
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: cat.color }}
+                      aria-hidden
+                    />
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
               <label className="block text-[11px] text-foreground/60">
                 Current
                 <Input
@@ -390,7 +382,6 @@ function GoalCard({
               </label>
             </div>
 
-            {/* Primary: commit or discard. */}
             <div className="mt-3 flex items-center gap-2">
               <Button
                 size="sm"
@@ -401,24 +392,43 @@ function GoalCard({
               >
                 Save changes
               </Button>
-              <Button size="sm" variant="outline" onPress={closeEditor} isDisabled={pending}>
+              <Button size="sm" variant="secondary" onPress={closeEditor} isDisabled={pending}>
                 Close
               </Button>
             </div>
 
-            {/* Secondary: status on the left, ordering and removal on the right. */}
-            <div className="mt-2 flex items-center gap-2">
+            {/* separator between saving and the goal's other actions */}
+            <div className="mt-3 flex items-center gap-2 border-t border-foreground/10 pt-3">
               {g.done ? (
-                <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
+                <ActionButton
+                  size="sm"
+                  variant="secondary"
+                  onAction={() => tracker.toggleGoalDone(g.id)}
+                >
                   <RotateCcw className="h-4 w-4" /> Reopen
                 </ActionButton>
               ) : (
-                <ActionButton size="sm" variant="outline" onAction={() => tracker.toggleGoalDone(g.id)}>
-                  <Check className="h-4 w-4" /> Done
+                <ActionButton
+                  size="sm"
+                  variant="primary"
+                  className="btn-success"
+                  onAction={() => tracker.toggleGoalDone(g.id)}
+                >
+                  <Check className="h-4 w-4" /> Mark as done
                 </ActionButton>
               )}
 
               <div className="ml-auto flex items-center gap-1">
+                <ActionButton
+                  size="sm"
+                  variant="ghost"
+                  isIconOnly
+                  aria-label={g.pinned ? "Unpin goal" : "Pin goal to the top"}
+                  className={g.pinned ? "pill-selected" : ""}
+                  onAction={() => tracker.toggleGoalPin(g.id)}
+                >
+                  {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                </ActionButton>
                 {onMove && (
                   <>
                     <ActionButton
@@ -471,6 +481,9 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
     const i = list.findIndex((g) => g.id === id);
     const j = i + dir;
     if (i < 0 || j < 0 || j >= list.length) return false;
+    // pinned items always sort above unpinned ones, so a swap across that
+    // boundary would simply be undone by the sort
+    if (!!list[i].pinned !== !!list[j].pinned) return false;
     const all = [...s.goals];
     const a = all.findIndex((g) => g.id === list[i].id);
     const b = all.findIndex((g) => g.id === list[j].id);
@@ -479,8 +492,10 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
   };
   const done = s.goals.filter((g) => g.done);
   const active = s.goals.filter((g) => !g.done);
-  const todo = active.filter((g) => goalPct(g) <= 0);
-  const inProgress = active.filter((g) => goalPct(g) > 0);
+  const pinnedFirst = (list: Goal[]) =>
+    [...list].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
+  const todo = pinnedFirst(active.filter((g) => goalPct(g) <= 0));
+  const inProgress = pinnedFirst(active.filter((g) => goalPct(g) > 0));
 
   return (
     <div>
