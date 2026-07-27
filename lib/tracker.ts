@@ -131,12 +131,21 @@ export function nextCategoryColor(existing: { color: string }[]): string {
 const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c1", name: "Work", color: "#006FEE" },
-  { id: "c2", name: "Pressio", color: "#17C964" },
-  { id: "c3", name: "Learning", color: "#7828C8" },
-  { id: "c4", name: "Gym", color: "#F31260" },
-  { id: "c5", name: "Personal", color: "#F5A524" },
+  { id: "c1", name: "Work", color: "#2180e6" },
+  { id: "c2", name: "Pressio", color: "#1ea97b" },
+  { id: "c3", name: "Learning", color: "#264b04" },
+  { id: "c4", name: "Gym", color: "#72c613" },
+  { id: "c5", name: "Personal", color: "#bdf0ec" },
 ];
+
+/** Old (pre-palette) default colours → their brand-palette replacements. */
+const LEGACY_CATEGORY_COLORS: Record<string, string> = {
+  "#006fee": "#2180e6",
+  "#17c964": "#1ea97b",
+  "#7828c8": "#264b04",
+  "#f31260": "#72c613",
+  "#f5a524": "#bdf0ec",
+};
 
 const DEFAULT_STATE: TrackerState = {
   categories: DEFAULT_CATEGORIES,
@@ -268,7 +277,12 @@ export function goalPct(g: Goal): number {
 function migrate(raw: unknown): TrackerState {
   const s = (raw ?? {}) as Record<string, unknown>;
   const categories = Array.isArray(s.categories)
-    ? (s.categories as Category[])
+    ? (s.categories as Category[]).map((c) => ({
+        ...c,
+        // Colours saved before the rebrand are moved onto the palette;
+        // anything the user picked themselves is left untouched.
+        color: LEGACY_CATEGORY_COLORS[c.color?.toLowerCase()] ?? c.color,
+      }))
     : DEFAULT_CATEGORIES;
 
   const recurring: RecurringTask[] = Array.isArray(s.recurring)
@@ -606,7 +620,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8A94A3" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#4f7264" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),
