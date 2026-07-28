@@ -357,8 +357,10 @@ function migrate(raw: unknown): TrackerState {
   // Added after the first release, so older saved state has no macros key.
   const macros: MacroEntry[] = Array.isArray(s.macros) ? (s.macros as MacroEntry[]) : [];
 
-  const positive = (v: unknown) =>
-    typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+  const positive = (v: unknown) => {
+    const n = typeof v === "string" ? Number(v) : v;
+    return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
+  };
 
   return {
     categories,

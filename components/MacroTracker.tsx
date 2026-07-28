@@ -93,6 +93,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
   // the only way the two series are comparable: 30 g of fibre is a full day,
   // 30 g of protein is barely a fifth of one.
   const asPercent = !!(s.proteinTarget && s.fiberTarget);
+  const someTarget = !!(s.proteinTarget || s.fiberTarget);
   const pctSeries = series.map((v) => ({
     protein: s.proteinTarget ? (v.protein / s.proteinTarget) * 100 : 0,
     fiber: s.fiberTarget ? (v.fiber / s.fiberTarget) * 100 : 0,
@@ -178,9 +179,17 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           />
         </div>
 
-        {asPercent && s.macros.length > 0 && (
+        {asPercent ? (
+          s.macros.length > 0 && (
+            <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
+              % of daily target
+            </p>
+          )
+        ) : (
           <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
-            % of daily target
+            {someTarget
+              ? "Showing grams. Set both targets in Configuration to compare them as % of target."
+              : "Showing grams. Set daily targets in Configuration to see % of target."}
           </p>
         )}
 
