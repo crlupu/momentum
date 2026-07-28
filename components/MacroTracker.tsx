@@ -50,22 +50,26 @@ function TargetMeter({
   fill: string;
   solid: string;
 }) {
-  const pct = target ? Math.min(100, Math.round((value / target) * 100)) : 0;
+  const pct = target ? Math.round((value / target) * 100) : 0;
   return (
     <div className="min-w-0 flex-1">
       <div className="flex items-baseline gap-1.5">
         <span className="font-mono-n text-xl font-bold" style={{ color: solid }}>
-          {value}
+          {target ? `${pct}%` : value}
         </span>
         <span className="text-xs" style={{ color: LABEL }}>
-          {target ? `/ ${target} g ${label}` : `g ${label}`}
+          {target ? `${value} / ${target} g ${label}` : `g ${label}`}
         </span>
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: TRACK }}>
         {target ? (
           <div
             className="h-full rounded-full"
-            style={{ width: `${pct}%`, backgroundImage: fill, transition: "width .3s ease" }}
+            style={{
+              width: `${Math.min(100, pct)}%`,
+              backgroundImage: fill,
+              transition: "width .3s ease",
+            }}
           />
         ) : null}
       </div>
@@ -84,8 +88,21 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const series = days.map((d) => totals[dateKey(d)] ?? { protein: 0, fiber: 0 });
-  // One shared scale, so the two bars stay comparable day to day.
-  const max = Math.max(1, ...series.map((v) => Math.max(v.protein, v.fiber)));
+
+  // With both targets set the chart switches to percentage of target, which is
+  // the only way the two series are comparable: 30 g of fibre is a full day,
+  // 30 g of protein is barely a fifth of one.
+  const asPercent = !!(s.proteinTarget && s.fiberTarget);
+  const pctSeries = series.map((v) => ({
+    protein: s.proteinTarget ? (v.protein / s.proteinTarget) * 100 : 0,
+    fiber: s.fiberTarget ? (v.fiber / s.fiberTarget) * 100 : 0,
+  }));
+  const plotted = asPercent ? pctSeries : series;
+  // Keep 100% on the scale so a full day always reaches the reference line,
+  // and let overshoot extend above it.
+  const max = asPercent
+    ? Math.max(100, ...pctSeries.map((v) => Math.max(v.protein, v.fiber)))
+    : Math.max(1, ...series.map((v) => Math.max(v.protein, v.fiber)));
 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
@@ -161,21 +178,44 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           />
         </div>
 
+        {asPercent && s.macros.length > 0 && (
+          <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
+            % of daily target
+          </p>
+        )}
+
         {s.macros.length === 0 ? (
           <p className="px-1 py-2 text-[15px]" style={{ color: LABEL }}>
             Log protein or fibre to see both plotted here.
           </p>
         ) : (
-          <div className="flex h-[120px] items-end gap-1 pt-3">
+          <div className="relative flex h-[120px] items-end gap-1 pt-3">
+            {/* 100% reference line, drawn at the height a full day reaches */}
+            {asPercent && (
+              <div
+                className="pointer-events-none absolute inset-x-0 flex items-center gap-2"
+                style={{ bottom: 17 + (100 / max) * 84 }}
+                aria-hidden
+              >
+                <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+                <span className="text-[9px]" style={{ color: LABEL }}>
+                  100%
+                </span>
+              </div>
+            )}
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                 {/* the two series share a day column, side by side */}
                 <div className="flex h-[84px] w-full items-end justify-center gap-[2px]">
                   <div
                     className="w-full max-w-[9px] rounded-t"
-                    title={`${series[i].protein} g protein`}
+                    title={
+                      asPercent
+                        ? `${Math.round(pctSeries[i].protein)}% of protein target (${series[i].protein} g)`
+                        : `${series[i].protein} g protein`
+                    }
                     style={{
-                      height: Math.max(2, (series[i].protein / max) * 84),
+                      height: Math.max(2, Math.min(1, plotted[i].protein / max) * 84),
                       // one shorthand only: setting `background` alongside
                       // `backgroundImage` clears the gradient
                       background: series[i].protein ? PROTEIN : TRACK,
@@ -183,9 +223,13 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                   />
                   <div
                     className="w-full max-w-[9px] rounded-t"
-                    title={`${series[i].fiber} g fibre`}
+                    title={
+                      asPercent
+                        ? `${Math.round(pctSeries[i].fiber)}% of fibre target (${series[i].fiber} g)`
+                        : `${series[i].fiber} g fibre`
+                    }
                     style={{
-                      height: Math.max(2, (series[i].fiber / max) * 84),
+                      height: Math.max(2, Math.min(1, plotted[i].fiber / max) * 84),
                       background: series[i].fiber ? FIBER : TRACK,
                     }}
                   />
