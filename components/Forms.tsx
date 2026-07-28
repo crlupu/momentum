@@ -463,20 +463,20 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
           {none ? (
             <p className="text-[15px] text-foreground/60">No daily targets set.</p>
           ) : (
-            <div className="flex gap-6">
+            <div className="space-y-3">
               <div>
                 <div className="font-mono-n text-2xl font-bold leading-none">
                   {s.proteinTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-foreground/60">g</span>
+                  <span className="ml-1 text-sm font-medium text-foreground/60">g / day</span>
                 </div>
-                <div className="mt-1.5 text-[13px] text-foreground/60">protein / day</div>
+                <div className="mt-1.5 text-[13px] text-foreground/60">protein</div>
               </div>
               <div>
                 <div className="font-mono-n text-2xl font-bold leading-none">
                   {s.fiberTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-foreground/60">g</span>
+                  <span className="ml-1 text-sm font-medium text-foreground/60">g / day</span>
                 </div>
-                <div className="mt-1.5 text-[13px] text-foreground/60">fibre / day</div>
+                <div className="mt-1.5 text-[13px] text-foreground/60">fibre</div>
               </div>
             </div>
           )}
