@@ -95,8 +95,6 @@
   --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
   --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
   --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
-  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
-  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
 
   /* ambient wash — what the frosted surfaces refract */
   --wash-1: rgba(15, 98, 254, 0.14);    /* blue 60    */
@@ -187,6 +185,8 @@
   --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
   --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
   --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
+  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
+  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
 
   --wash-1: rgba(15, 98, 254, 0.22);
   --wash-2: rgba(138, 63, 252, 0.18);

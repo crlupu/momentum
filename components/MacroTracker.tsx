@@ -175,20 +175,18 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                     className="w-full max-w-[9px] rounded-t"
                     title={`${series[i].protein} g protein`}
                     style={{
-                      height: Math.max(series[i].protein ? 2 : 0, (series[i].protein / max) * 84),
-                      backgroundImage: series[i].protein ? PROTEIN : undefined,
-                      background: series[i].protein ? undefined : TRACK,
-                      minHeight: 2,
+                      height: Math.max(2, (series[i].protein / max) * 84),
+                      // one shorthand only: setting `background` alongside
+                      // `backgroundImage` clears the gradient
+                      background: series[i].protein ? PROTEIN : TRACK,
                     }}
                   />
                   <div
                     className="w-full max-w-[9px] rounded-t"
                     title={`${series[i].fiber} g fibre`}
                     style={{
-                      height: Math.max(series[i].fiber ? 2 : 0, (series[i].fiber / max) * 84),
-                      backgroundImage: series[i].fiber ? FIBER : undefined,
-                      background: series[i].fiber ? undefined : TRACK,
-                      minHeight: 2,
+                      height: Math.max(2, (series[i].fiber / max) * 84),
+                      background: series[i].fiber ? FIBER : TRACK,
                     }}
                   />
                 </div>
