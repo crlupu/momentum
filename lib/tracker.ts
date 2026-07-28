@@ -84,6 +84,14 @@ export type WeightEntry = { date: string; kg: number };
 
 export type CalorieEntry = { id: string; date: string; kcal: number };
 
+/** A protein / fibre log entry. Either field may be omitted. */
+export type MacroEntry = {
+  id: string;
+  date: string;
+  protein?: number;
+  fiber?: number;
+};
+
 export type TrackerState = {
   categories: Category[];
   goals: Goal[];
@@ -95,6 +103,11 @@ export type TrackerState = {
   calories: CalorieEntry[];
   /** Daily calorie budget, used to work out what's left for the week. */
   calorieBudget?: number;
+  macros: MacroEntry[];
+  /** Daily protein target, in grams. */
+  proteinTarget?: number;
+  /** Daily fibre target, in grams. */
+  fiberTarget?: number;
 };
 
 export const CAT_COLORS = [
@@ -148,6 +161,7 @@ const DEFAULT_STATE: TrackerState = {
   completions: [],
   weights: [],
   calories: [],
+  macros: [],
 };
 
 /** Monday-based start of the current week, as a YYYY-MM-DD key. */
@@ -340,6 +354,12 @@ function migrate(raw: unknown): TrackerState {
     ? (s.calories as CalorieEntry[])
     : [];
 
+  // Added after the first release, so older saved state has no macros key.
+  const macros: MacroEntry[] = Array.isArray(s.macros) ? (s.macros as MacroEntry[]) : [];
+
+  const positive = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) && v > 0 ? v : undefined;
+
   return {
     categories,
     goals,
@@ -351,6 +371,9 @@ function migrate(raw: unknown): TrackerState {
     calories,
     calorieBudget:
       typeof s.calorieBudget === "number" && s.calorieBudget > 0 ? s.calorieBudget : undefined,
+    macros,
+    proteinTarget: positive(s.proteinTarget),
+    fiberTarget: positive(s.fiberTarget),
   };
 }
 
@@ -956,10 +979,50 @@ export function useTracker() {
         if (!Number.isFinite(kcal) || kcal <= 0) return s;
         return { ...s, calories: [...s.calories, { id: uid(), date: dateKey(), kcal: Math.round(kcal) }] };
       }),
+
+    // ---- protein and fibre ----
+    /** Logs protein and/or fibre for today. Either value may be left out. */
+    addMacros: (protein: number | null, fiber: number | null) =>
+      commit((s) => {
+        const p = protein != null && Number.isFinite(protein) && protein > 0 ? Math.round(protein) : undefined;
+        const f = fiber != null && Number.isFinite(fiber) && fiber > 0 ? Math.round(fiber) : undefined;
+        if (p === undefined && f === undefined) return s;
+        const entry: MacroEntry = { id: uid(), date: dateKey() };
+        if (p !== undefined) entry.protein = p;
+        if (f !== undefined) entry.fiber = f;
+        return { ...s, macros: [...s.macros, entry] };
+      }),
+
+    setProteinTarget: (grams: number | null) =>
+      commit((s) => ({
+        ...s,
+        proteinTarget:
+          grams != null && Number.isFinite(grams) && grams > 0 ? Math.round(grams) : undefined,
+      })),
+
+    setFiberTarget: (grams: number | null) =>
+      commit((s) => ({
+        ...s,
+        fiberTarget:
+          grams != null && Number.isFinite(grams) && grams > 0 ? Math.round(grams) : undefined,
+      })),
   };
 }
 
 export type Tracker = ReturnType<typeof useTracker>;
+
+/** Totals protein and fibre per date, for the combined chart. */
+export function macroTotalsByDate(
+  macros: MacroEntry[]
+): Record<string, { protein: number; fiber: number }> {
+  const map: Record<string, { protein: number; fiber: number }> = {};
+  for (const m of macros) {
+    const day = (map[m.date] ??= { protein: 0, fiber: 0 });
+    day.protein += m.protein ?? 0;
+    day.fiber += m.fiber ?? 0;
+  }
+  return map;
+}
 
 export function completionsByDate(completions: Completion[]): Record<string, number> {
   const map: Record<string, number> = {};

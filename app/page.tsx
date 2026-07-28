@@ -13,12 +13,14 @@ import {
   GroupsCard,
   RecurringManageCard,
   CalorieBudgetCard,
+  MacroTargetsCard,
 } from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
 import TodoList from "@/components/TodoList";
 import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
+import MacroTracker from "@/components/MacroTracker";
 import Charts from "@/components/Charts";
 import CompletionLog from "@/components/CompletionLog";
 
@@ -67,6 +69,7 @@ export default function Home() {
                   <TodoList tracker={tracker} />
                   <WeightTracker tracker={tracker} />
                   <CaloriesTracker tracker={tracker} />
+                  <MacroTracker tracker={tracker} />
                 </section>
               </div>
 
@@ -132,6 +135,16 @@ export default function Home() {
                       <Card>
                         <Card.Content className="p-4 sm:p-5">
                           <CalorieBudgetCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Protein &amp; fibre targets
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <MacroTargetsCard tracker={tracker} />
                         </Card.Content>
                       </Card>
                     </div>

@@ -426,6 +426,118 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
   );
 }
 
+/**
+ * Daily targets for protein and fibre. Both are optional — leaving a field
+ * empty clears that target, and the tracker simply stops showing its meter.
+ */
+export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [editing, setEditing] = useState(false);
+  const [protein, setProtein] = useState(String(s.proteinTarget ?? ""));
+  const [fiber, setFiber] = useState(String(s.fiberTarget ?? ""));
+  const { pending, run } = usePending();
+
+  const startEditing = () => {
+    setProtein(String(s.proteinTarget ?? ""));
+    setFiber(String(s.fiberTarget ?? ""));
+    setEditing(true);
+  };
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pending) return;
+    const p = protein.trim() === "" ? null : Number(protein);
+    const f = fiber.trim() === "" ? null : Number(fiber);
+    const ok = await run(async () => {
+      await tracker.setProteinTarget(p);
+      await tracker.setFiberTarget(f);
+    });
+    if (ok) setEditing(false);
+  };
+
+  if (!editing) {
+    const none = !s.proteinTarget && !s.fiberTarget;
+    return (
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {none ? (
+            <p className="text-[15px] text-foreground/60">No daily targets set.</p>
+          ) : (
+            <div className="flex gap-6">
+              <div>
+                <div className="font-mono-n text-2xl font-bold leading-none">
+                  {s.proteinTarget ?? "–"}
+                  <span className="ml-1 text-sm font-medium text-foreground/60">g</span>
+                </div>
+                <div className="mt-1.5 text-[13px] text-foreground/60">protein / day</div>
+              </div>
+              <div>
+                <div className="font-mono-n text-2xl font-bold leading-none">
+                  {s.fiberTarget ?? "–"}
+                  <span className="ml-1 text-sm font-medium text-foreground/60">g</span>
+                </div>
+                <div className="mt-1.5 text-[13px] text-foreground/60">fibre / day</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          isIconOnly
+          aria-label={none ? "Set protein and fibre targets" : "Edit protein and fibre targets"}
+          onPress={startEditing}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <div className="flex gap-3">
+        <label className="block flex-1 text-[11px] text-foreground/60">
+          Protein / day (g)
+          <Input
+            type="number"
+            aria-label="Daily protein target in grams"
+            placeholder="e.g. 140"
+            value={protein}
+            onChange={(e) => setProtein(e.target.value)}
+            className="mt-0.5 w-full"
+            autoFocus
+          />
+        </label>
+        <label className="block flex-1 text-[11px] text-foreground/60">
+          Fibre / day (g)
+          <Input
+            type="number"
+            aria-label="Daily fibre target in grams"
+            placeholder="e.g. 30"
+            value={fiber}
+            onChange={(e) => setFiber(e.target.value)}
+            className="mt-0.5 w-full"
+          />
+        </label>
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          type="submit"
+          variant="primary"
+          className={"flex-1 " + (pending ? "is-pending" : "")}
+          isDisabled={pending}
+        >
+          Save
+        </Button>
+        <Button variant="secondary" className="btn-invert" isDisabled={pending} onPress={() => setEditing(false)}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [editing, setEditing] = useState(false);
