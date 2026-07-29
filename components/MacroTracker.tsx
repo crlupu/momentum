@@ -58,13 +58,7 @@ function TargetMeter({
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       <span
-        className="text-[11px] font-semibold uppercase tracking-wide"
-        style={{ color: LABEL }}
-      >
-        {label}
-      </span>
-      <span
-        className="font-mono-n mt-0.5 text-2xl font-bold leading-none"
+        className="font-mono-n text-2xl font-bold leading-none"
         style={{ color: solid }}
       >
         {target ? `${pct}%` : value}

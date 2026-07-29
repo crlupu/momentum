@@ -655,3 +655,9 @@ button {
     pointer-events: none;
   }
 }
+
+/* Measured height of one completion-log row. The log caps its height at ten
+   of these, so the eleventh peeks out and signals there is more to scroll. */
+:root {
+  --log-row: 41px;
+}

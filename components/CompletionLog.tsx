@@ -40,6 +40,9 @@ function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
   );
 }
 
+/** How many entries are visible before the list starts scrolling. */
+const ROWS_BEFORE_SCROLL = 10;
+
 export default function CompletionLog({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
 
@@ -105,7 +108,8 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.
             </p>
           ) : (
-            <ul className="recurring-scroll max-h-[420px] list-none divide-y divide-foreground/10 overflow-y-auto p-0 pr-1">
+            <ul className="recurring-scroll list-none divide-y divide-foreground/10 overflow-y-auto p-0 pr-1"
+              style={{ maxHeight: `calc(${ROWS_BEFORE_SCROLL} * var(--log-row))` }}>
               {entries.map((e) => (
                 <li key={e.key} className="flex items-center gap-2.5 py-2.5">
                   <span
