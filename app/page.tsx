@@ -115,17 +115,7 @@ export default function Home() {
               >
                 <div className="grid items-start gap-5 lg:grid-cols-2">
                   <WeightTracker tracker={tracker} />
-                  <div>
-                    <h3 className="font-display mb-4 flex items-center gap-2 text-lg font-bold tracking-tight">
-                      <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
-                      Workouts
-                    </h3>
-                    <Card>
-                      <Card.Content className="p-4 sm:p-5">
-                        <WorkoutsView tracker={tracker} />
-                      </Card.Content>
-                    </Card>
-                  </div>
+                  <WorkoutVolumeChart tracker={tracker} />
                 </div>
               </Section>
 
@@ -152,9 +142,6 @@ export default function Home() {
                 isDesktop={isDesktop}
               >
                 <Charts tracker={tracker} />
-                <div className="mt-6">
-                  <WorkoutVolumeChart tracker={tracker} />
-                </div>
               </Section>
 
               <Section
@@ -222,6 +209,16 @@ export default function Home() {
                       <Card>
                         <Card.Content className="p-4 sm:p-5">
                           <CalorieBudgetCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Workouts
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <WorkoutsView tracker={tracker} />
                         </Card.Content>
                       </Card>
                     </div>
