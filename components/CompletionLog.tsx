@@ -5,6 +5,7 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Tracker } from "@/lib/tracker";
 import { readableText } from "@/lib/color";
 
@@ -43,6 +44,47 @@ function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
 
 /** How many entries are visible before the list starts scrolling. */
 const ROWS_BEFORE_SCROLL = 10;
+
+/**
+ * Caps a list at the height of its first n rows. Measured rather than assumed:
+ * entries wrap onto a second line at narrow widths, so a fixed row height would
+ * show the wrong number of them. The list also starts hidden inside a collapsed
+ * section on phones, where everything measures zero — hence the visibility
+ * guard and the observer that re-measures once it is shown.
+ */
+function useRowCap(count: number) {
+  const ref = useRef<HTMLUListElement | null>(null);
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    const ul = ref.current;
+    if (!ul) return;
+
+    const measure = () => {
+      // Hidden elements report zero, which would cap the list shut.
+      if (ul.offsetParent === null) return;
+      const rows = Array.from(ul.children) as HTMLElement[];
+      if (rows.length <= ROWS_BEFORE_SCROLL) {
+        setMaxHeight(undefined);
+        return;
+      }
+      const last = rows[ROWS_BEFORE_SCROLL - 1];
+      const height = last.offsetTop + last.offsetHeight - rows[0].offsetTop;
+      if (height > 0) setMaxHeight(height);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(ul);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [count]);
+
+  return { ref, maxHeight };
+}
 
 export default function CompletionLog({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
@@ -99,6 +141,8 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
 
   entries.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
 
+  const { ref: listRef, maxHeight } = useRowCap(entries.length);
+
   const fmt = (d: string) => {
     const [y, m, day] = d.split("-").map(Number);
     return new Date(y, m - 1, day).toLocaleDateString(undefined, {
@@ -117,8 +161,11 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.
             </p>
           ) : (
-            <ul className="recurring-scroll list-none divide-y divide-foreground/10 overflow-y-auto p-0 pr-1"
-              style={{ maxHeight: `calc(${ROWS_BEFORE_SCROLL} * var(--log-row))` }}>
+            <ul
+              ref={listRef}
+              className="recurring-scroll list-none divide-y divide-foreground/10 overflow-y-auto p-0 pr-1"
+              style={{ maxHeight }}
+            >
               {entries.map((e) => (
                 <li key={e.key} className="flex items-center gap-2.5 py-2.5">
                   <span

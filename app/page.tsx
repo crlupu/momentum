@@ -173,8 +173,8 @@ export default function Home() {
                     isDesktop={isDesktop}
                   >
                     <div className="space-y-5">
-                      <TodoList tracker={tracker} />
                       <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
+                      <TodoList tracker={tracker} />
                     </div>
                   </Section>
 
@@ -255,8 +255,8 @@ export default function Home() {
 
                     <div className="side-column space-y-5 md:col-span-1">
                       <section id="tasks" className="scroll-mt-6 space-y-5">
-                        <TodoList tracker={tracker} />
                         <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
+                        <TodoList tracker={tracker} />
                       </section>
                       <section id="weight" className="scroll-mt-6">
                         <WeightTracker tracker={tracker} />
