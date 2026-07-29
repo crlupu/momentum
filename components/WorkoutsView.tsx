@@ -138,8 +138,19 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState(workout.name);
   const { pending, run } = usePending();
+
+  const closeAdd = () => {
+    setName("");
+    setWeight("");
+    setAdding(false);
+  };
+
+  const onEscape = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") closeAdd();
+  };
 
   const addExercise = async (e: FormEvent) => {
     e.preventDefault();
@@ -147,6 +158,7 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
     const w = weight.trim() === "" ? null : Number(weight);
     const ok = await run(() => tracker.addExercise(workout.id, name, w));
     if (ok) {
+      // Stay open with the fields cleared — exercises are usually added in a run.
       setName("");
       setWeight("");
     }
@@ -242,33 +254,48 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
           </div>
         )}
 
-        <form onSubmit={addExercise} className="mt-3 flex gap-2">
-          <Input
-            aria-label={`Add an exercise to ${workout.name}`}
-            placeholder="Bench press…"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            aria-label="Weight in kg"
-            placeholder="kg"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="w-24"
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            isIconOnly
-            aria-label="Add exercise"
-            isDisabled={pending}
-            className={pending ? "is-pending" : ""}
-          >
-            <Plus className="h-4 w-4" />
+        {adding ? (
+          <form onSubmit={addExercise} className="mt-3 flex gap-2" onKeyDown={onEscape}>
+            <Input
+              aria-label={`Add an exercise to ${workout.name}`}
+              placeholder="Bench press…"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="flex-1"
+              autoFocus
+            />
+            <Input
+              type="number"
+              aria-label="Weight in kg"
+              placeholder="kg"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="w-24"
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              isIconOnly
+              aria-label="Add exercise"
+              isDisabled={pending}
+              className={pending ? "is-pending" : ""}
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              isIconOnly
+              aria-label="Done adding exercises"
+              onPress={closeAdd}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </form>
+        ) : (
+          <Button variant="outline" className="mt-3" onPress={() => setAdding(true)}>
+            <Plus className="h-4 w-4" /> Add exercise
           </Button>
-        </form>
+        )}
       </Card.Content>
     </Card>
   );
@@ -279,13 +306,23 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
 export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
   const { pending, run } = usePending();
+
+  const closeCreate = () => {
+    setName("");
+    setCreating(false);
+  };
+
+  const onEscape = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") closeCreate();
+  };
 
   const addWorkout = async (e: FormEvent) => {
     e.preventDefault();
     if (pending || !name.trim()) return;
     const ok = await run(() => tracker.addWorkout(name));
-    if (ok) setName("");
+    if (ok) closeCreate();
   };
 
   return (
@@ -300,36 +337,47 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
             {s.workouts.length} {s.workouts.length === 1 ? "workout" : "workouts"}
           </p>
         </div>
+        {!creating && (
+          <Button variant="primary" onPress={() => setCreating(true)}>
+            <Plus className="h-4 w-4" /> New workout
+          </Button>
+        )}
       </div>
 
-      <Card>
-        <Card.Content className="p-4 sm:p-5">
-          <form onSubmit={addWorkout} className="flex gap-2">
-            <Input
-              aria-label="New workout name"
-              placeholder="Push day…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              isDisabled={pending}
-              className={pending ? "is-pending" : ""}
-            >
-              <Plus className="h-4 w-4" /> New workout
-            </Button>
-          </form>
-        </Card.Content>
-      </Card>
+      {creating ? (
+        <Card>
+          <Card.Content className="p-4 sm:p-5">
+            <form onSubmit={addWorkout} className="flex gap-2" onKeyDown={onEscape}>
+              <Input
+                aria-label="New workout name"
+                placeholder="Push day…"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+                autoFocus
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                isDisabled={pending}
+                className={pending ? "is-pending" : ""}
+              >
+                <Check className="h-4 w-4" /> Create
+              </Button>
+              <Button variant="outline" isIconOnly aria-label="Cancel" onPress={closeCreate}>
+                <X className="h-4 w-4" />
+              </Button>
+            </form>
+          </Card.Content>
+        </Card>
+      ) : null}
 
       {s.workouts.length === 0 ? (
         <Card>
           <Card.Content className="p-6">
             <p className="text-[15px] text-foreground/60">
-              No workouts yet. Create one above — then add exercises to it, each with its
-              working weight.
+              No workouts yet. Use “New workout” above — then add exercises to it, each with
+              its working weight.
             </p>
           </Card.Content>
         </Card>
