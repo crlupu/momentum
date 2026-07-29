@@ -181,13 +181,11 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                     background: barFill(counts[i]),
                   }}
                 />
-                <span
-                  className={
-                    "text-[10px] text-foreground/50 whitespace-nowrap " +
-                    (i % 2 ? "hidden sm:inline" : "")
-                  }
-                >
-                  {d.getDate()}/{d.getMonth() + 1}
+                <span className="text-[10px] leading-none whitespace-nowrap tabular-nums text-foreground/50">
+                  <span className="sm:hidden">{d.getDate()}</span>
+                  <span className="hidden sm:inline">
+                    {d.getDate()}/{d.getMonth() + 1}
+                  </span>
                 </span>
               </div>
             ))}

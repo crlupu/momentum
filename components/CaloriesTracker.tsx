@@ -108,7 +108,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   }}
                 />
                 <span
-                  className={"text-[9px] " + (i % 2 ? "hidden sm:inline" : "")}
+                  className="text-[9px] leading-none tabular-nums"
                   style={{ color: LABEL }}
                 >
                   {d.getDate()}
