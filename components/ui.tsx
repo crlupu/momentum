@@ -87,6 +87,7 @@ export function Input({
   onChange,
   autoFocus,
   autoComplete,
+  onBlur,
   ...rest
 }: {
   className?: string;
@@ -97,6 +98,7 @@ export function Input({
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   autoFocus?: boolean;
   autoComplete?: string;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   "aria-label"?: string;
 }) {
   const id = useId();
@@ -114,6 +116,7 @@ export function Input({
       onChange={onChange}
       autoFocus={autoFocus}
       autoComplete={autoComplete}
+      onBlur={onBlur}
     />
   );
 }

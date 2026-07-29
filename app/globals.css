@@ -661,3 +661,17 @@ button {
 :root {
   --log-row: 41px;
 }
+
+/* Each dashboard section sits on its own panel, open or closed. It is a
+   lighter treatment than .card so the cards nested inside still read as
+   distinct surfaces. */
+.section-panel {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid var(--glass-hairline);
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  padding: 1rem;
+}
+@media (min-width: 640px) {
+  .section-panel { padding: 1.25rem; }
+}

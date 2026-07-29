@@ -10,7 +10,7 @@ import { readableText } from "@/lib/color";
 
 type Entry = {
   key: string;
-  kind: "To-do" | "Goal" | "Recurring";
+  kind: "To-do" | "Goal" | "Recurring" | "Workout";
   title: string;
   date: string;
   color: string;
@@ -21,6 +21,7 @@ const KIND_COLOR: Record<Entry["kind"], string> = {
   "To-do": "#1192e8",
   Goal: "#0f62fe",
   Recurring: "#009d9a",
+  Workout: "#8a3ffc",
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
@@ -84,6 +85,18 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
     });
   });
 
+  // Finished workouts only reach the log once they've been marked as done.
+  s.workoutSessions.forEach((w) => {
+    const detail = w.sets ? `${w.sets} sets · ${w.total.toLocaleString()} kg` : `${w.total.toLocaleString()} kg`;
+    entries.push({
+      key: `workout-${w.id}`,
+      kind: "Workout",
+      title: `${w.name} — ${detail}`,
+      date: w.date,
+      color: KIND_COLOR.Workout,
+    });
+  });
+
   entries.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
 
   const fmt = (d: string) => {
@@ -97,10 +110,6 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <h2 className="font-display mb-4 flex items-center gap-2.5 text-xl font-bold tracking-tight">
-        <span className="sec-dot" style={{ background: "var(--grad-teal)" }} aria-hidden />
-        Log
-      </h2>
       <Card>
         <Card.Content className="p-4 sm:p-5">
           {entries.length === 0 ? (

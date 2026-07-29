@@ -90,22 +90,39 @@ export type Exercise = {
   name: string;
   /** Working weight in kg. Left out for bodyweight movements. */
   weight?: number;
-  /** Left out on exercises added before sets and reps existed. */
-  sets?: number;
-  reps?: number;
 };
 
-export const DEFAULT_SETS = 3;
-export const DEFAULT_REPS = 8;
+/** One set performed during a live workout, at whatever weight was used. */
+export type ActiveSet = { id: string; weight?: number };
 
-/** Volume for one exercise: weight lifted, once per rep of every set. */
-export function exerciseVolume(e: Exercise): number {
-  return (e.weight ?? 0) * (e.sets ?? DEFAULT_SETS) * (e.reps ?? DEFAULT_REPS);
+export type ActiveExercise = {
+  exerciseId: string;
+  /** Copied at start, so renaming or deleting mid-session can't break it. */
+  name: string;
+  /** The exercise's usual weight, used as the default for new sets. */
+  weight?: number;
+  sets: ActiveSet[];
+};
+
+/** A workout in progress. At most one runs at a time. */
+export type ActiveWorkout = {
+  workoutId: string;
+  name: string;
+  startedAt: number;
+  exercises: ActiveExercise[];
+};
+
+/** Volume of a live workout: every set counts the weight it was done at. */
+export function activeWorkoutVolume(a: ActiveWorkout): number {
+  return a.exercises.reduce(
+    (sum, e) => sum + e.sets.reduce((s, set) => s + (set.weight ?? 0), 0),
+    0
+  );
 }
 
-/** Total volume of a workout, summed across its exercises. */
-export function workoutVolume(w: Workout): number {
-  return w.exercises.reduce((sum, e) => sum + exerciseVolume(e), 0);
+/** How many sets have been recorded so far. */
+export function activeWorkoutSets(a: ActiveWorkout): number {
+  return a.exercises.reduce((n, e) => n + e.sets.length, 0);
 }
 
 /** A named workout — "Push day", "Legs" — holding an ordered exercise list. */
@@ -127,6 +144,8 @@ export type WorkoutSession = {
   name: string;
   date: string;
   total: number;
+  /** Sets performed. Absent on sessions logged before live tracking. */
+  sets?: number;
 };
 
 /** A protein / fibre log entry. Either field may be omitted. */
@@ -151,6 +170,8 @@ export type TrackerState = {
   macros: MacroEntry[];
   workouts: Workout[];
   workoutSessions: WorkoutSession[];
+  /** The workout currently under way, if any. */
+  activeWorkout?: ActiveWorkout | null;
   /** Daily protein target, in grams. */
   proteinTarget?: number;
   /** Daily fibre target, in grams. */
@@ -211,6 +232,7 @@ const DEFAULT_STATE: TrackerState = {
   macros: [],
   workouts: [],
   workoutSessions: [],
+  activeWorkout: null,
 };
 
 /** Monday-based start of the current week, as a YYYY-MM-DD key. */
@@ -410,6 +432,11 @@ function migrate(raw: unknown): TrackerState {
     ? (s.workoutSessions as WorkoutSession[])
     : [];
 
+  const activeWorkout =
+    s.activeWorkout && typeof s.activeWorkout === "object"
+      ? (s.activeWorkout as ActiveWorkout)
+      : null;
+
   const workouts: Workout[] = Array.isArray(s.workouts)
     ? (s.workouts as Workout[]).map((w) => ({
         ...w,
@@ -441,6 +468,7 @@ function migrate(raw: unknown): TrackerState {
     macros,
     workouts,
     workoutSessions,
+    activeWorkout,
     proteinTarget: positive(s.proteinTarget),
     fiberTarget: positive(s.fiberTarget),
   };
@@ -1090,24 +1118,11 @@ export function useTracker() {
     removeWorkout: (workoutId: string) =>
       commit((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== workoutId) })),
 
-    addExercise: (
-      workoutId: string,
-      name: string,
-      weight: number | null,
-      sets: number | null = null,
-      reps: number | null = null
-    ) =>
+    addExercise: (workoutId: string, name: string, weight: number | null) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
-        const count = (v: number | null, fallback: number) =>
-          v != null && Number.isFinite(v) && v > 0 ? Math.round(v) : fallback;
-        const ex: Exercise = {
-          id: uid(),
-          name: clean,
-          sets: count(sets, DEFAULT_SETS),
-          reps: count(reps, DEFAULT_REPS),
-        };
+        const ex: Exercise = { id: uid(), name: clean };
         if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
         return {
           ...s,
@@ -1117,19 +1132,10 @@ export function useTracker() {
         };
       }),
 
-    updateExercise: (
-      workoutId: string,
-      exerciseId: string,
-      name: string,
-      weight: number | null,
-      sets: number | null = null,
-      reps: number | null = null
-    ) =>
+    updateExercise: (workoutId: string, exerciseId: string, name: string, weight: number | null) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
-        const count = (v: number | null, fallback: number) =>
-          v != null && Number.isFinite(v) && v > 0 ? Math.round(v) : fallback;
         return {
           ...s,
           workouts: s.workouts.map((w) =>
@@ -1143,8 +1149,6 @@ export function useTracker() {
                       : {
                           id: e.id,
                           name: clean,
-                          sets: count(sets, e.sets ?? DEFAULT_SETS),
-                          reps: count(reps, e.reps ?? DEFAULT_REPS),
                           ...(weight != null && Number.isFinite(weight) && weight > 0
                             ? { weight }
                             : {}),
@@ -1179,17 +1183,113 @@ export function useTracker() {
         }),
       })),
 
-    /** Logs the workout as done, recording the summed weight of its exercises. */
-    completeWorkout: (workoutId: string) =>
+    /** Begins a workout. Nothing is logged until it is finished. */
+    startWorkout: (workoutId: string) =>
       commit((s) => {
         const w = s.workouts.find((x) => x.id === workoutId);
-        if (!w) return s;
-        const total = workoutVolume(w);
+        if (!w || s.activeWorkout) return s;
         return {
           ...s,
+          activeWorkout: {
+            workoutId,
+            name: w.name,
+            startedAt: Date.now(),
+            exercises: w.exercises.map((e) => ({
+              exerciseId: e.id,
+              name: e.name,
+              weight: e.weight,
+              sets: [],
+            })),
+          },
+        };
+      }),
+
+    /** Records another set, defaulting to the weight of the previous one. */
+    addSet: (exerciseId: string) =>
+      commit((s) => {
+        if (!s.activeWorkout) return s;
+        return {
+          ...s,
+          activeWorkout: {
+            ...s.activeWorkout,
+            exercises: s.activeWorkout.exercises.map((e) =>
+              e.exerciseId !== exerciseId
+                ? e
+                : {
+                    ...e,
+                    sets: [
+                      ...e.sets,
+                      { id: uid(), weight: e.sets[e.sets.length - 1]?.weight ?? e.weight },
+                    ],
+                  }
+            ),
+          },
+        };
+      }),
+
+    removeSet: (exerciseId: string, setId: string) =>
+      commit((s) => {
+        if (!s.activeWorkout) return s;
+        return {
+          ...s,
+          activeWorkout: {
+            ...s.activeWorkout,
+            exercises: s.activeWorkout.exercises.map((e) =>
+              e.exerciseId !== exerciseId
+                ? e
+                : { ...e, sets: e.sets.filter((x) => x.id !== setId) }
+            ),
+          },
+        };
+      }),
+
+    setSetWeight: (exerciseId: string, setId: string, weight: number | null) =>
+      commit((s) => {
+        if (!s.activeWorkout) return s;
+        const w = weight != null && Number.isFinite(weight) && weight > 0 ? weight : undefined;
+        return {
+          ...s,
+          activeWorkout: {
+            ...s.activeWorkout,
+            exercises: s.activeWorkout.exercises.map((e) =>
+              e.exerciseId !== exerciseId
+                ? e
+                : {
+                    ...e,
+                    sets: e.sets.map((x) => (x.id === setId ? { ...x, weight: w } : x)),
+                  }
+            ),
+          },
+        };
+      }),
+
+    /** Abandons the workout without logging anything. */
+    cancelWorkout: () => commit((s) => ({ ...s, activeWorkout: null })),
+
+    /**
+     * Finishes the workout: only now does it reach the chart and the log.
+     * The total is the summed weight of every set actually performed.
+     */
+    finishWorkout: () =>
+      commit((s) => {
+        const a = s.activeWorkout;
+        if (!a) return s;
+        const total = activeWorkoutVolume(a);
+        const sets = activeWorkoutSets(a);
+        if (sets === 0) return { ...s, activeWorkout: null };
+        return {
+          ...s,
+          activeWorkout: null,
           workoutSessions: [
             ...s.workoutSessions,
-            { id: uid(), workoutId, name: w.name, date: dateKey(), total },
+            {
+              id: uid(),
+              workoutId: a.workoutId,
+              name: a.name,
+              date: dateKey(),
+              total,
+              sets,
+            },
           ],
         };
       }),

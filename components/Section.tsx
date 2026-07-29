@@ -70,14 +70,14 @@ export function Section({
     (size === "lg" ? "text-2xl" : "text-xl");
 
   return (
-    <section id={id} className="scroll-mt-6">
+    <section id={id} className="section-panel scroll-mt-6">
       {collapsible ? (
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={`${id}-body`}
-          className={headingClass + " mb-4"}
+          className={headingClass + (shown ? " mb-4" : "")}
         >
           {heading}
         </button>

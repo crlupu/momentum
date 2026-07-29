@@ -504,11 +504,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
     <div>
       <div className="mb-4 flex items-end justify-between">
         <div>
-          <h2 className="font-display flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-            <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
-            Goals
-          </h2>
-          <p className="mt-0.5 text-sm text-foreground/60">
+          <p className="text-sm text-foreground/60">
             {todo.length} to do · {inProgress.length} in progress · {done.length} done
           </p>
         </div>
