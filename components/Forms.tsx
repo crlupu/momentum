@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
+import { useConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
 import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek, CAT_COLORS } from "@/lib/tracker";
@@ -237,6 +238,7 @@ export function RecurringEditForm({
 
 export function CategoriesCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const editing = useConfigEditing();
   const [newCat, setNewCat] = useState("");
   const { pending, run } = usePending();
 
@@ -260,6 +262,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
           <li key={c.id} className="flex items-center gap-2 py-2">
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden />
             <span className="flex-1 truncate text-[15px]">{c.name}</span>
+            {editing && (
             <DeleteButton
               what={`the category "${c.name}"`}
               iconOnly
@@ -271,9 +274,11 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
                 return tracker.deleteCategory(c.id);
               }}
             />
+            )}
           </li>
         ))}
       </ul>
+      {editing && (
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
         <Button
@@ -287,12 +292,14 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
           <Plus className="h-4 w-4" />
         </Button>
       </form>
+      )}
     </div>
   );
 }
 
 export function GroupsCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const editing = useConfigEditing();
   const [newGroup, setNewGroup] = useState("");
   const { pending, run } = usePending();
 
@@ -325,6 +332,7 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
                 <span className="font-mono-n shrink-0 text-xs text-foreground/50">
                   {count} task{count === 1 ? "" : "s"}
                 </span>
+                {editing && (
                 <DeleteButton
                   what={`the group "${g.name}"`}
                   iconOnly
@@ -336,11 +344,13 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
                     return tracker.deleteGroup(g.id);
                   }}
                 />
+                )}
               </li>
             );
           })}
         </ul>
       )}
+      {editing && (
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="flex-1" />
         <Button
@@ -354,12 +364,14 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
           <Plus className="h-4 w-4" />
         </Button>
       </form>
+      )}
     </div>
   );
 }
 
 export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const editing = useConfigEditing();
   const [editTask, setEditTask] = useState<RecurringTask | null>(null);
   const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
 
@@ -397,20 +409,24 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                     {r.groupId ? ` · ${groupName(r.groupId)}` : ""}
                   </span>
                 </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isIconOnly
-                  aria-label={`Edit ${r.title}`}
-                  onPress={() => setEditTask(r)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <DeleteButton
-                  what={`the recurring task "${r.title}"`}
-                  iconOnly
-                  onDelete={() => tracker.deleteRecurring(r.id)}
-                />
+                {editing && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      isIconOnly
+                      aria-label={`Edit ${r.title}`}
+                      onPress={() => setEditTask(r)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <DeleteButton
+                      what={`the recurring task "${r.title}"`}
+                      iconOnly
+                      onDelete={() => tracker.deleteRecurring(r.id)}
+                    />
+                  </>
+                )}
               </li>
             );
           })}
@@ -432,6 +448,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
  */
 export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const configuring = useConfigEditing();
   const [editing, setEditing] = useState(false);
   const [protein, setProtein] = useState(String(s.proteinTarget ?? ""));
   const [fiber, setFiber] = useState(String(s.fiberTarget ?? ""));
@@ -481,15 +498,17 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
             </div>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label={none ? "Set protein and fibre targets" : "Edit protein and fibre targets"}
-          onPress={startEditing}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        {configuring && (
+          <Button
+            size="sm"
+            variant="outline"
+            isIconOnly
+            aria-label={none ? "Set protein and fibre targets" : "Edit protein and fibre targets"}
+            onPress={startEditing}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     );
   }
@@ -541,6 +560,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
 /** Meal tags: the sections that make up each day's calorie bar. */
 export function MealTagsCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const editing = useConfigEditing();
   const [name, setName] = useState("");
   const [color, setColor] = useState(CAT_COLORS[0]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -594,30 +614,35 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
               <li key={m.id} className="flex items-center gap-2 py-2">
                 <span className="inline-block h-3 w-3 shrink-0" style={{ background: m.color }} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-[15px]">{m.name}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isIconOnly
-                  aria-label={`Edit ${m.name}`}
-                  onPress={() => {
-                    setEditId(m.id);
-                    setEditName(m.name);
-                    setEditColor(m.color);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <DeleteButton
-                  what={`the meal tag "${m.name}"`}
-                  iconOnly
-                  onDelete={() => tracker.removeMealTag(m.id)}
-                />
+                {editing && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      isIconOnly
+                      aria-label={`Edit ${m.name}`}
+                      onPress={() => {
+                        setEditId(m.id);
+                        setEditName(m.name);
+                        setEditColor(m.color);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <DeleteButton
+                      what={`the meal tag "${m.name}"`}
+                      iconOnly
+                      onDelete={() => tracker.removeMealTag(m.id)}
+                    />
+                  </>
+                )}
               </li>
             )
           )}
         </ul>
       )}
 
+      {editing && (
       <form onSubmit={add} className="flex flex-wrap items-center gap-2">
         <Input
           aria-label="New meal tag"
@@ -638,6 +663,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
           <Plus className="h-4 w-4" />
         </Button>
       </form>
+      )}
     </div>
   );
 }
@@ -667,6 +693,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
 
 export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const configuring = useConfigEditing();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(s.calorieBudget ?? ""));
   const { pending, run } = usePending();
@@ -701,18 +728,20 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
               <p className="text-[15px] text-foreground/60">No daily budget set.</p>
             )}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label={budget ? "Edit calorie budget" : "Set calorie budget"}
-            onPress={() => {
-              setValue(String(budget ?? ""));
-              setEditing(true);
-            }}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {configuring && (
+            <Button
+              size="sm"
+              variant="outline"
+              isIconOnly
+              aria-label={budget ? "Edit calorie budget" : "Set calorie budget"}
+              onPress={() => {
+                setValue(String(budget ?? ""));
+                setEditing(true);
+              }}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {left != null && (

@@ -2,9 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus, Pencil, Check, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
-import { DeleteButton } from "./DeleteButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 
 /** Section accent; follows the theme so it stays visible on dark. */
@@ -53,7 +52,6 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   const colorOf = (id?: string) => tagOf(id)?.color ?? UNTAGGED_COLOR;
 
   const [tagId, setTagId] = useState<string>("");
-  const todayEntries = entriesByDate[today] ?? [];
 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
@@ -126,14 +124,6 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           <span className="text-xs" style={{ color: LABEL }}>avg kcal/day · this week</span>
         </div>
 
-        {todayEntries.length > 0 && (
-          <div className="mb-3 border-t border-foreground/10 pt-2">
-            {todayEntries.map((e) => (
-              <EntryRow key={e.id} tracker={tracker} entry={e} color={colorOf(e.tagId)} />
-            ))}
-          </div>
-        )}
-
         {s.calories.length === 0 ? (
           <p className="px-1 py-2 text-[15px]" style={{ color: LABEL }}>
             Add entries to see daily totals.
@@ -184,92 +174,6 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-/** One of today's entries, editable in place. */
-function EntryRow({
-  tracker,
-  entry,
-  color,
-}: {
-  tracker: Tracker;
-  entry: CalorieEntry;
-  color: string;
-}) {
-  const s = tracker.state!;
-  const [editing, setEditing] = useState(false);
-  const [kcal, setKcal] = useState(String(entry.kcal));
-  const [tagId, setTagId] = useState(entry.tagId ?? "");
-  const { pending, run } = usePending();
-
-  const save = async (e: FormEvent) => {
-    e.preventDefault();
-    const v = Number(kcal);
-    if (!Number.isFinite(v) || v <= 0 || pending) return;
-    const ok = await run(() => tracker.updateCalorieEntry(entry.id, v, tagId || undefined));
-    if (ok) setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <form onSubmit={save} className="flex flex-wrap items-center gap-2 py-1.5">
-        <Input
-          type="number"
-          aria-label="Calories"
-          value={kcal}
-          onChange={(e) => setKcal(e.target.value)}
-          className="w-24"
-          autoFocus
-        />
-        <select
-          aria-label="Meal"
-          value={tagId}
-          onChange={(e) => setTagId(e.target.value)}
-          className="h-10 min-w-[7rem] flex-1 px-2 text-sm"
-        >
-          <option value="">Untagged</option>
-          {s.mealTags.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save entry" isDisabled={pending}>
-          <Check className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label="Cancel"
-          onPress={() => {
-            setKcal(String(entry.kcal));
-            setTagId(entry.tagId ?? "");
-            setEditing(false);
-          }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </form>
-    );
-  }
-
-  const tagName = s.mealTags.find((m) => m.id === entry.tagId)?.name ?? "Untagged";
-  return (
-    <div className="flex items-center gap-2 py-1.5">
-      <span className="inline-block h-2.5 w-2.5 shrink-0" style={{ background: color }} aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-sm">{tagName}</span>
-      <span className="font-mono-n shrink-0 text-sm font-semibold tabular-nums">{entry.kcal}</span>
-      <Button size="sm" variant="outline" isIconOnly aria-label={`Edit ${tagName} entry`} onPress={() => setEditing(true)}>
-        <Pencil className="h-3.5 w-3.5" />
-      </Button>
-      <DeleteButton
-        what={`this ${entry.kcal} kcal entry`}
-        iconOnly
-        onDelete={() => tracker.removeCalorieEntry(entry.id)}
-      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Button, Input } from "./ui";
 import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, ChevronRight, CheckCircle2 } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
+import { useConfigEditing } from "./ConfigCard";
 import {
   Tracker,
   Workout,
@@ -457,11 +458,13 @@ function WorkoutRow({
   workout,
   expanded,
   onToggle,
+  editing,
 }: {
   tracker: Tracker;
   workout: Workout;
   expanded: boolean;
   onToggle: () => void;
+  editing: boolean;
 }) {
   return (
     <div className="border-b border-foreground/10 last:border-b-0">
@@ -480,25 +483,27 @@ function WorkoutRow({
             {workout.exercises.length}
           </span>
         </button>
-        <span className="flex shrink-0 items-center gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label={`Edit ${workout.name}`}
-            onPress={onToggle}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <DeleteButton
-            what={`the workout "${workout.name}"`}
-            iconOnly
-            onDelete={() => tracker.removeWorkout(workout.id)}
-          />
-        </span>
+        {editing && (
+          <span className="flex shrink-0 items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              isIconOnly
+              aria-label={`Edit ${workout.name}`}
+              onPress={onToggle}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <DeleteButton
+              what={`the workout "${workout.name}"`}
+              iconOnly
+              onDelete={() => tracker.removeWorkout(workout.id)}
+            />
+          </span>
+        )}
       </div>
 
-      {expanded && (
+      {expanded && editing && (
         <div className="pb-3">
           <WorkoutEditor tracker={tracker} workout={workout} />
         </div>
@@ -509,6 +514,7 @@ function WorkoutRow({
 
 export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const editing = useConfigEditing();
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -544,13 +550,14 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
               tracker={tracker}
               workout={w}
               expanded={openId === w.id}
+              editing={editing}
               onToggle={() => setOpenId(openId === w.id ? null : w.id)}
             />
           ))}
         </div>
       )}
 
-      {creating ? (
+      {editing && creating ? (
         <form onSubmit={addWorkout} className="flex gap-2" onKeyDown={onEscape}>
           <Input
             aria-label="New workout name"
@@ -572,11 +579,11 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
             <X className="h-4 w-4" />
           </Button>
         </form>
-      ) : (
+      ) : editing ? (
         <Button variant="outline" onPress={() => setCreating(true)}>
           <Plus className="h-4 w-4" /> New workout
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

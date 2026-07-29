@@ -6,6 +6,7 @@ import { useTracker } from "@/lib/tracker";
 import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";
 import { Section, useIsDesktop } from "@/components/Section";
+import { ConfigCard } from "@/components/ConfigCard";
 import { Modal } from "@/components/Modal";
 import {
   GoalForm,
@@ -57,79 +58,30 @@ export default function Home() {
   const configuration = (
         <div className="grid items-start gap-5 md:grid-cols-2">
           <div className="flex flex-col gap-5">
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Categories
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <CategoriesCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Groups
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <GroupsCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
+            <ConfigCard title={"Categories"}>
+<CategoriesCard tracker={tracker} />
+</ConfigCard>
+            <ConfigCard title={"Groups"}>
+<GroupsCard tracker={tracker} />
+</ConfigCard>
           </div>
 
           <div className="flex flex-col gap-5">
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Manage recurring
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <RecurringManageCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Calorie budget
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <CalorieBudgetCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Workouts
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <WorkoutsView tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Meal tags
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <MealTagsCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
-            <div>
-              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-                Protein &amp; fibre targets
-              </h3>
-              <Card>
-                <Card.Content className="p-4 sm:p-5">
-                  <MacroTargetsCard tracker={tracker} />
-                </Card.Content>
-              </Card>
-            </div>
+            <ConfigCard title={"Manage recurring"}>
+<RecurringManageCard tracker={tracker} />
+</ConfigCard>
+            <ConfigCard title={"Calorie budget"}>
+<CalorieBudgetCard tracker={tracker} />
+</ConfigCard>
+            <ConfigCard title={"Workouts"}>
+<WorkoutsView tracker={tracker} />
+</ConfigCard>
+            <ConfigCard title={"Meal tags"}>
+<MealTagsCard tracker={tracker} />
+</ConfigCard>
+            <ConfigCard title={"Protein & fibre targets"}>
+<MacroTargetsCard tracker={tracker} />
+</ConfigCard>
           </div>
         </div>
   );

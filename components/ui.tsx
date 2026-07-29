@@ -56,8 +56,10 @@ export function Button({
   type?: "button" | "submit" | "reset";
   style?: React.CSSProperties;
   "aria-label"?: string;
+  "aria-pressed"?: boolean;
 }) {
   const ariaLabel = (rest as Record<string, unknown>)["aria-label"] as string | undefined;
+  const ariaPressed = (rest as Record<string, unknown>)["aria-pressed"] as boolean | undefined;
   return (
     <CarbonButton
       kind={KIND[variant]}
@@ -70,6 +72,7 @@ export function Button({
       hasIconOnly={isIconOnly}
       iconDescription={isIconOnly ? (ariaLabel ?? "button") : undefined}
       aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
     >
       {children}
     </CarbonButton>
