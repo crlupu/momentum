@@ -58,30 +58,29 @@ export default function Home() {
   const configuration = (
         <div className="grid items-start gap-5 md:grid-cols-2">
           <div className="flex flex-col gap-5">
-            <ConfigCard title={"Categories"}>
-<CategoriesCard tracker={tracker} />
-</ConfigCard>
-            <ConfigCard title={"Groups"}>
-<GroupsCard tracker={tracker} />
-</ConfigCard>
-          </div>
-
-          <div className="flex flex-col gap-5">
             <ConfigCard title={"Manage recurring"}>
 <RecurringManageCard tracker={tracker} />
-</ConfigCard>
-            <ConfigCard title={"Calorie budget"}>
-<CalorieBudgetCard tracker={tracker} />
-</ConfigCard>
+            </ConfigCard>
+            <ConfigCard title={"Categories"}>
+<CategoriesCard tracker={tracker} />
+            </ConfigCard>
+            <ConfigCard title={"Groups"}>
+<GroupsCard tracker={tracker} />
+            </ConfigCard>
+          </div>
+          <div className="flex flex-col gap-5">
             <ConfigCard title={"Workouts"}>
 <WorkoutsView tracker={tracker} />
-</ConfigCard>
+            </ConfigCard>
             <ConfigCard title={"Meal tags"}>
 <MealTagsCard tracker={tracker} />
-</ConfigCard>
+            </ConfigCard>
+            <ConfigCard title={"Calorie budget"}>
+<CalorieBudgetCard tracker={tracker} />
+            </ConfigCard>
             <ConfigCard title={"Protein & fibre targets"}>
 <MacroTargetsCard tracker={tracker} />
-</ConfigCard>
+            </ConfigCard>
           </div>
         </div>
   );
