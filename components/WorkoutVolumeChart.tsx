@@ -2,6 +2,8 @@
 
 import { Card } from "./ui";
 import { Tracker, dateKey, workoutVolumeByDate, workoutMinutesByDate } from "@/lib/tracker";
+import { StartWorkoutButton } from "./StartWorkoutButton";
+import { ActiveWorkoutPanel } from "./WorkoutsView";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
@@ -37,9 +39,18 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-        Workout volume
-      </h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+          Workout volume
+        </h3>
+        <StartWorkoutButton tracker={tracker} />
+      </div>
+
+      {s.activeWorkout && (
+        <div className="mb-5">
+          <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />
+        </div>
+      )}
       <Card>
         <Card.Content className="p-4 sm:p-5">
           {sessions === 0 ? (

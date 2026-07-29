@@ -311,6 +311,30 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
 
 /* ---------------------------- live workout ------------------------------- */
 
+/** mm:ss while under an hour, then h:mm:ss. */
+function formatElapsed(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+
+/** Ticks once a second while a workout is running. */
+function Elapsed({ startedAt }: { startedAt: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="font-mono-n tabular-nums" aria-label="Time elapsed">
+      {formatElapsed(now - startedAt)}
+    </span>
+  );
+}
+
 /** A single recorded set: its weight is editable while the workout runs. */
 function SetRow({
   tracker,
@@ -390,7 +414,9 @@ export function ActiveWorkoutPanel({
           <span className="sec-dot" style={{ background: "var(--grad-success)" }} aria-hidden />
           <span className="truncate">{active.name}</span>
         </h3>
-        <span className="shrink-0 text-xs text-foreground/60">in progress</span>
+        <span className="shrink-0 text-sm text-foreground/70">
+          <Elapsed startedAt={active.startedAt} />
+        </span>
       </div>
 
       <div className="space-y-3">
