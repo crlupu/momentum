@@ -32,9 +32,13 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   const today = dateKey();
 
   const groupName = (id?: string) => s.recurringGroups.find((g) => g.id === id)?.name ?? "";
-  const recurring = [...s.recurring].sort((a, b) =>
-    a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
-  );
+  // Done for this period sinks to the bottom; within each half, alphabetical.
+  const recurring = [...s.recurring].sort((a, b) => {
+    const aDone = isRecurringDone(a, today);
+    const bDone = isRecurringDone(b, today);
+    if (aDone !== bDone) return aDone ? 1 : -1;
+    return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+  });
 
   return (
     <div>
