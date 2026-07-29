@@ -21,6 +21,7 @@ import TodoList from "@/components/TodoList";
 import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
 import MacroTracker from "@/components/MacroTracker";
+import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 import Charts from "@/components/Charts";
 import CompletionLog from "@/components/CompletionLog";
 
@@ -79,6 +80,9 @@ export default function Home() {
                   Progress
                 </h2>
                 <Charts tracker={tracker} />
+                <div className="mt-6">
+                  <WorkoutVolumeChart tracker={tracker} />
+                </div>
               </section>
 
               <section id="log" className="scroll-mt-6">

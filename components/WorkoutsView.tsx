@@ -2,10 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Card, Input } from "./ui";
-import { Plus, Pencil, ArrowUp, ArrowDown, Check, X } from "lucide-react";
+import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, CheckCircle2 } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
-import { Tracker, Workout, Exercise } from "@/lib/tracker";
+import { Tracker, Workout, Exercise, dateKey } from "@/lib/tracker";
 
 /** "70 kg", or a dash when the movement carries no weight. */
 function formatWeight(w?: number): string {
@@ -141,6 +141,11 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState(workout.name);
   const { pending, run } = usePending();
+
+  const total = workout.exercises.reduce((sum, e) => sum + (e.weight ?? 0), 0);
+  const doneToday = tracker
+    .state!.workoutSessions.filter((x) => x.workoutId === workout.id && x.date === dateKey())
+    .length;
 
   const closeAdd = () => {
     setName("");
@@ -296,6 +301,25 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
             <Plus className="h-4 w-4" /> Add exercise
           </Button>
         )}
+
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
+          <span className="text-xs text-foreground/60">
+            Total{" "}
+            <span className="font-mono-n text-sm font-bold text-foreground">{total} kg</span>
+            {doneToday > 0 && (
+              <span className="ml-2">
+                · done {doneToday}× today
+              </span>
+            )}
+          </span>
+          <Button
+            className={"btn-success " + (pending ? "is-pending" : "")}
+            isDisabled={pending || workout.exercises.length === 0}
+            onPress={() => void run(() => tracker.completeWorkout(workout.id))}
+          >
+            <CheckCircle2 className="h-4 w-4" /> Mark as done
+          </Button>
+        </div>
       </Card.Content>
     </Card>
   );

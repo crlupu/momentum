@@ -99,6 +99,20 @@ export type Workout = {
   exercises: Exercise[];
 };
 
+/**
+ * A completed workout. The total is a snapshot of the summed exercise weights
+ * at the moment it was marked done, so later weight changes don't rewrite past
+ * sessions.
+ */
+export type WorkoutSession = {
+  id: string;
+  workoutId: string;
+  /** Name at the time, kept so the history survives a rename or delete. */
+  name: string;
+  date: string;
+  total: number;
+};
+
 /** A protein / fibre log entry. Either field may be omitted. */
 export type MacroEntry = {
   id: string;
@@ -120,6 +134,7 @@ export type TrackerState = {
   calorieBudget?: number;
   macros: MacroEntry[];
   workouts: Workout[];
+  workoutSessions: WorkoutSession[];
   /** Daily protein target, in grams. */
   proteinTarget?: number;
   /** Daily fibre target, in grams. */
@@ -179,6 +194,7 @@ const DEFAULT_STATE: TrackerState = {
   calories: [],
   macros: [],
   workouts: [],
+  workoutSessions: [],
 };
 
 /** Monday-based start of the current week, as a YYYY-MM-DD key. */
@@ -374,6 +390,10 @@ function migrate(raw: unknown): TrackerState {
   // Added after the first release, so older saved state has no macros key.
   const macros: MacroEntry[] = Array.isArray(s.macros) ? (s.macros as MacroEntry[]) : [];
 
+  const workoutSessions: WorkoutSession[] = Array.isArray(s.workoutSessions)
+    ? (s.workoutSessions as WorkoutSession[])
+    : [];
+
   const workouts: Workout[] = Array.isArray(s.workouts)
     ? (s.workouts as Workout[]).map((w) => ({
         ...w,
@@ -399,6 +419,7 @@ function migrate(raw: unknown): TrackerState {
       typeof s.calorieBudget === "number" && s.calorieBudget > 0 ? s.calorieBudget : undefined,
     macros,
     workouts,
+    workoutSessions,
     proteinTarget: positive(s.proteinTarget),
     fiberTarget: positive(s.fiberTarget),
   };
@@ -1113,6 +1134,28 @@ export function useTracker() {
         }),
       })),
 
+    /** Logs the workout as done, recording the summed weight of its exercises. */
+    completeWorkout: (workoutId: string) =>
+      commit((s) => {
+        const w = s.workouts.find((x) => x.id === workoutId);
+        if (!w) return s;
+        const total = w.exercises.reduce((sum, e) => sum + (e.weight ?? 0), 0);
+        return {
+          ...s,
+          workoutSessions: [
+            ...s.workoutSessions,
+            { id: uid(), workoutId, name: w.name, date: dateKey(), total },
+          ],
+        };
+      }),
+
+    /** Removes a logged session — for undoing a mistaken tap. */
+    removeWorkoutSession: (sessionId: string) =>
+      commit((s) => ({
+        ...s,
+        workoutSessions: s.workoutSessions.filter((x) => x.id !== sessionId),
+      })),
+
     setFiberTarget: (grams: number | null) =>
       commit((s) => ({
         ...s,
@@ -1123,6 +1166,13 @@ export function useTracker() {
 }
 
 export type Tracker = ReturnType<typeof useTracker>;
+
+/** Total lifted weight per date, summing every session logged that day. */
+export function workoutVolumeByDate(sessions: WorkoutSession[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const s of sessions) map[s.date] = (map[s.date] ?? 0) + s.total;
+  return map;
+}
 
 /** Totals protein and fibre per date, for the combined chart. */
 export function macroTotalsByDate(
