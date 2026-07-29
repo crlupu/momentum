@@ -4,14 +4,18 @@ import Link from "next/link";
 
 import { useState } from "react";
 import { Button } from "./ui";
-import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut } from "lucide-react";
+import {
+  Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut, Dumbbell, Apple,
+} from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
-  { id: "recurring", label: "Recurring", icon: Repeat, color: "var(--sec-recurring)" },
+  { id: "tasks", label: "Tasks", icon: Repeat, color: "var(--sec-recurring)" },
+  { id: "fitness", label: "Fitness", icon: Dumbbell, color: "var(--sec-calories)" },
+  { id: "nutrition", label: "Nutrition", icon: Apple, color: "var(--sec-weight)" },
   { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
   { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
   { id: "config", label: "Configuration", icon: Settings, color: "var(--sec-config)" },
@@ -149,16 +153,23 @@ export function Sidebar({
   tracker,
   onAddGoal,
   onAddRecurring,
+  onNavigate,
 }: {
   tracker: Tracker;
   onAddGoal: () => void;
   onAddRecurring: () => void;
+  /** Lets the page open a collapsed section before we scroll to it. */
+  onNavigate?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
 
   const go = (id: string) => {
     setOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    onNavigate?.(id);
+    // Let the section expand before scrolling, or we'd aim at the old height.
+    requestAnimationFrame(() =>
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+    );
   };
 
   return (
