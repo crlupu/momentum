@@ -624,22 +624,28 @@ button {
   font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Separates the right-hand column from the goals board.
-   Stacked layouts get a horizontal rule above it; from lg up, where the two
-   sit side by side, it becomes a vertical rule that fades out at both ends. */
-.side-panel {
-  position: relative;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--separator);
+
+/* Each dashboard section sits on its own panel, open or closed. It is a
+   lighter treatment than .card so the cards nested inside still read as
+   distinct surfaces. */
+@media (max-width: 767px) {
+  .section-panel {
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    border: 1px solid var(--glass-hairline);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    padding: 1rem;
+  }
 }
 
-@media (min-width: 1024px) {
-  .side-panel {
-    padding-top: 0;
-    padding-left: 2rem;
-    border-top: 0;
+/* The right-hand column reads as one continuous block: a single rule down its
+   left edge binds the trackers together and separates them from the goals. */
+@media (min-width: 768px) {
+  .side-column {
+    position: relative;
+    padding-left: 1.75rem;
   }
-  .side-panel::before {
+  .side-column::before {
     content: "";
     position: absolute;
     inset-block: 0;
@@ -648,30 +654,10 @@ button {
     background: linear-gradient(
       to bottom,
       transparent,
-      var(--border) 8%,
-      var(--border) 92%,
+      var(--border) 6%,
+      var(--border) 94%,
       transparent
     );
     pointer-events: none;
   }
-}
-
-/* Measured height of one completion-log row. The log caps its height at ten
-   of these, so the eleventh peeks out and signals there is more to scroll. */
-:root {
-  --log-row: 41px;
-}
-
-/* Each dashboard section sits on its own panel, open or closed. It is a
-   lighter treatment than .card so the cards nested inside still read as
-   distinct surfaces. */
-.section-panel {
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
-  border: 1px solid var(--glass-hairline);
-  box-shadow: var(--surface-shadow);
-  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-  padding: 1rem;
-}
-@media (min-width: 640px) {
-  .section-panel { padding: 1.25rem; }
 }
