@@ -129,7 +129,12 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
 
   // Finished workouts only reach the log once they've been marked as done.
   s.workoutSessions.forEach((w) => {
-    const detail = w.sets ? `${w.sets} sets · ${w.total.toLocaleString()} kg` : `${w.total.toLocaleString()} kg`;
+    const parts = [
+      w.sets ? `${w.sets} ${w.sets === 1 ? "set" : "sets"}` : null,
+      `${w.total.toLocaleString()} kg`,
+      w.minutes ? `${w.minutes} min` : null,
+    ].filter(Boolean);
+    const detail = parts.join(" · ");
     entries.push({
       key: `workout-${w.id}`,
       kind: "Workout",

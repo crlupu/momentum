@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "./ui";
-import { Tracker, dateKey, workoutVolumeByDate } from "@/lib/tracker";
+import { Tracker, dateKey, workoutVolumeByDate, workoutMinutesByDate } from "@/lib/tracker";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
@@ -20,13 +20,19 @@ function offsetDate(days: number): Date {
 export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const byDate = workoutVolumeByDate(s.workoutSessions);
+  const minsByDate = workoutMinutesByDate(s.workoutSessions);
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const values = days.map((d) => byDate[dateKey(d)] ?? 0);
+  const minutes = days.map((d) => minsByDate[dateKey(d)] ?? 0);
   const max = Math.max(1, ...values);
+  // Time has its own scale — minutes and kilos aren't comparable numbers.
+  const maxMin = Math.max(1, ...minutes);
+  const anyTime = minutes.some((m) => m > 0);
 
   const sessions = s.workoutSessions.length;
   const weekTotal = values.slice(7).reduce((a, b) => a + b, 0);
+  const weekMinutes = minutes.slice(7).reduce((a, b) => a + b, 0);
   const best = Math.max(0, ...values);
 
   return (
@@ -45,11 +51,58 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
             <>
               <div className="mb-4 grid grid-cols-3 gap-3">
                 <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
-                <Stat value={`${best.toLocaleString()} kg`} label="best day" />
+                <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="time this week" />
                 <Stat value={sessions} label="sessions logged" />
               </div>
 
-              <div className="flex h-[120px] items-end gap-1">
+              {anyTime && (
+                <div className="mb-2 flex items-center justify-end gap-3 text-[11px]" style={{ color: LABEL }}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-2 w-2" style={{ background: "#4589ff" }} aria-hidden />
+                    kg
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff7eb6" }} aria-hidden />
+                    minutes
+                  </span>
+                </div>
+              )}
+
+              <div className="relative flex h-[120px] items-end gap-1">
+                {/* Duration rides over the bars on its own scale. */}
+                {anyTime && (
+                  <svg
+                    className="pointer-events-none absolute inset-x-0"
+                    style={{ bottom: 28, height: 84 }}
+                    viewBox="0 0 100 84"
+                    preserveAspectRatio="none"
+                    aria-hidden
+                  >
+                    <polyline
+                      points={minutes
+                        .map((m, i) => `${((i + 0.5) / 14) * 100},${84 - (m / maxMin) * 78}`)
+                        .join(" ")}
+                      fill="none"
+                      stroke="#ff7eb6"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {minutes.map((m, i) =>
+                      m > 0 ? (
+                        <circle
+                          key={i}
+                          cx={((i + 0.5) / 14) * 100}
+                          cy={84 - (m / maxMin) * 78}
+                          r="3"
+                          fill="#ff7eb6"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      ) : null
+                    )}
+                  </svg>
+                )}
                 {days.map((d, i) => (
                   <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                     <span
@@ -60,7 +113,11 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                     </span>
                     <div
                       className="w-full rounded-t"
-                      title={`${values[i].toLocaleString()} kg on ${dateKey(d)}`}
+                      title={
+                        `${values[i].toLocaleString()} kg` +
+                        (minutes[i] ? ` · ${minutes[i]} min` : "") +
+                        ` on ${dateKey(d)}`
+                      }
                       style={{
                         height: Math.max(2, (values[i] / max) * 84),
                         background: values[i] ? FILL : TRACK,
@@ -76,7 +133,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                 ))}
               </div>
               <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
-                kg lifted per day · weight × sets × reps, summed across each completed workout
+                kg lifted per day, with time trained overlaid
               </p>
             </>
           )}

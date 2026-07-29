@@ -146,6 +146,8 @@ export type WorkoutSession = {
   total: number;
   /** Sets performed. Absent on sessions logged before live tracking. */
   sets?: number;
+  /** Elapsed time in whole minutes, from start to finish. */
+  minutes?: number;
 };
 
 /** A protein / fibre log entry. Either field may be omitted. */
@@ -1277,6 +1279,8 @@ export function useTracker() {
         const total = activeWorkoutVolume(a);
         const sets = activeWorkoutSets(a);
         if (sets === 0) return { ...s, activeWorkout: null };
+        // Elapsed time to the nearest minute, never recorded as zero.
+        const minutes = Math.max(1, Math.round((Date.now() - a.startedAt) / 60000));
         return {
           ...s,
           activeWorkout: null,
@@ -1289,6 +1293,7 @@ export function useTracker() {
               date: dateKey(),
               total,
               sets,
+              minutes,
             },
           ],
         };
@@ -1311,6 +1316,13 @@ export function useTracker() {
 }
 
 export type Tracker = ReturnType<typeof useTracker>;
+
+/** Minutes trained per date, summing every session logged that day. */
+export function workoutMinutesByDate(sessions: WorkoutSession[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const s of sessions) if (s.minutes) map[s.date] = (map[s.date] ?? 0) + s.minutes;
+  return map;
+}
 
 /** Total lifted weight per date, summing every session logged that day. */
 export function workoutVolumeByDate(sessions: WorkoutSession[]): Record<string, number> {

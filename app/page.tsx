@@ -23,6 +23,7 @@ import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
 import MacroTracker from "@/components/MacroTracker";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
+import WorkoutSessionCard from "@/components/WorkoutSessionCard";
 import WorkoutsView from "@/components/WorkoutsView";
 import Charts from "@/components/Charts";
 import CompletionLog from "@/components/CompletionLog";
@@ -187,6 +188,7 @@ export default function Home() {
                     isDesktop={isDesktop}
                   >
                     <div className="space-y-5">
+                      <WorkoutSessionCard tracker={tracker} />
                       <WeightTracker tracker={tracker} />
                       <WorkoutVolumeChart tracker={tracker} />
                     </div>
@@ -273,7 +275,10 @@ export default function Home() {
                       <span className="sec-dot" style={{ background: "var(--grad-magenta)" }} aria-hidden />
                       Fitness
                     </h2>
-                    <WorkoutVolumeChart tracker={tracker} />
+                    <div className="grid items-start gap-5 lg:grid-cols-2">
+                      <WorkoutSessionCard tracker={tracker} />
+                      <WorkoutVolumeChart tracker={tracker} />
+                    </div>
                   </section>
 
                   <section id="charts" className="scroll-mt-6">

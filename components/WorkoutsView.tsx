@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, ChevronRight, Play, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, ChevronRight, CheckCircle2 } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import {
@@ -301,14 +301,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             {workout.exercises.length === 1 ? "exercise" : "exercises"}
             {doneToday > 0 && <span className="ml-2">· done {doneToday}× today</span>}
           </span>
-          <Button
-            variant="primary"
-            className={doneP ? "is-pending" : ""}
-            isDisabled={doneP || workout.exercises.length === 0 || !!tracker.state!.activeWorkout}
-            onPress={() => void runDone(() => tracker.startWorkout(workout.id))}
-          >
-            <Play className="h-4 w-4" /> Start workout
-          </Button>
+          <span className="text-xs text-foreground/50">Start it from Fitness</span>
         </div>
     </div>
   );
@@ -539,12 +532,6 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      {s.activeWorkout && (
-        <div className="mb-4">
-          <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />
-        </div>
-      )}
-
       {s.workouts.length === 0 && !creating ? (
         <p className="mb-3 text-[15px] text-foreground/60">
           No workouts yet.
