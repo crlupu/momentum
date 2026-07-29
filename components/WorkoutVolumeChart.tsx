@@ -38,14 +38,14 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
         <Card.Content className="p-4 sm:p-5">
           {sessions === 0 ? (
             <p className="py-2 text-[15px] text-foreground/60">
-              No workouts logged yet. Mark one as done on the Workouts page and its total
-              weight lands here.
+              No workouts logged yet. Mark one as done on the Workouts page and its volume
+              lands here.
             </p>
           ) : (
             <>
               <div className="mb-4 grid grid-cols-3 gap-3">
-                <Stat value={`${weekTotal} kg`} label="this week" />
-                <Stat value={`${best} kg`} label="best day" />
+                <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
+                <Stat value={`${best.toLocaleString()} kg`} label="best day" />
                 <Stat value={sessions} label="sessions logged" />
               </div>
 
@@ -56,11 +56,11 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                       className="font-mono-n text-[10px] font-semibold"
                       style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
                     >
-                      {values[i] || ""}
+                      {values[i] ? values[i].toLocaleString() : ""}
                     </span>
                     <div
                       className="w-full rounded-t"
-                      title={`${values[i]} kg on ${dateKey(d)}`}
+                      title={`${values[i].toLocaleString()} kg on ${dateKey(d)}`}
                       style={{
                         height: Math.max(2, (values[i] / max) * 84),
                         background: values[i] ? FILL : TRACK,
@@ -76,7 +76,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                 ))}
               </div>
               <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
-                kg lifted per day · sum of each completed workout&apos;s exercise weights
+                kg lifted per day · weight × sets × reps, summed across each completed workout
               </p>
             </>
           )}

@@ -90,7 +90,23 @@ export type Exercise = {
   name: string;
   /** Working weight in kg. Left out for bodyweight movements. */
   weight?: number;
+  /** Left out on exercises added before sets and reps existed. */
+  sets?: number;
+  reps?: number;
 };
+
+export const DEFAULT_SETS = 3;
+export const DEFAULT_REPS = 8;
+
+/** Volume for one exercise: weight lifted, once per rep of every set. */
+export function exerciseVolume(e: Exercise): number {
+  return (e.weight ?? 0) * (e.sets ?? DEFAULT_SETS) * (e.reps ?? DEFAULT_REPS);
+}
+
+/** Total volume of a workout, summed across its exercises. */
+export function workoutVolume(w: Workout): number {
+  return w.exercises.reduce((sum, e) => sum + exerciseVolume(e), 0);
+}
 
 /** A named workout — "Push day", "Legs" — holding an ordered exercise list. */
 export type Workout = {
@@ -1069,11 +1085,24 @@ export function useTracker() {
     removeWorkout: (workoutId: string) =>
       commit((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== workoutId) })),
 
-    addExercise: (workoutId: string, name: string, weight: number | null) =>
+    addExercise: (
+      workoutId: string,
+      name: string,
+      weight: number | null,
+      sets: number | null = null,
+      reps: number | null = null
+    ) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
-        const ex: Exercise = { id: uid(), name: clean };
+        const count = (v: number | null, fallback: number) =>
+          v != null && Number.isFinite(v) && v > 0 ? Math.round(v) : fallback;
+        const ex: Exercise = {
+          id: uid(),
+          name: clean,
+          sets: count(sets, DEFAULT_SETS),
+          reps: count(reps, DEFAULT_REPS),
+        };
         if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
         return {
           ...s,
@@ -1083,10 +1112,19 @@ export function useTracker() {
         };
       }),
 
-    updateExercise: (workoutId: string, exerciseId: string, name: string, weight: number | null) =>
+    updateExercise: (
+      workoutId: string,
+      exerciseId: string,
+      name: string,
+      weight: number | null,
+      sets: number | null = null,
+      reps: number | null = null
+    ) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
+        const count = (v: number | null, fallback: number) =>
+          v != null && Number.isFinite(v) && v > 0 ? Math.round(v) : fallback;
         return {
           ...s,
           workouts: s.workouts.map((w) =>
@@ -1100,6 +1138,8 @@ export function useTracker() {
                       : {
                           id: e.id,
                           name: clean,
+                          sets: count(sets, e.sets ?? DEFAULT_SETS),
+                          reps: count(reps, e.reps ?? DEFAULT_REPS),
                           ...(weight != null && Number.isFinite(weight) && weight > 0
                             ? { weight }
                             : {}),
@@ -1139,7 +1179,7 @@ export function useTracker() {
       commit((s) => {
         const w = s.workouts.find((x) => x.id === workoutId);
         if (!w) return s;
-        const total = w.exercises.reduce((sum, e) => sum + (e.weight ?? 0), 0);
+        const total = workoutVolume(w);
         return {
           ...s,
           workoutSessions: [
