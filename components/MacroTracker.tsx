@@ -36,7 +36,11 @@ function Legend({ color, name }: { color: string; name: string }) {
   );
 }
 
-/** Today's total against its target, shown as a thin meter. */
+/**
+ * Today's total against its target. Laid out in fixed rows — name, figure,
+ * detail, bar — so nothing wraps in a narrow column and both meters keep
+ * their bars on the same line.
+ */
 function TargetMeter({
   label,
   value,
@@ -52,16 +56,26 @@ function TargetMeter({
 }) {
   const pct = target ? Math.round((value / target) * 100) : 0;
   return (
-    <div className="min-w-0 flex-1">
-      <div className="flex items-baseline gap-1.5">
-        <span className="font-mono-n text-xl font-bold" style={{ color: solid }}>
-          {target ? `${pct}%` : value}
-        </span>
-        <span className="text-xs" style={{ color: LABEL }}>
-          {target ? `${value} / ${target} g ${label}` : `g ${label}`}
-        </span>
-      </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: TRACK }}>
+    <div className="flex min-w-0 flex-1 flex-col">
+      <span
+        className="text-[11px] font-semibold uppercase tracking-wide"
+        style={{ color: LABEL }}
+      >
+        {label}
+      </span>
+      <span
+        className="font-mono-n mt-0.5 text-2xl font-bold leading-none"
+        style={{ color: solid }}
+      >
+        {target ? `${pct}%` : value}
+      </span>
+      <span className="mt-1 truncate text-xs tabular-nums" style={{ color: LABEL }}>
+        {target ? `${value} / ${target} g` : `${value} g logged`}
+      </span>
+      <div
+        className="mt-2 h-1.5 w-full overflow-hidden rounded-full"
+        style={{ background: TRACK }}
+      >
         {target ? (
           <div
             className="h-full rounded-full"
@@ -162,7 +176,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
 
-        <div className="mb-1 flex gap-4">
+        <div className="mb-1 flex items-stretch gap-5">
           <TargetMeter
             label="protein"
             value={todayTotals.protein}
