@@ -75,6 +75,7 @@ export default function Home() {
                   {tracker.syncError} Your data is still saved on this device.
                 </div>
               )}
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
               <Section
                 id="goals"
                 title="Goals"
@@ -82,6 +83,7 @@ export default function Home() {
                 open={isOpen("goals")}
                 onToggle={() => toggle("goals")}
                 isDesktop={isDesktop}
+                className="md:col-span-2"
               >
                 <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
               </Section>
@@ -93,12 +95,15 @@ export default function Home() {
                 open={isOpen("tasks")}
                 onToggle={() => toggle("tasks")}
                 isDesktop={isDesktop}
+                className="md:col-span-1"
               >
-                <div className="grid items-start gap-5 lg:grid-cols-2">
+                {/* a third of the row, so these stack rather than sit side by side */}
+                <div className="space-y-5">
                   <TodoList tracker={tracker} />
                   <RecurringList tracker={tracker} onAdd={() => setRecurringOpen(true)} />
                 </div>
               </Section>
+              </div>
 
               <Section
                 id="fitness"

@@ -3,8 +3,11 @@
 import { ReactNode, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-/** Below this width sections collapse; at or above it they stay open. */
-const DESKTOP = "(min-width: 1024px)";
+/**
+ * Below this width sections collapse. Set at the tablet breakpoint so phones
+ * get the collapsible list while iPads and up show everything expanded.
+ */
+const DESKTOP = "(min-width: 768px)";
 
 /**
  * Tracks whether we're on a desktop-width viewport.
@@ -24,9 +27,9 @@ export function useIsDesktop(): boolean | null {
 }
 
 /**
- * A titled region of the page. On phones and tablets the heading is a toggle
- * and the body starts collapsed; from lg up everything is always shown and the
- * heading is inert.
+ * A titled region of the page. On phones the heading is a toggle and the body
+ * starts collapsed; from the tablet breakpoint up everything is always shown
+ * and the heading is inert.
  */
 export function Section({
   id,
@@ -36,6 +39,7 @@ export function Section({
   onToggle,
   isDesktop,
   size = "lg",
+  className,
   children,
 }: {
   id: string;
@@ -45,6 +49,7 @@ export function Section({
   onToggle: () => void;
   isDesktop: boolean | null;
   size?: "lg" | "md";
+  className?: string;
   children: ReactNode;
 }) {
   // Until the media query resolves, render as expanded so the prerendered
@@ -70,7 +75,7 @@ export function Section({
     (size === "lg" ? "text-2xl" : "text-xl");
 
   return (
-    <section id={id} className="section-panel scroll-mt-6">
+    <section id={id} className={["section-panel scroll-mt-6", className].filter(Boolean).join(" ")}>
       {collapsible ? (
         <button
           type="button"
