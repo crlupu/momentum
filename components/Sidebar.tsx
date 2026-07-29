@@ -1,20 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
 
 import { useState } from "react";
 import { Button } from "./ui";
-import {
-  Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut, Dumbbell,
-} from "lucide-react";
+import { Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
-  { id: "/workouts", label: "Workouts", icon: Dumbbell, color: "var(--sec-calories)", href: "/workouts" },
   { id: "recurring", label: "Recurring", icon: Repeat, color: "var(--sec-recurring)" },
   { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
   { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
@@ -159,21 +155,9 @@ export function Sidebar({
   onAddRecurring: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
 
   const go = (id: string) => {
     setOpen(false);
-    const entry = NAV.find((n) => n.id === id);
-    if (entry && "href" in entry && entry.href) {
-      router.push(entry.href);
-      return;
-    }
-    // Section anchors only exist on the dashboard, so come back to it first.
-    if (pathname !== "/") {
-      router.push(`/#${id}`);
-      return;
-    }
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 

@@ -423,6 +423,11 @@ function migrate(raw: unknown): TrackerState {
   };
 
   return {
+    // Anything this build doesn't recognise is carried through untouched.
+    // Without this, a device running an older bundle would parse a document
+    // containing newer fields, drop them, and then write the pruned state back
+    // — silently deleting that data for every other device.
+    ...(s as Partial<TrackerState>),
     categories,
     goals,
     recurring,

@@ -22,6 +22,7 @@ import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
 import MacroTracker from "@/components/MacroTracker";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
+import WorkoutsView from "@/components/WorkoutsView";
 import Charts from "@/components/Charts";
 import CompletionLog from "@/components/CompletionLog";
 
@@ -139,6 +140,16 @@ export default function Home() {
                       <Card>
                         <Card.Content className="p-4 sm:p-5">
                           <CalorieBudgetCard tracker={tracker} />
+                        </Card.Content>
+                      </Card>
+                    </div>
+                    <div>
+                      <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                        Workouts
+                      </h3>
+                      <Card>
+                        <Card.Content className="p-4 sm:p-5">
+                          <WorkoutsView tracker={tracker} />
                         </Card.Content>
                       </Card>
                     </div>

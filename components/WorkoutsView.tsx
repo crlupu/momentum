@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input } from "./ui";
-import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, CheckCircle2 } from "lucide-react";
+import { Button, Input } from "./ui";
+import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, CheckCircle2, ChevronRight } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import {
@@ -172,7 +172,7 @@ function ExerciseRow({
 
 /* -------------------------------- workout -------------------------------- */
 
-function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
+function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
   const [name, setName] = useState("");
   const [weight, setWeight] = useState("");
   // Sets and reps start at the common default so most entries are one field.
@@ -217,8 +217,7 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
   };
 
   return (
-    <Card>
-      <Card.Content className="p-4 sm:p-5">
+    <div>
         <div className="mb-3 flex items-start justify-between gap-3">
           {renaming ? (
             <form
@@ -254,29 +253,10 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
             </form>
           ) : (
             <>
-              <h2 className="font-display min-w-0 flex-1 truncate text-lg font-bold tracking-tight">
-                {workout.name}
-              </h2>
-              <span className="flex shrink-0 items-center gap-1">
-                <span className="mr-1 text-xs text-foreground/50">
-                  {workout.exercises.length}{" "}
-                  {workout.exercises.length === 1 ? "exercise" : "exercises"}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isIconOnly
-                  aria-label={`Rename ${workout.name}`}
-                  onPress={() => setRenaming(true)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <DeleteButton
-                  what={`the workout "${workout.name}"`}
-                  iconOnly
-                  onDelete={() => tracker.removeWorkout(workout.id)}
-                />
-              </span>
+              {/* the list row above already shows the name and delete */}
+              <Button size="sm" variant="outline" onPress={() => setRenaming(true)}>
+                <Pencil className="h-3.5 w-3.5" /> Rename
+              </Button>
             </>
           )}
         </div>
@@ -386,17 +366,73 @@ function WorkoutCard({ tracker, workout }: { tracker: Tracker; workout: Workout 
             <CheckCircle2 className="h-4 w-4" /> Mark as done
           </Button>
         </div>
-      </Card.Content>
-    </Card>
+    </div>
   );
 }
 
 /* --------------------------------- view ---------------------------------- */
 
+/** One row in the configuration list: title, then edit and delete. */
+function WorkoutRow({
+  tracker,
+  workout,
+  expanded,
+  onToggle,
+}: {
+  tracker: Tracker;
+  workout: Workout;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="border-b border-foreground/10 last:border-b-0">
+      <div className="flex items-center gap-3 py-2.5">
+        <button
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          aria-expanded={expanded}
+        >
+          <ChevronRight
+            className={"h-4 w-4 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
+            aria-hidden
+          />
+          <span className="truncate text-[15px]">{workout.name}</span>
+          <span className="shrink-0 text-xs text-foreground/50">
+            {workout.exercises.length}
+          </span>
+        </button>
+        <span className="flex shrink-0 items-center gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            isIconOnly
+            aria-label={`Edit ${workout.name}`}
+            onPress={onToggle}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <DeleteButton
+            what={`the workout "${workout.name}"`}
+            iconOnly
+            onDelete={() => tracker.removeWorkout(workout.id)}
+          />
+        </span>
+      </div>
+
+      {expanded && (
+        <div className="pb-3">
+          <WorkoutEditor tracker={tracker} workout={workout} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
   const { pending, run } = usePending();
 
   const closeCreate = () => {
@@ -416,67 +452,51 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-            <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
-            Workouts
-          </h1>
-          <p className="mt-1 text-sm text-foreground/60">
-            {s.workouts.length} {s.workouts.length === 1 ? "workout" : "workouts"}
-          </p>
-        </div>
-        {!creating && (
-          <Button variant="primary" onPress={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> New workout
-          </Button>
-        )}
-      </div>
-
-      {creating ? (
-        <Card>
-          <Card.Content className="p-4 sm:p-5">
-            <form onSubmit={addWorkout} className="flex gap-2" onKeyDown={onEscape}>
-              <Input
-                aria-label="New workout name"
-                placeholder="Push day…"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="flex-1"
-                autoFocus
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                isDisabled={pending}
-                className={pending ? "is-pending" : ""}
-              >
-                <Check className="h-4 w-4" /> Create
-              </Button>
-              <Button variant="outline" isIconOnly aria-label="Cancel" onPress={closeCreate}>
-                <X className="h-4 w-4" />
-              </Button>
-            </form>
-          </Card.Content>
-        </Card>
-      ) : null}
-
-      {s.workouts.length === 0 ? (
-        <Card>
-          <Card.Content className="p-6">
-            <p className="text-[15px] text-foreground/60">
-              No workouts yet. Use “New workout” above — then add exercises to it, each with
-              its working weight.
-            </p>
-          </Card.Content>
-        </Card>
+    <div>
+      {s.workouts.length === 0 && !creating ? (
+        <p className="mb-3 text-[15px] text-foreground/60">
+          No workouts yet.
+        </p>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="mb-3">
           {s.workouts.map((w) => (
-            <WorkoutCard key={w.id} tracker={tracker} workout={w} />
+            <WorkoutRow
+              key={w.id}
+              tracker={tracker}
+              workout={w}
+              expanded={openId === w.id}
+              onToggle={() => setOpenId(openId === w.id ? null : w.id)}
+            />
           ))}
         </div>
+      )}
+
+      {creating ? (
+        <form onSubmit={addWorkout} className="flex gap-2" onKeyDown={onEscape}>
+          <Input
+            aria-label="New workout name"
+            placeholder="Push day…"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="flex-1"
+            autoFocus
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            isDisabled={pending}
+            className={pending ? "is-pending" : ""}
+          >
+            <Check className="h-4 w-4" /> Create
+          </Button>
+          <Button variant="outline" isIconOnly aria-label="Cancel" onPress={closeCreate}>
+            <X className="h-4 w-4" />
+          </Button>
+        </form>
+      ) : (
+        <Button variant="outline" onPress={() => setCreating(true)}>
+          <Plus className="h-4 w-4" /> New workout
+        </Button>
       )}
     </div>
   );
