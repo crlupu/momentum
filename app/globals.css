@@ -661,3 +661,103 @@ button {
     pointer-events: none;
   }
 }
+
+/* ============================================================
+   Configuration
+   One row rhythm and one control size across every card, so the
+   lists read as a single system rather than seven variations.
+   ============================================================ */
+
+/* A row in a configuration list. */
+.cfg-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-block-size: 2.75rem;   /* comfortable target, consistent rhythm */
+  padding-block: 0.375rem;
+}
+
+/* Row actions always sit at the trailing edge, destructive one last. */
+.cfg-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-inline-start: auto;
+  flex: none;
+}
+
+/* Every row action is the same square, whichever component renders it. */
+.cfg-actions .cds--btn {
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
+  padding: 0;
+  justify-content: center;
+}
+.cfg-actions .cds--btn svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+}
+
+/* Colour marker, identical in every list. */
+.cfg-dot {
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* Primary label and its supporting line. */
+.cfg-label {
+  min-inline-size: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+}
+.cfg-meta {
+  flex: none;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.cfg-empty {
+  padding-block: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+/* The add form is separated from the list it appends to. */
+.cfg-add {
+  margin-block-start: 0.75rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--separator);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* A card being edited is marked, so it's clear which one is live. */
+.config-card--editing {
+  border-color: var(--accent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Colour swatch: a real target, with a clear selected state. */
+.cfg-swatch {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 2px;
+  flex: none;
+}
+
+/* Keyboard focus is visible on every configuration control. */
+.cfg-row button:focus-visible,
+.cfg-add button:focus-visible,
+.cfg-swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

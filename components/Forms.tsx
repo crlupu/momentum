@@ -259,10 +259,11 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
         }
       >
         {s.categories.map((c) => (
-          <li key={c.id} className="flex items-center gap-2 py-2">
-            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} aria-hidden />
-            <span className="flex-1 truncate text-[15px]">{c.name}</span>
+          <li key={c.id} className="cfg-row">
+            <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
+            <span className="cfg-label">{c.name}</span>
             {editing && (
+            <span className="cfg-actions">
             <DeleteButton
               what={`the category "${c.name}"`}
               iconOnly
@@ -274,13 +275,14 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
                 return tracker.deleteCategory(c.id);
               }}
             />
+            </span>
             )}
           </li>
         ))}
       </ul>
       {editing && (
-      <form onSubmit={submit} className="mt-3 flex gap-2">
-        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="flex-1" />
+      <form onSubmit={submit} className="cfg-add">
+        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-[8rem] flex-1" />
         <Button
           type="submit"
           variant="primary"
@@ -314,7 +316,7 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       {s.recurringGroups.length === 0 ? (
-        <p className="py-1 text-[15px] text-foreground/60">
+        <p className="cfg-empty">
           No groups yet. Tasks in a group cover each other — e.g. Legs / Push / Pull day.
         </p>
       ) : (
@@ -327,12 +329,13 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
           {s.recurringGroups.map((g) => {
             const count = s.recurring.filter((r) => r.groupId === g.id).length;
             return (
-              <li key={g.id} className="flex items-center gap-2 py-2">
-                <span className="flex-1 truncate text-[15px]">{g.name}</span>
-                <span className="font-mono-n shrink-0 text-xs text-foreground/50">
+              <li key={g.id} className="cfg-row">
+                <span className="cfg-label">{g.name}</span>
+                <span className="cfg-meta font-mono-n">
                   {count} task{count === 1 ? "" : "s"}
                 </span>
                 {editing && (
+                <span className="cfg-actions">
                 <DeleteButton
                   what={`the group "${g.name}"`}
                   iconOnly
@@ -344,6 +347,7 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
                     return tracker.deleteGroup(g.id);
                   }}
                 />
+                </span>
                 )}
               </li>
             );
@@ -351,8 +355,8 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
         </ul>
       )}
       {editing && (
-      <form onSubmit={submit} className="mt-3 flex gap-2">
-        <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="flex-1" />
+      <form onSubmit={submit} className="cfg-add">
+        <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="min-w-[8rem] flex-1" />
         <Button
           type="submit"
           variant="primary"
@@ -385,7 +389,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       {tasks.length === 0 ? (
-        <p className="py-1 text-[15px] text-foreground/60">No recurring tasks yet.</p>
+        <p className="cfg-empty">No recurring tasks yet.</p>
       ) : (
         <ul
           className={
@@ -396,12 +400,8 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
           {tasks.map((r) => {
             const c = tracker.cat(r.catId);
             return (
-              <li key={r.id} className="flex items-center gap-2 py-2">
-                <span
-                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ background: c.color }}
-                  aria-hidden
-                />
+              <li key={r.id} className="cfg-row">
+                <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px]">{r.title}</span>
                   <span className="block text-[11px] text-foreground/50">
@@ -410,7 +410,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                   </span>
                 </span>
                 {editing && (
-                  <>
+                  <span className="cfg-actions">
                     <Button
                       size="sm"
                       variant="outline"
@@ -425,7 +425,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                       iconOnly
                       onDelete={() => tracker.deleteRecurring(r.id)}
                     />
-                  </>
+                  </span>
                 )}
               </li>
             );
@@ -449,16 +449,9 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
 export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const configuring = useConfigEditing();
-  const [editing, setEditing] = useState(false);
   const [protein, setProtein] = useState(String(s.proteinTarget ?? ""));
   const [fiber, setFiber] = useState(String(s.fiberTarget ?? ""));
   const { pending, run } = usePending();
-
-  const startEditing = () => {
-    setProtein(String(s.proteinTarget ?? ""));
-    setFiber(String(s.fiberTarget ?? ""));
-    setEditing(true);
-  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -469,10 +462,10 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
       await tracker.setProteinTarget(p);
       await tracker.setFiberTarget(f);
     });
-    if (ok) setEditing(false);
+    return ok;
   };
 
-  if (!editing) {
+  if (!configuring) {
     const none = !s.proteinTarget && !s.fiberTarget;
     return (
       <div className="flex items-start justify-between gap-3">
@@ -498,17 +491,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
             </div>
           )}
         </div>
-        {configuring && (
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label={none ? "Set protein and fibre targets" : "Edit protein and fibre targets"}
-            onPress={startEditing}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        )}
+
       </div>
     );
   }
@@ -547,10 +530,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
           className={"flex-1 " + (pending ? "is-pending" : "")}
           isDisabled={pending}
         >
-          Save
-        </Button>
-        <Button variant="secondary" className="btn-invert" isDisabled={pending} onPress={() => setEditing(false)}>
-          Cancel
+          Save targets
         </Button>
       </div>
     </form>
@@ -585,9 +565,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       {s.mealTags.length === 0 ? (
-        <p className="mb-3 text-[15px] text-foreground/60">
-          No meal tags. Calorie entries will be logged untagged.
-        </p>
+        <p className="cfg-empty">No meal tags. Calorie entries are logged untagged.</p>
       ) : (
         <ul className="mb-3 list-none divide-y divide-foreground/10 p-0">
           {s.mealTags.map((m) =>
@@ -611,11 +589,11 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
                 </form>
               </li>
             ) : (
-              <li key={m.id} className="flex items-center gap-2 py-2">
-                <span className="inline-block h-3 w-3 shrink-0" style={{ background: m.color }} aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-[15px]">{m.name}</span>
+              <li key={m.id} className="cfg-row">
+                <span className="cfg-dot" style={{ background: m.color }} aria-hidden />
+                <span className="cfg-label">{m.name}</span>
                 {editing && (
-                  <>
+                  <span className="cfg-actions">
                     <Button
                       size="sm"
                       variant="outline"
@@ -634,7 +612,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
                       iconOnly
                       onDelete={() => tracker.removeMealTag(m.id)}
                     />
-                  </>
+                  </span>
                 )}
               </li>
             )
@@ -643,7 +621,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
       )}
 
       {editing && (
-      <form onSubmit={add} className="flex flex-wrap items-center gap-2">
+      <form onSubmit={add} className="cfg-add">
         <Input
           aria-label="New meal tag"
           placeholder="Breakfast…"
@@ -679,11 +657,11 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
           aria-label={`Use colour ${c}`}
           aria-pressed={value === c}
           onClick={() => onChange(c)}
-          className="h-6 w-6 rounded-sm"
+          className="cfg-swatch"
           style={{
             background: c,
-            outline: value === c ? "2px solid var(--foreground)" : "none",
-            outlineOffset: 1,
+            outline: value === c ? "2px solid var(--foreground)" : "1px solid var(--border)",
+            outlineOffset: value === c ? 2 : 0,
           }}
         />
       ))}
@@ -694,7 +672,6 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
 export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const configuring = useConfigEditing();
-  const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(s.calorieBudget ?? ""));
   const { pending, run } = usePending();
 
@@ -705,11 +682,10 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
     e.preventDefault();
     if (pending) return;
     const n = value.trim() === "" ? null : Number(value);
-    const ok = await run(() => tracker.setCalorieBudget(n));
-    if (ok) setEditing(false);
+    return run(() => tracker.setCalorieBudget(n));
   };
 
-  if (!editing) {
+  if (!configuring) {
     return (
       <div>
         <div className="flex items-start justify-between gap-3">
@@ -728,20 +704,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
               <p className="text-[15px] text-foreground/60">No daily budget set.</p>
             )}
           </div>
-          {configuring && (
-            <Button
-              size="sm"
-              variant="outline"
-              isIconOnly
-              aria-label={budget ? "Edit calorie budget" : "Set calorie budget"}
-              onPress={() => {
-                setValue(String(budget ?? ""));
-                setEditing(true);
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
+
         </div>
 
         {left != null && (
@@ -775,18 +738,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
           className={"flex-1 " + (pending ? "is-pending" : "")}
           isDisabled={pending}
         >
-          Save
-        </Button>
-        <Button
-          variant="secondary"
-          className="btn-invert"
-          isDisabled={pending}
-          onPress={() => {
-            setValue(String(budget ?? ""));
-            setEditing(false);
-          }}
-        >
-          Cancel
+          Save budget
         </Button>
       </div>
       <p className="mt-2 text-[11px] text-foreground/50">

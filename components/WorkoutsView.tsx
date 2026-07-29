@@ -468,23 +468,28 @@ function WorkoutRow({
 }) {
   return (
     <div className="border-b border-foreground/10 last:border-b-0">
-      <div className="flex items-center gap-3 py-2.5">
-        <button
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          aria-expanded={expanded}
-        >
-          <ChevronRight
-            className={"h-4 w-4 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
-            aria-hidden
-          />
-          <span className="truncate text-[15px]">{workout.name}</span>
-          <span className="shrink-0 text-xs text-foreground/50">
-            {workout.exercises.length}
-          </span>
-        </button>
+      <div className="cfg-row">
+        {editing ? (
+          <button
+            onClick={onToggle}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            aria-expanded={expanded}
+          >
+            <ChevronRight
+              className={"h-3.5 w-3.5 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
+              aria-hidden
+            />
+            <span className="truncate text-[15px]">{workout.name}</span>
+          </button>
+        ) : (
+          <span className="cfg-label">{workout.name}</span>
+        )}
+        <span className="cfg-meta">
+          {workout.exercises.length}{" "}
+          {workout.exercises.length === 1 ? "exercise" : "exercises"}
+        </span>
         {editing && (
-          <span className="flex shrink-0 items-center gap-1">
+          <span className="cfg-actions">
             <Button
               size="sm"
               variant="outline"
@@ -539,9 +544,7 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       {s.workouts.length === 0 && !creating ? (
-        <p className="mb-3 text-[15px] text-foreground/60">
-          No workouts yet.
-        </p>
+        <p className="cfg-empty">No workouts yet.</p>
       ) : (
         <div className="mb-3">
           {s.workouts.map((w) => (
@@ -558,13 +561,13 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
       )}
 
       {editing && creating ? (
-        <form onSubmit={addWorkout} className="flex gap-2" onKeyDown={onEscape}>
+        <form onSubmit={addWorkout} className="cfg-add" onKeyDown={onEscape}>
           <Input
             aria-label="New workout name"
             placeholder="Push day…"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1"
+            className="min-w-[8rem] flex-1"
             autoFocus
           />
           <Button
@@ -580,7 +583,7 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
       ) : editing ? (
-        <Button variant="outline" onPress={() => setCreating(true)}>
+        <Button variant="outline" className="cfg-add" onPress={() => setCreating(true)}>
           <Plus className="h-4 w-4" /> New workout
         </Button>
       ) : null}
