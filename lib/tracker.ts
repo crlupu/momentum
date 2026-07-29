@@ -84,6 +84,21 @@ export type WeightEntry = { date: string; kg: number };
 
 export type CalorieEntry = { id: string; date: string; kcal: number };
 
+/** One exercise inside a workout, with the weight it's performed at. */
+export type Exercise = {
+  id: string;
+  name: string;
+  /** Working weight in kg. Left out for bodyweight movements. */
+  weight?: number;
+};
+
+/** A named workout — "Push day", "Legs" — holding an ordered exercise list. */
+export type Workout = {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+};
+
 /** A protein / fibre log entry. Either field may be omitted. */
 export type MacroEntry = {
   id: string;
@@ -104,6 +119,7 @@ export type TrackerState = {
   /** Daily calorie budget, used to work out what's left for the week. */
   calorieBudget?: number;
   macros: MacroEntry[];
+  workouts: Workout[];
   /** Daily protein target, in grams. */
   proteinTarget?: number;
   /** Daily fibre target, in grams. */
@@ -162,6 +178,7 @@ const DEFAULT_STATE: TrackerState = {
   weights: [],
   calories: [],
   macros: [],
+  workouts: [],
 };
 
 /** Monday-based start of the current week, as a YYYY-MM-DD key. */
@@ -357,6 +374,13 @@ function migrate(raw: unknown): TrackerState {
   // Added after the first release, so older saved state has no macros key.
   const macros: MacroEntry[] = Array.isArray(s.macros) ? (s.macros as MacroEntry[]) : [];
 
+  const workouts: Workout[] = Array.isArray(s.workouts)
+    ? (s.workouts as Workout[]).map((w) => ({
+        ...w,
+        exercises: Array.isArray(w.exercises) ? w.exercises : [],
+      }))
+    : [];
+
   const positive = (v: unknown) => {
     const n = typeof v === "string" ? Number(v) : v;
     return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
@@ -374,6 +398,7 @@ function migrate(raw: unknown): TrackerState {
     calorieBudget:
       typeof s.calorieBudget === "number" && s.calorieBudget > 0 ? s.calorieBudget : undefined,
     macros,
+    workouts,
     proteinTarget: positive(s.proteinTarget),
     fiberTarget: positive(s.fiberTarget),
   };
@@ -1000,6 +1025,92 @@ export function useTracker() {
         ...s,
         proteinTarget:
           grams != null && Number.isFinite(grams) && grams > 0 ? Math.round(grams) : undefined,
+      })),
+
+    // ---- workouts ----
+    addWorkout: (name: string) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        return { ...s, workouts: [...s.workouts, { id: uid(), name: clean, exercises: [] }] };
+      }),
+
+    renameWorkout: (workoutId: string, name: string) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        return {
+          ...s,
+          workouts: s.workouts.map((w) => (w.id === workoutId ? { ...w, name: clean } : w)),
+        };
+      }),
+
+    removeWorkout: (workoutId: string) =>
+      commit((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== workoutId) })),
+
+    addExercise: (workoutId: string, name: string, weight: number | null) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        const ex: Exercise = { id: uid(), name: clean };
+        if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
+        return {
+          ...s,
+          workouts: s.workouts.map((w) =>
+            w.id === workoutId ? { ...w, exercises: [...w.exercises, ex] } : w
+          ),
+        };
+      }),
+
+    updateExercise: (workoutId: string, exerciseId: string, name: string, weight: number | null) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        return {
+          ...s,
+          workouts: s.workouts.map((w) =>
+            w.id !== workoutId
+              ? w
+              : {
+                  ...w,
+                  exercises: w.exercises.map((e) =>
+                    e.id !== exerciseId
+                      ? e
+                      : {
+                          id: e.id,
+                          name: clean,
+                          ...(weight != null && Number.isFinite(weight) && weight > 0
+                            ? { weight }
+                            : {}),
+                        }
+                  ),
+                }
+          ),
+        };
+      }),
+
+    removeExercise: (workoutId: string, exerciseId: string) =>
+      commit((s) => ({
+        ...s,
+        workouts: s.workouts.map((w) =>
+          w.id === workoutId
+            ? { ...w, exercises: w.exercises.filter((e) => e.id !== exerciseId) }
+            : w
+        ),
+      })),
+
+    moveExercise: (workoutId: string, exerciseId: string, dir: -1 | 1) =>
+      commit((s) => ({
+        ...s,
+        workouts: s.workouts.map((w) => {
+          if (w.id !== workoutId) return w;
+          const i = w.exercises.findIndex((e) => e.id === exerciseId);
+          const j = i + dir;
+          if (i < 0 || j < 0 || j >= w.exercises.length) return w;
+          const next = [...w.exercises];
+          [next[i], next[j]] = [next[j], next[i]];
+          return { ...w, exercises: next };
+        }),
       })),
 
     setFiberTarget: (grams: number | null) =>
