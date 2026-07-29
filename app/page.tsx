@@ -15,6 +15,7 @@ import {
   RecurringManageCard,
   CalorieBudgetCard,
   MacroTargetsCard,
+  MealTagsCard,
 } from "@/components/Forms";
 import GoalsView from "@/components/GoalsView";
 import RecurringList from "@/components/RecurringList";
@@ -106,6 +107,16 @@ export default function Home() {
               <Card>
                 <Card.Content className="p-4 sm:p-5">
                   <WorkoutsView tracker={tracker} />
+                </Card.Content>
+              </Card>
+            </div>
+            <div>
+              <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+                Meal tags
+              </h3>
+              <Card>
+                <Card.Content className="p-4 sm:p-5">
+                  <MealTagsCard tracker={tracker} />
                 </Card.Content>
               </Card>
             </div>

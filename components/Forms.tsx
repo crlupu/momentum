@@ -2,11 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Check, X } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
-import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek } from "@/lib/tracker";
+import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek, CAT_COLORS } from "@/lib/tracker";
 
 function GroupPicker({
   tracker,
@@ -535,6 +535,133 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
         </Button>
       </div>
     </form>
+  );
+}
+
+/** Meal tags: the sections that make up each day's calorie bar. */
+export function MealTagsCard({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(CAT_COLORS[0]);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState(CAT_COLORS[0]);
+  const { pending, run } = usePending();
+
+  const add = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pending || !name.trim()) return;
+    const ok = await run(() => tracker.addMealTag(name, color));
+    if (ok) setName("");
+  };
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pending || !editId || !editName.trim()) return;
+    const ok = await run(() => tracker.updateMealTag(editId, editName, editColor));
+    if (ok) setEditId(null);
+  };
+
+  return (
+    <div>
+      {s.mealTags.length === 0 ? (
+        <p className="mb-3 text-[15px] text-foreground/60">
+          No meal tags. Calorie entries will be logged untagged.
+        </p>
+      ) : (
+        <ul className="mb-3 list-none divide-y divide-foreground/10 p-0">
+          {s.mealTags.map((m) =>
+            editId === m.id ? (
+              <li key={m.id} className="py-2">
+                <form onSubmit={save} className="flex flex-wrap items-center gap-2">
+                  <Input
+                    aria-label="Tag name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="min-w-[6rem] flex-1"
+                    autoFocus
+                  />
+                  <ColorPicker value={editColor} onChange={setEditColor} />
+                  <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save tag" isDisabled={pending}>
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" isIconOnly aria-label="Cancel" onPress={() => setEditId(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </form>
+              </li>
+            ) : (
+              <li key={m.id} className="flex items-center gap-2 py-2">
+                <span className="inline-block h-3 w-3 shrink-0" style={{ background: m.color }} aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-[15px]">{m.name}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isIconOnly
+                  aria-label={`Edit ${m.name}`}
+                  onPress={() => {
+                    setEditId(m.id);
+                    setEditName(m.name);
+                    setEditColor(m.color);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <DeleteButton
+                  what={`the meal tag "${m.name}"`}
+                  iconOnly
+                  onDelete={() => tracker.removeMealTag(m.id)}
+                />
+              </li>
+            )
+          )}
+        </ul>
+      )}
+
+      <form onSubmit={add} className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="New meal tag"
+          placeholder="Breakfast…"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="min-w-[6rem] flex-1"
+        />
+        <ColorPicker value={color} onChange={setColor} />
+        <Button
+          type="submit"
+          variant="primary"
+          isIconOnly
+          aria-label="Add meal tag"
+          isDisabled={pending}
+          className={pending ? "is-pending" : ""}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+/** Swatch row shared by the tag forms. */
+function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {CAT_COLORS.map((c) => (
+        <button
+          key={c}
+          type="button"
+          aria-label={`Use colour ${c}`}
+          aria-pressed={value === c}
+          onClick={() => onChange(c)}
+          className="h-6 w-6 rounded-sm"
+          style={{
+            background: c,
+            outline: value === c ? "2px solid var(--foreground)" : "none",
+            outlineOffset: 1,
+          }}
+        />
+      ))}
+    </span>
   );
 }
 

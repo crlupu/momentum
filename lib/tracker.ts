@@ -82,7 +82,28 @@ export type Completion = {
 
 export type WeightEntry = { date: string; kg: number };
 
-export type CalorieEntry = { id: string; date: string; kcal: number };
+/** A meal category — breakfast, coffee, and so on — with its own colour. */
+export type MealTag = { id: string; name: string; color: string };
+
+export type CalorieEntry = {
+  id: string;
+  date: string;
+  kcal: number;
+  /** Which meal it belonged to. Absent on entries logged before tags. */
+  tagId?: string;
+};
+
+/** Seeded the first time a device runs a build that has tags. */
+const DEFAULT_MEAL_TAGS: MealTag[] = [
+  { id: "mt1", name: "Breakfast", color: "#0f62fe" },
+  { id: "mt2", name: "Lunch", color: "#08bdba" },
+  { id: "mt3", name: "Dinner", color: "#8a3ffc" },
+  { id: "mt4", name: "Snack", color: "#ff7eb6" },
+  { id: "mt5", name: "Coffee", color: "#ff832b" },
+];
+
+/** Colour shown for entries with no tag, or whose tag has been deleted. */
+export const UNTAGGED_COLOR = "#6f6f6f";
 
 /** One exercise inside a workout, with the weight it's performed at. */
 export type Exercise = {
@@ -167,6 +188,7 @@ export type TrackerState = {
   completions: Completion[];
   weights: WeightEntry[];
   calories: CalorieEntry[];
+  mealTags: MealTag[];
   /** Daily calorie budget, used to work out what's left for the week. */
   calorieBudget?: number;
   macros: MacroEntry[];
@@ -231,6 +253,7 @@ const DEFAULT_STATE: TrackerState = {
   completions: [],
   weights: [],
   calories: [],
+  mealTags: DEFAULT_MEAL_TAGS,
   macros: [],
   workouts: [],
   workoutSessions: [],
@@ -427,6 +450,12 @@ function migrate(raw: unknown): TrackerState {
     ? (s.calories as CalorieEntry[])
     : [];
 
+  // Absent means this state predates tags, so seed the defaults. An empty
+  // array means the reader deleted them all, which we leave alone.
+  const mealTags: MealTag[] = Array.isArray(s.mealTags)
+    ? (s.mealTags as MealTag[])
+    : DEFAULT_MEAL_TAGS;
+
   // Added after the first release, so older saved state has no macros key.
   const macros: MacroEntry[] = Array.isArray(s.macros) ? (s.macros as MacroEntry[]) : [];
 
@@ -465,6 +494,7 @@ function migrate(raw: unknown): TrackerState {
     completions,
     weights,
     calories,
+    mealTags,
     calorieBudget:
       typeof s.calorieBudget === "number" && s.calorieBudget > 0 ? s.calorieBudget : undefined,
     macros,
@@ -1073,11 +1103,49 @@ export function useTracker() {
       })),
 
     // ---- calories ----
-    addCalories: (kcal: number) =>
+    addCalories: (kcal: number, tagId?: string) =>
       commit((s) => {
         if (!Number.isFinite(kcal) || kcal <= 0) return s;
-        return { ...s, calories: [...s.calories, { id: uid(), date: dateKey(), kcal: Math.round(kcal) }] };
+        const entry: CalorieEntry = { id: uid(), date: dateKey(), kcal: Math.round(kcal) };
+        if (tagId) entry.tagId = tagId;
+        // Appended, so array order is the order things were eaten that day.
+        return { ...s, calories: [...s.calories, entry] };
       }),
+
+    updateCalorieEntry: (id: string, kcal: number, tagId?: string) =>
+      commit((s) => {
+        if (!Number.isFinite(kcal) || kcal <= 0) return s;
+        return {
+          ...s,
+          calories: s.calories.map((e) =>
+            e.id !== id ? e : { id: e.id, date: e.date, kcal: Math.round(kcal), ...(tagId ? { tagId } : {}) }
+          ),
+        };
+      }),
+
+    removeCalorieEntry: (id: string) =>
+      commit((s) => ({ ...s, calories: s.calories.filter((e) => e.id !== id) })),
+
+    addMealTag: (name: string, color: string) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        return { ...s, mealTags: [...s.mealTags, { id: uid(), name: clean, color }] };
+      }),
+
+    updateMealTag: (id: string, name: string, color: string) =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        return {
+          ...s,
+          mealTags: s.mealTags.map((m) => (m.id === id ? { ...m, name: clean, color } : m)),
+        };
+      }),
+
+    /** Entries keep their tag id; they simply fall back to the untagged colour. */
+    removeMealTag: (id: string) =>
+      commit((s) => ({ ...s, mealTags: s.mealTags.filter((m) => m.id !== id) })),
 
     // ---- protein and fibre ----
     /** Logs protein and/or fibre for today. Either value may be left out. */
