@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -712,7 +712,19 @@ export function useTracker() {
     }
   };
 
-  return {
+  /**
+   * The returned object is memoised on the five values that actually drive the
+   * UI. Previously it was a fresh literal with some sixty inline functions on
+   * every render, so its identity changed constantly and every consumer
+   * re-rendered whenever anything in page.tsx moved — opening a modal,
+   * collapsing a section, the desktop media query resolving. React.memo on a
+   * child was inert against it.
+   *
+   * Safe to memoise because the mutating closures read through stateRef rather
+   * than capturing state, and the three that do read state directly (catOf,
+   * catInUse, groupInUse) have it as a dependency here.
+   */
+  return useMemo(() => ({
     state,
 
     // ---- auth ----
@@ -1400,7 +1412,7 @@ export function useTracker() {
         fiberTarget:
           grams != null && Number.isFinite(grams) && grams > 0 ? Math.round(grams) : undefined,
       })),
-  };
+  }), [state, user, authReady, authError, syncError]);
 }
 
 export type Tracker = ReturnType<typeof useTracker>;

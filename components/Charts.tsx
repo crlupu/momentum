@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { Card } from "./ui";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 
@@ -112,7 +114,9 @@ function barFill(n: number): string {
   return n > 0 ? "var(--sec-charts)" : "var(--default)";
 }
 
-export default function Charts({ tracker }: { tracker: Tracker }) {
+/* Memoised: its only prop is the tracker, which is now a stable object, so
+   this re-renders when the data changes rather than whenever the page does. */
+const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const completions: Completion[] = s.completions;
   const allMap = completionsByDate(completions);
@@ -222,4 +226,6 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
 
     </div>
   );
-}
+});
+
+export default Charts;

@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import { Card } from "./ui";
 import {
   Tracker,
@@ -30,7 +32,9 @@ function offsetDate(days: number): Date {
  * Total weight lifted per day, where each completed workout contributes the
  * sum of its exercise weights.
  */
-export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
+/* Memoised: its only prop is the tracker, which is now a stable object, so
+   this re-renders when the data changes rather than whenever the page does. */
+const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const byDate = workoutVolumeByDate(s.workoutSessions);
   const minsByDate = workoutMinutesByDate(s.workoutSessions);
@@ -197,7 +201,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
       </Card>
     </div>
   );
-}
+});
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
@@ -212,3 +216,5 @@ function Stat({ value, label }: { value: string | number; label: string }) {
     </div>
   );
 }
+
+export default WorkoutVolumeChart;

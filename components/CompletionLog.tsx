@@ -5,7 +5,7 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
-import { useLayoutEffect, useRef, useState } from "react";
+import { memo, useLayoutEffect, useRef, useState } from "react";
 import { Tracker } from "@/lib/tracker";
 import { readableText } from "@/lib/color";
 
@@ -86,7 +86,9 @@ function useRowCap(count: number) {
   return { ref, maxHeight };
 }
 
-export default function CompletionLog({ tracker }: { tracker: Tracker }) {
+/* Memoised: its only prop is the tracker, which is now a stable object, so
+   this re-renders when the data changes rather than whenever the page does. */
+const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
 
   const entries: Entry[] = [];
@@ -201,4 +203,6 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
       </Card>
     </div>
   );
-}
+});
+
+export default CompletionLog;
