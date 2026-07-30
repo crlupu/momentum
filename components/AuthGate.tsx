@@ -61,7 +61,7 @@ export function AuthGate({
   return (
     <div className="mx-auto max-w-sm px-4 pt-10">
       <Card>
-        <Card.Content className="p-5 sm:p-6">
+        <Card.Content className="p-5 md:p-6">
           <h2 className="font-display mb-1 text-xl font-bold">
             {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>

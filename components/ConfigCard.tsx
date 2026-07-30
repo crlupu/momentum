@@ -37,7 +37,7 @@ export function ConfigCard({ title, children }: { title: string; children: React
         </Button>
       </div>
       <Card className={editing ? "config-card--editing" : undefined}>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="p-4 md:p-5">
           <EditingContext.Provider value={editing}>{children}</EditingContext.Provider>
         </Card.Content>
       </Card>

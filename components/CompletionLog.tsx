@@ -160,7 +160,7 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <Card>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="p-4 md:p-5">
           {entries.length === 0 ? (
             <p className="py-1 text-[15px] text-foreground/60">
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.

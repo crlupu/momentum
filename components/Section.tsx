@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { SectionMotif, sectionIndex, sectionTitle, type SectionId } from "@/components/SectionMotif";
+import { sectionIndex, sectionTitle, type SectionId } from "@/components/sections";
 
 /**
  * Below this width sections collapse. Set at the tablet breakpoint so phones
@@ -28,8 +28,8 @@ export function useIsDesktop(): boolean | null {
 }
 
 /**
- * The coloured plate that introduces a section: index, title, and the section's
- * motif. Renders as a button when it toggles something and as a plain heading
+ * The heading that introduces a section: its index and title.
+ * Renders as a button when it toggles something and as a plain heading
  * when it doesn't — the treatment is identical either way, so a section looks
  * the same on a phone and on an iPad.
  */
@@ -64,9 +64,6 @@ export function SectionBand({
       <span className="sec-band__label">
         <span className="sec-band__index">{sectionIndex(id)}</span>
         <span className="sec-band__title">{title ?? sectionTitle(id)}</span>
-      </span>
-      <span className="sec-band__motif" aria-hidden>
-        <SectionMotif id={id} />
       </span>
       {collapsible && (
         <span className={"sec-band__chevron" + (open ? " sec-band__chevron--open" : "")}>

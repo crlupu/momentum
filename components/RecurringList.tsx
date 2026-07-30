@@ -53,7 +53,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
       </div>
 
       <Card>
-        <Card.Content className="px-3 py-3 sm:px-4">
+        <Card.Content className="px-3 py-3 md:px-4">
 
           {recurring.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-foreground/60">None yet — add one with the button above.</p>

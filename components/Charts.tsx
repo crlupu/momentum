@@ -145,7 +145,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
   return (
     <div className="space-y-4">
       <Card>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="p-4 md:p-5">
           <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
             {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
@@ -182,8 +182,8 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                   }}
                 />
                 <span className="text-[10px] leading-none whitespace-nowrap tabular-nums text-foreground/50">
-                  <span className="sm:hidden">{d.getDate()}</span>
-                  <span className="hidden sm:inline">
+                  <span className="md:hidden">{d.getDate()}</span>
+                  <span className="hidden md:inline">
                     {d.getDate()}/{d.getMonth() + 1}
                   </span>
                 </span>
@@ -194,7 +194,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
       </Card>
 
       <Card>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="p-4 md:p-5">
           <h2 className="font-display mb-1 text-sm font-semibold uppercase tracking-wide text-foreground/60">
             Completions by category
           </h2>

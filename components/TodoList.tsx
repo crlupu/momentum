@@ -54,7 +54,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
       </h2>
 
       <Card>
-        <Card.Content className="px-3 py-3 sm:px-4">
+        <Card.Content className="px-3 py-3 md:px-4">
           <form onSubmit={submit} className="mb-3 flex gap-2">
             <Input
               aria-label="New to-do"

@@ -143,7 +143,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
         </span>
       </div>
 
-      <div className="card p-4 sm:p-5">
+      <div className="card p-4 md:p-5">
         <form onSubmit={submit} className="mb-4 flex gap-2">
           <Input
             type="number"

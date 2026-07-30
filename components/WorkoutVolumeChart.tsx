@@ -78,7 +78,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
         </div>
       )}
       <Card>
-        <Card.Content className="p-4 sm:p-5">
+        <Card.Content className="p-4 md:p-5">
           {sessions === 0 ? (
             <p className="py-2 text-[15px] text-foreground/60">
               No workouts logged yet. Mark one as done on the Workouts page and its volume

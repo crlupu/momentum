@@ -561,10 +561,9 @@ textarea::placeholder {
 }
 
 /* ============================================================
-   Section band — the signature element.
-   Each section is introduced by a full-bleed plate of its own colour with a
-   single-stroke motif at the trailing edge. The bands together are the app's
-   identity: seven flat plates, no gutters, one idea each.
+   Section heading.
+   Type on the page ground: a mono index in the section's accent colour, and
+   the title in the reading colour. No plate, no imagery.
    ============================================================ */
 .sec-band {
   display: flex;
@@ -609,35 +608,6 @@ button.sec-band:hover .sec-band__title { color: var(--band-color); }
 }
 .sec-band--md .sec-band__title { font-size: 1rem; } /* heading-02 */
 
-/* The motif is clipped by the plate, so strokes run off the edges the way
-   they do in the reference grid. */
-.sec-band__motif {
-  flex: none;
-  inline-size: 3rem;
-  position: relative;
-  overflow: hidden;
-}
-.sec-band__motif svg {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-}
-.sec-band__motif { color: var(--band-color); }
-.sec-band__motif .motif-stroke {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-.sec-band__motif .motif-stroke--thin {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-  opacity: 0.55;
-}
-.sec-band__motif .motif-fill { fill: currentColor; }
 
 .sec-band__chevron {
   flex: none;
@@ -653,9 +623,6 @@ button.sec-band:hover .sec-band__title { color: var(--band-color); }
   .sec-band__chevron { transition: none; }
 }
 
-@media (min-width: 42rem) {
-  .sec-band__motif { inline-size: 4rem; }
-}
 
 /* ---- Pending state: running border while a write is in flight ---- */
 @property --ring-angle {

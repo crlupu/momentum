@@ -412,7 +412,7 @@ export function ActiveWorkoutPanel({
   const sets = activeWorkoutSets(active);
 
   return (
-    <div className="card p-4 sm:p-5" style={{ borderColor: "var(--accent)" }}>
+    <div className="card p-4 md:p-5" style={{ borderColor: "var(--accent)" }}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="font-display flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight">
           <span className="sec-dot" style={{ background: "var(--sec-fitness)" }} aria-hidden />

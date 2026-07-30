@@ -35,13 +35,13 @@ export function Modal({
   // otherwise be centred on that card rather than on the page.
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center p-0 md:items-center md:p-4"
       role="dialog"
       aria-modal="true"
     >
       <div className="scrim absolute inset-0" onClick={onClose} aria-hidden />
       <div
-        className="overlay-surface relative z-10 max-h-[92vh] w-full overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-h-[88vh] sm:max-w-md sm:pb-5"
+        className="overlay-surface relative z-10 max-h-[92vh] w-full overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-h-[88vh] md:max-w-md md:pb-5"
         style={{ color: "var(--overlay-foreground)" }}
       >
         <div className="mb-4 flex items-center justify-between">

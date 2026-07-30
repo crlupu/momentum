@@ -73,7 +73,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
         <span className="font-mono-n text-sm text-foreground/60">{todayTotal} kcal today</span>
       </div>
 
-      <div className="card p-4 sm:p-5">
+      <div className="card p-4 md:p-5">
         <form onSubmit={submit} className="mb-3 space-y-2">
           <div className="flex gap-2">
             <Input

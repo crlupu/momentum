@@ -259,7 +259,7 @@ function GoalCard({
 
   return (
     <Card>
-      <Card.Content className="px-3 py-3 sm:px-4">
+      <Card.Content className="px-3 py-3 md:px-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div
@@ -521,7 +521,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
           </Card.Content>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <ColumnHeader>To do</ColumnHeader>
             <div className="space-y-3">
@@ -566,7 +566,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
       {done.length > 0 && (
         <>
           <div className="mb-3 mt-6 text-[13px] uppercase tracking-wide text-foreground/40">Completed</div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {done.map((g) => (
               <Card key={g.id}>
                 <Card.Content className="px-3 py-2">
