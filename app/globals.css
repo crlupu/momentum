@@ -375,10 +375,12 @@ body {
   font-weight: 600;
 }
 
-/* Positive action: flat green */
+/* Positive action ("mark as done"): Purple 80. The class name describes the
+   intent, not the hue. White on Green 20 was also about 1.4:1; on Purple 80
+   it is roughly 11:1. */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: var(--success);
+  background-color: var(--ibm-purple-80);
   background-image: none;
   color: var(--ibm-white);
   border-color: transparent;
@@ -422,11 +424,12 @@ body {
   color: var(--foreground);
 }
 
-/* Delete: flat red */
+/* Delete: flat red. Red 40 is a light value, so it takes dark ink — white on
+   it was 2.4:1, well under AA. */
 .cds--btn--danger {
   background-color: var(--danger);
   background-image: none;
-  color: var(--ibm-white);
+  color: var(--danger-foreground);
   border-color: transparent;
 }
 .cds--btn--danger:hover { filter: brightness(1.12); }
