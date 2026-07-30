@@ -1,13 +1,24 @@
 "use client";
 
 import { Card } from "./ui";
-import { Tracker, dateKey, workoutVolumeByDate, workoutMinutesByDate } from "@/lib/tracker";
+import {
+  Tracker,
+  dateKey,
+  workoutVolumeByDate,
+  workoutMinutesByDate,
+  CAT_COLORS,
+  UNTAGGED_COLOR,
+} from "@/lib/tracker";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
-const FILL = "var(--grad-primary)";
+/** Each workout keeps one colour, so a bar says which workout it was. */
+function workoutColor(workoutId: string, order: string[]): string {
+  const i = order.indexOf(workoutId);
+  return i === -1 ? UNTAGGED_COLOR : CAT_COLORS[i % CAT_COLORS.length];
+}
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -24,6 +35,12 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
   const byDate = workoutVolumeByDate(s.workoutSessions);
   const minsByDate = workoutMinutesByDate(s.workoutSessions);
 
+  // Colours are assigned by the workout's position in the list, so they stay
+  // put as sessions accumulate.
+  const order = s.workouts.map((w) => w.id);
+  const sessionsByDate: Record<string, typeof s.workoutSessions> = {};
+  for (const w of s.workoutSessions) (sessionsByDate[w.date] ??= []).push(w);
+
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const values = days.map((d) => byDate[dateKey(d)] ?? 0);
   const minutes = days.map((d) => minsByDate[dateKey(d)] ?? 0);
@@ -31,6 +48,15 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
   // Time has its own scale — minutes and kilos aren't comparable numbers.
   const maxMin = Math.max(1, ...minutes);
   const anyTime = minutes.some((m) => m > 0);
+
+  // Only name the workouts that appear in the window, in bar order.
+  const seen = new Map<string, string>();
+  for (const d of days) {
+    for (const w of sessionsByDate[dateKey(d)] ?? []) {
+      if (!seen.has(w.workoutId)) seen.set(w.workoutId, w.name);
+    }
+  }
+  const shown = [...seen].map(([id, name]) => ({ id, name }));
 
   const sessions = s.workoutSessions.length;
   const weekTotal = values.slice(7).reduce((a, b) => a + b, 0);
@@ -66,18 +92,27 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                 <Stat value={sessions} label="sessions logged" />
               </div>
 
-              {anyTime && (
-                <div className="mb-2 flex items-center justify-end gap-3 text-[11px]" style={{ color: LABEL }}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-2 w-2" style={{ background: "#4589ff" }} aria-hidden />
-                    kg
+              <div
+                className="mb-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[11px]"
+                style={{ color: LABEL }}
+              >
+                {shown.map((w) => (
+                  <span key={w.id} className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2 w-2"
+                      style={{ background: workoutColor(w.id, order) }}
+                      aria-hidden
+                    />
+                    {w.name}
                   </span>
+                ))}
+                {anyTime && (
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block h-[2px] w-4" style={{ background: "#ff7eb6" }} aria-hidden />
                     minutes
                   </span>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="relative flex h-[120px] items-end gap-1">
                 {/* Duration rides over the bars on its own scale. */}
@@ -123,17 +158,27 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                       {values[i] ? values[i].toLocaleString() : ""}
                     </span>
                     <div
-                      className="w-full rounded-t"
-                      title={
-                        `${values[i].toLocaleString()} kg` +
-                        (minutes[i] ? ` · ${minutes[i]} min` : "") +
-                        ` on ${dateKey(d)}`
-                      }
+                      className="flex w-full flex-col-reverse overflow-hidden rounded-t"
                       style={{
                         height: Math.max(2, (values[i] / max) * 84),
-                        background: values[i] ? FILL : TRACK,
+                        background: values[i] ? undefined : TRACK,
                       }}
-                    />
+                    >
+                      {(sessionsByDate[dateKey(d)] ?? []).map((w) => (
+                        <div
+                          key={w.id}
+                          title={
+                            `${w.name}: ${w.total.toLocaleString()} kg` +
+                            (w.minutes ? ` · ${w.minutes} min` : "") +
+                            ` on ${w.date}`
+                          }
+                          style={{
+                            height: `${(w.total / (values[i] || 1)) * 100}%`,
+                            background: workoutColor(w.workoutId, order),
+                          }}
+                        />
+                      ))}
+                    </div>
                     <span
                       className="text-[9px] leading-none tabular-nums"
                       style={{ color: LABEL }}
