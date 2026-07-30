@@ -7,6 +7,7 @@ import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
+import { readableText } from "@/lib/color";
 import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek, CAT_COLORS } from "@/lib/tracker";
 
 function GroupPicker({
@@ -646,26 +647,38 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
   );
 }
 
-/** Swatch row shared by the tag forms. */
+/**
+ * Colour choice for a meal tag. Sits on its own line as a labelled grid of
+ * swatches — squeezed inline beside the name field it was cramped and the
+ * selected one was hard to pick out.
+ */
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
   return (
-    <span className="flex flex-wrap items-center gap-1">
-      {CAT_COLORS.map((c) => (
-        <button
-          key={c}
-          type="button"
-          aria-label={`Use colour ${c}`}
-          aria-pressed={value === c}
-          onClick={() => onChange(c)}
-          className="cfg-swatch"
-          style={{
-            background: c,
-            outline: value === c ? "2px solid var(--foreground)" : "1px solid var(--border)",
-            outlineOffset: value === c ? 2 : 0,
-          }}
-        />
-      ))}
-    </span>
+    <div className="basis-full">
+      <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-foreground/50">
+        Colour
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {CAT_COLORS.map((c) => {
+          const selected = value === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              aria-label={`Use colour ${c}`}
+              aria-pressed={selected}
+              onClick={() => onChange(c)}
+              className={"cfg-swatch" + (selected ? " cfg-swatch--on" : "")}
+              style={{ background: c }}
+            >
+              {selected && (
+                <Check className="h-3.5 w-3.5" style={{ color: readableText(c) }} aria-hidden />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

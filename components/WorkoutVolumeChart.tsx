@@ -92,27 +92,6 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                 <Stat value={sessions} label="sessions logged" />
               </div>
 
-              <div
-                className="mb-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[11px]"
-                style={{ color: LABEL }}
-              >
-                {shown.map((w) => (
-                  <span key={w.id} className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-2 w-2"
-                      style={{ background: workoutColor(w.id, order) }}
-                      aria-hidden
-                    />
-                    {w.name}
-                  </span>
-                ))}
-                {anyTime && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff7eb6" }} aria-hidden />
-                    minutes
-                  </span>
-                )}
-              </div>
 
               <div className="relative flex h-[120px] items-end gap-1">
                 {/* Duration rides over the bars on its own scale. */}
@@ -187,6 +166,27 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                     </span>
                   </div>
                 ))}
+              </div>
+              <div
+                className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]"
+                style={{ color: LABEL }}
+              >
+                {shown.map((w) => (
+                  <span key={w.id} className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2 w-2"
+                      style={{ background: workoutColor(w.id, order) }}
+                      aria-hidden
+                    />
+                    {w.name}
+                  </span>
+                ))}
+                {anyTime && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff7eb6" }} aria-hidden />
+                    minutes
+                  </span>
+                )}
               </div>
               <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
                 kg lifted per day, with time trained overlaid

@@ -746,12 +746,27 @@ button {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-/* Colour swatch: a real target, with a clear selected state. */
+/* Colour swatch: a real target, with the choice marked inside it rather than
+   by an outline that competes with the swatch colour. */
 .cfg-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   inline-size: 1.75rem;
   block-size: 1.75rem;
   border-radius: 2px;
   flex: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease;
+}
+.cfg-swatch:hover {
+  transform: scale(1.08);
+}
+.cfg-swatch--on {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--foreground);
 }
 
 /* Keyboard focus is visible on every configuration control. */
