@@ -791,6 +791,20 @@ button.sec-band:hover .sec-band__title { color: var(--band-color); }
   background-color: var(--surface-secondary);
   border-left: 2px solid var(--chip-color);
 }
+/* iOS Safari holds a tap for roughly 300ms on anything that could still be a
+   double-tap-to-zoom, even with width=device-width set. manipulation opts out
+   of the gesture while leaving pan and pinch alone, so the press registers
+   immediately. */
+.cat-chip,
+.cds--btn,
+button,
+[role="button"],
+a { touch-action: manipulation; }
+
+/* Feedback on touchdown rather than on click. The state change still waits
+   for React, but the press stops feeling unacknowledged in the meantime. */
+.cat-chip:active { background-color: var(--surface-tertiary); }
+
 .cat-chip__dot {
   inline-size: 0.5rem;
   block-size: 0.5rem;
