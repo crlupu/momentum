@@ -386,12 +386,13 @@ body {
 .btn-success.cds--btn:hover { filter: brightness(1.12); }
 .btn-success.cds--btn:active { filter: brightness(0.9); }
 
-/* Primary action: flat purple, the Goals accent doubling as the app's action colour */
+/* Primary action: IBM Blue 60. The action colour is its own thing, not
+   borrowed from a section accent. */
 .cds--btn--primary,
 .btn-invert.cds--btn,
 .btn-invert {
   background-image: none;
-  background-color: var(--sec-goals);
+  background-color: var(--ibm-blue-60);
   color: var(--ibm-white);
   border-color: transparent;
 }
@@ -569,16 +570,16 @@ textarea::placeholder {
   display: flex;
   align-items: stretch;
   inline-size: 100%;
-  min-block-size: 4.5rem;
-  background: var(--band-color);
-  color: var(--band-ink);
+  min-block-size: auto;
+  background: transparent;
+  color: var(--foreground);
   border: 0;
   text-align: start;
   cursor: default;
   transition: filter var(--duration-moderate-02) var(--easing-standard-productive);
 }
 button.sec-band { cursor: pointer; }
-button.sec-band:hover { filter: brightness(1.1); }
+button.sec-band:hover .sec-band__title { color: var(--band-color); }
 
 .sec-band__label {
   flex: 1 1 auto;
@@ -587,12 +588,13 @@ button.sec-band:hover { filter: brightness(1.1); }
   flex-direction: column;
   justify-content: center;
   gap: 0.125rem;
-  padding: var(--spacing-04) var(--spacing-05);
+  padding: 0 0 var(--spacing-03) 0;
 }
 
 /* Eyebrow: the section's position in the page order, in mono. Order is real
    information here — the sections always appear in this sequence. */
 .sec-band__index {
+  color: var(--band-color);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.75rem;      /* label-01 — Carbon has no 11px step */
   letter-spacing: 0.32px;
@@ -611,7 +613,7 @@ button.sec-band:hover { filter: brightness(1.1); }
    they do in the reference grid. */
 .sec-band__motif {
   flex: none;
-  inline-size: 5.5rem;
+  inline-size: 3rem;
   position: relative;
   overflow: hidden;
 }
@@ -621,6 +623,7 @@ button.sec-band:hover { filter: brightness(1.1); }
   inline-size: 100%;
   block-size: 100%;
 }
+.sec-band__motif { color: var(--band-color); }
 .sec-band__motif .motif-stroke {
   fill: none;
   stroke: currentColor;
@@ -650,12 +653,8 @@ button.sec-band:hover { filter: brightness(1.1); }
   .sec-band__chevron { transition: none; }
 }
 
-/* On a wide band the motif has to grow with the plate, or the colour reads as
-   an empty stripe with a detail stuck to one end. */
 @media (min-width: 42rem) {
-  .sec-band { min-block-size: 6rem; }
-  .sec-band__motif { inline-size: 12rem; }
-  .sec-band__label { padding-inline: var(--spacing-06); }
+  .sec-band__motif { inline-size: 4rem; }
 }
 
 /* ---- Pending state: running border while a write is in flight ---- */
@@ -769,31 +768,20 @@ button {
 /* Each dashboard section sits on its own panel, open or closed. It is a
    lighter treatment than .card so the cards nested inside still read as
    distinct surfaces. */
-/* A section is a card: one bordered surface with its band as the header and
-   its content inside the same box. Applies at every width, so a section is
-   the same object on a phone and an iPad — only whether it collapses changes.
-   overflow:hidden keeps the band flush to the card's edge. */
+/* A section is not a surface of its own. It carries no border, background or
+   padding — the cards inside it are the objects on the page, and the section
+   only groups them. */
 .section-panel {
-  background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
+  background: transparent;
+  border: 0;
   box-shadow: none;
   padding: 0;
-  overflow: hidden;
 }
 
-/* The band is the card header, so it sits flush — no gutter-breaking margin
-   and no gap between it and the edge. */
 .section-panel > .sec-band { inline-size: 100%; margin: 0; }
 
-.section-panel__body { padding: var(--spacing-05); }
-
-/* Cards nested inside a section card would otherwise double the border. The
-   section already provides the enclosure, so the inner ones drop theirs. */
-.section-panel__body > .card,
-.section-panel__body > * > .card {
-  border-color: var(--pane-hairline);
-  background: var(--pane-bg-strong);
-}
+/* Body sits directly under the header with no enclosure around it. */
+.section-panel__body { padding: 0; padding-block-start: var(--spacing-05); }
 
 /* The right-hand column reads as one continuous block: a single rule down its
    left edge binds the trackers together and separates them from the goals. */
