@@ -138,7 +138,7 @@ export function Section({
         onToggle={onToggle}
       />
 
-      <div id={`${id}-body`} hidden={!shown} className={shown ? "pt-4" : undefined}>
+      <div id={`${id}-body`} hidden={!shown} className="section-panel__body">
         {children}
       </div>
     </section>

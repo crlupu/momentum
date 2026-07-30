@@ -193,9 +193,11 @@ export default function Home() {
                    in one continuous column on the right. */
                 <>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    <section id="goals" className="scroll-mt-6 md:col-span-2">
-                      <SectionBand id="goals" className="mb-4" />
-                      <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
+                    <section id="goals" className="section-panel scroll-mt-6 md:col-span-2">
+                      <SectionBand id="goals" />
+                      <div className="section-panel__body">
+                        <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
+                      </div>
                     </section>
 
                     <div className="side-column space-y-5 md:col-span-1">
@@ -213,24 +215,32 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <section id="fitness" className="scroll-mt-6">
-                    <SectionBand id="fitness" className="mb-4" />
-                    <WorkoutVolumeChart tracker={tracker} />
+                  <section id="fitness" className="section-panel scroll-mt-6">
+                    <SectionBand id="fitness" />
+                    <div className="section-panel__body">
+                      <WorkoutVolumeChart tracker={tracker} />
+                    </div>
                   </section>
 
-                  <section id="charts" className="scroll-mt-6">
-                    <SectionBand id="charts" className="mb-4" />
-                    <Charts tracker={tracker} />
+                  <section id="charts" className="section-panel scroll-mt-6">
+                    <SectionBand id="charts" />
+                    <div className="section-panel__body">
+                      <Charts tracker={tracker} />
+                    </div>
                   </section>
 
-                  <section id="log" className="scroll-mt-6">
-                    <SectionBand id="log" className="mb-4" />
-                    <CompletionLog tracker={tracker} />
+                  <section id="log" className="section-panel scroll-mt-6">
+                    <SectionBand id="log" />
+                    <div className="section-panel__body">
+                      <CompletionLog tracker={tracker} />
+                    </div>
                   </section>
 
-                  <section id="config" className="scroll-mt-6">
-                    <SectionBand id="config" size="md" className="mb-4" />
-                    {configuration}
+                  <section id="config" className="section-panel scroll-mt-6">
+                    <SectionBand id="config" size="md" />
+                    <div className="section-panel__body">
+                      {configuration}
+                    </div>
                   </section>
                 </>
               )}
