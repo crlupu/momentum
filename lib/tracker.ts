@@ -675,18 +675,28 @@ export function useTracker() {
     }
 
     const updated = Date.now();
+    const prevState = base;
+    const prevUpdated = lastUpdated.current;
+
+    // Apply locally first, then write. Waiting for the round trip before
+    // touching state made every edit feel a network hop slow.
+    // The ref is updated synchronously because React state only lands on the
+    // next render, and a second write issued immediately after this one would
+    // otherwise start from the stale state and undo this change.
+    lastUpdated.current = updated;
+    stateRef.current = next;
+    setState(next);
+
     try {
       await setDoc(doc(fb.db, "users", userRef.current.uid), clean({ state: next, updated }));
-      lastUpdated.current = updated;
-      // Update the ref synchronously: React state lands on the next render, so a
-      // second write issued immediately after this one would otherwise start
-      // from the stale state and undo this change.
-      stateRef.current = next;
-      setState(next);
       setSyncError(null);
       return true;
     } catch (e) {
       console.error("save failed", e);
+      // Put it back, so the screen never claims something was saved that wasn't.
+      lastUpdated.current = prevUpdated;
+      stateRef.current = prevState;
+      setState(prevState);
       setSyncError("Couldn't save to the cloud. Your change was not applied.");
       return false;
     }

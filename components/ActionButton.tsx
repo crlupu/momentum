@@ -4,7 +4,9 @@ import { useCallback, useState } from "react";
 import { Button } from "./ui";
 
 /** Minimum time the pending state stays visible, so it never just flashes. */
-const MIN_PENDING_MS = 1000;
+/* Long enough that the indicator is perceptible, short enough that an
+   optimistic change doesn't appear to still be in flight. */
+const MIN_PENDING_MS = 350;
 
 /** Tracks pending state around an async action. */
 export function usePending() {

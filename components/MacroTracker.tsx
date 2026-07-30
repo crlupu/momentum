@@ -120,10 +120,13 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
     const p = protein.trim() === "" ? null : Number(protein);
     const f = fiber.trim() === "" ? null : Number(fiber);
     if (p == null && f == null) return;
+    const typed = { protein, fiber };
+    setProtein("");
+    setFiber("");
     const ok = await run(() => tracker.addMacros(p, f));
-    if (ok) {
-      setProtein("");
-      setFiber("");
+    if (!ok) {
+      setProtein(typed.protein);
+      setFiber(typed.fiber);
     }
   };
 

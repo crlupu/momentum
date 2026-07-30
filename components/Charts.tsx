@@ -170,7 +170,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
                 <span
                   className="font-mono-n text-[11px] font-semibold"
-                  style={{ color: rampStep(counts[i], max) }}
+                  style={{ color: counts[i] ? "var(--foreground)" : "transparent" }}
                 >
                   {counts[i] || ""}
                 </span>

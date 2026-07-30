@@ -175,11 +175,15 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
     e.preventDefault();
     if (pending || !name.trim()) return;
     const num = (v: string) => (v.trim() === "" ? null : Number(v));
-    const ok = await run(() => tracker.addExercise(workout.id, name, num(weight)));
-    if (ok) {
-      // Stay open — exercises are usually added in a run.
-      setName("");
-      setWeight("");
+    const typed = { name, weight };
+    // Clear straight away: the row is added optimistically, so waiting on the
+    // save left the fields holding text that had already been committed.
+    setName("");
+    setWeight("");
+    const ok = await run(() => tracker.addExercise(workout.id, typed.name, num(typed.weight)));
+    if (!ok) {
+      setName(typed.name);
+      setWeight(typed.weight);
     }
   };
 
@@ -563,8 +567,13 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
   const addWorkout = async (e: FormEvent) => {
     e.preventDefault();
     if (pending || !name.trim()) return;
-    const ok = await run(() => tracker.addWorkout(name));
-    if (ok) closeCreate();
+    const typed = name;
+    closeCreate();
+    const ok = await run(() => tracker.addWorkout(typed));
+    if (!ok) {
+      setName(typed);
+      setCreating(true);
+    }
   };
 
   return (

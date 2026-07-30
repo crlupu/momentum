@@ -58,8 +58,9 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
     e.preventDefault();
     const v = Number(kcal);
     if (!Number.isFinite(v) || v <= 0 || pending) return;
+    setKcal("");
     const ok = await run(() => tracker.addCalories(v, tagId || undefined));
-    if (ok) setKcal("");
+    if (!ok) setKcal(String(v));
   };
 
   return (
