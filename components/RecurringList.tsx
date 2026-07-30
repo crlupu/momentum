@@ -44,7 +44,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--grad-success)" }} aria-hidden />
+          <span className="sec-dot" style={{ background: "var(--sec-tasks)" }} aria-hidden />
           Recurring
         </h2>
         <Button variant="primary" isIconOnly aria-label="New recurring task" onPress={onAdd}>

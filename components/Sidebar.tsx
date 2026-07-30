@@ -13,9 +13,9 @@ import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tr
 
 const NAV = [
   { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
-  { id: "tasks", label: "Tasks", icon: Repeat, color: "var(--sec-recurring)" },
-  { id: "fitness", label: "Fitness", icon: Dumbbell, color: "var(--sec-calories)" },
-  { id: "nutrition", label: "Nutrition", icon: Apple, color: "var(--sec-weight)" },
+  { id: "tasks", label: "Tasks", icon: Repeat, color: "var(--sec-tasks)" },
+  { id: "fitness", label: "Fitness", icon: Dumbbell, color: "var(--sec-fitness)" },
+  { id: "nutrition", label: "Nutrition", icon: Apple, color: "var(--sec-nutrition)" },
   { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
   { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
   { id: "config", label: "Configuration", icon: Settings, color: "var(--sec-config)" },

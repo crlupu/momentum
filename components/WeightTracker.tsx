@@ -116,7 +116,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
+          <span className="sec-dot" style={{ background: "var(--sec-fitness)" }} aria-hidden />
           Weight
         </h2>
         {latest && (

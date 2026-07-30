@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { SectionMotif, SECTION_INDEX, type SectionId } from "@/components/SectionMotif";
 
 /**
  * Below this width sections collapse. Set at the tablet breakpoint so phones
@@ -27,14 +28,83 @@ export function useIsDesktop(): boolean | null {
 }
 
 /**
- * A titled region of the page. On phones the heading is a toggle and the body
+ * The coloured plate that introduces a section: index, title, and the section's
+ * motif. Renders as a button when it toggles something and as a plain heading
+ * when it doesn't — the treatment is identical either way, so a section looks
+ * the same on a phone and on an iPad.
+ */
+export function SectionBand({
+  id,
+  title,
+  size = "lg",
+  collapsible,
+  open,
+  onToggle,
+  className: extraClass,
+}: {
+  id: SectionId;
+  title: string;
+  size?: "lg" | "md";
+  collapsible?: boolean;
+  open?: boolean;
+  onToggle?: () => void;
+  className?: string;
+}) {
+  const className = ["sec-band", size === "md" ? "sec-band--md" : "", extraClass]
+    .filter(Boolean)
+    .join(" ");
+  const style = {
+    ["--band-color" as string]: `var(--sec-${id})`,
+    ["--band-ink" as string]: `var(--ink-${id})`,
+  } as React.CSSProperties;
+
+  const inner = (
+    <>
+      <span className="sec-band__label">
+        <span className="sec-band__index">{SECTION_INDEX[id]}</span>
+        <span className="sec-band__title">{title}</span>
+      </span>
+      <span className="sec-band__motif" aria-hidden>
+        <SectionMotif id={id} />
+      </span>
+      {collapsible && (
+        <span className={"sec-band__chevron" + (open ? " sec-band__chevron--open" : "")}>
+          <ChevronDown className="h-5 w-5" aria-hidden />
+        </span>
+      )}
+    </>
+  );
+
+  if (collapsible) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`${id}-body`}
+        className={className}
+        style={style}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <h2 className={className} style={style}>
+      {inner}
+    </h2>
+  );
+}
+
+/**
+ * A titled region of the page. On phones the band is a toggle and the body
  * starts collapsed; from the tablet breakpoint up everything is always shown
- * and the heading is inert.
+ * and the band is inert.
  */
 export function Section({
   id,
   title,
-  gradient,
   open,
   onToggle,
   isDesktop,
@@ -42,9 +112,8 @@ export function Section({
   className,
   children,
 }: {
-  id: string;
+  id: SectionId;
   title: string;
-  gradient: string;
   open: boolean;
   onToggle: () => void;
   isDesktop: boolean | null;
@@ -57,40 +126,18 @@ export function Section({
   const collapsible = isDesktop === false;
   const shown = !collapsible || open;
 
-  const heading = (
-    <>
-      <span className="sec-dot" style={{ background: gradient }} aria-hidden />
-      <span className="flex-1 text-left">{title}</span>
-      {collapsible && (
-        <ChevronDown
-          className={"h-5 w-5 shrink-0 transition-transform " + (open ? "rotate-180" : "")}
-          aria-hidden
-        />
-      )}
-    </>
-  );
-
-  const headingClass =
-    "font-display flex w-full items-center gap-2.5 font-bold tracking-tight " +
-    (size === "lg" ? "text-2xl" : "text-xl");
-
   return (
     <section id={id} className={["section-panel scroll-mt-6", className].filter(Boolean).join(" ")}>
-      {collapsible ? (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          aria-controls={`${id}-body`}
-          className={headingClass + (shown ? " mb-4" : "")}
-        >
-          {heading}
-        </button>
-      ) : (
-        <h2 className={headingClass + " mb-4"}>{heading}</h2>
-      )}
+      <SectionBand
+        id={id}
+        title={title}
+        size={size}
+        collapsible={collapsible}
+        open={open}
+        onToggle={onToggle}
+      />
 
-      <div id={`${id}-body`} hidden={!shown}>
+      <div id={`${id}-body`} hidden={!shown} className={shown ? "pt-4" : undefined}>
         {children}
       </div>
     </section>

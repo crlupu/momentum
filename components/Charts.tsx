@@ -109,7 +109,7 @@ function rampStep(n: number, max: number): string {
 
 /** Bars are filled with the fill-icon gradient, scaled by how busy the day was. */
 function barFill(n: number): string {
-  return n > 0 ? "var(--grad-teal-up)" : "var(--default)";
+  return n > 0 ? "var(--sec-charts)" : "var(--default)";
 }
 
 export default function Charts({ tracker }: { tracker: Tracker }) {

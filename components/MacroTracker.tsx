@@ -10,8 +10,8 @@ const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 
 /** Protein reads teal→blue, fibre green→teal, so the two series stay apart. */
-const PROTEIN = "var(--grad-teal-up)";
-const FIBER = "var(--grad-success)";
+const PROTEIN = "var(--sec-nutrition)";
+const FIBER = "var(--signal)";
 const PROTEIN_SOLID = "#08bdba";
 const FIBER_SOLID = "#42be65";
 

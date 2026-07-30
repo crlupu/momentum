@@ -5,7 +5,7 @@ import { Card } from "@/components/ui";
 import { useTracker } from "@/lib/tracker";
 import { AuthGate } from "@/components/AuthGate";
 import { Sidebar } from "@/components/Sidebar";
-import { Section, useIsDesktop } from "@/components/Section";
+import { Section, SectionBand, useIsDesktop } from "@/components/Section";
 import { ConfigCard } from "@/components/ConfigCard";
 import { Modal } from "@/components/Modal";
 import {
@@ -118,7 +118,6 @@ export default function Home() {
                   <Section
                     id="goals"
                     title="Goals"
-                    gradient="var(--grad-primary)"
                     open={isOpen("goals")}
                     onToggle={() => toggle("goals")}
                     isDesktop={isDesktop}
@@ -129,7 +128,6 @@ export default function Home() {
                   <Section
                     id="tasks"
                     title="Tasks"
-                    gradient="var(--grad-teal)"
                     open={isOpen("tasks")}
                     onToggle={() => toggle("tasks")}
                     isDesktop={isDesktop}
@@ -143,7 +141,6 @@ export default function Home() {
                   <Section
                     id="fitness"
                     title="Fitness"
-                    gradient="var(--grad-magenta)"
                     open={isOpen("fitness")}
                     onToggle={() => toggle("fitness")}
                     isDesktop={isDesktop}
@@ -157,7 +154,6 @@ export default function Home() {
                   <Section
                     id="nutrition"
                     title="Nutrition"
-                    gradient="var(--grad-success)"
                     open={isOpen("nutrition")}
                     onToggle={() => toggle("nutrition")}
                     isDesktop={isDesktop}
@@ -171,7 +167,6 @@ export default function Home() {
                   <Section
                     id="charts"
                     title="Progress"
-                    gradient="var(--grad-teal)"
                     open={isOpen("charts")}
                     onToggle={() => toggle("charts")}
                     isDesktop={isDesktop}
@@ -182,7 +177,6 @@ export default function Home() {
                   <Section
                     id="log"
                     title="Log"
-                    gradient="var(--grad-teal)"
                     open={isOpen("log")}
                     onToggle={() => toggle("log")}
                     isDesktop={isDesktop}
@@ -193,7 +187,6 @@ export default function Home() {
                   <Section
                     id="config"
                     title="Configuration"
-                    gradient="var(--grad-magenta)"
                     size="md"
                     open={isOpen("config")}
                     onToggle={() => toggle("config")}
@@ -208,10 +201,7 @@ export default function Home() {
                 <>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <section id="goals" className="scroll-mt-6 md:col-span-2">
-                      <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-                        <span className="sec-dot" style={{ background: "var(--grad-primary)" }} aria-hidden />
-                        Goals
-                      </h2>
+                      <SectionBand id="goals" title="Goals" className="mb-4" />
                       <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
                     </section>
 
@@ -231,34 +221,22 @@ export default function Home() {
                   </div>
 
                   <section id="fitness" className="scroll-mt-6">
-                    <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-                      <span className="sec-dot" style={{ background: "var(--grad-magenta)" }} aria-hidden />
-                      Fitness
-                    </h2>
+                    <SectionBand id="fitness" title="Fitness" className="mb-4" />
                     <WorkoutVolumeChart tracker={tracker} />
                   </section>
 
                   <section id="charts" className="scroll-mt-6">
-                    <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-                      <span className="sec-dot" style={{ background: "var(--grad-teal)" }} aria-hidden />
-                      Progress
-                    </h2>
+                    <SectionBand id="charts" title="Progress" className="mb-4" />
                     <Charts tracker={tracker} />
                   </section>
 
                   <section id="log" className="scroll-mt-6">
-                    <h2 className="font-display mb-4 flex items-center gap-2.5 text-2xl font-bold tracking-tight">
-                      <span className="sec-dot" style={{ background: "var(--grad-teal)" }} aria-hidden />
-                      Log
-                    </h2>
+                    <SectionBand id="log" title="Log" className="mb-4" />
                     <CompletionLog tracker={tracker} />
                   </section>
 
                   <section id="config" className="scroll-mt-6">
-                    <h2 className="font-display mb-4 flex items-center gap-2.5 text-xl font-bold tracking-tight">
-                      <span className="sec-dot" style={{ background: "var(--grad-magenta)" }} aria-hidden />
-                      Configuration
-                    </h2>
+                    <SectionBand id="config" title="Configuration" size="md" className="mb-4" />
                     {configuration}
                   </section>
                 </>

@@ -70,14 +70,28 @@
   --field-placeholder: #6f6f6f;
 
   /* per-section accents, from the icon family */
-  --sec-goals: #0f62fe;      /* blue    */
-  --sec-recurring: #009d9a;  /* teal    */
-  --sec-todos: #1192e8;      /* cyan    */
-  --sec-weight: #8a3ffc;     /* purple  */
-  --sec-calories: #ee5396;   /* magenta */
-  --sec-charts: #009d9a;
-  --sec-log: #1192e8;
-  --sec-config: #525252;
+  /* Same hues as dark, stepped darker so they hold contrast on a white ground. */
+  --sec-goals: #6929c4;      /* purple 70 */
+  --sec-tasks: #8a3ffc;      /* purple 60 */
+  --sec-fitness: #198038;    /* green 60  */
+  --sec-nutrition: #007d79;  /* teal 60   */
+  --sec-charts: #0f62fe;     /* blue 60   */
+  --sec-log: #da1e28;        /* red 60    */
+  --sec-config: #525252;     /* gray 70   */
+
+  --sec-recurring: var(--sec-tasks);
+  --sec-todos: var(--sec-tasks);
+  --sec-weight: var(--sec-fitness);
+  --sec-calories: var(--sec-nutrition);
+
+  /* Band ink, chosen per accent for contrast rather than assumed from theme. */
+  --ink-goals: #ffffff;
+  --ink-tasks: #ffffff;
+  --ink-fitness: #ffffff;
+  --ink-nutrition: #ffffff;
+  --ink-charts: #ffffff;
+  --ink-log: #ffffff;
+  --ink-config: #ffffff;
 
   /* Carbon blue scale */
   --scale-1: #d0e2ff;
@@ -88,42 +102,34 @@
 
 
 
-  /* Gradient families from the IBM fill app icons */
-  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
-  --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
-  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
-  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
-  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
-  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
+  /* Secondary data series, for the one place two series share a chart. */
+  --signal: #b28600;
 
-  /* ambient wash — what the frosted surfaces refract */
-  --wash-1: rgba(15, 98, 254, 0.14);    /* blue 60    */
-  --wash-2: rgba(138, 63, 252, 0.12);   /* purple 60  */
-  --wash-3: rgba(17, 146, 232, 0.10);   /* cyan 60    */
+  /* Motif ink: the single stroke weight that draws every section motif. */
+  --motif-ink: #ffffff;
 
-  /* ---- glass layer ---- */
-  --glass-bg: rgba(255, 255, 255, 0.68);
-  --glass-bg-strong: rgba(255, 255, 255, 0.86);
-  --glass-border: rgba(255, 255, 255, 0.75);
-  --glass-hairline: rgba(22, 22, 22, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 4px 24px rgba(22, 22, 22, 0.1), 0 1px 2px rgba(22, 22, 22, 0.06);
-  --glass-blur: 18px;
+  /* ---- flat surfaces ----
+     Elevation is a background step plus a 1px border. Nothing blurs and
+     nothing casts a shadow, so a card reads as a plane, not a pane. */
+  --pane-bg: #ffffff;
+  --pane-bg-strong: #ffffff;
+  --pane-border: #e0e0e0;
+  --pane-hairline: #e0e0e0;
 }
 
 /* Dark (default): stock Carbon g100 */
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #161616;   /* gray 100 */
+  --background: #000000;   /* true black ground — the colour lives in the shapes */
   --foreground: #f4f4f4;
 
-  --surface: #262626;      /* layer 01 */
+  --surface: #161616;      /* gray 100 — one step off the ground */
   --surface-foreground: #f4f4f4;
-  --surface-secondary: #393939;
-  --surface-tertiary: #525252;
+  --surface-secondary: #262626;
+  --surface-tertiary: #393939;
 
-  --overlay: #262626;
+  --overlay: #161616;
   --overlay-foreground: #f4f4f4;
 
   --muted: #8d8d8d;        /* gray 50 */
@@ -162,14 +168,30 @@
   --field-border: #6f6f6f;
   --field-placeholder: #a8a8a8;
 
-  --sec-goals: #4589ff;
-  --sec-recurring: #08bdba;
-  --sec-todos: #33b1ff;
-  --sec-weight: #a56eff;
-  --sec-calories: #ff7eb6;
-  --sec-charts: #08bdba;
-  --sec-log: #33b1ff;
-  --sec-config: #c6c6c6;
+  /* One colour per section. Sub-trackers alias their parent section so a
+     chart inside Nutrition can never disagree with the Nutrition band. */
+  --sec-goals: #8a3ffc;      /* purple 60 */
+  --sec-tasks: #a56eff;      /* purple 40 */
+  --sec-fitness: #42be65;    /* green 40  */
+  --sec-nutrition: #08bdba;  /* teal 40   */
+  --sec-charts: #4589ff;     /* blue 50   */
+  --sec-log: #fa4d56;        /* red 50    */
+  --sec-config: #c6c6c6;     /* gray 30   */
+
+  --sec-recurring: var(--sec-tasks);
+  --sec-todos: var(--sec-tasks);
+  --sec-weight: var(--sec-fitness);
+  --sec-calories: var(--sec-nutrition);
+
+  /* The bright 40/50 accents take black ink. Purple 60 is dark enough for
+     white, which is also Carbon's own pairing for it. */
+  --ink-goals: #ffffff;
+  --ink-tasks: #161616;
+  --ink-fitness: #161616;
+  --ink-nutrition: #161616;
+  --ink-charts: #161616;
+  --ink-log: #161616;
+  --ink-config: #161616;
 
   --scale-1: #262626;
   --scale-2: #002d9c;
@@ -180,26 +202,14 @@
 
   /* pure black canvas — colour lives in the shapes, not a glow */
 
-  /* Gradient families from the IBM fill app icons */
-  --grad-primary: linear-gradient(135deg, #4589ff 0%, #0f62fe 55%, #8a3ffc 100%);
-  --grad-magenta: linear-gradient(135deg, #8a3ffc 0%, #ee5396 100%);
-  --grad-teal: linear-gradient(180deg, #08bdba 0%, #0f62fe 100%);
-  --grad-teal-up: linear-gradient(0deg, #08bdba 0%, #0f62fe 100%);
-  --grad-success: linear-gradient(135deg, #42be65 0%, #08bdba 100%);
-  --grad-danger: linear-gradient(135deg, #fa4d56 0%, #da1e28 100%);
+  --signal: #f1c21b;
+  --motif-ink: #ffffff;
 
-  --wash-1: rgba(15, 98, 254, 0.22);
-  --wash-2: rgba(138, 63, 252, 0.18);
-  --wash-3: rgba(17, 146, 232, 0.14);
-
-  /* ---- glass layer ---- */
-  --glass-bg: rgba(38, 38, 38, 0.62);
-  --glass-bg-strong: rgba(38, 38, 38, 0.86);
-  --glass-border: rgba(244, 244, 244, 0.14);
-  --glass-hairline: rgba(244, 244, 244, 0.1);
-  --glass-highlight: rgba(244, 244, 244, 0.12);
-  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
-  --glass-blur: 18px;
+  /* ---- flat surfaces ---- */
+  --pane-bg: #161616;
+  --pane-bg-strong: #262626;
+  --pane-border: #393939;
+  --pane-hairline: #393939;
 }
 
 body {
@@ -209,19 +219,8 @@ body {
   background: var(--background);
 }
 
-/* The hero's green-to-orange gradient, kept as a quiet backdrop */
-body::before {
-  content: "";
-  position: fixed;
-  inset: -10%;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(48rem 40rem at 8% 0%, var(--wash-1), transparent 62%),
-    radial-gradient(44rem 40rem at 96% 12%, var(--wash-2), transparent 62%),
-    radial-gradient(40rem 40rem at 60% 100%, var(--wash-3), transparent 62%);
-  filter: blur(24px);
-}
+/* No ambient backdrop. The ground is one flat colour; every bit of colour in
+   the app belongs to a shape that means something. */
 
 /* Display type: Plex, tight and confident like the specimen */
 .font-display {
@@ -235,82 +234,52 @@ body::before {
   font-feature-settings: "tnum";
 }
 
-/* Carbon tiles, rendered as frosted glass over the ambient wash.
-   Square geometry is kept — this is Carbon with a glass surface, not a
-   different design language. */
+/* Carbon tiles as flat opaque planes. A card is separated from the ground by
+   a background step and a 1px hairline — never by blur or shadow. */
 .card {
   position: relative;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--pane-bg);
+  border: 1px solid var(--pane-border);
   border-radius: 0;
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-/* Specular top edge — what reads as "glass" rather than merely translucent */
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding-top: 1px;
-  background: linear-gradient(to bottom, var(--glass-highlight), transparent 40%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.card.card--default { background: var(--glass-bg); }
+.card.card--default { background: var(--pane-bg); }
 .card.card--secondary,
-.card.card--tertiary { background: var(--glass-bg-strong); }
+.card.card--tertiary { background: var(--pane-bg-strong); }
 
 .card--transparent,
 .card.card--transparent {
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+/* Overlay surfaces (modal, drawer): one step up from a card, still opaque.
+   The border does the lifting that a shadow used to. */
+.glass-overlay {
+  background: var(--pane-bg-strong);
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
   backdrop-filter: none;
 }
-.card--transparent::before,
-.card.card--transparent::before { display: none; }
 
-/* Overlay surfaces (modal, drawer): heavier frost above the blanket */
-.glass-overlay {
-  background: var(--glass-bg-strong);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--overlay-shadow), var(--glass-shadow);
-  backdrop-filter: blur(28px) saturate(170%);
-}
-
-/* Scrim behind overlays: dimmed and lightly blurred */
+/* Scrim behind overlays: flat dim, no blur */
 .glass-blanket {
   background: var(--blanket);
-  backdrop-filter: blur(6px);
+  backdrop-filter: none;
 }
 
 /* Frosted app bar */
+/* App bar sits directly on the ground, separated by a hairline only. */
 .glass-bar {
-  background: var(--glass-bg);
-  border-bottom: 1px solid var(--glass-hairline);
-  backdrop-filter: blur(var(--glass-blur)) saturate(170%);
+  background: var(--background);
+  border-bottom: 1px solid var(--pane-hairline);
+  backdrop-filter: none;
 }
 
-/* Where backdrop-filter is unsupported, fall back to opaque Carbon surfaces
-   so nothing becomes unreadable. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .card,
-  .card.card--default,
-  .glass-bar { background: var(--surface); border-color: var(--border); }
-  .card.card--secondary { background: var(--surface-secondary); }
-  .card.card--tertiary { background: var(--surface-tertiary); }
-  .glass-overlay { background: var(--overlay); }
-  .card::before { display: none; }
-}
+/* No backdrop-filter fallback needed — nothing blurs anymore. */
 
 /* Controls: Carbon's square buttons */
 .button {
@@ -328,23 +297,23 @@ body::before {
   font-weight: 600;
 }
 
-/* Positive action: green→teal gradient */
+/* Positive action: flat green */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: #24a148;
-  background-image: var(--grad-success);
+  background-color: var(--success);
+  background-image: none;
   color: #ffffff;
   border-color: transparent;
 }
 .btn-success.cds--btn:hover { filter: brightness(1.12); }
 .btn-success.cds--btn:active { filter: brightness(0.9); }
 
-/* Buttons carry the fill-icon gradients */
+/* Primary action: flat purple, the Goals accent doubling as the app's action colour */
 .cds--btn--primary,
 .btn-invert.cds--btn,
 .btn-invert {
-  background-image: var(--grad-primary);
-  background-color: #0f62fe;
+  background-image: none;
+  background-color: var(--sec-goals);
   color: #ffffff;
   border-color: transparent;
 }
@@ -353,14 +322,14 @@ body::before {
 .cds--btn--primary:active,
 .btn-invert.cds--btn:active { filter: brightness(0.9); }
 
-/* Secondary / tertiary keep a readable translucent fill on the glass */
+/* Secondary: one surface step, bordered — not a second saturated fill */
 .cds--btn--secondary {
-  background-image: var(--grad-magenta);
-  background-color: #8a3ffc;
-  color: #ffffff;
-  border-color: transparent;
+  background-image: none;
+  background-color: var(--surface-tertiary);
+  color: var(--foreground);
+  border: 1px solid var(--border-strong, var(--border));
 }
-.cds--btn--secondary:hover { filter: brightness(1.12); }
+.cds--btn--secondary:hover { background-color: var(--surface-secondary); }
 
 .cds--btn--tertiary,
 .cds--btn--ghost {
@@ -374,11 +343,10 @@ body::before {
   color: var(--foreground);
 }
 
-/* Delete: red→deep-red gradient. It joins the gradient system without
-   drifting away from "destructive". */
+/* Delete: flat red */
 .cds--btn--danger {
-  background-color: #da1e28;
-  background-image: var(--grad-danger);
+  background-color: var(--danger);
+  background-image: none;
   color: #ffffff;
   border-color: transparent;
 }
@@ -393,7 +361,6 @@ body::before {
   background-image: none;
   border: 1px solid var(--border);
   color: var(--foreground);
-  backdrop-filter: blur(8px);
 }
 .cds--btn--tertiary.btn-icon-only:hover,
 .cds--btn--ghost.btn-icon-only:hover {
@@ -514,6 +481,114 @@ textarea::placeholder {
   flex: none;
 }
 
+/* ============================================================
+   Section band — the signature element.
+   Each section is introduced by a full-bleed plate of its own colour with a
+   single-stroke motif at the trailing edge. The bands together are the app's
+   identity: seven flat plates, no gutters, one idea each.
+   ============================================================ */
+.sec-band {
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: 4.5rem;
+  background: var(--band-color);
+  color: var(--band-ink);
+  border: 0;
+  text-align: start;
+  cursor: default;
+  transition: filter 240ms cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+button.sec-band { cursor: pointer; }
+button.sec-band:hover { filter: brightness(1.1); }
+
+.sec-band__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.875rem 1rem;
+}
+
+/* Eyebrow: the section's position in the page order, in mono. Order is real
+   information here — the sections always appear in this sequence. */
+.sec-band__index {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.032em;
+  opacity: 0.75;
+}
+
+.sec-band__title {
+  font-size: 1.25rem;
+  font-weight: 300;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+.sec-band--md .sec-band__title { font-size: 1.125rem; }
+
+/* The motif is clipped by the plate, so strokes run off the edges the way
+   they do in the reference grid. */
+.sec-band__motif {
+  flex: none;
+  inline-size: 5.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.sec-band__motif svg {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.sec-band__motif .motif-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.sec-band__motif .motif-stroke--thin {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+.sec-band__motif .motif-fill { fill: currentColor; }
+
+.sec-band__chevron {
+  flex: none;
+  inline-size: 3rem;
+  display: grid;
+  place-items: center;
+  transition: transform 240ms cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+.sec-band__chevron--open { transform: rotate(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sec-band,
+  .sec-band__chevron { transition: none; }
+}
+
+/* Full-bleed on phones: the band breaks the page gutter so the plates stack
+   edge to edge, as one continuous grid. */
+@media (max-width: 767px) {
+  .sec-band {
+    margin-inline: -0.5rem;
+    inline-size: calc(100% + 1rem);
+  }
+}
+
+/* On a wide band the motif has to grow with the plate, or the colour reads as
+   an empty stripe with a detail stuck to one end. */
+@media (min-width: 768px) {
+  .sec-band { min-block-size: 6rem; }
+  .sec-band__motif { inline-size: 12rem; }
+  .sec-band__label { padding-inline: 1.25rem; }
+}
+
 /* ---- Pending state: running border while a write is in flight ---- */
 @property --ring-angle {
   syntax: "<angle>";
@@ -582,7 +657,7 @@ textarea::placeholder {
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
   background: rgba(82, 82, 82, 0.5);
-  border-radius: 999px;
+  border-radius: 0;
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
 
@@ -595,17 +670,14 @@ textarea::placeholder {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--foreground);
-  background-image: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--chip-color) 30%, transparent),
-    color-mix(in srgb, var(--chip-color) 10%, transparent)
-  );
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-color) 45%, transparent);
+  background-image: none;
+  background-color: var(--surface-secondary);
+  border-left: 2px solid var(--chip-color);
 }
 .cat-chip__dot {
   inline-size: 0.5rem;
   block-size: 0.5rem;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--chip-color);
   flex: none;
 }
@@ -630,11 +702,10 @@ button {
    distinct surfaces. */
 @media (max-width: 767px) {
   .section-panel {
-    background: color-mix(in srgb, var(--surface) 55%, transparent);
-    border: 1px solid var(--glass-hairline);
-    box-shadow: var(--surface-shadow);
-    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
-    padding: 1rem;
+    background: var(--background);
+    border: 1px solid var(--pane-hairline);
+    box-shadow: none;
+    padding: 0;
   }
 }
 
@@ -651,13 +722,7 @@ button {
     inset-block: 0;
     inset-inline-start: 0;
     inline-size: 1px;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      var(--border) 6%,
-      var(--border) 94%,
-      transparent
-    );
+    background: var(--border);
     pointer-events: none;
   }
 }
