@@ -174,7 +174,7 @@ export default function CompletionLog({ tracker }: { tracker: Tracker }) {
               {entries.map((e) => (
                 <li key={e.key} className="flex items-center gap-2.5 py-2.5">
                   <span
-                    className="shrink-0 rounded-full px-2 py-[3px] text-[10px] font-semibold leading-none"
+                    className="shrink-0 px-2 py-[3px] text-[10px] font-semibold leading-none"
                     style={{ background: e.color, color: readableText(e.color) }}
                   >
                     {e.kind}

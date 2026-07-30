@@ -17,7 +17,7 @@ function TodoCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; don
     >
       <span
         className={
-          "flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 transition-colors " +
+          "flex h-[17px] w-[17px] items-center justify-center border-2 transition-colors " +
           (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent") +
           (pending ? " is-pending" : "")
         }
@@ -49,7 +49,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <span className="sec-dot" style={{ background: "var(--sec-tasks)" }} aria-hidden />
+        <span className="sec-dot" style={{ background: "var(--sec-todos)" }} aria-hidden />
         To do
       </h2>
 

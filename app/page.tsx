@@ -102,7 +102,7 @@ export default function Home() {
               {tracker.syncError && (
                 <div
                   role="alert"
-                  className="rounded-2xl border px-4 py-3 text-sm"
+                  className="border px-4 py-3 text-sm"
                   style={{
                     borderColor: "color-mix(in srgb, var(--danger) 45%, transparent)",
                     background: "color-mix(in srgb, var(--danger) 12%, transparent)",
@@ -117,7 +117,6 @@ export default function Home() {
                 <>
                   <Section
                     id="goals"
-                    title="Goals"
                     open={isOpen("goals")}
                     onToggle={() => toggle("goals")}
                     isDesktop={isDesktop}
@@ -127,7 +126,6 @@ export default function Home() {
 
                   <Section
                     id="tasks"
-                    title="Tasks"
                     open={isOpen("tasks")}
                     onToggle={() => toggle("tasks")}
                     isDesktop={isDesktop}
@@ -140,7 +138,6 @@ export default function Home() {
 
                   <Section
                     id="fitness"
-                    title="Fitness"
                     open={isOpen("fitness")}
                     onToggle={() => toggle("fitness")}
                     isDesktop={isDesktop}
@@ -153,7 +150,6 @@ export default function Home() {
 
                   <Section
                     id="nutrition"
-                    title="Nutrition"
                     open={isOpen("nutrition")}
                     onToggle={() => toggle("nutrition")}
                     isDesktop={isDesktop}
@@ -166,7 +162,6 @@ export default function Home() {
 
                   <Section
                     id="charts"
-                    title="Progress"
                     open={isOpen("charts")}
                     onToggle={() => toggle("charts")}
                     isDesktop={isDesktop}
@@ -176,7 +171,6 @@ export default function Home() {
 
                   <Section
                     id="log"
-                    title="Log"
                     open={isOpen("log")}
                     onToggle={() => toggle("log")}
                     isDesktop={isDesktop}
@@ -186,7 +180,6 @@ export default function Home() {
 
                   <Section
                     id="config"
-                    title="Configuration"
                     size="md"
                     open={isOpen("config")}
                     onToggle={() => toggle("config")}
@@ -201,7 +194,7 @@ export default function Home() {
                 <>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <section id="goals" className="scroll-mt-6 md:col-span-2">
-                      <SectionBand id="goals" title="Goals" className="mb-4" />
+                      <SectionBand id="goals" className="mb-4" />
                       <GoalsView tracker={tracker} onAdd={() => setGoalOpen(true)} />
                     </section>
 
@@ -221,22 +214,22 @@ export default function Home() {
                   </div>
 
                   <section id="fitness" className="scroll-mt-6">
-                    <SectionBand id="fitness" title="Fitness" className="mb-4" />
+                    <SectionBand id="fitness" className="mb-4" />
                     <WorkoutVolumeChart tracker={tracker} />
                   </section>
 
                   <section id="charts" className="scroll-mt-6">
-                    <SectionBand id="charts" title="Progress" className="mb-4" />
+                    <SectionBand id="charts" className="mb-4" />
                     <Charts tracker={tracker} />
                   </section>
 
                   <section id="log" className="scroll-mt-6">
-                    <SectionBand id="log" title="Log" className="mb-4" />
+                    <SectionBand id="log" className="mb-4" />
                     <CompletionLog tracker={tracker} />
                   </section>
 
                   <section id="config" className="scroll-mt-6">
-                    <SectionBand id="config" title="Configuration" size="md" className="mb-4" />
+                    <SectionBand id="config" size="md" className="mb-4" />
                     {configuration}
                   </section>
                 </>

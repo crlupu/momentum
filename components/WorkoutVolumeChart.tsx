@@ -137,7 +137,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                       {values[i] ? values[i].toLocaleString() : ""}
                     </span>
                     <div
-                      className="flex w-full flex-col-reverse overflow-hidden rounded-t"
+                      className="flex w-full flex-col-reverse overflow-hidden"
                       style={{
                         height: Math.max(2, (values[i] / max) * 84),
                         background: values[i] ? undefined : TRACK,
@@ -202,7 +202,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
     <div
-      className="rounded-lg px-3 py-2.5"
+      className="px-3 py-2.5"
       style={{ background: "color-mix(in srgb, #4589ff 14%, transparent)" }}
     >
       <div className="font-mono-n text-xl font-semibold" style={{ color: "#4589ff" }}>

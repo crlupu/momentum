@@ -67,7 +67,7 @@ function Heatmap({
               <div
                 key={k}
                 title={`${k} — ${n} done`}
-                className="rounded-[6px]"
+                className="-[6px]"
                 style={{ width: CELL, height: CELL, background: shade(n) }}
               />
             );
@@ -89,7 +89,7 @@ function Stat({
 }) {
   return (
     <div
-      className="rounded-lg px-3 py-2.5"
+      className="px-3 py-2.5"
       style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
     >
       <div className="font-mono-n text-2xl font-semibold" style={{ color }}>
@@ -175,7 +175,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
                   {counts[i] || ""}
                 </span>
                 <div
-                  className="w-full max-w-[34px] rounded-t-md"
+                  className="w-full max-w-[34px]"
                   style={{
                     height: Math.max(3, (counts[i] / max) * 110),
                     background: barFill(counts[i]),
@@ -208,7 +208,7 @@ export default function Charts({ tracker }: { tracker: Tracker }) {
               {perCat.map(({ c, map, total }) => (
                 <div key={c.id}>
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
+                    <span className="inline-block h-2.5 w-2.5" style={{ background: c.color }} aria-hidden />
                     <span className="text-sm font-medium">{c.name}</span>
                     <span className="font-mono-n text-xs text-foreground/50">{total}</span>
                   </div>

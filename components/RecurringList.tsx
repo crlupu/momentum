@@ -16,7 +16,7 @@ function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string
     >
       <span
         className={
-          "flex h-[17px] w-[17px] items-center justify-center rounded-full border-2 transition-colors " +
+          "flex h-[17px] w-[17px] items-center justify-center border-2 transition-colors " +
           (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent") +
           (pending ? " is-pending" : "")
         }
@@ -44,7 +44,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
     <div>
       <div className="mb-4 flex items-end justify-between">
         <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-tasks)" }} aria-hidden />
+          <span className="sec-dot" style={{ background: "var(--sec-recurring)" }} aria-hidden />
           Recurring
         </h2>
         <Button variant="primary" isIconOnly aria-label="New recurring task" onPress={onAdd}>
@@ -72,14 +72,14 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
                     <span className={"flex-1 min-w-0 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>
                       <span className="truncate">{r.title}</span>
                       {r.groupId && (
-                        <span className="ml-1.5 rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
+                        <span className="ml-1.5 bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
                           {groupName(r.groupId)}
                         </span>
                       )}
                     </span>
                     <span className="flex w-16 shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
                       <span
-                        className="inline-block h-2 w-2 shrink-0 rounded-full"
+                        className="inline-block h-2 w-2 shrink-0"
                         style={{ background: c.color }}
                         aria-hidden
                       />

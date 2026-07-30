@@ -55,14 +55,12 @@
   --selected-fg: #ffffff;
 
   --radius: 0;
-  --surface-shadow: 0 1px 2px rgba(22, 22, 22, 0.08);
 
   --default: rgba(22, 22, 22, 0.07);
   --default-foreground: #161616;
   --pill-fg: #ffffff;
 
   --blanket: rgba(22, 22, 22, 0.5);
-  --overlay-shadow: 0 8px 24px rgba(22, 22, 22, 0.2);
 
   /* fields need to read as inputs against the card they sit on */
   --field-bg: #ffffff;
@@ -104,9 +102,6 @@
 
   /* Secondary data series, for the one place two series share a chart. */
   --signal: #b28600;
-
-  /* Motif ink: the single stroke weight that draws every section motif. */
-  --motif-ink: #ffffff;
 
   /* ---- flat surfaces ----
      Elevation is a background step plus a 1px border. Nothing blurs and
@@ -154,14 +149,12 @@
   --selected-fg: #161616;
 
   --radius: 0;
-  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 
   --default: rgba(244, 244, 244, 0.09);
   --default-foreground: #f4f4f4;
   --pill-fg: #161616;
 
   --blanket: rgba(22, 22, 22, 0.7);
-  --overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   /* one step lighter than the card, so the field is visible on it */
   --field-bg: #393939;
@@ -203,7 +196,6 @@
   /* pure black canvas — colour lives in the shapes, not a glow */
 
   --signal: #f1c21b;
-  --motif-ink: #ffffff;
 
   /* ---- flat surfaces ---- */
   --pane-bg: #161616;
@@ -258,7 +250,7 @@ body {
 
 /* Overlay surfaces (modal, drawer): one step up from a card, still opaque.
    The border does the lifting that a shadow used to. */
-.glass-overlay {
+.overlay-surface {
   background: var(--pane-bg-strong);
   border: 1px solid var(--border-strong);
   box-shadow: none;
@@ -266,14 +258,14 @@ body {
 }
 
 /* Scrim behind overlays: flat dim, no blur */
-.glass-blanket {
+.scrim {
   background: var(--blanket);
   backdrop-filter: none;
 }
 
 /* Frosted app bar */
 /* App bar sits directly on the ground, separated by a hairline only. */
-.glass-bar {
+.app-bar {
   background: var(--background);
   border-bottom: 1px solid var(--pane-hairline);
   backdrop-filter: none;

@@ -136,7 +136,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 <span className="font-mono-n text-[9px] font-bold">{counts[i] || ""}</span>
                 {/* Stacked in reverse so the first entry of the day is lowest. */}
                 <div
-                  className="flex w-full max-w-[22px] flex-col-reverse overflow-hidden rounded-t"
+                  className="flex w-full max-w-[22px] flex-col-reverse overflow-hidden"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
                     background: counts[i] ? undefined : TRACK,

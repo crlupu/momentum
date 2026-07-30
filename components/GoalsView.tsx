@@ -66,9 +66,9 @@ function SubtaskRow({
         </span>
       </div>
 
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
+      <div className="mt-1 h-1.5 w-full overflow-hidden bg-foreground/10">
         <div
-          className="h-full rounded-full"
+          className="h-full"
           style={{
             width: `${pct}%`,
             backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${color} 60%, #8a3ffc 100%)`,
@@ -305,9 +305,9 @@ function GoalCard({
         </div>
 
         {showProgress && (
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
+          <div className="mt-3 h-2 w-full overflow-hidden bg-foreground/10">
             <div
-              className="h-full rounded-full"
+              className="h-full"
               style={{
                 width: `${pct}%`,
                 backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${c.color} 60%, #8a3ffc 100%)`,
@@ -352,7 +352,7 @@ function GoalCard({
                     onPress={() => setCatId(cat.id)}
                   >
                     <span
-                      className="inline-block h-2 w-2 rounded-full"
+                      className="inline-block h-2 w-2"
                       style={{ background: cat.color }}
                       aria-hidden
                     />

@@ -67,12 +67,12 @@ function TargetMeter({
         {target ? `${value} / ${target} g` : `${value} g logged`}
       </span>
       <div
-        className="mt-2 h-1.5 w-full overflow-hidden rounded-full"
+        className="mt-2 h-1.5 w-full overflow-hidden"
         style={{ background: TRACK }}
       >
         {target ? (
           <div
-            className="h-full rounded-full"
+            className="h-full"
             style={{
               width: `${Math.min(100, pct)}%`,
               backgroundImage: fill,
@@ -228,7 +228,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                 {/* the two series share a day column, side by side */}
                 <div className="flex h-[84px] w-full items-end justify-center gap-[2px]">
                   <div
-                    className="w-full max-w-[9px] rounded-t"
+                    className="w-full max-w-[9px]"
                     title={
                       asPercent
                         ? `${Math.round(pctSeries[i].protein)}% of protein target (${series[i].protein} g)`
@@ -242,7 +242,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                     }}
                   />
                   <div
-                    className="w-full max-w-[9px] rounded-t"
+                    className="w-full max-w-[9px]"
                     title={
                       asPercent
                         ? `${Math.round(pctSeries[i].fiber)}% of fibre target (${series[i].fiber} g)`

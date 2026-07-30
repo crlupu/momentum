@@ -35,14 +35,14 @@ function TopStat({
   // tinted background and its dot, not from the type.
   return (
     <span
-      className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 whitespace-nowrap text-foreground"
+      className="flex shrink-0 items-center gap-1.5 px-2.5 py-1 whitespace-nowrap text-foreground"
       style={{
         backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${bg} 32%, transparent), color-mix(in srgb, ${bg} 12%, transparent))`,
         boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bg} 45%, transparent)`,
       }}
     >
       <span
-        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+        className="inline-block h-1.5 w-1.5 shrink-0"
         style={{ background: bg }}
         aria-hidden
       />
@@ -129,7 +129,7 @@ function SidebarInner({
           <button
             key={n.id}
             onClick={() => onNavigate(n.id)}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[15px] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground"
+            className="flex items-center gap-3 px-3 py-2.5 text-left text-[15px] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground"
           >
             <n.icon className="h-4 w-4" style={{ color: n.color }} />
             {n.label}
@@ -175,7 +175,7 @@ export function Sidebar({
   return (
     <>
       {/* Top bar: menu button, logo, stats. The menu is always an overlay. */}
-      <div className="glass-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3">
+      <div className="app-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3">
         <button
           aria-label="Open menu"
           onClick={() => setOpen(true)}
@@ -193,9 +193,9 @@ export function Sidebar({
       {/* Overlay drawer */}
       {open && (
         <div className="fixed inset-0 z-40">
-          <div className="glass-blanket absolute inset-0" onClick={() => setOpen(false)} aria-hidden />
+          <div className="scrim absolute inset-0" onClick={() => setOpen(false)} aria-hidden />
           <aside
-            className="glass-overlay absolute inset-y-0 left-0 w-64 max-w-[85vw]"
+            className="overlay-surface absolute inset-y-0 left-0 w-64 max-w-[85vw]"
             style={{ color: "var(--overlay-foreground)" }}
           >
             <SidebarInner

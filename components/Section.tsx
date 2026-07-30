@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { SectionMotif, SECTION_INDEX, type SectionId } from "@/components/SectionMotif";
+import { SectionMotif, sectionIndex, sectionTitle, type SectionId } from "@/components/SectionMotif";
 
 /**
  * Below this width sections collapse. Set at the tablet breakpoint so phones
@@ -43,7 +43,8 @@ export function SectionBand({
   className: extraClass,
 }: {
   id: SectionId;
-  title: string;
+  /** Defaults to the registry title; pass only to override it. */
+  title?: string;
   size?: "lg" | "md";
   collapsible?: boolean;
   open?: boolean;
@@ -61,8 +62,8 @@ export function SectionBand({
   const inner = (
     <>
       <span className="sec-band__label">
-        <span className="sec-band__index">{SECTION_INDEX[id]}</span>
-        <span className="sec-band__title">{title}</span>
+        <span className="sec-band__index">{sectionIndex(id)}</span>
+        <span className="sec-band__title">{title ?? sectionTitle(id)}</span>
       </span>
       <span className="sec-band__motif" aria-hidden>
         <SectionMotif id={id} />
@@ -113,7 +114,7 @@ export function Section({
   children,
 }: {
   id: SectionId;
-  title: string;
+  title?: string;
   open: boolean;
   onToggle: () => void;
   isDesktop: boolean | null;

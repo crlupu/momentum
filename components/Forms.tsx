@@ -69,7 +69,7 @@ function CatPicker({
             className={catId === c.id ? "pill-selected" : ""}
             onPress={() => setCatId(c.id)}
           >
-            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
+            <span className="inline-block h-2.5 w-2.5" style={{ background: c.color }} aria-hidden />
             {c.name}
           </Button>
         ))}
