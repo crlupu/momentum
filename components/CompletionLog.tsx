@@ -19,9 +19,9 @@ type Entry = {
 };
 
 const KIND_COLOR: Record<Entry["kind"], string> = {
-  "To-do": "#1192e8",
+  "To-do": "#33b1ff",
   Goal: "#0f62fe",
-  Recurring: "#009d9a",
+  Recurring: "#491d8b",
   Workout: "#8a3ffc",
 };
 

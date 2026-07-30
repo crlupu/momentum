@@ -15,15 +15,15 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const WHITE = "#ffffff";
-const INK = "#161616";
+const WHITE = "#ffffff"; // IBM White
+const INK = "#121619"; // IBM Cool Gray 100
 
 /**
  * Picks the more legible text colour for a given background.
  *
  * White is preferred when it comfortably passes WCAG AA (4.5:1) — it suits
  * saturated, darker fills and matches the usual convention for buttons — but
- * light fills such as the brand yellow fall back to near-black, where white
+ * light fills such as Green 20 or Red 40 fall back to near-black, where white
  * would be effectively invisible (1.3:1).
  */
 export function readableText(background: string): string {

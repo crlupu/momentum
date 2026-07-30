@@ -96,14 +96,14 @@ export type CalorieEntry = {
 /** Seeded the first time a device runs a build that has tags. */
 const DEFAULT_MEAL_TAGS: MealTag[] = [
   { id: "mt1", name: "Breakfast", color: "#0f62fe" },
-  { id: "mt2", name: "Lunch", color: "#08bdba" },
+  { id: "mt2", name: "Lunch", color: "#33b1ff" },
   { id: "mt3", name: "Dinner", color: "#8a3ffc" },
-  { id: "mt4", name: "Snack", color: "#ff7eb6" },
-  { id: "mt5", name: "Coffee", color: "#ff832b" },
+  { id: "mt4", name: "Snack", color: "#ff8389" },
+  { id: "mt5", name: "Coffee", color: "#491d8b" },
 ];
 
 /** Colour shown for entries with no tag, or whose tag has been deleted. */
-export const UNTAGGED_COLOR = "#6f6f6f";
+export const UNTAGGED_COLOR = "#a2a9b0";
 
 /** One exercise inside a workout, with the weight it's performed at. */
 export type Exercise = {
@@ -202,9 +202,10 @@ export type TrackerState = {
   fiberTarget?: number;
 };
 
+/* The full chromatic range of the palette, plus its one usable neutral. */
 export const CAT_COLORS = [
-  "#0f62fe", "#8a3ffc", "#ee5396", "#009d9a",
-  "#1192e8", "#24a148", "#ff832b", "#6929c4",
+  "#0f62fe", "#8a3ffc", "#33b1ff", "#ff8389",
+  "#a7f0ba", "#491d8b", "#a2a9b0",
 ];
 
 /** Picks a colour no existing category is already using. */
@@ -221,27 +222,36 @@ const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: "c1", name: "Work", color: "#0f62fe" },
-  { id: "c2", name: "Pressio", color: "#009d9a" },
+  { id: "c2", name: "Pressio", color: "#a7f0ba" },
   { id: "c3", name: "Learning", color: "#8a3ffc" },
-  { id: "c4", name: "Gym", color: "#ee5396" },
-  { id: "c5", name: "Personal", color: "#1192e8" },
+  { id: "c4", name: "Gym", color: "#ff8389" },
+  { id: "c5", name: "Personal", color: "#33b1ff" },
 ];
 
-/** Colours from every earlier theme → their IBM-palette replacements. */
+/** Colours from every earlier theme → their current-palette replacements.
+ *  Roles run Work / Pressio / Learning / Gym / Personal, era by era. Targets
+ *  are retargeted whenever the palette changes, so a value saved under any
+ *  past theme lands on a colour the palette still contains. */
 const LEGACY_CATEGORY_COLORS: Record<string, string> = {
-  // roles: Work / Pressio / Learning / Gym / Personal, era by era
   // HeroUI originals
-  "#006fee": "#0f62fe", "#17c964": "#009d9a", "#7828c8": "#8a3ffc",
-  "#f31260": "#ee5396", "#f5a524": "#1192e8",
+  "#006fee": "#0f62fe", "#17c964": "#a7f0ba", "#7828c8": "#8a3ffc",
+  "#f31260": "#ff8389", "#f5a524": "#33b1ff",
   // Atlassian era
-  "#357de8": "#0f62fe", "#22a06b": "#009d9a", "#af59e1": "#8a3ffc",
-  "#ae2e24": "#ee5396", "#c75300": "#1192e8",
+  "#357de8": "#0f62fe", "#22a06b": "#a7f0ba", "#af59e1": "#8a3ffc",
+  "#ae2e24": "#ff8389", "#c75300": "#33b1ff",
   // green-brand era
-  "#2180e6": "#0f62fe", "#1ea97b": "#009d9a", "#264b04": "#8a3ffc",
-  "#72c613": "#ee5396", "#c8efc1": "#1192e8",
+  "#2180e6": "#0f62fe", "#1ea97b": "#a7f0ba", "#264b04": "#8a3ffc",
+  "#72c613": "#ff8389", "#c8efc1": "#33b1ff",
   // Neo Retro era
-  "#a6a9be": "#0f62fe", "#1e3a1e": "#009d9a", "#0e0e0e": "#8a3ffc",
-  "#e0761b": "#ee5396", "#b8c2c2": "#1192e8",
+  "#a6a9be": "#0f62fe", "#1e3a1e": "#a7f0ba", "#0e0e0e": "#8a3ffc",
+  "#e0761b": "#ff8389", "#b8c2c2": "#33b1ff",
+  // Carbon era, before the palette was cut to thirteen colours
+  "#009d9a": "#a7f0ba", "#ee5396": "#ff8389", "#1192e8": "#33b1ff",
+  "#08bdba": "#33b1ff", "#ff7eb6": "#ff8389", "#ff832b": "#491d8b",
+  "#24a148": "#a7f0ba", "#6929c4": "#491d8b", "#6f6f6f": "#a2a9b0",
+  "#4589ff": "#0f62fe", "#42be65": "#a7f0ba", "#fa4d56": "#ff8389",
+  "#a56eff": "#491d8b", "#da1e28": "#ff8389", "#f1c21b": "#a7f0ba",
+  "#161616": "#121619", "#c6c6c6": "#a2a9b0", "#33b1ff": "#33b1ff",
 };
 
 const DEFAULT_STATE: TrackerState = {
@@ -774,7 +784,7 @@ export function useTracker() {
 
     // ---- lookups ----
     cat: (id: string): Category =>
-      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#8d8d8d" },
+      state?.categories.find((c) => c.id === id) ?? { id: "", name: "–", color: "#a2a9b0" },
 
     categoryInUse: (id: string): boolean =>
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),

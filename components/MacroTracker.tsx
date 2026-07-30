@@ -12,8 +12,8 @@ const TRACK = "var(--default)";
 /** Protein reads teal→blue, fibre green→teal, so the two series stay apart. */
 const PROTEIN = "var(--sec-nutrition)";
 const FIBER = "var(--signal)";
-const PROTEIN_SOLID = "#08bdba";
-const FIBER_SOLID = "#42be65";
+const PROTEIN_SOLID = "#33b1ff";
+const FIBER_SOLID = "#a7f0ba";
 
 function offsetDate(days: number): Date {
   const d = new Date();

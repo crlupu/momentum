@@ -13,8 +13,8 @@ export function Logo({ className }: { className?: string }) {
     <svg viewBox="0 -4 512 231" className={className} role="img" aria-label="Momentum">
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#4589ff" />
-          <stop offset="0.55" stopColor="#0f62fe" />
+          <stop offset="0" stopColor="#8a3ffc" />
+          <stop offset="0.55" stopColor="#8a3ffc" />
           <stop offset="1" stopColor="#8a3ffc" />
         </linearGradient>
       </defs>

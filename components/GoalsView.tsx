@@ -71,7 +71,7 @@ function SubtaskRow({
           className="h-full"
           style={{
             width: `${pct}%`,
-            backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${color} 60%, #8a3ffc 100%)`,
+            background: color,
             transition: "width .3s ease",
           }}
         />
@@ -310,7 +310,7 @@ function GoalCard({
               className="h-full"
               style={{
                 width: `${pct}%`,
-                backgroundImage: `linear-gradient(90deg, #4589ff 0%, ${c.color} 60%, #8a3ffc 100%)`,
+                background: c.color,
                 transition: "width .3s ease",
               }}
             />

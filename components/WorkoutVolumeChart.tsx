@@ -108,7 +108,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                         .map((m, i) => `${((i + 0.5) / 14) * 100},${84 - (m / maxMin) * 78}`)
                         .join(" ")}
                       fill="none"
-                      stroke="#ff7eb6"
+                      stroke="#ff8389"
                       strokeWidth="2"
                       strokeLinejoin="round"
                       strokeLinecap="round"
@@ -121,7 +121,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                           cx={((i + 0.5) / 14) * 100}
                           cy={84 - (m / maxMin) * 78}
                           r="3"
-                          fill="#ff7eb6"
+                          fill="#ff8389"
                           vectorEffect="non-scaling-stroke"
                         />
                       ) : null
@@ -183,7 +183,7 @@ export default function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
                 ))}
                 {anyTime && (
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff7eb6" }} aria-hidden />
+                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff8389" }} aria-hidden />
                     minutes
                   </span>
                 )}
@@ -203,9 +203,9 @@ function Stat({ value, label }: { value: string | number; label: string }) {
   return (
     <div
       className="px-3 py-2.5"
-      style={{ background: "color-mix(in srgb, #4589ff 14%, transparent)" }}
+      style={{ background: "var(--surface-secondary)" }}
     >
-      <div className="font-mono-n text-xl font-semibold" style={{ color: "#4589ff" }}>
+      <div className="font-mono-n text-xl font-semibold" style={{ color: "var(--accent)" }}>
         {value}
       </div>
       <div className="text-xs text-foreground/60">{label}</div>

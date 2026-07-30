@@ -70,16 +70,16 @@ function TopStats({ tracker }: { tracker: Tracker }) {
 
   return (
     <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
-      <TopStat value={done} label="done today" bg="#24a148" />
+      <TopStat value={done} label="done today" bg="#a7f0ba" />
       <TopStat value={notDone} label="not done" bg="#8a3ffc" />
-      <TopStat value={openTodos} label="to do" bg="#1192e8" />
+      <TopStat value={openTodos} label="to do" bg="#33b1ff" />
       <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#0f62fe" />
-      <TopStat value={kcalToday} label="kcal today" bg="#ee5396" />
+      <TopStat value={kcalToday} label="kcal today" bg="#ff8389" />
       {kcalLeft != null && (
         <TopStat
           value={kcalLeft}
           label="kcal left / week"
-          bg={kcalLeft >= 0 ? "#24a148" : "#da1e28"}
+          bg={kcalLeft >= 0 ? "#a7f0ba" : "#ff8389"}
         />
       )}
     </div>
