@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Palette audit and Carbon token generator.
 
-The app is restricted to fourteen IBM colours. Source greps can't prove that:
+The app is restricted to sixteen colours. Source greps can't prove that:
 Carbon components paint from their own --cds-* tokens, so a Toggle drew
 Carbon's #42be65 and a label drew its #c6c6c6 even though neither appeared
 anywhere in this repo. This walks the rendered DOM instead and checks every
@@ -32,6 +32,8 @@ PALETTE = {
     "--ibm-red-40": "#ff8389",
     "--ibm-green-20": "#a7f0ba",
     "--ibm-green-60": "#198038",
+    "--illustration-green": "#67bb6e",
+    "--illustration-red": "#e75b5c",
 }
 VAR = {v: k for k, v in PALETTE.items()}
 
@@ -97,7 +99,7 @@ def verify(url):
                 for (c, prop, cls), n in sorted(bad.items()):
                     print(f"  OFF-PALETTE rgb{c} via {prop} on '{cls}' x{n}")
             else:
-                print("  ok — every painted colour is one of the fourteen")
+                print("  ok — every painted colour is one of the sixteen")
             pg.close()
         b.close()
     return 1 if failed else 0

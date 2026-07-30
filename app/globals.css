@@ -93,6 +93,8 @@
   --ibm-red-40: #ff8389;
   --ibm-green-20: #a7f0ba;
   --ibm-green-60: #198038;
+  --illustration-green: #67bb6e;  /* sampled from the artwork */
+  --illustration-red: #e75b5c;    /* sampled from the artwork */
 }
 
 /* Section accents and their ink are palette constants, not theme values: the
@@ -376,13 +378,12 @@ body {
   font-weight: 600;
 }
 
-/* Positive action ("mark as done"): Green 60, the lightest step of the green
-   ramp that clears AA against white text (5.02:1). Green 70 would give more
-   headroom on the label but only 2.7:1 against the black ground, where the
-   button starts to disappear; Green 60 holds 4.2:1 there. */
+/* Positive action ("mark as done"): the green sampled from the artwork.
+   White on it measures 2.36:1, below the 4.5:1 AA threshold — this is a
+   deliberate brand choice over a contrast one. */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: var(--ibm-green-60);
+  background-color: var(--illustration-green);
   background-image: none;
   color: var(--ibm-white);
   border-color: transparent;
@@ -409,7 +410,7 @@ body {
 .cds--btn--secondary {
   background-image: none;
   background-color: var(--surface-tertiary);
-  color: var(--foreground);
+  color: var(--ibm-white);
   border: 1px solid var(--border-strong, var(--border));
 }
 .cds--btn--secondary:hover { background-color: var(--surface-secondary); }
@@ -426,12 +427,12 @@ body {
   color: var(--foreground);
 }
 
-/* Delete: flat red. Red 40 is a light value, so it takes dark ink — white on
-   it was 2.4:1, well under AA. */
+/* Delete: the red sampled from the artwork. White on it measures 3.47:1,
+   which clears AA for large text only. */
 .cds--btn--danger {
-  background-color: var(--danger);
+  background-color: var(--illustration-red);
   background-image: none;
-  color: var(--danger-foreground);
+  color: var(--ibm-white);
   border-color: transparent;
 }
 .cds--btn--danger:hover { filter: brightness(1.12); }
@@ -942,22 +943,22 @@ html.light {
   --cds-border-tile-02: var(--ibm-cool-gray-20);
   --cds-border-tile-03: var(--ibm-cool-gray-40);
   --cds-button-danger-active: var(--ibm-cool-gray-100);
-  --cds-button-danger-hover: var(--ibm-cool-gray-80);
-  --cds-button-danger-primary: var(--ibm-cool-gray-80);
-  --cds-button-danger-secondary: var(--ibm-cool-gray-80);
+  --cds-button-danger-hover: var(--illustration-red);
+  --cds-button-danger-primary: var(--illustration-red);
+  --cds-button-danger-secondary: var(--illustration-red);
   --cds-button-disabled: var(--ibm-cool-gray-20);
   --cds-button-primary: var(--ibm-blue-60);
   --cds-button-primary-active: var(--ibm-purple-80);
   --cds-button-primary-hover: var(--ibm-blue-60);
   --cds-button-secondary: var(--ibm-cool-gray-80);
-  --cds-button-secondary-active: var(--ibm-green-60);
+  --cds-button-secondary-active: var(--illustration-green);
   --cds-button-secondary-hover: var(--ibm-cool-gray-80);
   --cds-button-separator: var(--ibm-cool-gray-20);
   --cds-button-tertiary: var(--ibm-blue-60);
   --cds-button-tertiary-active: var(--ibm-purple-80);
   --cds-button-tertiary-hover: var(--ibm-blue-60);
   --cds-chat-avatar-agent: var(--ibm-cool-gray-80);
-  --cds-chat-avatar-bot: var(--ibm-green-60);
+  --cds-chat-avatar-bot: var(--illustration-green);
   --cds-chat-avatar-user: var(--ibm-blue-60);
   --cds-chat-bubble-agent: var(--ibm-white);
   --cds-chat-bubble-agent-text: var(--ibm-cool-gray-100);
@@ -1049,26 +1050,26 @@ html.light {
   --cds-skeleton-background: var(--ibm-cool-gray-20);
   --cds-skeleton-element: var(--ibm-cool-gray-20);
   --cds-status-blue: var(--ibm-blue-60);
-  --cds-status-gray: var(--ibm-green-60);
+  --cds-status-gray: var(--illustration-green);
   --cds-status-green: var(--ibm-green-60);
-  --cds-status-orange: var(--ibm-red-40);
-  --cds-status-orange-outline: var(--ibm-cool-gray-80);
+  --cds-status-orange: var(--illustration-red);
+  --cds-status-orange-outline: var(--illustration-red);
   --cds-status-purple: var(--ibm-purple-60);
-  --cds-status-red: var(--ibm-cool-gray-80);
+  --cds-status-red: var(--illustration-red);
   --cds-status-yellow: var(--ibm-red-40);
   --cds-status-yellow-outline: var(--ibm-cool-gray-80);
-  --cds-support-caution-major: var(--ibm-red-40);
+  --cds-support-caution-major: var(--illustration-red);
   --cds-support-caution-minor: var(--ibm-red-40);
   --cds-support-caution-undefined: var(--ibm-purple-60);
-  --cds-support-error: var(--ibm-cool-gray-80);
-  --cds-support-error-inverse: var(--ibm-red-40);
+  --cds-support-error: var(--illustration-red);
+  --cds-support-error-inverse: var(--illustration-red);
   --cds-support-info: var(--ibm-blue-60);
   --cds-support-info-inverse: var(--ibm-cyan-40);
   --cds-support-success: var(--ibm-green-60);
-  --cds-support-success-inverse: var(--ibm-green-60);
+  --cds-support-success-inverse: var(--illustration-green);
   --cds-support-warning: var(--ibm-red-40);
   --cds-support-warning-inverse: var(--ibm-red-40);
-  --cds-syntax-angle-bracket: var(--ibm-green-60);
+  --cds-syntax-angle-bracket: var(--illustration-green);
   --cds-syntax-annotation: var(--ibm-green-60);
   --cds-syntax-arithmetic-operator: var(--ibm-cool-gray-80);
   --cds-syntax-atom: var(--ibm-cool-gray-100);
@@ -1111,7 +1112,7 @@ html.light {
   --cds-syntax-heading-6: var(--ibm-purple-80);
   --cds-syntax-inserted: var(--ibm-green-20);
   --cds-syntax-integer: var(--ibm-green-60);
-  --cds-syntax-invalid: var(--ibm-cool-gray-80);
+  --cds-syntax-invalid: var(--illustration-red);
   --cds-syntax-keyword: var(--ibm-blue-60);
   --cds-syntax-label-name: var(--ibm-blue-60);
   --cds-syntax-line-comment: var(--ibm-green-60);
@@ -1170,7 +1171,7 @@ html.light {
   --cds-tag-border-cool-gray: var(--ibm-cool-gray-40);
   --cds-tag-border-cyan: var(--ibm-cyan-40);
   --cds-tag-border-gray: var(--ibm-cool-gray-40);
-  --cds-tag-border-green: var(--ibm-green-60);
+  --cds-tag-border-green: var(--illustration-green);
   --cds-tag-border-magenta: var(--ibm-red-40);
   --cds-tag-border-purple: var(--ibm-cool-gray-40);
   --cds-tag-border-red: var(--ibm-red-40);
@@ -1197,8 +1198,8 @@ html.light {
   --cds-tag-hover-teal: var(--ibm-cyan-40);
   --cds-tag-hover-warm-gray: var(--ibm-cool-gray-20);
   --cds-text-disabled: var(--ibm-cool-gray-100);
-  --cds-text-error: var(--ibm-cool-gray-80);
-  --cds-text-helper: var(--ibm-green-60);
+  --cds-text-error: var(--illustration-red);
+  --cds-text-helper: var(--illustration-green);
   --cds-text-inverse: var(--ibm-white);
   --cds-text-on-color: var(--ibm-white);
   --cds-text-on-color-disabled: var(--ibm-cool-gray-40);
@@ -1239,28 +1240,28 @@ html.dark {
   --cds-border-disabled: var(--ibm-cool-gray-40);
   --cds-border-interactive: var(--ibm-cyan-40);
   --cds-border-inverse: var(--ibm-cool-gray-10);
-  --cds-border-strong-01: var(--ibm-green-60);
+  --cds-border-strong-01: var(--illustration-green);
   --cds-border-strong-02: var(--ibm-cool-gray-40);
   --cds-border-strong-03: var(--ibm-cool-gray-40);
   --cds-border-subtle-00: var(--ibm-cool-gray-80);
   --cds-border-subtle-01: var(--ibm-cool-gray-80);
-  --cds-border-subtle-02: var(--ibm-green-60);
-  --cds-border-subtle-03: var(--ibm-green-60);
-  --cds-border-subtle-selected-01: var(--ibm-green-60);
+  --cds-border-subtle-02: var(--illustration-green);
+  --cds-border-subtle-03: var(--illustration-green);
+  --cds-border-subtle-selected-01: var(--illustration-green);
   --cds-border-subtle-selected-02: var(--ibm-cool-gray-40);
   --cds-border-subtle-selected-03: var(--ibm-cool-gray-40);
   --cds-border-tile-01: var(--ibm-cool-gray-80);
-  --cds-border-tile-02: var(--ibm-green-60);
+  --cds-border-tile-02: var(--illustration-green);
   --cds-border-tile-03: var(--ibm-cool-gray-40);
   --cds-button-danger-active: var(--ibm-cool-gray-100);
-  --cds-button-danger-hover: var(--ibm-cool-gray-80);
-  --cds-button-danger-primary: var(--ibm-cool-gray-80);
-  --cds-button-danger-secondary: var(--ibm-red-40);
+  --cds-button-danger-hover: var(--illustration-red);
+  --cds-button-danger-primary: var(--illustration-red);
+  --cds-button-danger-secondary: var(--illustration-red);
   --cds-button-disabled: var(--ibm-cool-gray-40);
   --cds-button-primary: var(--ibm-blue-60);
   --cds-button-primary-active: var(--ibm-purple-80);
   --cds-button-primary-hover: var(--ibm-blue-60);
-  --cds-button-secondary: var(--ibm-green-60);
+  --cds-button-secondary: var(--illustration-green);
   --cds-button-secondary-active: var(--ibm-cool-gray-80);
   --cds-button-secondary-hover: var(--ibm-cool-gray-80);
   --cds-button-separator: var(--ibm-cool-gray-100);
@@ -1312,15 +1313,15 @@ html.dark {
   --cds-layer-03: var(--ibm-cool-gray-80);
   --cds-layer-accent-01: var(--ibm-cool-gray-80);
   --cds-layer-accent-02: var(--ibm-cool-gray-80);
-  --cds-layer-accent-03: var(--ibm-green-60);
-  --cds-layer-accent-active-01: var(--ibm-green-60);
+  --cds-layer-accent-03: var(--illustration-green);
+  --cds-layer-accent-active-01: var(--illustration-green);
   --cds-layer-accent-active-02: var(--ibm-cool-gray-40);
   --cds-layer-accent-active-03: var(--ibm-cool-gray-80);
   --cds-layer-accent-hover-01: var(--ibm-cool-gray-80);
   --cds-layer-accent-hover-02: var(--ibm-cool-gray-80);
   --cds-layer-accent-hover-03: var(--ibm-cool-gray-80);
   --cds-layer-active-01: var(--ibm-cool-gray-80);
-  --cds-layer-active-02: var(--ibm-green-60);
+  --cds-layer-active-02: var(--illustration-green);
   --cds-layer-active-03: var(--ibm-cool-gray-40);
   --cds-layer-background-01: var(--ibm-cool-gray-100);
   --cds-layer-background-02: var(--ibm-cool-gray-100);
@@ -1330,7 +1331,7 @@ html.dark {
   --cds-layer-hover-03: var(--ibm-cool-gray-80);
   --cds-layer-selected-01: var(--ibm-cool-gray-80);
   --cds-layer-selected-02: var(--ibm-cool-gray-80);
-  --cds-layer-selected-03: var(--ibm-green-60);
+  --cds-layer-selected-03: var(--illustration-green);
   --cds-layer-selected-disabled: var(--ibm-cool-gray-40);
   --cds-layer-selected-hover-01: var(--ibm-cool-gray-80);
   --cds-layer-selected-hover-02: var(--ibm-cool-gray-80);
@@ -1359,21 +1360,21 @@ html.dark {
   --cds-skeleton-element: var(--ibm-cool-gray-80);
   --cds-status-blue: var(--ibm-cyan-40);
   --cds-status-gray: var(--ibm-cool-gray-40);
-  --cds-status-green: var(--ibm-green-60);
-  --cds-status-orange: var(--ibm-red-40);
-  --cds-status-orange-outline: var(--ibm-red-40);
+  --cds-status-green: var(--illustration-green);
+  --cds-status-orange: var(--illustration-red);
+  --cds-status-orange-outline: var(--illustration-red);
   --cds-status-purple: var(--ibm-purple-60);
-  --cds-status-red: var(--ibm-red-40);
+  --cds-status-red: var(--illustration-red);
   --cds-status-yellow: var(--ibm-red-40);
   --cds-status-yellow-outline: var(--ibm-red-40);
-  --cds-support-caution-major: var(--ibm-red-40);
+  --cds-support-caution-major: var(--illustration-red);
   --cds-support-caution-minor: var(--ibm-red-40);
   --cds-support-caution-undefined: var(--ibm-purple-60);
-  --cds-support-error: var(--ibm-red-40);
-  --cds-support-error-inverse: var(--ibm-cool-gray-80);
+  --cds-support-error: var(--illustration-red);
+  --cds-support-error-inverse: var(--illustration-red);
   --cds-support-info: var(--ibm-cyan-40);
   --cds-support-info-inverse: var(--ibm-blue-60);
-  --cds-support-success: var(--ibm-green-60);
+  --cds-support-success: var(--illustration-green);
   --cds-support-success-inverse: var(--ibm-green-60);
   --cds-support-warning: var(--ibm-red-40);
   --cds-support-warning-inverse: var(--ibm-red-40);
@@ -1385,14 +1386,14 @@ html.dark {
   --cds-syntax-attribute-name: var(--ibm-cyan-40);
   --cds-syntax-attribute-value: var(--ibm-cool-gray-10);
   --cds-syntax-bitwise-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-block-comment: var(--ibm-green-60);
+  --cds-syntax-block-comment: var(--illustration-green);
   --cds-syntax-bool: var(--ibm-cool-gray-10);
   --cds-syntax-brace: var(--ibm-cool-gray-20);
   --cds-syntax-bracket: var(--ibm-cool-gray-20);
   --cds-syntax-character: var(--ibm-cool-gray-10);
   --cds-syntax-class-name: var(--ibm-cyan-40);
   --cds-syntax-color: var(--ibm-cool-gray-10);
-  --cds-syntax-comment: var(--ibm-green-60);
+  --cds-syntax-comment: var(--illustration-green);
   --cds-syntax-compare-operator: var(--ibm-cool-gray-20);
   --cds-syntax-constant: var(--ibm-cyan-40);
   --cds-syntax-content: var(--ibm-cool-gray-10);
@@ -1404,12 +1405,12 @@ html.dark {
   --cds-syntax-definition-operator: var(--ibm-cyan-40);
   --cds-syntax-deleted: var(--ibm-cool-gray-80);
   --cds-syntax-deref-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-doc-comment: var(--ibm-green-60);
+  --cds-syntax-doc-comment: var(--illustration-green);
   --cds-syntax-doc-string: var(--ibm-cool-gray-10);
-  --cds-syntax-document-meta: var(--ibm-green-60);
+  --cds-syntax-document-meta: var(--illustration-green);
   --cds-syntax-emphasis: var(--ibm-cool-gray-10);
   --cds-syntax-escape: var(--ibm-cool-gray-20);
-  --cds-syntax-float: var(--ibm-green-20);
+  --cds-syntax-float: var(--illustration-green);
   --cds-syntax-function: var(--ibm-red-40);
   --cds-syntax-heading: var(--ibm-cyan-40);
   --cds-syntax-heading-1: var(--ibm-cyan-40);
@@ -1419,32 +1420,32 @@ html.dark {
   --cds-syntax-heading-5: var(--ibm-cyan-40);
   --cds-syntax-heading-6: var(--ibm-cyan-40);
   --cds-syntax-inserted: var(--ibm-green-60);
-  --cds-syntax-integer: var(--ibm-green-20);
-  --cds-syntax-invalid: var(--ibm-red-40);
+  --cds-syntax-integer: var(--illustration-green);
+  --cds-syntax-invalid: var(--illustration-red);
   --cds-syntax-keyword: var(--ibm-cyan-40);
   --cds-syntax-label-name: var(--ibm-cool-gray-20);
-  --cds-syntax-line-comment: var(--ibm-green-60);
+  --cds-syntax-line-comment: var(--illustration-green);
   --cds-syntax-link: var(--ibm-cyan-40);
   --cds-syntax-list: var(--ibm-cool-gray-10);
   --cds-syntax-literal: var(--ibm-cool-gray-10);
   --cds-syntax-local: var(--ibm-cool-gray-20);
   --cds-syntax-logic-operator: var(--ibm-cool-gray-20);
   --cds-syntax-macro-name: var(--ibm-cool-gray-10);
-  --cds-syntax-meta: var(--ibm-green-60);
+  --cds-syntax-meta: var(--illustration-green);
   --cds-syntax-modifier: var(--ibm-cyan-40);
   --cds-syntax-module-keyword: var(--ibm-cool-gray-40);
   --cds-syntax-monospace: var(--ibm-cool-gray-10);
   --cds-syntax-name: var(--ibm-cool-gray-20);
   --cds-syntax-namespace: var(--ibm-cyan-40);
   --cds-syntax-null: var(--ibm-cool-gray-10);
-  --cds-syntax-number: var(--ibm-green-20);
+  --cds-syntax-number: var(--illustration-green);
   --cds-syntax-operator: var(--ibm-cool-gray-20);
   --cds-syntax-operator-keyword: var(--ibm-cyan-40);
   --cds-syntax-paren: var(--ibm-cool-gray-20);
   --cds-syntax-processing-instruction: var(--ibm-cool-gray-10);
   --cds-syntax-property-name: var(--ibm-cyan-40);
   --cds-syntax-punctuation: var(--ibm-cool-gray-20);
-  --cds-syntax-quote: var(--ibm-green-60);
+  --cds-syntax-quote: var(--illustration-green);
   --cds-syntax-regexp: var(--ibm-cool-gray-40);
   --cds-syntax-self: var(--ibm-cyan-40);
   --cds-syntax-separator: var(--ibm-cool-gray-20);
@@ -1460,7 +1461,7 @@ html.dark {
   --cds-syntax-type: var(--ibm-cyan-40);
   --cds-syntax-type-name: var(--ibm-cyan-40);
   --cds-syntax-type-operator: var(--ibm-cyan-40);
-  --cds-syntax-unit: var(--ibm-green-20);
+  --cds-syntax-unit: var(--illustration-green);
   --cds-syntax-update-operator: var(--ibm-cool-gray-20);
   --cds-syntax-url: var(--ibm-cool-gray-20);
   --cds-syntax-variable: var(--ibm-cool-gray-20);
@@ -1482,8 +1483,8 @@ html.dark {
   --cds-tag-border-green: var(--ibm-green-60);
   --cds-tag-border-magenta: var(--ibm-red-40);
   --cds-tag-border-purple: var(--ibm-purple-60);
-  --cds-tag-border-red: var(--ibm-red-40);
-  --cds-tag-border-teal: var(--ibm-green-60);
+  --cds-tag-border-red: var(--illustration-red);
+  --cds-tag-border-teal: var(--illustration-green);
   --cds-tag-border-warm-gray: var(--ibm-cool-gray-40);
   --cds-tag-color-blue: var(--ibm-cool-gray-20);
   --cds-tag-color-cool-gray: var(--ibm-cool-gray-10);
@@ -1500,9 +1501,9 @@ html.dark {
   --cds-tag-hover-cyan: var(--ibm-blue-60);
   --cds-tag-hover-gray: var(--ibm-cool-gray-80);
   --cds-tag-hover-green: var(--ibm-green-60);
-  --cds-tag-hover-magenta: var(--ibm-purple-80);
+  --cds-tag-hover-magenta: var(--illustration-red);
   --cds-tag-hover-purple: var(--ibm-purple-60);
-  --cds-tag-hover-red: var(--ibm-cool-gray-80);
+  --cds-tag-hover-red: var(--illustration-red);
   --cds-tag-hover-teal: var(--ibm-green-60);
   --cds-tag-hover-warm-gray: var(--ibm-cool-gray-80);
   --cds-text-disabled: var(--ibm-cool-gray-10);
@@ -1514,5 +1515,5 @@ html.dark {
   --cds-text-placeholder: var(--ibm-cool-gray-10);
   --cds-text-primary: var(--ibm-cool-gray-10);
   --cds-text-secondary: var(--ibm-cool-gray-20);
-  --cds-toggle-off: var(--ibm-green-60);
+  --cds-toggle-off: var(--illustration-green);
 }
