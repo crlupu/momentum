@@ -103,7 +103,7 @@ function SidebarInner({
     <div className="flex h-full flex-col gap-1 p-4">
       <div className="mb-4 flex items-center justify-between px-1">
         <span className="flex items-center gap-2">
-          <Logo className="h-5 w-auto" />
+          <Logo className="h-5 w-auto text-[var(--c-blue-60)]" />
           <span className="font-display text-xl font-bold tracking-tight">Momentum</span>
         </span>
         {onClose && (
@@ -183,9 +183,8 @@ export function Sidebar({
         >
           <Menu className="h-6 w-6" />
         </button>
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Momentum home">
-          <Logo className="h-4 w-auto" />
-          <span className="font-display text-lg font-bold tracking-tight">Momentum</span>
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Momentum home">
+          <Logo className="h-6 w-auto text-[var(--c-blue-60)]" />
         </Link>
         <TopStats tracker={tracker} />
       </div>

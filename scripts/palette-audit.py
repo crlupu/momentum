@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Palette audit and Carbon token generator.
 
-The app is restricted to sixteen colours. Source greps can't prove that:
+The app is restricted to the official palette: seven hue families of ten steps, plus neutrals. Source greps can't prove that:
 Carbon components paint from their own --cds-* tokens, so a Toggle drew
 Carbon's #42be65 and a label drew its #c6c6c6 even though neither appeared
 anywhere in this repo. This walks the rendered DOM instead and checks every
@@ -18,6 +18,76 @@ Requires: pip install playwright && python3 -m playwright install chromium
 import glob, pathlib, re, sys
 
 PALETTE = {
+    "--c-blue-10": "#edf4fc",
+    "--c-blue-100": "#05103e",
+    "--c-blue-20": "#ccddfb",
+    "--c-blue-30": "#9dc0f8",
+    "--c-blue-40": "#79a3f5",
+    "--c-blue-50": "#5489f3",
+    "--c-blue-60": "#2860f3",
+    "--c-blue-70": "#1e48d2",
+    "--c-blue-80": "#1330a5",
+    "--c-blue-90": "#091970",
+    "--c-cyan-10": "#e4f5fc",
+    "--c-cyan-100": "#0c192a",
+    "--c-cyan-20": "#bce5f9",
+    "--c-cyan-30": "#84c8f9",
+    "--c-cyan-40": "#59aff8",
+    "--c-cyan-50": "#4491e1",
+    "--c-cyan-60": "#3271be",
+    "--c-cyan-70": "#25579c",
+    "--c-cyan-80": "#173d6e",
+    "--c-cyan-90": "#0e2a4f",
+    "--c-green-10": "#defae3",
+    "--c-green-100": "#0d1b0a",
+    "--c-green-20": "#adecb7",
+    "--c-green-30": "#7ad381",
+    "--c-green-40": "#65b96b",
+    "--c-green-50": "#4e9f52",
+    "--c-green-60": "#3c7e40",
+    "--c-green-70": "#2d6130",
+    "--c-green-80": "#1d471f",
+    "--c-green-90": "#133115",
+    "--c-magenta-10": "#fcf1f7",
+    "--c-magenta-100": "#250b16",
+    "--c-magenta-20": "#f6d2de",
+    "--c-magenta-30": "#f1a5c1",
+    "--c-magenta-40": "#e87ea2",
+    "--c-magenta-50": "#dc5f89",
+    "--c-magenta-60": "#be3964",
+    "--c-magenta-70": "#95294d",
+    "--c-magenta-80": "#691838",
+    "--c-magenta-90": "#4e0b2a",
+    "--c-purple-10": "#f7effa",
+    "--c-purple-100": "#1b1030",
+    "--c-purple-20": "#e2d6fa",
+    "--c-purple-30": "#cbb1fa",
+    "--c-purple-40": "#b48ff8",
+    "--c-purple-50": "#a173f7",
+    "--c-purple-60": "#8044f4",
+    "--c-purple-70": "#6534c3",
+    "--c-purple-80": "#492390",
+    "--c-purple-90": "#331668",
+    "--c-red-10": "#fcf1ef",
+    "--c-red-100": "#280a0a",
+    "--c-red-20": "#f3d3d4",
+    "--c-red-30": "#f2a7ab",
+    "--c-red-40": "#ed7f7e",
+    "--c-red-50": "#e95958",
+    "--c-red-60": "#cd3b3b",
+    "--c-red-70": "#952825",
+    "--c-red-80": "#6b1a17",
+    "--c-red-90": "#470c0e",
+    "--c-teal-10": "#e0f8f8",
+    "--c-teal-100": "#0a191c",
+    "--c-teal-20": "#9febeb",
+    "--c-teal-30": "#64d1ce",
+    "--c-teal-40": "#53b5b4",
+    "--c-teal-50": "#469c9b",
+    "--c-teal-60": "#357a77",
+    "--c-teal-70": "#28605f",
+    "--c-teal-80": "#1b4448",
+    "--c-teal-90": "#102f34",
     "--ibm-black": "#000000",
     "--ibm-cool-gray-100": "#121619",
     "--ibm-cool-gray-80": "#343a3f",
@@ -25,15 +95,6 @@ PALETTE = {
     "--ibm-cool-gray-20": "#dde1e6",
     "--ibm-cool-gray-10": "#f2f4f8",
     "--ibm-white": "#ffffff",
-    "--ibm-purple-80": "#491d8b",
-    "--ibm-purple-60": "#8a3ffc",
-    "--ibm-blue-60": "#0f62fe",
-    "--ibm-cyan-40": "#33b1ff",
-    "--ibm-red-40": "#ff8389",
-    "--ibm-green-20": "#a7f0ba",
-    "--ibm-green-60": "#198038",
-    "--illustration-green": "#67bb6e",
-    "--illustration-red": "#e75b5c",
 }
 VAR = {v: k for k, v in PALETTE.items()}
 
@@ -99,7 +160,7 @@ def verify(url):
                 for (c, prop, cls), n in sorted(bad.items()):
                     print(f"  OFF-PALETTE rgb{c} via {prop} on '{cls}' x{n}")
             else:
-                print("  ok — every painted colour is one of the sixteen")
+                print("  ok — every painted colour is in the palette")
             pg.close()
         b.close()
     return 1 if failed else 0
