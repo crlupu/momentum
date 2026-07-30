@@ -12,6 +12,66 @@
 }
 
 /* ============================================================
+   Tailwind's scales, redefined onto Carbon's.
+   Every text-* and every breakpoint in the app already goes through these
+   utilities, so remapping the scale restyles the whole app at once and
+   leaves no place for an off-system value to persist. Rewriting the eighty
+   or so className strings by hand would have reached the same place with far
+   more room to break something.
+   ============================================================ */
+@theme {
+  /* Type: Carbon's productive ladder is 12 / 14 / 16 / 20 / 28 / 32 / 42 / 54.
+     Size, leading and tracking travel together, as they do in the system.
+     Weight is deliberately left out — the app's existing font-semibold and
+     font-bold choices carry emphasis, and baking a weight in here would
+     silently override every one of them. */
+  --text-xs: 0.75rem;                 /* label-01     */
+  --text-xs--line-height: 1.33333;
+  --text-xs--letter-spacing: 0.32px;
+
+  --text-sm: 0.875rem;                /* body-01      */
+  --text-sm--line-height: 1.42857;
+  --text-sm--letter-spacing: 0.16px;
+
+  --text-base: 1rem;                  /* body-02      */
+  --text-base--line-height: 1.5;
+  --text-base--letter-spacing: 0px;
+
+  --text-lg: 1rem;                    /* heading-02   */
+  --text-lg--line-height: 1.5;
+  --text-lg--letter-spacing: 0px;
+
+  --text-xl: 1.25rem;                 /* heading-03   */
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: 0px;
+
+  --text-2xl: 1.75rem;                /* heading-04   */
+  --text-2xl--line-height: 1.28572;
+  --text-2xl--letter-spacing: 0px;
+
+  --text-3xl: 2rem;                   /* heading-05   */
+  --text-3xl--line-height: 1.25;
+  --text-3xl--letter-spacing: 0px;
+
+  --text-4xl: 2.625rem;               /* heading-06   */
+  --text-4xl--line-height: 1.19;
+  --text-4xl--letter-spacing: 0px;
+
+  /* Breakpoints: Carbon's, not Tailwind's. sm 320 / md 672 / lg 1056 /
+     xl 1312 / max 1584. The app's `sm:` and `md:` prefixes now break where
+     the design system says they should. */
+  --breakpoint-sm: 20rem;    /*  320px */
+  --breakpoint-md: 42rem;    /*  672px */
+  --breakpoint-lg: 66rem;    /* 1056px */
+  --breakpoint-xl: 82rem;    /* 1312px */
+  --breakpoint-2xl: 99rem;   /* 1584px */
+
+  /* Carbon has no 20px step, so the 5 utilities land on 24px (spacing-06)
+     rather than sitting between two legal values. */
+  --spacing-5: 1.5rem;
+}
+
+/* ============================================================
    The palette. Thirteen named IBM colours and nothing else — every
    semantic token below resolves to one of these, and no rule anywhere
    introduces a colour outside this block. Tints are deliberately absent:
@@ -534,18 +594,18 @@ button.sec-band:hover { filter: brightness(1.1); }
    information here — the sections always appear in this sequence. */
 .sec-band__index {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.032em;
+  font-size: 0.75rem;      /* label-01 — Carbon has no 11px step */
+  letter-spacing: 0.32px;
   opacity: 0.75;
 }
 
 .sec-band__title {
-  font-size: 1.25rem;
+  font-size: 1.25rem;      /* heading-03 */
   font-weight: 300;
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: 1.4;
 }
-.sec-band--md .sec-band__title { font-size: 1.125rem; }
+.sec-band--md .sec-band__title { font-size: 1rem; } /* heading-02 */
 
 /* The motif is clipped by the plate, so strokes run off the edges the way
    they do in the reference grid. */
@@ -592,7 +652,7 @@ button.sec-band:hover { filter: brightness(1.1); }
 
 /* On a wide band the motif has to grow with the plate, or the colour reads as
    an empty stripe with a detail stuck to one end. */
-@media (min-width: 768px) {
+@media (min-width: 42rem) {
   .sec-band { min-block-size: 6rem; }
   .sec-band__motif { inline-size: 12rem; }
   .sec-band__label { padding-inline: var(--spacing-06); }
@@ -737,7 +797,7 @@ button {
 
 /* The right-hand column reads as one continuous block: a single rule down its
    left edge binds the trackers together and separates them from the goals. */
-@media (min-width: 768px) {
+@media (min-width: 42rem) {
   .side-column {
     position: relative;
     padding-left: 1.75rem;

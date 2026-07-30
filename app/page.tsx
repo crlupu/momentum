@@ -98,7 +98,7 @@ export default function Home() {
           {!tracker.state ? (
             <p className="p-6 text-foreground/60">Loading…</p>
           ) : (
-            <div className="mx-auto max-w-6xl space-y-8 px-2 py-5 sm:px-4 lg:px-6">
+            <div className="mx-auto max-w-[99rem] space-y-8 px-2 py-5 sm:px-4 lg:px-6">
               {tracker.syncError && (
                 <div
                   role="alert"

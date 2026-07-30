@@ -8,7 +8,7 @@ import { SectionMotif, sectionIndex, sectionTitle, type SectionId } from "@/comp
  * Below this width sections collapse. Set at the tablet breakpoint so phones
  * get the collapsible list while iPads and up show everything expanded.
  */
-const DESKTOP = "(min-width: 768px)";
+const DESKTOP = "(min-width: 42rem)"; // Carbon md, 672px
 
 /**
  * Tracks whether we're on a desktop-width viewport.
