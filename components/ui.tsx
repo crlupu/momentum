@@ -91,6 +91,10 @@ export function Input({
   autoFocus,
   autoComplete,
   onBlur,
+  onFocus,
+  disabled,
+  readOnly,
+  inputMode,
   ...rest
 }: {
   className?: string;
@@ -102,6 +106,11 @@ export function Input({
   autoFocus?: boolean;
   autoComplete?: string;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
+  readOnly?: boolean;
+  /** Chooses the phone keyboard: "decimal" for weights, "numeric" for reps. */
+  inputMode?: "text" | "decimal" | "numeric";
   "aria-label"?: string;
 }) {
   const id = useId();
@@ -120,6 +129,10 @@ export function Input({
       autoFocus={autoFocus}
       autoComplete={autoComplete}
       onBlur={onBlur}
+      onFocus={onFocus}
+      disabled={disabled}
+      readOnly={readOnly}
+      inputMode={inputMode}
     />
   );
 }

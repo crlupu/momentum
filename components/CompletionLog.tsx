@@ -6,16 +6,29 @@ import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { memo, useLayoutEffect, useRef, useState } from "react";
-import { Tracker } from "@/lib/tracker";
+import { Tracker, SetRecord } from "@/lib/tracker";
 import { readableText } from "@/lib/color";
+
+/** "60×10" — compact, because a session's breakdown lists many of them. */
+function formatSet(set: SetRecord): string {
+  if (set.weight != null && set.reps != null) return `${set.weight}×${set.reps}`;
+  if (set.weight != null) return `${set.weight}kg`;
+  return set.reps != null ? `×${set.reps}` : "–";
+}
 
 type Entry = {
   key: string;
   kind: "To-do" | "Goal" | "Recurring" | "Workout";
   title: string;
+  /** Second line, e.g. the set-by-set breakdown of a workout. */
+  detail?: string;
   date: string;
   color: string;
   todoId?: string;
+  /** What the confirmation dialog calls this entry. */
+  what: string;
+  /** Removes the entry outright — it is not a soft delete. */
+  onDelete: () => Promise<unknown>;
 };
 
 const KIND_COLOR: Record<Entry["kind"], string> = {
@@ -102,6 +115,8 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
         date: t.doneDate,
         color: KIND_COLOR["To-do"],
         todoId: t.id,
+        what: `the to-do "${t.title}"`,
+        onDelete: () => tracker.deleteTodo(t.id),
       });
   }
 
@@ -113,6 +128,8 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
         title: g.title,
         date: g.doneDate,
         color: KIND_COLOR.Goal,
+        what: `the goal "${g.title}"`,
+        onDelete: () => tracker.deleteGoal(g.id),
       });
   }
 
@@ -120,12 +137,15 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     const task = c.taskId ? s.recurring.find((r) => r.id === c.taskId) : undefined;
     const group = c.groupId ? s.recurringGroups.find((g) => g.id === c.groupId) : undefined;
     const label = task?.title ?? group?.name ?? tracker.cat(c.catId).name;
+    const title = group ? `${label}${task ? "" : " (group)"}` : label;
     entries.push({
       key: `comp-${c.date}-${i}`,
       kind: "Recurring",
-      title: group ? `${label}${task ? "" : " (group)"}` : label,
+      title,
       date: c.date,
       color: KIND_COLOR.Recurring,
+      what: `the "${title}" completion on ${c.date}`,
+      onDelete: () => tracker.removeCompletion(c),
     });
   });
 
@@ -136,13 +156,20 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       `${w.total.toLocaleString()} kg`,
       w.minutes ? `${w.minutes} min` : null,
     ].filter(Boolean);
-    const detail = parts.join(" · ");
+    const summary = parts.join(" · ");
+    // Sessions logged before per-set detail existed simply have none.
+    const breakdown = (w.exercises ?? [])
+      .map((e) => `${e.name} ${e.sets.map(formatSet).join(", ")}`)
+      .join(" · ");
     entries.push({
       key: `workout-${w.id}`,
       kind: "Workout",
-      title: `${w.name} — ${detail}`,
+      title: `${w.name} — ${summary}`,
+      detail: breakdown || undefined,
       date: w.date,
       color: KIND_COLOR.Workout,
+      what: `the ${w.name} session on ${w.date}`,
+      onDelete: () => tracker.removeWorkoutSession(w.id),
     });
   });
 
@@ -181,20 +208,17 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                   >
                     {e.kind}
                   </span>
-                  <span className="min-w-0 flex-1 break-words text-[15px]">{e.title}</span>
+                  <span className="min-w-0 flex-1 break-words text-[15px]">
+                    {e.title}
+                    {e.detail && (
+                      <span className="mt-0.5 block text-xs text-foreground/50">{e.detail}</span>
+                    )}
+                  </span>
                   <span className="font-mono-n shrink-0 text-xs text-foreground/50">
                     {fmt(e.date)}
                   </span>
-                  {e.todoId && (
-                    <>
-                      <RestoreTodo tracker={tracker} id={e.todoId} />
-                      <DeleteButton
-                        what={`the to-do "${e.title}"`}
-                        iconOnly
-                        onDelete={() => tracker.deleteTodo(e.todoId!)}
-                      />
-                    </>
-                  )}
+                  {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
+                  <DeleteButton what={e.what} iconOnly onDelete={e.onDelete} />
                 </li>
               ))}
             </ul>

@@ -113,8 +113,14 @@ export type Exercise = {
   weight?: number;
 };
 
-/** One set performed during a live workout, at whatever weight was used. */
-export type ActiveSet = { id: string; weight?: number };
+/** The numbers that describe a single set. Shared by live and logged sets. */
+export type SetRecord = { weight?: number; reps?: number };
+
+/**
+ * One set inside a live workout. A set is planned first and performed second:
+ * `done` is what separates the two, and only done sets count towards volume.
+ */
+export type ActiveSet = SetRecord & { id: string; done?: boolean };
 
 export type ActiveExercise = {
   exerciseId: string;
@@ -133,17 +139,58 @@ export type ActiveWorkout = {
   exercises: ActiveExercise[];
 };
 
-/** Volume of a live workout: every set counts the weight it was done at. */
+/**
+ * Load moved by one set: weight × reps. Sets recorded before reps existed
+ * count their weight once, so old sessions keep the total they were logged at.
+ */
+export function setLoad(set: SetRecord): number {
+  const reps = set.reps != null && set.reps > 0 ? set.reps : 1;
+  return (set.weight ?? 0) * reps;
+}
+
+/** Volume of a live workout. Only sets marked done count — planned ones don't. */
 export function activeWorkoutVolume(a: ActiveWorkout): number {
   return a.exercises.reduce(
-    (sum, e) => sum + e.sets.reduce((s, set) => s + (set.weight ?? 0), 0),
+    (sum, e) => sum + e.sets.reduce((s, set) => (set.done ? s + setLoad(set) : s), 0),
     0
   );
 }
 
-/** How many sets have been recorded so far. */
+/** How many sets have actually been completed. */
 export function activeWorkoutSets(a: ActiveWorkout): number {
+  return a.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
+}
+
+/** How many sets are on the board, done or not. */
+export function activeWorkoutPlannedSets(a: ActiveWorkout): number {
   return a.exercises.reduce((n, e) => n + e.sets.length, 0);
+}
+
+/**
+ * Rewrites one exercise's set list inside the live workout, leaving the rest of
+ * the state alone. Every set mutation below is the same three levels of
+ * spreading, so it lives here once rather than five times.
+ */
+function editSets(
+  s: TrackerState,
+  exerciseId: string,
+  fn: (sets: ActiveSet[]) => ActiveSet[]
+): TrackerState {
+  if (!s.activeWorkout) return s;
+  return {
+    ...s,
+    activeWorkout: {
+      ...s.activeWorkout,
+      exercises: s.activeWorkout.exercises.map((e) =>
+        e.exerciseId === exerciseId ? { ...e, sets: fn(e.sets) } : e
+      ),
+    },
+  };
+}
+
+/** A weight or rep count, or undefined when the field was left empty. */
+function positiveNumber(v: number | null | undefined): number | undefined {
+  return v != null && Number.isFinite(v) && v > 0 ? v : undefined;
 }
 
 /** A named workout — "Push day", "Legs" — holding an ordered exercise list. */
@@ -169,7 +216,35 @@ export type WorkoutSession = {
   sets?: number;
   /** Elapsed time in whole minutes, from start to finish. */
   minutes?: number;
+  /**
+   * What was actually performed, exercise by exercise. Absent on sessions
+   * logged before per-set detail was kept, which is why every reader of it
+   * has to cope with it being missing.
+   */
+  exercises?: LoggedExercise[];
 };
+
+/** One exercise as performed in a finished session. */
+export type LoggedExercise = {
+  exerciseId: string;
+  name: string;
+  sets: SetRecord[];
+};
+
+/**
+ * The last time an exercise was actually performed, with the numbers used.
+ * Sessions are only ever appended, so the newest match is the last one found.
+ */
+export function lastPerformed(
+  sessions: WorkoutSession[],
+  exerciseId: string
+): { date: string; sets: SetRecord[] } | null {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const e = sessions[i].exercises?.find((x) => x.exerciseId === exerciseId);
+    if (e && e.sets.length > 0) return { date: sessions[i].date, sets: e.sets };
+  }
+  return null;
+}
 
 /** A protein / fibre log entry. Either field may be omitted. */
 export type MacroEntry = {
@@ -1306,64 +1381,70 @@ export function useTracker() {
         };
       }),
 
-    /** Records another set, defaulting to the weight of the previous one. */
+    /**
+     * Adds a set to work on. It starts out not done: performing it is the
+     * separate step below. The numbers are seeded from the set before it, or —
+     * for the first set of an exercise — from the last time it was performed,
+     * so the common case is press, press, done.
+     */
     addSet: (exerciseId: string) =>
       commit((s) => {
         if (!s.activeWorkout) return s;
-        return {
-          ...s,
-          activeWorkout: {
-            ...s.activeWorkout,
-            exercises: s.activeWorkout.exercises.map((e) =>
-              e.exerciseId !== exerciseId
-                ? e
-                : {
-                    ...e,
-                    sets: [
-                      ...e.sets,
-                      { id: uid(), weight: e.sets[e.sets.length - 1]?.weight ?? e.weight },
-                    ],
-                  }
-            ),
-          },
-        };
+        const ex = s.activeWorkout.exercises.find((e) => e.exerciseId === exerciseId);
+        if (!ex) return s;
+        const previous = ex.sets[ex.sets.length - 1];
+        const history = lastPerformed(s.workoutSessions, exerciseId)?.sets ?? [];
+        const seed: SetRecord = previous
+          ? { weight: previous.weight, reps: previous.reps }
+          : history[0] ?? { weight: ex.weight };
+        return editSets(s, exerciseId, (sets) => [...sets, { id: uid(), ...seed, done: false }]);
       }),
+
+    /**
+     * Copies a set to the end of the list as a fresh, undone one — for the
+     * usual case of doing the same thing again.
+     */
+    duplicateSet: (exerciseId: string, setId: string) =>
+      commit((s) =>
+        editSets(s, exerciseId, (sets) => {
+          const source = sets.find((x) => x.id === setId);
+          if (!source) return sets;
+          return [
+            ...sets,
+            { id: uid(), weight: source.weight, reps: source.reps, done: false },
+          ];
+        })
+      ),
 
     removeSet: (exerciseId: string, setId: string) =>
-      commit((s) => {
-        if (!s.activeWorkout) return s;
-        return {
-          ...s,
-          activeWorkout: {
-            ...s.activeWorkout,
-            exercises: s.activeWorkout.exercises.map((e) =>
-              e.exerciseId !== exerciseId
-                ? e
-                : { ...e, sets: e.sets.filter((x) => x.id !== setId) }
-            ),
-          },
-        };
-      }),
+      commit((s) => editSets(s, exerciseId, (sets) => sets.filter((x) => x.id !== setId))),
 
     setSetWeight: (exerciseId: string, setId: string, weight: number | null) =>
-      commit((s) => {
-        if (!s.activeWorkout) return s;
-        const w = weight != null && Number.isFinite(weight) && weight > 0 ? weight : undefined;
-        return {
-          ...s,
-          activeWorkout: {
-            ...s.activeWorkout,
-            exercises: s.activeWorkout.exercises.map((e) =>
-              e.exerciseId !== exerciseId
-                ? e
-                : {
-                    ...e,
-                    sets: e.sets.map((x) => (x.id === setId ? { ...x, weight: w } : x)),
-                  }
-            ),
-          },
-        };
-      }),
+      commit((s) =>
+        editSets(s, exerciseId, (sets) =>
+          sets.map((x) => (x.id === setId ? { ...x, weight: positiveNumber(weight) } : x))
+        )
+      ),
+
+    setSetReps: (exerciseId: string, setId: string, reps: number | null) =>
+      commit((s) =>
+        editSets(s, exerciseId, (sets) =>
+          sets.map((x) =>
+            x.id === setId ? { ...x, reps: positiveNumber(reps ? Math.round(reps) : null) } : x
+          )
+        )
+      ),
+
+    /**
+     * The second step: the set has been performed. Only now does it count
+     * towards the workout's volume, and only now can it be logged.
+     */
+    setSetDone: (exerciseId: string, setId: string, done: boolean) =>
+      commit((s) =>
+        editSets(s, exerciseId, (sets) =>
+          sets.map((x) => (x.id === setId ? { ...x, done } : x))
+        )
+      ),
 
     /** Abandons the workout without logging anything. */
     cancelWorkout: () => commit((s) => ({ ...s, activeWorkout: null })),
@@ -1381,6 +1462,17 @@ export function useTracker() {
         if (sets === 0) return { ...s, activeWorkout: null };
         // Elapsed time to the nearest minute, never recorded as zero.
         const minutes = Math.max(1, Math.round((Date.now() - a.startedAt) / 60000));
+        // Only completed sets are recorded. Anything still planned when the
+        // workout was finished simply wasn't performed.
+        const exercises: LoggedExercise[] = a.exercises
+          .map((e) => ({
+            exerciseId: e.exerciseId,
+            name: e.name,
+            sets: e.sets
+              .filter((x) => x.done)
+              .map((x) => ({ weight: x.weight, reps: x.reps })),
+          }))
+          .filter((e) => e.sets.length > 0);
         return {
           ...s,
           activeWorkout: null,
@@ -1394,9 +1486,28 @@ export function useTracker() {
               total,
               sets,
               minutes,
+              exercises,
             },
           ],
         };
+      }),
+
+    /**
+     * Removes a recurring completion from the log. Completions carry no id, so
+     * the match is on their fields — and only the first one goes, or ticking
+     * the same task twice in a day would lose both.
+     */
+    removeCompletion: (target: Completion) =>
+      commit((s) => {
+        const i = s.completions.findIndex(
+          (c) =>
+            c.date === target.date &&
+            c.catId === target.catId &&
+            c.taskId === target.taskId &&
+            c.groupId === target.groupId
+        );
+        if (i === -1) return s;
+        return { ...s, completions: s.completions.filter((_, j) => j !== i) };
       }),
 
     /** Removes a logged session — for undoing a mistaken tap. */

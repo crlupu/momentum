@@ -2,7 +2,17 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus, Pencil, ArrowUp, ArrowDown, Check, X, ChevronRight, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  X,
+  ChevronRight,
+  CheckCircle2,
+  Copy,
+} from "lucide-react";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing } from "./ConfigCard";
@@ -12,8 +22,12 @@ import {
   Exercise,
   dateKey,
   ActiveWorkout,
+  ActiveSet,
+  SetRecord,
   activeWorkoutVolume,
   activeWorkoutSets,
+  activeWorkoutPlannedSets,
+  lastPerformed,
 } from "@/lib/tracker";
 
 /** "70 kg", or a dash when the movement carries no weight. */
@@ -339,62 +353,213 @@ function Elapsed({ startedAt }: { startedAt: number }) {
   );
 }
 
-/** A single recorded set: its weight is editable while the workout runs. */
+/** "60 kg × 10", with whichever half is missing left out. */
+function formatSet(set: SetRecord): string {
+  const parts: string[] = [];
+  if (set.weight != null) parts.push(`${set.weight} kg`);
+  if (set.reps != null) parts.push(`${set.reps} reps`);
+  return parts.length ? parts.join(" × ") : "–";
+}
+
+/**
+ * A number field that writes through to the store rather than holding a draft:
+ * it commits shortly after typing stops as well as on blur, so a value is never
+ * lost just because the field still had focus when the phone locked.
+ */
+function NumberField({
+  label,
+  value,
+  onCommit,
+  placeholder,
+  locked,
+  inputMode = "decimal",
+}: {
+  label: string;
+  value?: number;
+  onCommit: (n: number | null) => void;
+  placeholder: string;
+  locked?: boolean;
+  inputMode?: "decimal" | "numeric";
+}) {
+  const stored = value?.toString() ?? "";
+  const [text, setText] = useState(stored);
+
+  // Keep in step when the store changes underneath (e.g. another device).
+  useEffect(() => setText(stored), [stored]);
+
+  const commit = () => {
+    if (text === stored) return;
+    onCommit(text.trim() === "" ? null : Number(text));
+  };
+
+  useEffect(() => {
+    if (text === stored) return;
+    const id = setTimeout(commit, 500);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, stored]);
+
+  return (
+    <Input
+      type="number"
+      inputMode={inputMode}
+      aria-label={label}
+      placeholder={placeholder}
+      value={text}
+      disabled={locked}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      className="min-w-0 flex-1"
+    />
+  );
+}
+
+/** Directions for the burst that fires when a set is completed. */
+const SPARKS = [
+  [0, -1],
+  [0.87, -0.5],
+  [0.87, 0.5],
+  [0, 1],
+  [-0.87, 0.5],
+  [-0.87, -1],
+];
+
+/**
+ * One set in the live workout. A set is planned first and performed second, so
+ * the row carries its own numbers, last session's numbers for reference, and a
+ * single button that turns the first into the second.
+ */
 function SetRow({
   tracker,
   exerciseId,
   index,
-  weight,
-  setId,
+  set,
+  previous,
 }: {
   tracker: Tracker;
   exerciseId: string;
   index: number;
-  weight?: number;
-  setId: string;
+  set: ActiveSet;
+  /** The same set number from the last time this exercise was performed. */
+  previous?: SetRecord;
 }) {
-  const stored = weight?.toString() ?? "";
-  const [value, setValue] = useState(stored);
+  const [celebrating, setCelebrating] = useState(false);
+  const done = !!set.done;
 
-  // Keep in step when the store changes underneath (e.g. another device).
-  useEffect(() => setValue(stored), [stored]);
+  // The celebration is a fixed-length flourish, not a pending state — the write
+  // itself is optimistic and usually lands well before the animation ends.
+  useEffect(() => {
+    if (!celebrating) return;
+    const id = setTimeout(() => setCelebrating(false), 1000);
+    return () => clearTimeout(id);
+  }, [celebrating]);
 
-  const commit = () => {
-    if (value === stored) return;
-    const n = value.trim() === "" ? null : Number(value);
-    tracker.setSetWeight(exerciseId, setId, n);
+  const complete = () => {
+    setCelebrating(true);
+    // A short double buzz, so the tap lands physically as well as visually.
+    if (typeof navigator !== "undefined") navigator.vibrate?.([16, 45, 28]);
+    void tracker.setSetDone(exerciseId, set.id, true);
   };
 
-  // Commit shortly after typing stops as well as on blur, so a weight is never
-  // lost just because the field still had focus.
-  useEffect(() => {
-    if (value === stored) return;
-    const id = setTimeout(commit, 500);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, stored]);
+  const className = [
+    "set-row",
+    done ? "set-row--done" : "",
+    celebrating ? "set-row--celebrate" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-12 shrink-0 text-xs text-foreground/50">Set {index + 1}</span>
-      <Input
-        type="number"
-        aria-label={`Weight for set ${index + 1}`}
-        placeholder="kg"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={commit}
-        className="w-24"
-      />
-      <Button
-        size="sm"
-        variant="ghost"
-        isIconOnly
-        aria-label={`Remove set ${index + 1}`}
-        onPress={() => tracker.removeSet(exerciseId, setId)}
-      >
-        <X className="h-3.5 w-3.5" />
-      </Button>
+    <div className={className}>
+      <span className="set-row__wipe" aria-hidden />
+
+      <div className="set-row__head">
+        <span className="set-row__index">Set {index + 1}</span>
+        {/* Last time's numbers: reference only, never editable. */}
+        <span className="set-row__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
+          {previous ? `last · ${formatSet(previous)}` : "no history"}
+        </span>
+      </div>
+
+      <div className="set-row__body">
+        <NumberField
+          label={`Weight for set ${index + 1}`}
+          placeholder="kg"
+          value={set.weight}
+          locked={done}
+          onCommit={(n) => tracker.setSetWeight(exerciseId, set.id, n)}
+        />
+        <span className="set-row__times" aria-hidden>
+          ×
+        </span>
+        <NumberField
+          label={`Reps for set ${index + 1}`}
+          placeholder="reps"
+          inputMode="numeric"
+          value={set.reps}
+          locked={done}
+          onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
+        />
+
+        <span className="set-row__actions">
+          <span className="set-row__do">
+            {done ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
+                className="set-row__undo"
+                aria-label={`Reopen set ${index + 1}`}
+                onPress={() => void tracker.setSetDone(exerciseId, set.id, false)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                isIconOnly
+                className="btn-success"
+                aria-label={`Complete set ${index + 1}`}
+                onPress={complete}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            )}
+            {celebrating && (
+              <span className="set-row__burst" aria-hidden>
+                {SPARKS.map(([dx, dy], i) => (
+                  <span
+                    key={i}
+                    className="set-row__spark"
+                    style={{
+                      ["--dx" as string]: `${dx * 26}px`,
+                      ["--dy" as string]: `${dy * 26}px`,
+                    }}
+                  />
+                ))}
+              </span>
+            )}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            isIconOnly
+            aria-label={`Duplicate set ${index + 1}`}
+            onPress={() => void tracker.duplicateSet(exerciseId, set.id)}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            isIconOnly
+            aria-label={`Remove set ${index + 1}`}
+            onPress={() => void tracker.removeSet(exerciseId, set.id)}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </span>
+      </div>
     </div>
   );
 }
@@ -410,6 +575,8 @@ export function ActiveWorkoutPanel({
   const { pending, run } = usePending();
   const total = activeWorkoutVolume(active);
   const sets = activeWorkoutSets(active);
+  const planned = activeWorkoutPlannedSets(active);
+  const sessions = tracker.state!.workoutSessions;
 
   return (
     <div className="card p-4 md:p-5" style={{ borderColor: "var(--accent)" }}>
@@ -424,41 +591,48 @@ export function ActiveWorkoutPanel({
       </div>
 
       <div className="space-y-3">
-        {active.exercises.map((e) => (
-          <div key={e.exerciseId} className="border-b border-foreground/10 pb-3 last:border-b-0">
-            <div className="mb-1.5 flex items-center justify-between gap-3">
-              <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
-              <span className="shrink-0 text-xs text-foreground/50">
-                {e.sets.length} {e.sets.length === 1 ? "set" : "sets"}
-              </span>
+        {active.exercises.map((e) => {
+          // What was done for this exercise last time round, set by set.
+          const history = lastPerformed(sessions, e.exerciseId);
+          const doneCount = e.sets.filter((s) => s.done).length;
+          return (
+            <div key={e.exerciseId} className="border-b border-foreground/10 pb-3 last:border-b-0">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
+                <span className="shrink-0 text-xs text-foreground/50">
+                  {e.sets.length === 0
+                    ? "no sets"
+                    : `${doneCount}/${e.sets.length} done`}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {e.sets.map((s, i) => (
+                  <SetRow
+                    key={s.id}
+                    tracker={tracker}
+                    exerciseId={e.exerciseId}
+                    set={s}
+                    index={i}
+                    previous={history?.sets[i]}
+                  />
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onPress={() => void tracker.addSet(e.exerciseId)}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add set
+              </Button>
             </div>
-            <div className="space-y-2">
-              {e.sets.map((s, i) => (
-                <SetRow
-                  key={s.id}
-                  tracker={tracker}
-                  exerciseId={e.exerciseId}
-                  setId={s.id}
-                  index={i}
-                  weight={s.weight}
-                />
-              ))}
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2"
-              onPress={() => tracker.addSet(e.exerciseId)}
-            >
-              <Plus className="h-3.5 w-3.5" /> Add set
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
         <span className="text-xs text-foreground/60">
-          {sets} {sets === 1 ? "set" : "sets"} ·{" "}
+          {sets} of {planned} {planned === 1 ? "set" : "sets"} ·{" "}
           <span className="font-mono-n text-sm font-bold text-foreground">
             {total.toLocaleString()} kg
           </span>
