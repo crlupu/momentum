@@ -51,7 +51,12 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
   const max = Math.max(1, ...values);
   // Time has its own scale — minutes and kilos aren't comparable numbers.
   const maxMin = Math.max(1, ...minutes);
-  const anyTime = minutes.some((m) => m > 0);
+  // Only the days actually trained. The line joins these and ends at the last
+  // one, rather than running along the floor through every rest day.
+  const trained = minutes
+    .map((m, i) => ({ i, m }))
+    .filter((p) => p.m > 0);
+  const anyTime = trained.length > 0;
 
   // Only name the workouts that appear in the window, in bar order.
   const seen = new Map<string, string>();
@@ -97,43 +102,69 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
               </div>
 
 
-              <div className="relative flex h-[120px] items-end gap-1">
-                {/* Duration rides over the bars on its own scale. */}
+              {/* No flex gap here: the line above is positioned as a fraction of
+                  this row's width, so a column's centre has to be exactly
+                  (i + 0.5) / 14 of it. A gap would push every bar off its own
+                  point, by more and more towards the right-hand end. The bars
+                  are separated by their own padding instead. */}
+              <div className="relative flex h-[120px] items-end">
+                {/* Duration rides over the bars on its own scale, and only
+                    joins the days actually trained — a day with no workout is
+                    a gap in the record, not a zero to draw a line down to. */}
                 {anyTime && (
-                  <svg
-                    className="pointer-events-none absolute inset-x-0"
-                    style={{ bottom: 28, height: 84 }}
-                    viewBox="0 0 100 84"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                  >
-                    <polyline
-                      points={minutes
-                        .map((m, i) => `${((i + 0.5) / 14) * 100},${84 - (m / maxMin) * 78}`)
-                        .join(" ")}
-                      fill="none"
-                      stroke="#ff8389"
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    {minutes.map((m, i) =>
-                      m > 0 ? (
-                        <circle
-                          key={i}
-                          cx={((i + 0.5) / 14) * 100}
-                          cy={84 - (m / maxMin) * 78}
-                          r="3"
-                          fill="#ff8389"
-                          vectorEffect="non-scaling-stroke"
+                  <>
+                    {/* width must be set explicitly. An <svg> is a replaced
+                        element, so left:0 + right:0 alone does not stretch it —
+                        it falls back to its intrinsic size, which for this
+                        viewBox at 84px tall is 100px. The line was being drawn
+                        into the leftmost 100px of the row, putting today's
+                        point over a date ten days earlier. */}
+                    <svg
+                      className="pointer-events-none absolute inset-x-0 w-full"
+                      style={{ bottom: 28, height: 84 }}
+                      viewBox="0 0 100 84"
+                      preserveAspectRatio="none"
+                      aria-hidden
+                    >
+                      <polyline
+                        points={trained
+                          .map((p) => `${((p.i + 0.5) / 14) * 100},${84 - (p.m / maxMin) * 78}`)
+                          .join(" ")}
+                        fill="none"
+                        stroke="#ff8389"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    </svg>
+                    {/* The markers are plain elements rather than <circle>s:
+                        the stretched viewBox above would squash a circle into a
+                        wide ellipse, which read as sitting over the wrong day. */}
+                    <div
+                      className="pointer-events-none absolute inset-x-0"
+                      style={{ bottom: 28, height: 84 }}
+                      aria-hidden
+                    >
+                      {trained.map((p) => (
+                        <span
+                          key={p.i}
+                          className="absolute block h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full"
+                          style={{
+                            left: `${((p.i + 0.5) / 14) * 100}%`,
+                            bottom: (p.m / maxMin) * 78,
+                            background: "#ff8389",
+                          }}
                         />
-                      ) : null
-                    )}
-                  </svg>
+                      ))}
+                    </div>
+                  </>
                 )}
                 {days.map((d, i) => (
-                  <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <div
+                    key={i}
+                    className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]"
+                  >
                     <span
                       className="font-mono-n text-[10px] font-semibold"
                       style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
