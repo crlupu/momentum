@@ -18,6 +18,7 @@ export function DeleteButton({
   className,
   fullWidth,
   iconOnly,
+  bare,
 }: {
   /** Name of the thing being deleted, shown in the dialog. */
   what: string;
@@ -28,6 +29,11 @@ export function DeleteButton({
   fullWidth?: boolean;
   /** Render just the trash icon (still confirms before deleting). */
   iconOnly?: boolean;
+  /**
+   * Drop the filled background and colour the icon itself instead. For lists
+   * where a solid danger button on every row would shout louder than the rows.
+   */
+  bare?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { pending, run } = usePending();
@@ -41,10 +47,12 @@ export function DeleteButton({
     <>
       <Button
         size={size}
-        variant="danger"
+        variant={bare ? "ghost" : "danger"}
         isIconOnly={iconOnly}
         aria-label={iconOnly ? `Delete ${what}` : undefined}
-        className={[fullWidth ? "w-full" : "", className].filter(Boolean).join(" ")}
+        className={[fullWidth ? "w-full" : "", bare ? "btn-delete-bare" : "", className]
+          .filter(Boolean)
+          .join(" ")}
         onPress={() => setOpen(true)}
       >
         <Trash2 className="h-4 w-4" />

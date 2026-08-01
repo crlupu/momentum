@@ -1717,3 +1717,32 @@ html.dark {
   }
   .set-row__burst { display: none; }
 }
+
+/* ============================================================
+   Bare delete button.
+   A trash icon on every row of a list, carrying its meaning in the icon's
+   colour rather than in a filled block. Carbon's ghost kind supplies the
+   layout; these rules take over the colour, which ghost otherwise paints in
+   the link blue, and hold the background transparent through hover and press
+   so the row underneath stays the thing being looked at.
+   ============================================================ */
+.btn-delete-bare.cds--btn {
+  background: transparent;
+  /* A 1px outline would still read as a button sitting in the row. */
+  border: none;
+  color: var(--c-red-50);
+}
+.btn-delete-bare.cds--btn:hover,
+.btn-delete-bare.cds--btn:active,
+.btn-delete-bare.cds--btn:focus {
+  background: transparent;
+  border: none;
+  color: var(--c-red-40);
+}
+/* Carbon colours icons through its own selector, which would otherwise win. */
+.btn-delete-bare.cds--btn svg,
+.btn-delete-bare.cds--btn .cds--btn__icon {
+  fill: none;
+  stroke: currentColor;
+  color: inherit;
+}

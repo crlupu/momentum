@@ -217,7 +217,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                     {fmt(e.date)}
                   </span>
                   {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
-                  <DeleteButton what={e.what} iconOnly onDelete={e.onDelete} />
+                  <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />
                 </li>
               ))}
             </ul>
