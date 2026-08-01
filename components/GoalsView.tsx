@@ -39,6 +39,9 @@ function SubtaskRow({
   const hasTarget = typeof t.target === "number" && t.target > 0;
 
   const save = async () => {
+    // Closed on the press rather than on the network. The editor keeps what
+    // was typed, so if the write is refused it reopens with the draft intact.
+    setEditing(false);
     const ok = await run(() =>
       tracker.setSubtaskProgress(
         goalId,
@@ -48,7 +51,7 @@ function SubtaskRow({
         name
       )
     );
-    if (ok) setEditing(false);
+    if (!ok) setEditing(true);
   };
 
   return (

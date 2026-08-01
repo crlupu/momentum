@@ -39,8 +39,13 @@ export function DeleteButton({
   const { pending, run } = usePending();
 
   const confirm = async () => {
+    // Close on the press. The delete is applied locally before it is sent, so
+    // waiting for the round trip left the dialog sitting over a row that had
+    // already gone. A refused delete is rolled back by the store, so the
+    // dialog comes back to be confirmed again; the sync banner says why.
+    setOpen(false);
     const ok = await run(onDelete);
-    if (ok !== false) setOpen(false);
+    if (ok === false) setOpen(true);
   };
 
   return (

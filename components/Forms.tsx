@@ -90,7 +90,12 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
     e.preventDefault();
     const t = title.trim();
     if (!t || pending) return;
-    const ok = await run(() =>
+    // Closed on the press, not on the round trip. The write is applied
+    // locally before it is sent, and Firestore does not resolve a write while
+    // offline at all, so waiting on it left the dialog open indefinitely over
+    // a goal that was already in the list.
+    onDone();
+    await run(() =>
       tracker.addGoal(
         t,
         catId || s.categories[0]?.id,
@@ -98,7 +103,6 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
         target === "" ? null : Number(target)
       )
     );
-    if (ok) onDone(); // close only when the database confirmed the write
   };
 
   return (
@@ -134,8 +138,8 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
     e.preventDefault();
     const t = title.trim();
     if (!t || pending) return;
-    const ok = await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq, groupId));
-    if (ok) onDone();
+    onDone();
+    await run(() => tracker.addRecurring(t, catId || s.categories[0]?.id, freq, groupId));
   };
 
   return (
@@ -187,10 +191,8 @@ export function RecurringEditForm({
     e.preventDefault();
     const t = title.trim();
     if (!t || pending) return;
-    const ok = await run(() =>
-      tracker.updateRecurring(task.id, { title: t, catId, freq, groupId })
-    );
-    if (ok) onDone();
+    onDone();
+    await run(() => tracker.updateRecurring(task.id, { title: t, catId, freq, groupId }));
   };
 
   return (
@@ -227,9 +229,8 @@ export function RecurringEditForm({
         <DeleteButton
           what={`the recurring task "${task.title}"`}
           onDelete={async () => {
-            const ok = await tracker.deleteRecurring(task.id);
-            if (ok) onDone();
-            return ok;
+            onDone();
+            return tracker.deleteRecurring(task.id);
           }}
         />
       </div>

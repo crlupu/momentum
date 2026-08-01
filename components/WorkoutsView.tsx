@@ -61,10 +61,13 @@ function ExerciseRow({
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (pending) return;
+    // Closed on the press rather than on the network. The editor keeps what
+    // was typed, so if the write is refused it reopens with the draft intact.
+    setEditing(false);
     const ok = await run(() =>
       tracker.updateExercise(workout.id, exercise.id, name, num(weight))
     );
-    if (ok) setEditing(false);
+    if (!ok) setEditing(true);
   };
 
   if (editing) {
