@@ -707,64 +707,6 @@ button.sec-band:hover .sec-band__title { color: var(--band-color); }
 
 
 /* ---- Pending state: running border while a write is in flight ---- */
-@property --ring-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-.is-pending {
-  position: relative;
-  cursor: progress;
-  opacity: 1 !important;
-}
-.is-pending::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--ring-angle),
-    transparent 0deg,
-    transparent 200deg,
-    currentColor 320deg,
-    transparent 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  animation: run-border 1s linear infinite;
-  pointer-events: none;
-  z-index: 2;
-}
-.is-pending.button::after {
-  border-radius: 0;
-}
-@keyframes run-border {
-  to {
-    --ring-angle: 360deg;
-  }
-}
-@supports not (background: conic-gradient(from var(--ring-angle), red, blue)) {
-  .is-pending::after {
-    background: currentColor;
-    opacity: 0.5;
-    animation: pulse-ring 1s ease-in-out infinite;
-  }
-  @keyframes pulse-ring {
-    50% { opacity: 0.15; }
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .is-pending::after { animation-duration: 2.4s; }
-}
-
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;

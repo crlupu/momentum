@@ -91,7 +91,6 @@ function ExerciseRow({
           isIconOnly
           aria-label="Save exercise"
           isDisabled={pending}
-          className={pending ? "is-pending" : ""}
         >
           <Check className="h-4 w-4" />
         </Button>
@@ -167,9 +166,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState(workout.name);
   const { pending, run } = usePending();
-  // Its own flag, so an unrelated write doesn't disable it.
-  const { pending: doneP, run: runDone } = usePending();
-
 
   const doneToday = tracker
     .state!.workoutSessions.filter((x) => x.workoutId === workout.id && x.date === dateKey())
@@ -295,7 +291,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
               isIconOnly
               aria-label="Add exercise"
               isDisabled={pending}
-              className={pending ? "is-pending" : ""}
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -642,7 +637,7 @@ export function ActiveWorkoutPanel({
             Cancel
           </Button>
           <Button
-            className={"btn-success " + (pending ? "is-pending" : "")}
+            className="btn-success"
             isDisabled={pending || sets === 0}
             onPress={() => void run(() => tracker.finishWorkout())}
           >
@@ -783,7 +778,6 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
             type="submit"
             variant="primary"
             isDisabled={pending}
-            className={pending ? "is-pending" : ""}
           >
             <Check className="h-4 w-4" /> Create
           </Button>

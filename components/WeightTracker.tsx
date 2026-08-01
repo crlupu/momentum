@@ -143,7 +143,6 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
             isIconOnly
             aria-label="Add"
             isDisabled={pending}
-            className={pending ? "is-pending" : ""}
           >
             <Plus className="h-4 w-4" />
           </Button>

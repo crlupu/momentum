@@ -64,7 +64,6 @@ export function DeleteButton({
             variant="danger"
             onPress={() => void confirm()}
             isDisabled={pending}
-            className={pending ? "is-pending" : ""}
           >
             <Trash2 className="h-4 w-4" />
             Delete

@@ -3,24 +3,21 @@
 import { useCallback, useState } from "react";
 import { Button } from "./ui";
 
-/** Minimum time the pending state stays visible, so it never just flashes. */
-/* Long enough that the indicator is perceptible, short enough that an
-   optimistic change doesn't appear to still be in flight. */
-const MIN_PENDING_MS = 350;
-
-/** Tracks pending state around an async action. */
+/**
+ * Tracks pending state around an async action, so a button can refuse a second
+ * press while the first is still in flight.
+ *
+ * Nothing is drawn from this any more. It used to be held for a minimum time
+ * so the indicator couldn't just flash, but with the indicator gone that delay
+ * only kept the button dead longer than the work took.
+ */
 export function usePending() {
   const [pending, setPending] = useState(false);
   const run = useCallback(async (fn: () => Promise<unknown>) => {
     setPending(true);
-    const startedAt = Date.now();
     try {
       return await fn();
     } finally {
-      const elapsed = Date.now() - startedAt;
-      if (elapsed < MIN_PENDING_MS) {
-        await new Promise((r) => setTimeout(r, MIN_PENDING_MS - elapsed));
-      }
       setPending(false);
     }
   }, []);
@@ -28,12 +25,15 @@ export function usePending() {
 }
 
 type Props = React.ComponentProps<typeof Button> & {
-  /** Async action; the button shows a cycling border until it settles. */
+  /** Async action. The button is held disabled until it settles. */
   onAction: () => Promise<unknown>;
 };
 
 /**
- * Button that shows a cycling border while its write is in flight.
+ * Button that guards against a second press while its write is in flight.
+ * There is no longer a visual indicator: writes are applied locally before the
+ * network call, so by the time anything could be shown the change is already
+ * on screen, and an animation over it only suggested it hadn't landed yet.
  */
 export function ActionButton({ onAction, className, isDisabled, children, ...rest }: Props) {
   const { pending, run } = usePending();
@@ -41,7 +41,7 @@ export function ActionButton({ onAction, className, isDisabled, children, ...res
     <Button
       {...rest}
       isDisabled={isDisabled || pending}
-      className={[className, pending ? "is-pending" : ""].filter(Boolean).join(" ")}
+      className={className}
       onPress={() => {
         if (!pending) void run(onAction);
       }}

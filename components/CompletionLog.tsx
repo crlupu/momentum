@@ -47,7 +47,6 @@ function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
       isIconOnly
       aria-label="Move back to the to-do list"
       isDisabled={pending}
-      className={pending ? "is-pending" : ""}
       onPress={() => void run(() => tracker.toggleTodo(id))}
     >
       <RotateCcw className="h-4 w-4" />

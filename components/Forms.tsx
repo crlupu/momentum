@@ -115,7 +115,7 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
           <Input type="number" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
         </label>
       </div>
-      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
+      <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
         Add goal
       </Button>
     </form>
@@ -160,7 +160,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
       </div>
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
-      <Button type="submit" variant="primary" className={"mt-1 " + (pending ? "is-pending" : "")} isDisabled={pending}>
+      <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
         Add recurring task
       </Button>
     </form>
@@ -219,7 +219,7 @@ export function RecurringEditForm({
         <Button
           type="submit"
           variant="primary"
-          className={"flex-1 " + (pending ? "is-pending" : "")}
+          className="flex-1"
           isDisabled={pending}
         >
           Save changes
@@ -289,7 +289,6 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
           variant="primary"
           isIconOnly
           aria-label="Add"
-          className={pending ? "is-pending" : ""}
           isDisabled={pending}
         >
           <Plus className="h-4 w-4" />
@@ -363,7 +362,6 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
           variant="primary"
           isIconOnly
           aria-label="Add"
-          className={pending ? "is-pending" : ""}
           isDisabled={pending}
         >
           <Plus className="h-4 w-4" />
@@ -528,7 +526,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
         <Button
           type="submit"
           variant="primary"
-          className={"flex-1 " + (pending ? "is-pending" : "")}
+          className="flex-1"
           isDisabled={pending}
         >
           Save targets
@@ -637,7 +635,6 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
           isIconOnly
           aria-label="Add meal tag"
           isDisabled={pending}
-          className={pending ? "is-pending" : ""}
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -748,7 +745,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
         <Button
           type="submit"
           variant="primary"
-          className={"flex-1 " + (pending ? "is-pending" : "")}
+          className="flex-1"
           isDisabled={pending}
         >
           Save budget

@@ -17,8 +17,7 @@ function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string
       <span
         className={
           "flex h-[17px] w-[17px] items-center justify-center border-2 transition-colors " +
-          (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent") +
-          (pending ? " is-pending" : "")
+          (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent")
         }
       >
         {done && <Check className="h-2.5 w-2.5" strokeWidth={4} />}

@@ -113,7 +113,7 @@ function SubtaskRow({
             variant="primary"
             onPress={() => void save()}
             isDisabled={pending}
-            className={"w-full " + (pending ? "is-pending" : "")}
+            className="w-full"
           >
             Save
           </Button>
@@ -199,7 +199,7 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
         variant="primary"
         onPress={() => void add()}
         isDisabled={pending}
-        className={"w-full " + (pending ? "is-pending" : "")}
+        className="w-full"
       >
         Add subtask
       </Button>
@@ -391,7 +391,7 @@ function GoalCard({
                 variant="primary"
                 onPress={() => void save()}
                 isDisabled={pending}
-                className={"flex-1 " + (pending ? "is-pending" : "")}
+                className="flex-1"
               >
                 Save changes
               </Button>
