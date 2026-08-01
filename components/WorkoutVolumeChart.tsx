@@ -243,8 +243,20 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
     e.preventDefault();
     const n = Number(mins);
     if (!Number.isFinite(n) || n <= 0) return;
+
+    // Close first. The write is applied locally before it is sent, so by the
+    // time the round trip finishes the entry is already on the chart behind
+    // the dialog — waiting for the network left it sitting open for seconds
+    // on a slow connection, looking like the button had not worked.
+    close();
     const ok = await run(() => tracker.addCardio(n));
-    if (ok !== false) close();
+    // A refused write is rolled back, so put the dialog back with the number
+    // still in it rather than losing what was typed. The reason why is shown
+    // by the sync banner on the page.
+    if (ok === false) {
+      setMins(String(n));
+      setOpen(true);
+    }
   };
 
   return (
