@@ -23,6 +23,7 @@ import {
   dateKey,
   ActiveWorkout,
   ActiveSet,
+  ActiveExercise,
   SetRecord,
   activeWorkoutVolume,
   activeWorkoutSets,
@@ -415,15 +416,26 @@ function NumberField({
   );
 }
 
-/** Directions for the burst that fires when a set is completed. */
-const SPARKS = [
-  [0, -1],
-  [0.87, -0.5],
-  [0.87, 0.5],
-  [0, 1],
-  [-0.87, 0.5],
-  [-0.87, -1],
-];
+/**
+ * Fires the tap animation on an element and buzzes the phone. The feedback is
+ * meant to read as the press itself landing rather than as a celebration
+ * afterwards, so it is short and it is over before the finger is clear.
+ */
+function useTapFeedback(): [boolean, () => void] {
+  const [tapped, setTapped] = useState(false);
+  useEffect(() => {
+    if (!tapped) return;
+    const id = setTimeout(() => setTapped(false), 320);
+    return () => clearTimeout(id);
+  }, [tapped]);
+  return [
+    tapped,
+    () => {
+      setTapped(true);
+      if (typeof navigator !== "undefined") navigator.vibrate?.(18);
+    },
+  ];
+}
 
 /**
  * One set in the live workout. A set is planned first and performed second, so
@@ -444,36 +456,20 @@ function SetRow({
   /** The same set number from the last time this exercise was performed. */
   previous?: SetRecord;
 }) {
-  const [celebrating, setCelebrating] = useState(false);
+  const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
 
-  // The celebration is a fixed-length flourish, not a pending state — the write
-  // itself is optimistic and usually lands well before the animation ends.
-  useEffect(() => {
-    if (!celebrating) return;
-    const id = setTimeout(() => setCelebrating(false), 1000);
-    return () => clearTimeout(id);
-  }, [celebrating]);
-
   const complete = () => {
-    setCelebrating(true);
-    // A short double buzz, so the tap lands physically as well as visually.
-    if (typeof navigator !== "undefined") navigator.vibrate?.([16, 45, 28]);
+    tap();
     void tracker.setSetDone(exerciseId, set.id, true);
   };
 
-  const className = [
-    "set-row",
-    done ? "set-row--done" : "",
-    celebrating ? "set-row--celebrate" : "",
-  ]
+  const className = ["set-row", done ? "set-row--done" : "", tapped ? "is-tapped" : ""]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div className={className}>
-      <span className="set-row__wipe" aria-hidden />
-
       <div className="set-row__head">
         <span className="set-row__index">Set {index + 1}</span>
         {/* Last time's numbers: reference only, never editable. */}
@@ -526,20 +522,6 @@ function SetRow({
                 <Check className="h-4 w-4" />
               </Button>
             )}
-            {celebrating && (
-              <span className="set-row__burst" aria-hidden>
-                {SPARKS.map(([dx, dy], i) => (
-                  <span
-                    key={i}
-                    className="set-row__spark"
-                    style={{
-                      ["--dx" as string]: `${dx * 26}px`,
-                      ["--dy" as string]: `${dy * 26}px`,
-                    }}
-                  />
-                ))}
-              </span>
-            )}
           </span>
           <Button
             size="sm"
@@ -561,6 +543,98 @@ function SetRow({
           </Button>
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * One exercise inside the live workout. While it is being worked through it
+ * shows an editable row per set; once marked done it collapses to a plain
+ * record of what was lifted, a line per set, with nothing left to type into.
+ */
+function ExerciseBlock({
+  tracker,
+  exercise: e,
+  history,
+}: {
+  tracker: Tracker;
+  exercise: ActiveExercise;
+  history: { date: string; sets: SetRecord[] } | null;
+}) {
+  const [tapped, tap] = useTapFeedback();
+  const done = !!e.done;
+  const doneCount = e.sets.filter((s) => s.done).length;
+  const empty = e.sets.length === 0;
+
+  const finish = () => {
+    tap();
+    void tracker.setExerciseDone(e.exerciseId, true);
+  };
+
+  return (
+    <div
+      className={["exercise", done ? "exercise--done" : "", tapped ? "is-tapped" : ""]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
+        <span className="shrink-0 text-xs text-foreground/50">
+          {empty ? "no sets" : `${doneCount}/${e.sets.length} done`}
+        </span>
+        {/* Only offered once there is something to finish. */}
+        {!empty &&
+          (done ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              isIconOnly
+              className="exercise__reopen shrink-0"
+              aria-label={`Reopen ${e.name}`}
+              onPress={() => void tracker.setExerciseDone(e.exerciseId, false)}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" className="shrink-0" onPress={finish}>
+              <Check className="h-3.5 w-3.5" /> Done
+            </Button>
+          ))}
+      </div>
+
+      {done ? (
+        <ul className="exercise__record">
+          {e.sets.map((s, i) => (
+            <li key={s.id}>
+              <span className="exercise__record-index">{i + 1}</span>
+              <span className="exercise__record-value">{formatSet(s)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {e.sets.map((s, i) => (
+              <SetRow
+                key={s.id}
+                tracker={tracker}
+                exerciseId={e.exerciseId}
+                set={s}
+                index={i}
+                previous={history?.sets[i]}
+              />
+            ))}
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2"
+            onPress={() => void tracker.addSet(e.exerciseId)}
+          >
+            <Plus className="h-3.5 w-3.5" /> Add set
+          </Button>
+        </>
+      )}
     </div>
   );
 }
@@ -592,43 +666,14 @@ export function ActiveWorkoutPanel({
       </div>
 
       <div className="space-y-3">
-        {active.exercises.map((e) => {
-          // What was done for this exercise last time round, set by set.
-          const history = lastPerformed(sessions, e.exerciseId);
-          const doneCount = e.sets.filter((s) => s.done).length;
-          return (
-            <div key={e.exerciseId} className="border-b border-foreground/10 pb-3 last:border-b-0">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
-                <span className="shrink-0 text-xs text-foreground/50">
-                  {e.sets.length === 0
-                    ? "no sets"
-                    : `${doneCount}/${e.sets.length} done`}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {e.sets.map((s, i) => (
-                  <SetRow
-                    key={s.id}
-                    tracker={tracker}
-                    exerciseId={e.exerciseId}
-                    set={s}
-                    index={i}
-                    previous={history?.sets[i]}
-                  />
-                ))}
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="mt-2"
-                onPress={() => void tracker.addSet(e.exerciseId)}
-              >
-                <Plus className="h-3.5 w-3.5" /> Add set
-              </Button>
-            </div>
-          );
-        })}
+        {active.exercises.map((e) => (
+          <ExerciseBlock
+            key={e.exerciseId}
+            tracker={tracker}
+            exercise={e}
+            history={lastPerformed(sessions, e.exerciseId)}
+          />
+        ))}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">

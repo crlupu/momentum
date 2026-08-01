@@ -464,7 +464,9 @@ body {
   color: var(--ibm-white);
   border-color: transparent;
 }
-.btn-success.cds--btn:hover { filter: brightness(1.12); }
+@media (hover: hover) {
+  .btn-success.cds--btn:hover { filter: brightness(1.12); }
+}
 .btn-success.cds--btn:active { filter: brightness(0.9); }
 
 /* Primary action: IBM Blue 60. The action colour is its own thing, not
@@ -477,8 +479,10 @@ body {
   color: var(--ibm-white);
   border-color: transparent;
 }
-.cds--btn--primary:hover,
-.btn-invert.cds--btn:hover { filter: brightness(1.12); }
+@media (hover: hover) {
+  .cds--btn--primary:hover,
+  .btn-invert.cds--btn:hover { filter: brightness(1.12); }
+}
 .cds--btn--primary:active,
 .btn-invert.cds--btn:active { filter: brightness(0.9); }
 
@@ -489,7 +493,9 @@ body {
   color: var(--ibm-white);
   border: 1px solid var(--border-strong, var(--border));
 }
-.cds--btn--secondary:hover { background-color: var(--surface-secondary); }
+@media (hover: hover) {
+  .cds--btn--secondary:hover { background-color: var(--surface-secondary); }
+}
 
 .cds--btn--tertiary,
 .cds--btn--ghost {
@@ -497,10 +503,12 @@ body {
   color: var(--foreground);
   border: 1px solid var(--border);
 }
-.cds--btn--tertiary:hover,
-.cds--btn--ghost:hover {
-  background-color: var(--surface-secondary);
-  color: var(--foreground);
+@media (hover: hover) {
+  .cds--btn--tertiary:hover,
+  .cds--btn--ghost:hover {
+    background-color: var(--surface-secondary);
+    color: var(--foreground);
+  }
 }
 
 /* Delete: the red sampled from the artwork. White on it measures 3.47:1,
@@ -511,11 +519,27 @@ body {
   color: var(--ibm-white);
   border-color: transparent;
 }
-.cds--btn--danger:hover { filter: brightness(1.12); }
+@media (hover: hover) {
+  .cds--btn--danger:hover { filter: brightness(1.12); }
+}
 .cds--btn--danger:active { filter: brightness(0.9); }
 
+/* Carbon rings a focused button. A tap focuses it too, so on a phone the ring
+   stayed on afterwards; :focus-visible keeps it for keyboard use only, which
+   is who it is for. */
+.cds--btn:focus:not(:focus-visible) {
+  box-shadow: none;
+  outline: none;
+}
+
 /* Edit and other icon-only outline buttons: frosted square that lights up
-   in accent blue on hover. */
+   in accent blue on hover.
+
+   Every :hover rule for buttons above is gated behind (hover: hover). A touch
+   screen has no pointer to hover with, so it applies :hover on tap and leaves
+   it applied until something else is tapped — the button sat there lit up in
+   blue as though still pressed. Gated, a tap on a phone changes nothing and
+   the press is over when the finger lifts. */
 .cds--btn--tertiary.btn-icon-only,
 .cds--btn--ghost.btn-icon-only {
   background-color: var(--default);
@@ -523,11 +547,13 @@ body {
   border: 1px solid var(--border);
   color: var(--foreground);
 }
-.cds--btn--tertiary.btn-icon-only:hover,
-.cds--btn--ghost.btn-icon-only:hover {
-  background-color: var(--accent);
-  border-color: var(--accent);
-  color: var(--ibm-white);
+@media (hover: hover) {
+  .cds--btn--tertiary.btn-icon-only:hover,
+  .cds--btn--ghost.btn-icon-only:hover {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--ibm-white);
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -1651,71 +1677,90 @@ html.dark {
 }
 .set-row__undo.cds--btn { color: var(--c-green-40); }
 
-/* ---- the flourish ---- */
-.set-row__wipe {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--c-green-50) 55%, transparent),
-    color-mix(in srgb, var(--c-green-30) 20%, transparent)
-  );
-  transform-origin: left center;
-}
-.set-row--celebrate { animation: set-cheer 620ms cubic-bezier(0.22, 1, 0.36, 1); }
-.set-row--celebrate .set-row__wipe { animation: set-wipe 620ms cubic-bezier(0.22, 1, 0.36, 1); }
-.set-row--celebrate .set-row__do { animation: set-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-@keyframes set-cheer {
-  0%   { transform: translateY(0) scale(1); }
-  30%  { transform: translateY(-3px) scale(1.012); }
-  100% { transform: translateY(0) scale(1); }
-}
-@keyframes set-wipe {
-  0%   { opacity: 0.9; transform: scaleX(0); }
-  55%  { opacity: 0.7; }
-  100% { opacity: 0;   transform: scaleX(1); }
-}
-@keyframes set-pop {
-  0%   { transform: scale(0.7) rotate(-12deg); }
-  55%  { transform: scale(1.28) rotate(4deg); }
-  100% { transform: scale(1) rotate(0deg); }
+/* ---- tap feedback ----
+   A press, not a celebration: the row dips under the finger and springs back,
+   which reads as the tap landing rather than as something being announced
+   afterwards. Paired with a single short buzz. It is over in a third of a
+   second, before the finger is clear of the screen. */
+.set-row.is-tapped,
+.exercise.is-tapped {
+  animation: tap-press 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.set-row__burst {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
-}
-.set-row__spark {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  border-radius: 50%;
-  background: var(--c-green-30);
-  animation: set-spark 640ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes set-spark {
-  0%   { transform: translate(0, 0) scale(0.4); opacity: 1; }
-  70%  { opacity: 0.9; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(0.15); opacity: 0; }
+@keyframes tap-press {
+  0%   { transform: scale(1); }
+  22%  { transform: scale(0.975); }
+  55%  { transform: scale(1.008); }
+  100% { transform: scale(1); }
 }
 
-/* Motion is decoration here; the colour change alone carries the meaning. */
+/* The colour change alone carries the meaning without motion. */
 @media (prefers-reduced-motion: reduce) {
-  .set-row--celebrate,
-  .set-row--celebrate .set-row__wipe,
-  .set-row--celebrate .set-row__do,
-  .set-row__spark {
+  .set-row.is-tapped,
+  .exercise.is-tapped {
     animation: none;
   }
-  .set-row__burst { display: none; }
+}
+
+/* ============================================================
+   A finished exercise.
+   Marked done, an exercise stops being a form and becomes a record: the
+   inputs give way to a line per set saying what was lifted. There is nothing
+   left to type into, so nothing is drawn as though there were.
+   ============================================================ */
+.exercise {
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  padding-bottom: 0.75rem;
+}
+.exercise:last-child {
+  border-bottom: none;
+}
+.exercise--done {
+  border-left: 3px solid var(--c-green-50);
+  padding-left: 0.625rem;
+}
+.exercise__reopen.cds--btn {
+  color: var(--c-green-40);
+}
+
+.exercise__record {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.exercise__record li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  /* Each line arrives just after the one above it, so the record reads as
+     being written out rather than appearing all at once. */
+  animation: record-line 260ms ease-out both;
+}
+.exercise__record li:nth-child(2) { animation-delay: 45ms; }
+.exercise__record li:nth-child(3) { animation-delay: 90ms; }
+.exercise__record li:nth-child(4) { animation-delay: 135ms; }
+.exercise__record li:nth-child(n + 5) { animation-delay: 180ms; }
+
+.exercise__record-index {
+  min-width: 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.exercise__record-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+@keyframes record-line {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise__record li { animation: none; }
 }
 
 /* ============================================================

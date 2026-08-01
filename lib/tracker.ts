@@ -139,6 +139,11 @@ export type ActiveExercise = {
   /** The exercise's usual weight, used as the default for new sets. */
   weight?: number;
   sets: ActiveSet[];
+  /**
+   * Finished for this session. The sets stop being editable and are shown as
+   * a plain record of what was lifted.
+   */
+  done?: boolean;
 };
 
 /** A workout in progress. At most one runs at a time. */
@@ -1471,6 +1476,33 @@ export function useTracker() {
           )
         )
       ),
+
+    /**
+     * Marks a whole exercise finished. Every set it holds is completed with
+     * it: saying the exercise is done is saying its sets were performed, and
+     * leaving one behind would drop that work from the session's volume.
+     * Reopening only reopens the exercise — the sets stay as they were, so
+     * nothing has to be re-entered to correct a single number.
+     */
+    setExerciseDone: (exerciseId: string, done: boolean) =>
+      commit((s) => {
+        if (!s.activeWorkout) return s;
+        return {
+          ...s,
+          activeWorkout: {
+            ...s.activeWorkout,
+            exercises: s.activeWorkout.exercises.map((e) =>
+              e.exerciseId !== exerciseId
+                ? e
+                : {
+                    ...e,
+                    done,
+                    sets: done ? e.sets.map((x) => ({ ...x, done: true })) : e.sets,
+                  }
+            ),
+          },
+        };
+      }),
 
     /**
      * The second step: the set has been performed. Only now does it count
