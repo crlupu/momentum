@@ -1746,3 +1746,52 @@ html.dark {
   stroke: currentColor;
   color: inherit;
 }
+
+/* ============================================================
+   Configuration: bare icon buttons.
+   Configuration is a dense list of small controls — edit, reorder, add,
+   save, cancel — several to a row. Given a filled background each, the
+   chrome outweighs the settings it surrounds. The icon carries the colour
+   instead, and the row stays readable.
+
+   Scoped by the section id rather than applied at each call site, so it
+   covers everything configuration renders (including the workouts card)
+   without reaching the same components used elsewhere — notably the live
+   set rows, which are in Fitness and keep their solid buttons.
+
+   Only icon-only buttons. Anything with a label keeps its background,
+   since those are deliberate actions rather than row furniture.
+   ============================================================ */
+#config .cds--btn.btn-icon-only {
+  background: transparent;
+  border: none;
+  color: var(--c-blue-50);
+}
+#config .cds--btn.btn-icon-only:hover,
+#config .cds--btn.btn-icon-only:active,
+#config .cds--btn.btn-icon-only:focus {
+  background: transparent;
+  border: none;
+  color: var(--c-blue-40);
+}
+#config .cds--btn.btn-icon-only:disabled {
+  background: transparent;
+  border: none;
+}
+/* Carbon paints icons through its own selector, which would otherwise win. */
+#config .cds--btn.btn-icon-only svg,
+#config .cds--btn.btn-icon-only .cds--btn__icon {
+  fill: none;
+  stroke: currentColor;
+  color: inherit;
+}
+/* Delete keeps its meaning in red. Same specificity as the rule above, so
+   this has to stay after it. */
+#config .cds--btn--danger.btn-icon-only {
+  color: var(--c-red-50);
+}
+#config .cds--btn--danger.btn-icon-only:hover,
+#config .cds--btn--danger.btn-icon-only:active,
+#config .cds--btn--danger.btn-icon-only:focus {
+  color: var(--c-red-40);
+}
