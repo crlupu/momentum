@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 30" role="img" aria-label="Momentum" fill="#2860f3">
-  <polygon points="2.0,22.6 7.6,28.4 24.8,11.7 19.3,6.0" />
-  <polygon points="18.2,23.7 25.4,27.3 35.9,5.7 28.7,2.2" />
-  <polygon points="34.8,25.5 42.8,25.5 42.8,1.5 34.8,1.5" />
+  <rect x="1.438" y="13.144" width="23.974" height="8.062" rx="2" transform="rotate(-44.155 13.425 17.175)" />
+  <rect x="15.042" y="10.7" width="24.017" height="8.05" rx="2" transform="rotate(-64.075 27.05 14.725)" />
+  <rect x="26.8" y="9.5" width="24" height="8" rx="2" transform="rotate(-90 38.8 13.5)" />
 </svg>

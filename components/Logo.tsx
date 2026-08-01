@@ -11,11 +11,26 @@
  * eyeballed: angles, bar length and base spacing were searched for the
  * steepest possible fall whose joints still share under 2% of a bar's area,
  * so the chain reads as three distinct dominoes in contact instead of one
- * merged silhouette. The joints come to 1.3%.
+ * merged silhouette.
  *
- * Square-cut, one colour, no gradient — the same rules as the rest of the app.
- * The reference image had rounded caps; those are dropped deliberately.
+ * Drawn as rotated rectangles rather than polygons, because only a rect can
+ * carry a corner radius. Each is the same bar — near enough 24 by 8 — turned
+ * about its own centre. The radius is a quarter of the bar's width: enough to
+ * read as rounded at the 20 pixels the mark is usually shown at, without the
+ * ends going pill-shaped. The geometry is the polygons' own, squared up; they
+ * were already within two thirds of a degree of true rectangles.
  */
+
+/** One bar, three times over: position, size and the angle it has fallen to. */
+const BARS = [
+  { x: 1.438, y: 13.144, w: 23.974, h: 8.062, angle: -44.155, cx: 13.425, cy: 17.175 },
+  { x: 15.042, y: 10.7, w: 24.017, h: 8.05, angle: -64.075, cx: 27.05, cy: 14.725 },
+  { x: 26.8, y: 9.5, w: 24, h: 8, angle: -90, cx: 38.8, cy: 13.5 },
+];
+
+/** A quarter of the bar's width. */
+const RADIUS = 2;
+
 export function Logo({ className }: { className?: string }) {
   return (
     <svg
@@ -25,9 +40,17 @@ export function Logo({ className }: { className?: string }) {
       aria-label="Momentum"
       fill="currentColor"
     >
-      <polygon points="2.0,22.6 7.6,28.4 24.8,11.7 19.3,6.0" />
-      <polygon points="18.2,23.7 25.4,27.3 35.9,5.7 28.7,2.2" />
-      <polygon points="34.8,25.5 42.8,25.5 42.8,1.5 34.8,1.5" />
+      {BARS.map((b, i) => (
+        <rect
+          key={i}
+          x={b.x}
+          y={b.y}
+          width={b.w}
+          height={b.h}
+          rx={RADIUS}
+          transform={`rotate(${b.angle} ${b.cx} ${b.cy})`}
+        />
+      ))}
     </svg>
   );
 }
