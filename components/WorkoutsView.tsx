@@ -267,28 +267,33 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
           </div>
         )}
 
+        {/* The add row never wraps: the cancel button belongs beside the field
+            it cancels, not stranded on a line of its own. The name field
+            carries min-w-0 so it is what gets squeezed. */}
         {adding ? (
-          <form onSubmit={addExercise} className="mt-3 flex flex-wrap gap-2" onKeyDown={onEscape}>
+          <form onSubmit={addExercise} className="mt-3 flex items-center gap-2" onKeyDown={onEscape}>
             <Input
               aria-label={`Add an exercise to ${workout.name}`}
               placeholder="Bench press…"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="min-w-[8rem] flex-1"
+              className="min-w-0 flex-1"
               autoFocus
             />
             <Input
               type="number"
+              inputMode="decimal"
               aria-label="Weight in kg"
               placeholder="kg"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-[4.5rem]"
+              className="w-16 shrink-0"
             />
             <Button
               type="submit"
               variant="primary"
               isIconOnly
+              className="shrink-0"
               aria-label="Add exercise"
               isDisabled={pending}
             >
@@ -297,6 +302,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             <Button
               variant="outline"
               isIconOnly
+              className="shrink-0"
               aria-label="Done adding exercises"
               onPress={closeAdd}
             >

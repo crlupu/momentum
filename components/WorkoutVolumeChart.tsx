@@ -14,6 +14,7 @@ import {
 } from "@/lib/tracker";
 import { Plus } from "lucide-react";
 import { usePending } from "./ActionButton";
+import { Modal } from "./Modal";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
 
@@ -94,7 +95,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
         {/* Both controls sit with the chart they feed rather than in a section
             of their own. */}
         <div className="flex items-center gap-2">
-          <CardioForm tracker={tracker} />
+          <CardioButton tracker={tracker} />
           <StartWorkoutButton tracker={tracker} />
         </div>
       </div>
@@ -223,44 +224,62 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
 });
 
 /**
- * Logs cardio minutes against today. Deliberately just a number and a button:
- * the thing worth recording is that it happened and for how long, and asking
- * for more than that is how a log stops getting filled in.
+ * Logs cardio minutes against today. The field lives in a dialog rather than
+ * in the header: inline it crowded the row on a phone, and this is a thing
+ * done once after the gym rather than a control worth standing permanent
+ * duty beside the chart.
  */
-function CardioForm({ tracker }: { tracker: Tracker }) {
+function CardioButton({ tracker }: { tracker: Tracker }) {
+  const [open, setOpen] = useState(false);
   const [mins, setMins] = useState("");
   const { pending, run } = usePending();
+
+  const close = () => {
+    setMins("");
+    setOpen(false);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const n = Number(mins);
     if (!Number.isFinite(n) || n <= 0) return;
     const ok = await run(() => tracker.addCardio(n));
-    if (ok !== false) setMins("");
+    if (ok !== false) close();
   };
 
   return (
-    <form onSubmit={submit} className="flex items-center gap-1.5">
-      <Input
-        type="number"
-        inputMode="numeric"
-        aria-label="Cardio minutes today"
-        placeholder="cardio min…"
-        value={mins}
-        onChange={(e) => setMins(e.target.value)}
-        className="w-28"
-      />
-      <Button
-        type="submit"
-        size="sm"
-        variant="primary"
-        isIconOnly
-        aria-label="Add cardio minutes"
-        isDisabled={pending || mins.trim() === ""}
-      >
-        <Plus className="h-4 w-4" />
+    <>
+      <Button size="sm" variant="outline" onPress={() => setOpen(true)}>
+        <Plus className="h-3.5 w-3.5" /> Add cardio
       </Button>
-    </form>
+
+      <Modal open={open} onClose={close} title="Add cardio">
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <Input
+            type="number"
+            inputMode="numeric"
+            aria-label="Cardio minutes today"
+            placeholder="minutes…"
+            value={mins}
+            onChange={(e) => setMins(e.target.value)}
+            autoFocus
+          />
+          <p className="text-xs text-foreground/50">Logged against today.</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onPress={close}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isDisabled={pending || mins.trim() === ""}
+            >
+              Add
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
 
