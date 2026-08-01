@@ -82,6 +82,16 @@ export type Completion = {
 
 export type WeightEntry = { date: string; kg: number };
 
+/**
+ * A stretch of cardio, in minutes. Kept separate from workout sessions because
+ * it carries no volume: it is time spent, not weight moved, and averaging the
+ * two into one number would describe neither.
+ *
+ * Several a day are allowed — a bike before lifting and a walk after are two
+ * efforts, not one — so each has an id and the day's total is their sum.
+ */
+export type CardioEntry = { id: string; date: string; minutes: number };
+
 /** A meal category — breakfast, coffee, and so on — with its own colour. */
 export type MealTag = { id: string; name: string; color: string };
 
@@ -262,6 +272,7 @@ export type TrackerState = {
   todos: TodoItem[];
   completions: Completion[];
   weights: WeightEntry[];
+  cardio: CardioEntry[];
   calories: CalorieEntry[];
   mealTags: MealTag[];
   /** Daily calorie budget, used to work out what's left for the week. */
@@ -337,6 +348,7 @@ const DEFAULT_STATE: TrackerState = {
   todos: [],
   completions: [],
   weights: [],
+  cardio: [],
   calories: [],
   mealTags: DEFAULT_MEAL_TAGS,
   macros: [],
@@ -531,6 +543,10 @@ function migrate(raw: unknown): TrackerState {
     ? (s.weights as WeightEntry[])
     : [];
 
+  // Added after cardio tracking existed only as workout minutes, so older
+  // saved state has no key at all.
+  const cardio: CardioEntry[] = Array.isArray(s.cardio) ? (s.cardio as CardioEntry[]) : [];
+
   const calories: CalorieEntry[] = Array.isArray(s.calories)
     ? (s.calories as CalorieEntry[])
     : [];
@@ -578,6 +594,7 @@ function migrate(raw: unknown): TrackerState {
     todos,
     completions,
     weights,
+    cardio,
     calories,
     mealTags,
     calorieBudget:
@@ -1203,6 +1220,26 @@ export function useTracker() {
         return { ...s, weights };
       }),
 
+    /**
+     * Logs a stretch of cardio against today. Adds rather than replaces, so a
+     * second effort in the same day is recorded as its own entry instead of
+     * overwriting the first.
+     */
+    addCardio: (minutes: number) =>
+      commit((s) => {
+        if (!Number.isFinite(minutes) || minutes <= 0) return s;
+        const entry: CardioEntry = {
+          id: uid(),
+          date: dateKey(),
+          minutes: Math.round(minutes),
+        };
+        const cardio = [...s.cardio, entry].sort((a, b) => a.date.localeCompare(b.date));
+        return { ...s, cardio };
+      }),
+
+    removeCardio: (id: string) =>
+      commit((s) => ({ ...s, cardio: s.cardio.filter((c) => c.id !== id) })),
+
     setCalorieBudget: (kcal: number | null) =>
       commit((s) => ({
         ...s,
@@ -1532,6 +1569,13 @@ export type Tracker = ReturnType<typeof useTracker>;
 export function workoutMinutesByDate(sessions: WorkoutSession[]): Record<string, number> {
   const map: Record<string, number> = {};
   for (const s of sessions) if (s.minutes) map[s.date] = (map[s.date] ?? 0) + s.minutes;
+  return map;
+}
+
+/** Cardio minutes per date, summing every effort logged that day. */
+export function cardioMinutesByDate(entries: CardioEntry[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const c of entries) if (c.minutes) map[c.date] = (map[c.date] ?? 0) + c.minutes;
   return map;
 }
 

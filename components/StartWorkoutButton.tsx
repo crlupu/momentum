@@ -7,7 +7,7 @@ import { Modal } from "./Modal";
 import { Tracker } from "@/lib/tracker";
 
 /**
- * Starts a workout. Lives beside the workout volume chart rather than in a
+ * Starts a workout. Lives beside the training chart rather than in a
  * section of its own — picking which workout happens in a dialog, so nothing
  * on the page shifts until one is running.
  */

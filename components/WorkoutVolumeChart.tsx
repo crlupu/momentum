@@ -1,21 +1,28 @@
 "use client";
 
-import { memo } from "react";
+import { FormEvent, memo, useState } from "react";
 
-import { Card } from "./ui";
+import { Card, Input, Button } from "./ui";
 import {
   Tracker,
   dateKey,
   workoutVolumeByDate,
   workoutMinutesByDate,
+  cardioMinutesByDate,
   CAT_COLORS,
   UNTAGGED_COLOR,
 } from "@/lib/tracker";
+import { Plus } from "lucide-react";
+import { usePending } from "./ActionButton";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
+/* The two time lines. Both are time, so they share a scale; they need to be
+   told apart at a glance, hence warm for lifting and cool for cardio. */
+const LIFT_LINE = "#ff8389";
+const CARDIO_LINE = "#42be65";
 /** Each workout keeps one colour, so a bar says which workout it was. */
 function workoutColor(workoutId: string, order: string[]): string {
   const i = order.indexOf(workoutId);
@@ -38,6 +45,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
   const s = tracker.state!;
   const byDate = workoutVolumeByDate(s.workoutSessions);
   const minsByDate = workoutMinutesByDate(s.workoutSessions);
+  const cardioByDate = cardioMinutesByDate(s.cardio);
 
   // Colours are assigned by the workout's position in the list, so they stay
   // put as sessions accumulate.
@@ -48,15 +56,19 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const values = days.map((d) => byDate[dateKey(d)] ?? 0);
   const minutes = days.map((d) => minsByDate[dateKey(d)] ?? 0);
+  const cardio = days.map((d) => cardioByDate[dateKey(d)] ?? 0);
   const max = Math.max(1, ...values);
-  // Time has its own scale — minutes and kilos aren't comparable numbers.
-  const maxMin = Math.max(1, ...minutes);
-  // Only the days actually trained. The line joins these and ends at the last
-  // one, rather than running along the floor through every rest day.
-  const trained = minutes
-    .map((m, i) => ({ i, m }))
-    .filter((p) => p.m > 0);
+  // Time has its own scale — minutes and kilos aren't comparable numbers. Both
+  // time lines share that one scale, so an hour of cardio and an hour of
+  // lifting sit at the same height.
+  const maxMin = Math.max(1, ...minutes, ...cardio);
+  // Only the days each actually happened. A line joins these and ends at the
+  // last, rather than running along the floor through every rest day.
+  const onlyLogged = (xs: number[]) => xs.map((m, i) => ({ i, m })).filter((p) => p.m > 0);
+  const trained = onlyLogged(minutes);
+  const cardioPoints = onlyLogged(cardio);
   const anyTime = trained.length > 0;
+  const anyCardio = cardioPoints.length > 0;
 
   // Only name the workouts that appear in the window, in bar order.
   const seen = new Map<string, string>();
@@ -70,15 +82,21 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
   const sessions = s.workoutSessions.length;
   const weekTotal = values.slice(7).reduce((a, b) => a + b, 0);
   const weekMinutes = minutes.slice(7).reduce((a, b) => a + b, 0);
+  const weekCardio = cardio.slice(7).reduce((a, b) => a + b, 0);
   const best = Math.max(0, ...values);
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-          Workout volume
+          Training
         </h3>
-        <StartWorkoutButton tracker={tracker} />
+        {/* Both controls sit with the chart they feed rather than in a section
+            of their own. */}
+        <div className="flex items-center gap-2">
+          <CardioForm tracker={tracker} />
+          <StartWorkoutButton tracker={tracker} />
+        </div>
       </div>
 
       {s.activeWorkout && (
@@ -88,16 +106,18 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
       )}
       <Card>
         <Card.Content className="p-4 md:p-5">
-          {sessions === 0 ? (
+          {sessions === 0 && s.cardio.length === 0 ? (
             <p className="py-2 text-[15px] text-foreground/60">
-              No workouts logged yet. Mark one as done on the Workouts page and its volume
-              lands here.
+              Nothing logged yet. Finish a workout and its volume lands here; add cardio
+              minutes above and they join it.
             </p>
           ) : (
             <>
-              <div className="mb-4 grid grid-cols-3 gap-3">
+              {/* Four across is too tight on a phone, so they wrap two by two. */}
+              <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
-                <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="time this week" />
+                <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="lifting this week" />
+                <Stat value={weekCardio ? `${weekCardio} min` : "–"} label="cardio this week" />
                 <Stat value={sessions} label="sessions logged" />
               </div>
 
@@ -108,58 +128,12 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
                   point, by more and more towards the right-hand end. The bars
                   are separated by their own padding instead. */}
               <div className="relative flex h-[120px] items-end">
-                {/* Duration rides over the bars on its own scale, and only
-                    joins the days actually trained — a day with no workout is
-                    a gap in the record, not a zero to draw a line down to. */}
-                {anyTime && (
-                  <>
-                    {/* width must be set explicitly. An <svg> is a replaced
-                        element, so left:0 + right:0 alone does not stretch it —
-                        it falls back to its intrinsic size, which for this
-                        viewBox at 84px tall is 100px. The line was being drawn
-                        into the leftmost 100px of the row, putting today's
-                        point over a date ten days earlier. */}
-                    <svg
-                      className="pointer-events-none absolute inset-x-0 w-full"
-                      style={{ bottom: 28, height: 84 }}
-                      viewBox="0 0 100 84"
-                      preserveAspectRatio="none"
-                      aria-hidden
-                    >
-                      <polyline
-                        points={trained
-                          .map((p) => `${((p.i + 0.5) / 14) * 100},${84 - (p.m / maxMin) * 78}`)
-                          .join(" ")}
-                        fill="none"
-                        stroke="#ff8389"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                    </svg>
-                    {/* The markers are plain elements rather than <circle>s:
-                        the stretched viewBox above would squash a circle into a
-                        wide ellipse, which read as sitting over the wrong day. */}
-                    <div
-                      className="pointer-events-none absolute inset-x-0"
-                      style={{ bottom: 28, height: 84 }}
-                      aria-hidden
-                    >
-                      {trained.map((p) => (
-                        <span
-                          key={p.i}
-                          className="absolute block h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full"
-                          style={{
-                            left: `${((p.i + 0.5) / 14) * 100}%`,
-                            bottom: (p.m / maxMin) * 78,
-                            background: "#ff8389",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
+                {/* Time rides over the bars on its own scale. Each line
+                    joins only the days it happened on and stops at the last —
+                    a day without one is a gap in the record, not a zero to
+                    draw a line down to. */}
+                <TimeLine points={trained} max={maxMin} color={LIFT_LINE} />
+                <TimeLine points={cardioPoints} max={maxMin} color={CARDIO_LINE} />
                 {days.map((d, i) => (
                   <div
                     key={i}
@@ -218,13 +192,27 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
                 ))}
                 {anyTime && (
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-[2px] w-4" style={{ background: "#ff8389" }} aria-hidden />
-                    minutes
+                    <span
+                      className="inline-block h-[2px] w-4"
+                      style={{ background: LIFT_LINE }}
+                      aria-hidden
+                    />
+                    lifting
+                  </span>
+                )}
+                {anyCardio && (
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-[2px] w-4"
+                      style={{ background: CARDIO_LINE }}
+                      aria-hidden
+                    />
+                    cardio
                   </span>
                 )}
               </div>
               <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
-                kg lifted per day, with time trained overlaid
+                kg lifted per day, with lifting and cardio time overlaid
               </p>
             </>
           )}
@@ -233,6 +221,113 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
     </div>
   );
 });
+
+/**
+ * Logs cardio minutes against today. Deliberately just a number and a button:
+ * the thing worth recording is that it happened and for how long, and asking
+ * for more than that is how a log stops getting filled in.
+ */
+function CardioForm({ tracker }: { tracker: Tracker }) {
+  const [mins, setMins] = useState("");
+  const { pending, run } = usePending();
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const n = Number(mins);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const ok = await run(() => tracker.addCardio(n));
+    if (ok !== false) setMins("");
+  };
+
+  return (
+    <form onSubmit={submit} className="flex items-center gap-1.5">
+      <Input
+        type="number"
+        inputMode="numeric"
+        aria-label="Cardio minutes today"
+        placeholder="cardio min…"
+        value={mins}
+        onChange={(e) => setMins(e.target.value)}
+        className="w-28"
+      />
+      <Button
+        type="submit"
+        size="sm"
+        variant="primary"
+        isIconOnly
+        aria-label="Add cardio minutes"
+        isDisabled={pending || mins.trim() === ""}
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </form>
+  );
+}
+
+/**
+ * One time series drawn over the bars: a line through the days it happened on,
+ * with a marker at each. Both the lifting and cardio lines are this, sharing a
+ * scale so their heights can be compared against each other.
+ */
+function TimeLine({
+  points,
+  max,
+  color,
+}: {
+  points: { i: number; m: number }[];
+  /** Top of the shared scale, in minutes. */
+  max: number;
+  color: string;
+}) {
+  if (points.length === 0) return null;
+  const y = (m: number) => 84 - (m / max) * 78;
+  return (
+    <>
+      {/* width must be set explicitly. An <svg> is a replaced element, so
+          left:0 + right:0 alone does not stretch it — it falls back to its
+          intrinsic size, which for this viewBox at 84px tall is 100px. The
+          line was being drawn into the leftmost 100px of the row, putting
+          today's point over a date ten days earlier. */}
+      <svg
+        className="pointer-events-none absolute inset-x-0 w-full"
+        style={{ bottom: 28, height: 84 }}
+        viewBox="0 0 100 84"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <polyline
+          points={points.map((p) => `${((p.i + 0.5) / 14) * 100},${y(p.m)}`).join(" ")}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      {/* The markers are plain elements rather than <circle>s: the stretched
+          viewBox above would squash a circle into a wide ellipse, which read
+          as sitting over the wrong day. */}
+      <div
+        className="pointer-events-none absolute inset-x-0"
+        style={{ bottom: 28, height: 84 }}
+        aria-hidden
+      >
+        {points.map((p) => (
+          <span
+            key={p.i}
+            className="absolute block h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full"
+            style={{
+              left: `${((p.i + 0.5) / 14) * 100}%`,
+              bottom: (p.m / max) * 78,
+              background: color,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (

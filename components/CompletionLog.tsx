@@ -18,7 +18,7 @@ function formatSet(set: SetRecord): string {
 
 type Entry = {
   key: string;
-  kind: "To-do" | "Goal" | "Recurring" | "Workout";
+  kind: "To-do" | "Goal" | "Recurring" | "Workout" | "Cardio";
   title: string;
   /** Second line, e.g. the set-by-set breakdown of a workout. */
   detail?: string;
@@ -36,6 +36,7 @@ const KIND_COLOR: Record<Entry["kind"], string> = {
   Goal: "#0f62fe",
   Recurring: "#491d8b",
   Workout: "#8a3ffc",
+  Cardio: "#42be65",
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
@@ -169,6 +170,19 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       color: KIND_COLOR.Workout,
       what: `the ${w.name} session on ${w.date}`,
       onDelete: () => tracker.removeWorkoutSession(w.id),
+    });
+  });
+
+  // Cardio is logged on its own, not as part of a session.
+  s.cardio.forEach((c) => {
+    entries.push({
+      key: `cardio-${c.id}`,
+      kind: "Cardio",
+      title: `Cardio — ${c.minutes} min`,
+      date: c.date,
+      color: KIND_COLOR.Cardio,
+      what: `the ${c.minutes} min cardio on ${c.date}`,
+      onDelete: () => tracker.removeCardio(c.id),
     });
   });
 
