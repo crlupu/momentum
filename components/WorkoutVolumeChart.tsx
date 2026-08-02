@@ -51,40 +51,64 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
   // Colours are assigned by the workout's position in the list, so they stay
   // put as sessions accumulate.
   const order = s.workouts.map((w) => w.id);
-  const sessionsByDate: Record<string, typeof s.workoutSessions> = {};
-  for (const w of s.workoutSessions) (sessionsByDate[w.date] ??= []).push(w);
-
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
-  const values = days.map((d) => byDate[dateKey(d)] ?? 0);
-  const minutes = days.map((d) => minsByDate[dateKey(d)] ?? 0);
-  const cardio = days.map((d) => cardioByDate[dateKey(d)] ?? 0);
-  const max = Math.max(1, ...values);
-  // Time has its own scale — minutes and kilos aren't comparable numbers. Both
-  // time lines share that one scale, so an hour of cardio and an hour of
-  // lifting sit at the same height.
-  const maxMin = Math.max(1, ...minutes, ...cardio);
-  // Only the days each actually happened. A line joins these and ends at the
-  // last, rather than running along the floor through every rest day.
-  const onlyLogged = (xs: number[]) => xs.map((m, i) => ({ i, m })).filter((p) => p.m > 0);
-  const trained = onlyLogged(minutes);
-  const cardioPoints = onlyLogged(cardio);
-  const anyTime = trained.length > 0;
-  const anyCardio = cardioPoints.length > 0;
+  const keys = days.map(dateKey);
 
-  // Only name the workouts that appear in the window, in bar order.
-  const seen = new Map<string, string>();
-  for (const d of days) {
-    for (const w of sessionsByDate[dateKey(d)] ?? []) {
-      if (!seen.has(w.workoutId)) seen.set(w.workoutId, w.name);
-    }
-  }
-  const shown = [...seen].map(([id, name]) => ({ id, name }));
+  const values = keys.map((k) => byDate[k] ?? 0);
+  const minutes = keys.map((k) => minsByDate[k] ?? 0);
+  const cardio = keys.map((k) => cardioByDate[k] ?? 0);
 
   const sessions = s.workoutSessions.length;
   const weekTotal = values.slice(7).reduce((a, b) => a + b, 0);
   const weekMinutes = minutes.slice(7).reduce((a, b) => a + b, 0);
   const weekCardio = cardio.slice(7).reduce((a, b) => a + b, 0);
-  const best = Math.max(0, ...values);
+
+  /**
+   * One chart per workout that was actually done in the window, in the order
+   * the workouts are configured, then cardio. A workout with nothing in the
+   * last fortnight is left out rather than given an empty chart to explain.
+   */
+  const charts: ChartSpec[] = [];
+  for (const w of s.workouts) {
+    const mine = s.workoutSessions.filter((x) => x.workoutId === w.id);
+    if (!mine.length) continue;
+    const vol = keys.map((k) =>
+      mine.filter((x) => x.date === k).reduce((a, x) => a + x.total, 0)
+    );
+    if (!vol.some((v) => v > 0)) continue;
+    const mins = keys.map((k) =>
+      mine.filter((x) => x.date === k).reduce((a, x) => a + (x.minutes ?? 0), 0)
+    );
+    charts.push({
+      id: w.id,
+      name: w.name,
+      colour: workoutColor(w.id, order),
+      values: vol,
+      unit: "kg",
+      minutes: mins,
+      lineColour: LIFT_LINE,
+      lineLabel: "minutes",
+      tooltip: (i) =>
+        `${w.name}: ${vol[i].toLocaleString()} kg` +
+        (mins[i] ? ` · ${mins[i]} min` : "") +
+        ` on ${keys[i]}`,
+    });
+  }
+  // Cardio belongs to no workout, so it gets a chart of its own. Its bars are
+  // minutes — there is no weight to plot — so it carries no second line.
+  if (cardio.some((m) => m > 0)) {
+    charts.push({
+      id: "cardio",
+      name: "Cardio",
+      colour: CARDIO_LINE,
+      values: cardio,
+      unit: "min",
+      minutes: null,
+      lineColour: CARDIO_LINE,
+      lineLabel: "minutes",
+      tooltip: (i) => `Cardio: ${cardio[i]} min on ${keys[i]}`,
+    });
+  }
 
   return (
     <div>
@@ -105,120 +129,51 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
           <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />
         </div>
       )}
-      <Card>
-        <Card.Content className="p-4 md:p-5">
-          {sessions === 0 && s.cardio.length === 0 ? (
+      {sessions === 0 && s.cardio.length === 0 ? (
+        <Card>
+          <Card.Content className="p-4 md:p-5">
             <p className="py-2 text-[15px] text-foreground/60">
               Nothing logged yet. Finish a workout and its volume lands here; add cardio
               minutes above and they join it.
             </p>
-          ) : (
-            <>
+          </Card.Content>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <Card.Content className="p-4 md:p-5">
               {/* Four across is too tight on a phone, so they wrap two by two. */}
-              <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
                 <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="lifting this week" />
                 <Stat value={weekCardio ? `${weekCardio} min` : "–"} label="cardio this week" />
                 <Stat value={sessions} label="sessions logged" />
               </div>
+            </Card.Content>
+          </Card>
 
-
-              {/* No flex gap here: the line above is positioned as a fraction of
-                  this row's width, so a column's centre has to be exactly
-                  (i + 0.5) / 14 of it. A gap would push every bar off its own
-                  point, by more and more towards the right-hand end. The bars
-                  are separated by their own padding instead. */}
-              <div className="relative flex h-[120px] items-end">
-                {/* Time rides over the bars on its own scale. Each line
-                    joins only the days it happened on and stops at the last —
-                    a day without one is a gap in the record, not a zero to
-                    draw a line down to. */}
-                <TimeLine points={trained} max={maxMin} color={LIFT_LINE} />
-                <TimeLine points={cardioPoints} max={maxMin} color={CARDIO_LINE} />
-                {days.map((d, i) => (
-                  <div
-                    key={i}
-                    className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]"
-                  >
-                    <span
-                      className="font-mono-n text-[10px] font-semibold"
-                      style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
-                    >
-                      {values[i] ? values[i].toLocaleString() : ""}
-                    </span>
-                    <div
-                      className="flex w-full flex-col-reverse overflow-hidden"
-                      style={{
-                        height: Math.max(2, (values[i] / max) * 84),
-                        background: values[i] ? undefined : TRACK,
-                      }}
-                    >
-                      {(sessionsByDate[dateKey(d)] ?? []).map((w) => (
-                        <div
-                          key={w.id}
-                          title={
-                            `${w.name}: ${w.total.toLocaleString()} kg` +
-                            (w.minutes ? ` · ${w.minutes} min` : "") +
-                            ` on ${w.date}`
-                          }
-                          style={{
-                            height: `${(w.total / (values[i] || 1)) * 100}%`,
-                            background: workoutColor(w.workoutId, order),
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <span
-                      className="text-[9px] leading-none tabular-nums"
-                      style={{ color: LABEL }}
-                    >
-                      {d.getDate()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div
-                className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]"
-                style={{ color: LABEL }}
-              >
-                {shown.map((w) => (
-                  <span key={w.id} className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-2 w-2"
-                      style={{ background: workoutColor(w.id, order) }}
-                      aria-hidden
-                    />
-                    {w.name}
-                  </span>
-                ))}
-                {anyTime && (
-                  <span className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-[2px] w-4"
-                      style={{ background: LIFT_LINE }}
-                      aria-hidden
-                    />
-                    lifting
-                  </span>
-                )}
-                {anyCardio && (
-                  <span className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-[2px] w-4"
-                      style={{ background: CARDIO_LINE }}
-                      aria-hidden
-                    />
-                    cardio
-                  </span>
-                )}
-              </div>
-              <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
-                kg lifted per day, with lifting and cardio time overlaid
-              </p>
-            </>
-          )}
-        </Card.Content>
-      </Card>
+          {/* A chart each, rather than one stack. Push and Pull move different
+              amounts of weight, and stacked into one bar neither one's shape
+              was readable. Each is scaled to its own heaviest day, so a light
+              workout still fills its chart — which means heights compare
+              within a chart but never between two. */}
+          {charts.map((c) => (
+            <div key={c.id} className="mt-3">
+              <DayChart
+                title={c.name}
+                colour={c.colour}
+                days={days}
+                values={c.values}
+                unit={c.unit}
+                minutes={c.minutes}
+                lineColour={c.lineColour}
+                lineLabel={c.lineLabel}
+                tooltip={c.tooltip}
+              />
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 });
@@ -292,6 +247,110 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
         </form>
       </Modal>
     </>
+  );
+}
+
+/** Everything one chart needs. Cardio fills this in too, with no second line. */
+type ChartSpec = {
+  id: string;
+  name: string;
+  /** Bar colour. Cardio borrows the line colour it used to be drawn in. */
+  colour: string;
+  values: number[];
+  unit: string;
+  /** Minutes to overlay, or null where the bars are already the time. */
+  minutes: number[] | null;
+  lineColour: string;
+  lineLabel: string;
+  tooltip: (i: number) => string;
+};
+
+/**
+ * A fortnight of one thing, a bar per day, scaled to its own heaviest day so
+ * a light workout still fills its chart. That means bar heights can be read
+ * against each other within a chart and never between two of them, which is
+ * why each carries its own figures above the bars.
+ */
+function DayChart({
+  title,
+  colour,
+  days,
+  values,
+  unit,
+  minutes,
+  lineColour,
+  lineLabel,
+  tooltip,
+}: {
+  title: string;
+  colour: string;
+  days: Date[];
+  values: number[];
+  unit: string;
+  minutes: number[] | null;
+  lineColour: string;
+  lineLabel: string;
+  tooltip: (i: number) => string;
+}) {
+  const max = Math.max(1, ...values);
+  const overlay = minutes ?? [];
+  const maxMin = Math.max(1, ...overlay);
+  // Only the days it happened on. The line joins those and stops at the last,
+  // rather than running along the floor through every rest day.
+  const points = overlay.map((m, i) => ({ i, m })).filter((pt) => pt.m > 0);
+  const total = values.reduce((a, b) => a + b, 0);
+
+  return (
+    <Card>
+      <Card.Content className="p-4 md:p-5">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="inline-block h-2 w-2 shrink-0" style={{ background: colour }} aria-hidden />
+            <span className="truncate text-[15px] font-semibold">{title}</span>
+          </span>
+          <span className="font-mono-n shrink-0 text-xs" style={{ color: LABEL }}>
+            {total.toLocaleString()} {unit}
+          </span>
+        </div>
+
+        {/* No flex gap here: the line above is positioned as a fraction of this
+            row's width, so a column's centre has to be exactly (i + 0.5) / 14
+            of it. A gap would push every bar off its own point, by more and
+            more towards the right-hand end. The bars are separated by their
+            own padding instead. */}
+        <div className="relative flex h-[104px] items-end">
+          {points.length > 0 && <TimeLine points={points} max={maxMin} color={lineColour} />}
+          {days.map((d, i) => (
+            <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]">
+              <span
+                className="font-mono-n text-[10px] font-semibold"
+                style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
+              >
+                {values[i] ? values[i].toLocaleString() : ""}
+              </span>
+              <div
+                className="w-full"
+                title={values[i] ? tooltip(i) : undefined}
+                style={{
+                  height: Math.max(2, (values[i] / max) * 68),
+                  background: values[i] ? colour : TRACK,
+                }}
+              />
+              <span className="text-[9px] leading-none tabular-nums" style={{ color: LABEL }}>
+                {d.getDate()}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {points.length > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: LABEL }}>
+            <span className="inline-block h-[2px] w-4" style={{ background: lineColour }} aria-hidden />
+            {lineLabel}
+          </div>
+        )}
+      </Card.Content>
+    </Card>
   );
 }
 
