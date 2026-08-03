@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "./ui";
 import {
   Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut, Dumbbell, Apple,
+  BookOpen,
 } from "lucide-react";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
@@ -16,6 +17,7 @@ const NAV = [
   { id: "tasks", label: "Tasks", icon: Repeat, color: "var(--sec-tasks)" },
   { id: "fitness", label: "Fitness", icon: Dumbbell, color: "var(--sec-fitness)" },
   { id: "nutrition", label: "Nutrition", icon: Apple, color: "var(--sec-nutrition)" },
+  { id: "books", label: "Books", icon: BookOpen, color: "var(--sec-books)" },
   { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
   { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
   { id: "config", label: "Configuration", icon: Settings, color: "var(--sec-config)" },

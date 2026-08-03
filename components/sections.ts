@@ -11,6 +11,7 @@ export type SectionId =
   | "tasks"
   | "fitness"
   | "nutrition"
+  | "books"
   | "charts"
   | "log"
   | "config";
@@ -25,6 +26,7 @@ export const SECTIONS = [
   { id: "tasks", title: "Tasks" },
   { id: "fitness", title: "Fitness" },
   { id: "nutrition", title: "Nutrition" },
+  { id: "books", title: "Books" },
   { id: "charts", title: "Progress" },
   { id: "log", title: "Log" },
   { id: "config", title: "Configuration" },

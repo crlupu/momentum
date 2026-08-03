@@ -95,6 +95,29 @@ export type CardioEntry = { id: string; date: string; minutes: number };
 /** A meal category — breakfast, coffee, and so on — with its own colour. */
 export type MealTag = { id: string; name: string; color: string };
 
+/**
+ * A book on the shelf. `pages` is the length, `read` how far in.
+ *
+ * Both are kept rather than a percentage, because the percentage is what is
+ * drawn and the pages are what is known: the number on the page you stopped
+ * at. Storing the derived figure would mean recomputing it by hand every time
+ * a length turned out to be wrong.
+ */
+export type Book = {
+  id: string;
+  title: string;
+  pages: number;
+  read: number;
+  /** The day it was finished, set when `read` first reaches `pages`. */
+  doneDate?: string;
+};
+
+/** How far through a book, 0 to 1. A book with no length counts as unread. */
+export function bookProgress(b: Book): number {
+  if (!b.pages || b.pages <= 0) return 0;
+  return Math.max(0, Math.min(1, b.read / b.pages));
+}
+
 export type CalorieEntry = {
   id: string;
   date: string;
@@ -278,6 +301,7 @@ export type TrackerState = {
   completions: Completion[];
   weights: WeightEntry[];
   cardio: CardioEntry[];
+  books: Book[];
   calories: CalorieEntry[];
   mealTags: MealTag[];
   /** Daily calorie budget, used to work out what's left for the week. */
@@ -365,6 +389,7 @@ const DEFAULT_STATE: TrackerState = {
   completions: [],
   weights: [],
   cardio: [],
+  books: [],
   calories: [],
   mealTags: DEFAULT_MEAL_TAGS,
   macros: [],
@@ -563,6 +588,9 @@ function migrate(raw: unknown): TrackerState {
   // saved state has no key at all.
   const cardio: CardioEntry[] = Array.isArray(s.cardio) ? (s.cardio as CardioEntry[]) : [];
 
+  // Added after the rest, so older saved state has no key at all.
+  const books: Book[] = Array.isArray(s.books) ? (s.books as Book[]) : [];
+
   const calories: CalorieEntry[] = Array.isArray(s.calories)
     ? (s.calories as CalorieEntry[])
     : [];
@@ -611,6 +639,7 @@ function migrate(raw: unknown): TrackerState {
     completions,
     weights,
     cardio,
+    books,
     calories,
     mealTags,
     calorieBudget:
@@ -1272,6 +1301,57 @@ export function useTracker() {
 
     removeCardio: (id: string) =>
       commit((s) => ({ ...s, cardio: s.cardio.filter((c) => c.id !== id) })),
+
+    // ---- books ----
+    addBook: (title: string, pages: number) =>
+      commit((s) => {
+        const t = title.trim();
+        if (!t) return s;
+        const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
+        return { ...s, books: [...s.books, { id: uid(), title: t, pages: n, read: 0 }] };
+      }),
+
+    /**
+     * Sets how far through a book we are. Clamped to the book's length, so a
+     * mistyped page can't fill a spine past full or drive it negative.
+     *
+     * The finish date is stamped when it first reaches the end and cleared if
+     * it moves back off it, so correcting an overshoot doesn't leave a book
+     * recorded as finished on a day it wasn't.
+     */
+    setBookProgress: (id: string, read: number) =>
+      commit((s) => ({
+        ...s,
+        books: s.books.map((b) => {
+          if (b.id !== id) return b;
+          const n = Number.isFinite(read) ? Math.max(0, Math.round(read)) : 0;
+          const capped = b.pages > 0 ? Math.min(n, b.pages) : n;
+          const finished = b.pages > 0 && capped >= b.pages;
+          return {
+            ...b,
+            read: capped,
+            ...(finished ? { doneDate: b.doneDate ?? dateKey() } : { doneDate: undefined }),
+          };
+        }),
+      })),
+
+    updateBook: (id: string, title: string, pages: number) =>
+      commit((s) => {
+        const t = title.trim();
+        if (!t) return s;
+        const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
+        return {
+          ...s,
+          // Shortening a book below where we had read to would otherwise leave
+          // it more than full, so the progress follows the new length down.
+          books: s.books.map((b) =>
+            b.id === id ? { ...b, title: t, pages: n, read: n > 0 ? Math.min(b.read, n) : b.read } : b
+          ),
+        };
+      }),
+
+    removeBook: (id: string) =>
+      commit((s) => ({ ...s, books: s.books.filter((b) => b.id !== id) })),
 
     setCalorieBudget: (kcal: number | null) =>
       commit((s) => ({

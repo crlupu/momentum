@@ -181,6 +181,7 @@
   --sec-tasks: var(--c-blue-50);
   --sec-fitness: var(--c-green-50);
   --sec-nutrition: var(--c-teal-50);
+  --sec-books: var(--c-orange-50, #ff832b);
   --sec-charts: var(--c-cyan-50);
   --sec-log: var(--c-magenta-50);
   --sec-config: var(--ibm-cool-gray-40);
@@ -251,6 +252,11 @@
 
   /* Solid, not translucent — a tint would land off-palette. */
   --default: var(--ibm-cool-gray-20);
+  --book-unread: var(--ibm-cool-gray-40);
+  --book-fill: var(--c-blue-60);
+  --book-shelf: #8d6a4b;
+  --book-ink: var(--ibm-white);
+  --book-ink-done: var(--ibm-white);
   --pill-fg: var(--ibm-white);
   --blanket: var(--ibm-cool-gray-80);
 
@@ -299,6 +305,11 @@
   --radius: 0;
 
   --default: var(--ibm-cool-gray-80);
+  --book-unread: var(--ibm-cool-gray-80);
+  --book-fill: var(--c-blue-60);
+  --book-shelf: #6b4f38;
+  --book-ink: var(--ibm-white);
+  --book-ink-done: var(--ibm-white);
   --pill-fg: var(--ibm-cool-gray-100);
   --blanket: var(--ibm-cool-gray-100);
 
@@ -1839,4 +1850,82 @@ html.dark {
 #config .cds--btn--danger.btn-icon-only:active,
 #config .cds--btn--danger.btn-icon-only:focus {
   color: var(--c-red-40);
+}
+
+/* ============================================================
+   The bookshelf.
+   Books stand on their ends and wrap into rows. Every book occupies a slot of
+   the same height whatever the height of the book in it, so the rows band the
+   shelf at a fixed interval — which is what lets one repeating background
+   draw a board under every row, full width, including a row holding a single
+   book. Drawing the board on the books themselves stopped it where the books
+   stopped, and a half-empty top row looked like a broken shelf.
+   ============================================================ */
+.bookshelf {
+  --slot: 140px;
+  --board: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--slot) - var(--board)),
+    var(--book-shelf) calc(var(--slot) - var(--board)),
+    var(--book-shelf) var(--slot)
+  );
+}
+
+/* Fixed height, so every row bands identically; the book sits on the board. */
+.book-slot {
+  display: flex;
+  align-items: flex-end;
+  height: var(--slot);
+  padding-bottom: var(--board);
+}
+
+.book-spine {
+  position: relative;
+  display: block;
+  margin: 0 2px;
+  cursor: pointer;
+  transition: transform 140ms ease;
+}
+
+.book-spine__title {
+  position: absolute;
+  inset: 0;
+  /* Block, not flex. As a flex item the title was sized to its own content
+     and so never wrapped — it just ran off the end of the spine and was
+     clipped mid-word. As a block it wraps within the spine's height. */
+  display: block;
+  padding: 8px 1px;
+  /* Read bottom to top, the way a spine is read with the head to the left. */
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+  /* The inline axis runs up the spine, so this centres the title along it. */
+  text-align: center;
+  /* Wraps rather than truncating: in vertical text a long title would
+     otherwise be cut mid-word with no ellipsis to show for it, and a spine
+     is wide enough for two or three lines. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  /* Legible over both halves of the fill, which is why it is not tinted. */
+  color: var(--book-ink);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+}
+.book-spine__title--done { color: var(--book-ink-done); }
+
+.book-spine:hover { transform: translateY(-3px); }
+.book-spine:active { transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+  .book-spine:hover,
+  .book-spine:active { transform: none; }
+}
+/* A finger has no hover, and a phone would leave the last book lifted. */
+@media (hover: none) {
+  .book-spine:hover { transform: none; }
 }
