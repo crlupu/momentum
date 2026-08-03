@@ -1862,7 +1862,7 @@ html.dark {
    stopped, and a half-empty top row looked like a broken shelf.
    ============================================================ */
 .bookshelf {
-  --slot: 140px;
+  --slot: 192px;
   --board: 6px;
   display: flex;
   flex-wrap: wrap;

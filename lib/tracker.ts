@@ -14,6 +14,7 @@ import {
 } from "firebase/auth";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getFirebase, isFirebaseConfigured } from "./firebase";
+import { contrast } from "./color";
 
 export type Category = { id: string; name: string; color: string };
 
@@ -108,9 +109,27 @@ export type Book = {
   title: string;
   pages: number;
   read: number;
+  /** Spine colour, picked when the book is added. */
+  color?: string;
   /** The day it was finished, set when `read` first reaches `pages`. */
   doneDate?: string;
 };
+
+
+/**
+ * A book's spine colour. Books shelved before colours existed have none
+ * stored, so one is derived from the id — arbitrary, but the same every time,
+ * which is what matters for something you learn to recognise by sight.
+ */
+export function bookColor(b: Book): string {
+  if (b.color) return b.color;
+  let h = 2166136261;
+  for (let i = 0; i < b.id.length; i++) {
+    h ^= b.id.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return BOOK_COLORS[h % BOOK_COLORS.length];
+}
 
 /** How far through a book, 0 to 1. A book with no length counts as unread. */
 export function bookProgress(b: Book): number {
@@ -333,6 +352,19 @@ export const CAT_COLORS = [
   "#ff832b", "#ba4e00", "#da1e28", "#ff8389", "#ee5396",
   "#9f1853", "#8a3ffc", "#be95ff", "#491d8b", "#a2a9b0",
 ];
+
+/**
+ * The colours a spine can be: those from the palette that white text sits
+ * legibly on.
+ *
+ * The title has to be one colour for the whole spine, because it runs across
+ * both the read part and the grey part below it. Grey settles that — it needs
+ * light text — so the fill has to take light text too, which rules out the
+ * palette's paler half. Derived from CAT_COLORS rather than listed out, so a
+ * colour added to the palette is considered here without being copied.
+ */
+export const BOOK_COLORS = CAT_COLORS.filter((c) => contrast("#ffffff", c) >= 4.5);
+
 
 /** Picks a colour no existing category is already using. */
 export function nextCategoryColor(existing: { color: string }[]): string {
@@ -1308,7 +1340,13 @@ export function useTracker() {
         const t = title.trim();
         if (!t) return s;
         const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
-        return { ...s, books: [...s.books, { id: uid(), title: t, pages: n, read: 0 }] };
+        // Random, but never the same as the book it will stand next to —
+        // two identical spines side by side look like one wide book.
+        const last = s.books[s.books.length - 1];
+        const lastColor = last ? bookColor(last) : null;
+        const choices = BOOK_COLORS.filter((c) => c !== lastColor);
+        const color = choices[Math.floor(Math.random() * choices.length)];
+        return { ...s, books: [...s.books, { id: uid(), title: t, pages: n, read: 0, color }] };
       }),
 
     /**

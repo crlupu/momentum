@@ -7,7 +7,7 @@ import { Button, Input } from "./ui";
 import { Modal } from "./Modal";
 import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
-import { Tracker, Book, bookProgress } from "@/lib/tracker";
+import { Tracker, Book, bookProgress, bookColor } from "@/lib/tracker";
 
 /** Every spine is the same width; only the height carries meaning now. */
 const SPINE_WIDTH = 34;
@@ -25,8 +25,8 @@ const SPINE_WIDTH = 34;
  */
 const SHORT_PAGES = 100;
 const LONG_PAGES = 800;
-const MIN_HEIGHT = 72;
-const MAX_HEIGHT = 128;
+const MIN_HEIGHT = 101;
+const MAX_HEIGHT = 179;
 
 function spineHeight(pages: number): number {
   // A book with no length recorded gets the shortest spine rather than none.
@@ -57,7 +57,8 @@ function Spine({ book, onOpen }: { book: Book; onOpen: () => void }) {
       style={{
         height: spineHeight(book.pages),
         width: SPINE_WIDTH,
-        background: `linear-gradient(to top, var(--book-fill) ${pct}%, var(--book-unread) ${pct}%)`,
+        // The read part in the book's own colour, the rest grey.
+        background: `linear-gradient(to top, ${bookColor(book)} ${pct}%, var(--book-unread) ${pct}%)`,
       }}
       aria-label={`${book.title}, ${book.read} of ${book.pages} pages read`}
       title={`${book.title} — ${book.read}/${book.pages} pages`}
@@ -111,28 +112,30 @@ function BookForm({
         autoFocus={!book}
       />
       <div className="flex gap-2">
-        <Input
-          type="number"
-          inputMode="numeric"
-          aria-label="Total pages"
-          placeholder="pages…"
-          value={pages}
-          onChange={(e) => setPages(e.target.value)}
-          className="min-w-0 flex-1"
-        />
-        {/* Only when editing: a book being added has not been read yet, and
-            asking would be one more field to skip past every time. */}
+        {/* Progress first: on an existing book it is the field being come back
+            to, while the length was settled when it was added. Only shown when
+            editing — a book being added has not been read yet, and asking
+            would be one more field to skip past every time. */}
         {book && (
           <Input
             type="number"
             inputMode="numeric"
             aria-label="Pages read"
-            placeholder="read…"
+            placeholder="Pages read"
             value={read}
             onChange={(e) => setRead(e.target.value)}
             className="min-w-0 flex-1"
           />
         )}
+        <Input
+          type="number"
+          inputMode="numeric"
+          aria-label="Total pages"
+          placeholder="Number of pages"
+          value={pages}
+          onChange={(e) => setPages(e.target.value)}
+          className="min-w-0 flex-1"
+        />
       </div>
 
       <div className="flex items-center justify-between gap-2">
