@@ -1176,6 +1176,18 @@ export function useTracker() {
         ],
       })),
 
+    /** Renames a category. Its colour and id are left alone, so everything
+     *  already filed under it keeps its colour and its filing. */
+    renameCategory: (id: string, name: string) =>
+      commit((s) => {
+        const n = name.trim();
+        if (!n) return s;
+        return {
+          ...s,
+          categories: s.categories.map((c) => (c.id === id ? { ...c, name: n } : c)),
+        };
+      }),
+
     deleteCategory: (id: string) =>
       commit((s) => ({ ...s, categories: s.categories.filter((c) => c.id !== id) })),
 

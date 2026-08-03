@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Button, Input } from "./ui";
-import { Pencil, Plus, Check, X } from "lucide-react";
+import { Pencil, Plus, Check, X, Palette } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
@@ -242,6 +242,9 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const editing = useConfigEditing();
   const [newCat, setNewCat] = useState("");
+  // Which category is being renamed, and the name being typed for it.
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
@@ -252,6 +255,17 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
     if (ok) setNewCat("");
   };
 
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pending || !editId || !editName.trim()) return;
+    // Closed on the press. The row keeps what was typed, so a refused write
+    // reopens the editor with the draft intact.
+    const id = editId;
+    setEditId(null);
+    const ok = await run(() => tracker.renameCategory(id, editName));
+    if (ok === false) setEditId(id);
+  };
+
   return (
     <div>
       <ul
@@ -260,27 +274,73 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
           (s.categories.length > 5 ? "max-h-[250px] overflow-y-auto pr-1 recurring-scroll" : "")
         }
       >
-        {s.categories.map((c) => (
-          <li key={c.id} className="cfg-row">
-            <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
-            <span className="cfg-label">{c.name}</span>
-            {editing && (
-            <span className="cfg-actions">
-            <DeleteButton
-              what={`the category "${c.name}"`}
-              iconOnly
-              onDelete={async () => {
-                if (tracker.categoryInUse(c.id)) {
-                  alert("This category is in use. Remove or reassign its items first.");
-                  return false;
-                }
-                return tracker.deleteCategory(c.id);
-              }}
-            />
-            </span>
-            )}
-          </li>
-        ))}
+        {s.categories.map((c) =>
+          editId === c.id ? (
+            <li key={c.id} className="py-2">
+              <form onSubmit={save} className="flex items-center gap-2">
+                <span className="cfg-dot shrink-0" style={{ background: c.color }} aria-hidden />
+                <Input
+                  aria-label={`Rename ${c.name}`}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="min-w-0 flex-1"
+                  autoFocus
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                  isIconOnly
+                  aria-label="Save name"
+                  isDisabled={pending}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isIconOnly
+                  aria-label="Cancel"
+                  onPress={() => setEditId(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </form>
+            </li>
+          ) : (
+            <li key={c.id} className="cfg-row">
+              <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
+              <span className="cfg-label">{c.name}</span>
+              {editing && (
+                <span className="cfg-actions">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    isIconOnly
+                    aria-label={`Edit ${c.name}`}
+                    onPress={() => {
+                      setEditId(c.id);
+                      setEditName(c.name);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <DeleteButton
+                    what={`the category "${c.name}"`}
+                    iconOnly
+                    onDelete={async () => {
+                      if (tracker.categoryInUse(c.id)) {
+                        alert("This category is in use. Remove or reassign its items first.");
+                        return false;
+                      }
+                      return tracker.deleteCategory(c.id);
+                    }}
+                  />
+                </span>
+              )}
+            </li>
+          )
+        )}
       </ul>
       {editing && (
       <form onSubmit={submit} className="cfg-add">
@@ -577,12 +637,12 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
           {s.mealTags.map((m) =>
             editId === m.id ? (
               <li key={m.id} className="py-2">
-                <form onSubmit={save} className="flex flex-wrap items-center gap-2">
+                <form onSubmit={save} className="flex items-center gap-2">
                   <Input
                     aria-label="Tag name"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="min-w-[6rem] flex-1"
+                    className="min-w-0 flex-1"
                     autoFocus
                   />
                   <ColorPicker value={editColor} onChange={setEditColor} />
@@ -633,7 +693,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
           placeholder="Breakfast…"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="min-w-[6rem] flex-1"
+          className="min-w-0 flex-1"
         />
         <ColorPicker value={color} onChange={setColor} />
         <Button
@@ -652,37 +712,88 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
 }
 
 /**
- * Colour choice for a meal tag. Sits on its own line as a labelled grid of
- * swatches — squeezed inline beside the name field it was cramped and the
- * selected one was hard to pick out.
+ * Colour choice, as a swatch that opens a palette.
+ *
+ * The grid used to sit on its own line, which pushed the name field and the
+ * add button onto a line of their own and made a three-control row into two.
+ * Behind a swatch it costs one slot, and the swatch doubles as the answer:
+ * the button *is* the current colour, so the row shows the choice without
+ * anything having to be opened.
+ *
+ * Presets only. A hex field would allow colours that vanish against the
+ * background or collide with a category's, and these only ever need to be
+ * told apart from each other.
  */
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+
+  // A popover has to be dismissable without choosing, or picking the wrong
+  // colour would be the only way out of it.
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
+
   return (
-    <div className="basis-full">
-      <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-foreground/50">
-        Colour
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {CAT_COLORS.map((c) => {
-          const selected = value === c;
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-label={`Use colour ${c}`}
-              aria-pressed={selected}
-              onClick={() => onChange(c)}
-              className={"cfg-swatch" + (selected ? " cfg-swatch--on" : "")}
-              style={{ background: c }}
-            >
-              {selected && (
-                <Check className="h-3.5 w-3.5" style={{ color: readableText(c) }} aria-hidden />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <span className="relative shrink-0" ref={box}>
+      <button
+        type="button"
+        aria-label="Choose colour"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-10 w-10 items-center justify-center"
+        style={{ background: value, border: "1px solid var(--default)" }}
+      >
+        <Palette className="h-4 w-4" style={{ color: readableText(value) }} aria-hidden />
+      </button>
+
+      {open && (
+        // Right-aligned: the swatch sits near the right edge of a narrow card,
+        // and a left-aligned panel would hang off it.
+        <div
+          className="absolute right-0 top-full z-50 mt-1 w-max p-2 shadow-lg"
+          style={{ background: "var(--surface-secondary)", border: "1px solid var(--default)" }}
+        >
+          <div className="grid grid-cols-5 gap-1.5">
+            {CAT_COLORS.map((c) => {
+              const selected = value === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={`Use colour ${c}`}
+                  aria-pressed={selected}
+                  // Choosing is the whole errand, so it closes on the press
+                  // rather than waiting to be dismissed.
+                  onClick={() => {
+                    onChange(c);
+                    setOpen(false);
+                  }}
+                  className={"cfg-swatch" + (selected ? " cfg-swatch--on" : "")}
+                  style={{ background: c }}
+                >
+                  {selected && (
+                    <Check className="h-3.5 w-3.5" style={{ color: readableText(c) }} aria-hidden />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </span>
   );
 }
 
