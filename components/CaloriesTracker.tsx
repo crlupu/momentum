@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus } from "lucide-react";
+import { Plus, CalendarDays } from "lucide-react";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 
@@ -55,6 +55,9 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   // The day the entry is logged against. Starts on today, so the common case
   // needs no thought; changing it is for catching up on a day already gone.
   const [date, setDate] = useState<string>(today);
+  // Whether the picker is still pointing at today, which decides whether the
+  // icon needs to draw attention to itself.
+  const loggingToday = !date || date === today;
 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
@@ -90,17 +93,36 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
               onChange={(e) => setKcal(e.target.value)}
               className="min-w-0 flex-1"
             />
-            {/* A date, no time — the totals this feeds are per day, and asking
-                for an hour would be asking for something never used. Capped at
-                today: there is nothing to record about a day not yet had. */}
-            <Input
-              type="date"
-              aria-label="Date to log against"
-              value={date}
-              max={today}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-[8.5rem] shrink-0"
-            />
+            {/* Just the icon. A date field spells out a date that is almost
+                always today, taking a third of the row to say so; the icon
+                turns accent-coloured on the days it is not, which is the only
+                time the date is worth reading.
+
+                The real input lies over the icon at zero opacity rather than
+                beside it. Tapping it opens the platform's own date picker —
+                the wheel on a phone — which is what makes this work without
+                showPicker(), whose support is patchier than a tap's. */}
+            <span className="relative shrink-0">
+              <span
+                className="flex h-10 w-10 items-center justify-center"
+                style={{
+                  background: "var(--surface-secondary)",
+                  border: "1px solid var(--default)",
+                  color: loggingToday ? "var(--muted)" : "var(--accent)",
+                }}
+                aria-hidden
+              >
+                <CalendarDays className="h-4 w-4" />
+              </span>
+              <input
+                type="date"
+                aria-label="Date to log against"
+                value={date}
+                max={today}
+                onChange={(e) => setDate(e.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </span>
             <Button
               type="submit"
               variant="primary"
