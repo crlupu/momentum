@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import { DeleteButton } from "./DeleteButton";
-import { useConfigEditing } from "./ConfigCard";
+import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
 import { readableText } from "@/lib/color";
@@ -449,6 +449,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
 export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const configuring = useConfigEditing();
+  const setEditing = useSetConfigEditing();
   const [protein, setProtein] = useState(String(s.proteinTarget ?? ""));
   const [fiber, setFiber] = useState(String(s.fiberTarget ?? ""));
   const { pending, run } = usePending();
@@ -458,10 +459,15 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
     if (pending) return;
     const p = protein.trim() === "" ? null : Number(protein);
     const f = fiber.trim() === "" ? null : Number(fiber);
+    setEditing(false);
+    // Two writes, and the pair is only saved if both land. Reporting the
+    // second's result alone would call a half-saved pair a success.
     const ok = await run(async () => {
-      await tracker.setProteinTarget(p);
-      await tracker.setFiberTarget(f);
+      const a = await tracker.setProteinTarget(p);
+      const b = await tracker.setFiberTarget(f);
+      return a !== false && b !== false;
     });
+    if (ok === false) setEditing(true);
     return ok;
   };
 
@@ -683,6 +689,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
 export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const configuring = useConfigEditing();
+  const setEditing = useSetConfigEditing();
   const [value, setValue] = useState(String(s.calorieBudget ?? ""));
   const { pending, run } = usePending();
 
@@ -693,7 +700,14 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
     e.preventDefault();
     if (pending) return;
     const n = value.trim() === "" ? null : Number(value);
-    return run(() => tracker.setCalorieBudget(n));
+    // Saving is the end of the errand, so the form gives way to the figure it
+    // just set rather than waiting for the gear to be pressed again. Closed on
+    // the press, not on the network; the card stays mounted and keeps what was
+    // typed, so a refused write can reopen it with the draft intact.
+    setEditing(false);
+    const ok = await run(() => tracker.setCalorieBudget(n));
+    if (ok === false) setEditing(true);
+    return ok;
   };
 
   if (!configuring) {

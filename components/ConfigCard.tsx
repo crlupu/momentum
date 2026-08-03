@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useState } from "react";
 import { Settings, Check } from "lucide-react";
 import { Button, Card } from "./ui";
 
@@ -11,13 +11,27 @@ import { Button, Card } from "./ui";
  */
 const EditingContext = createContext(false);
 
+/**
+ * Lets a card close its own editing mode. The list cards have no use for it —
+ * renaming one category then deleting another is one visit — but a card that
+ * is a single form with a Save button is finished the moment it is pressed,
+ * and should not need the gear pressed a second time to say so.
+ */
+const SetEditingContext = createContext<(on: boolean) => void>(() => {});
+
 export function useConfigEditing(): boolean {
   return useContext(EditingContext);
+}
+
+export function useSetConfigEditing(): (on: boolean) => void {
+  return useContext(SetEditingContext);
 }
 
 /** A titled configuration card whose controls appear only on request. */
 export function ConfigCard({ title, children }: { title: string; children: ReactNode }) {
   const [editing, setEditing] = useState(false);
+  // Stable, so a card can depend on it without re-running effects.
+  const set = useCallback((on: boolean) => setEditing(on), []);
 
   return (
     <div>
@@ -38,7 +52,9 @@ export function ConfigCard({ title, children }: { title: string; children: React
       </div>
       <Card className={editing ? "config-card--editing" : undefined}>
         <Card.Content className="p-4 md:p-5">
-          <EditingContext.Provider value={editing}>{children}</EditingContext.Provider>
+          <EditingContext.Provider value={editing}>
+            <SetEditingContext.Provider value={set}>{children}</SetEditingContext.Provider>
+          </EditingContext.Provider>
         </Card.Content>
       </Card>
     </div>
