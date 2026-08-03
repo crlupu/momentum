@@ -9,36 +9,31 @@ import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
 import { Tracker, Book, bookProgress } from "@/lib/tracker";
 
-/**
- * Spine height, in pixels, from the book's id.
+/** Every spine is the same width; only the height carries meaning now. */
+const SPINE_WIDTH = 34;
+
+/*
+ * Spine height is the book's length. The scale is absolute rather than
+ * relative to the longest book on the shelf: a height should mean the same
+ * number of pages today as it did last month, and shelving one doorstopper
+ * should not shrink everything already there.
  *
- * Real shelves are ragged and that is most of what makes one read as a shelf,
- * but the raggedness has to be the same on every render or a book would change
- * height whenever anything else on the page did. Hashing the id gives a height
- * that is arbitrary but fixed for the life of the book.
+ * Clamped at both ends, so a pamphlet still has a spine you can read a title
+ * on and a thousand-pager still fits the slot. Between them it is linear —
+ * the point is to see at a glance which books are the long ones, not to read
+ * a page count off a ruler.
  */
-function hash(id: string, seed: number): number {
-  let h = seed >>> 0;
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i);
-    // Multiply-and-mix, so ids differing only in their last character land far
-    // apart. A plain rolling sum put "bk1" and "bk2" one pixel from each other
-    // and the whole shelf came out level.
-    h = Math.imul(h, 16777619) >>> 0;
-    h ^= h >>> 13;
-  }
-  return h >>> 0;
-}
+const SHORT_PAGES = 100;
+const LONG_PAGES = 800;
+const MIN_HEIGHT = 72;
+const MAX_HEIGHT = 128;
 
-function spineHeight(id: string): number {
-  const MIN = 84;
-  const RANGE = 44;
-  return MIN + (hash(id, 2166136261) % RANGE);
-}
-
-/** Spine width, likewise fixed per book. A shelf of identical widths reads as a chart. */
-function spineWidth(id: string): number {
-  return 30 + (hash(id, 97) % 3) * 5;
+function spineHeight(pages: number): number {
+  // A book with no length recorded gets the shortest spine rather than none.
+  if (!pages || pages <= 0) return MIN_HEIGHT;
+  const t = (pages - SHORT_PAGES) / (LONG_PAGES - SHORT_PAGES);
+  const clamped = Math.max(0, Math.min(1, t));
+  return Math.round(MIN_HEIGHT + clamped * (MAX_HEIGHT - MIN_HEIGHT));
 }
 
 /**
@@ -60,8 +55,8 @@ function Spine({ book, onOpen }: { book: Book; onOpen: () => void }) {
       onClick={onOpen}
       className="book-spine"
       style={{
-        height: spineHeight(book.id),
-        width: spineWidth(book.id),
+        height: spineHeight(book.pages),
+        width: SPINE_WIDTH,
         background: `linear-gradient(to top, var(--book-fill) ${pct}%, var(--book-unread) ${pct}%)`,
       }}
       aria-label={`${book.title}, ${book.read} of ${book.pages} pages read`}
