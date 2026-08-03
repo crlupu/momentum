@@ -52,6 +52,9 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   const colorOf = (id?: string) => tagOf(id)?.color ?? UNTAGGED_COLOR;
 
   const [tagId, setTagId] = useState<string>("");
+  // The day the entry is logged against. Starts on today, so the common case
+  // needs no thought; changing it is for catching up on a day already gone.
+  const [date, setDate] = useState<string>(today);
 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
@@ -59,7 +62,9 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
     const v = Number(kcal);
     if (!Number.isFinite(v) || v <= 0 || pending) return;
     setKcal("");
-    const ok = await run(() => tracker.addCalories(v, tagId || undefined));
+    // An empty picker means today rather than nothing: the date is optional,
+    // and a cleared field should not stop an entry being logged.
+    const ok = await run(() => tracker.addCalories(v, tagId || undefined, date || today));
     if (!ok) setKcal(String(v));
   };
 
@@ -78,11 +83,23 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           <div className="flex gap-2">
             <Input
               type="number"
+              inputMode="numeric"
               aria-label="Calories to add"
               placeholder="add kcal…"
               value={kcal}
               onChange={(e) => setKcal(e.target.value)}
-              className="flex-1"
+              className="min-w-0 flex-1"
+            />
+            {/* A date, no time — the totals this feeds are per day, and asking
+                for an hour would be asking for something never used. Capped at
+                today: there is nothing to record about a day not yet had. */}
+            <Input
+              type="date"
+              aria-label="Date to log against"
+              value={date}
+              max={today}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-[8.5rem] shrink-0"
             />
             <Button
               type="submit"

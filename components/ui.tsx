@@ -95,6 +95,8 @@ export function Input({
   disabled,
   readOnly,
   inputMode,
+  max,
+  min,
   ...rest
 }: {
   className?: string;
@@ -111,6 +113,9 @@ export function Input({
   readOnly?: boolean;
   /** Chooses the phone keyboard: "decimal" for weights, "numeric" for reps. */
   inputMode?: "text" | "decimal" | "numeric";
+  /** Bounds for number and date inputs. */
+  max?: string;
+  min?: string;
   "aria-label"?: string;
 }) {
   const id = useId();
@@ -133,6 +138,8 @@ export function Input({
       disabled={disabled}
       readOnly={readOnly}
       inputMode={inputMode}
+      max={max}
+      min={min}
     />
   );
 }

@@ -1252,13 +1252,22 @@ export function useTracker() {
       })),
 
     // ---- calories ----
-    addCalories: (kcal: number, tagId?: string) =>
+    /**
+     * Logs calories. `date` allows an entry to be put on an earlier day —
+     * yesterday's dinner remembered this morning — and defaults to today.
+     * Entries stay sorted by date so a backdated one lands in its own day
+     * rather than at the end of the list.
+     */
+    addCalories: (kcal: number, tagId?: string, date?: string) =>
       commit((s) => {
         if (!Number.isFinite(kcal) || kcal <= 0) return s;
-        const entry: CalorieEntry = { id: uid(), date: dateKey(), kcal: Math.round(kcal) };
+        const entry: CalorieEntry = { id: uid(), date: date || dateKey(), kcal: Math.round(kcal) };
         if (tagId) entry.tagId = tagId;
         // Appended, so array order is the order things were eaten that day.
-        return { ...s, calories: [...s.calories, entry] };
+        // A stable sort keeps that order within each day while moving a
+        // backdated entry back among its own.
+        const calories = [...s.calories, entry].sort((a, b) => a.date.localeCompare(b.date));
+        return { ...s, calories };
       }),
 
     updateCalorieEntry: (id: string, kcal: number, tagId?: string) =>
