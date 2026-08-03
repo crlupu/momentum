@@ -294,9 +294,20 @@ export type TrackerState = {
 };
 
 /* The full chromatic range of the palette, plus its one usable neutral. */
+/**
+ * The colours a category or meal tag can be given. Carbon values throughout,
+ * ordered by hue so the grid reads as a spectrum rather than a jumble, and
+ * running light and dark within each family so neighbours stay distinguishable
+ * on a small dot.
+ *
+ * The original seven are all still here and in the same form, so anything
+ * already using one still matches a preset and shows as selected.
+ */
 export const CAT_COLORS = [
-  "#0f62fe", "#8a3ffc", "#33b1ff", "#ff8389",
-  "#a7f0ba", "#491d8b", "#a2a9b0",
+  "#0f62fe", "#78a9ff", "#0072c3", "#33b1ff", "#08bdba",
+  "#007d79", "#24a148", "#42be65", "#a7f0ba", "#f1c21b",
+  "#ff832b", "#ba4e00", "#da1e28", "#ff8389", "#ee5396",
+  "#9f1853", "#8a3ffc", "#be95ff", "#491d8b", "#a2a9b0",
 ];
 
 /** Picks a colour no existing category is already using. */
@@ -1167,24 +1178,29 @@ export function useTracker() {
       commit((s) => ({ ...s, recurring: s.recurring.filter((r) => r.id !== id) })),
 
     // ---- categories ----
-    addCategory: (name: string) =>
+    /** Adds a category. Without a colour it takes the next unused preset. */
+    addCategory: (name: string, color?: string) =>
       commit((s) => ({
         ...s,
         categories: [
           ...s.categories,
-          { id: uid(), name, color: nextCategoryColor(s.categories) },
+          { id: uid(), name, color: color || nextCategoryColor(s.categories) },
         ],
       })),
 
-    /** Renames a category. Its colour and id are left alone, so everything
-     *  already filed under it keeps its colour and its filing. */
-    renameCategory: (id: string, name: string) =>
+    /**
+     * Changes a category's name and colour. The id is left alone, so
+     * everything already filed under it keeps its filing.
+     */
+    updateCategory: (id: string, name: string, color?: string) =>
       commit((s) => {
         const n = name.trim();
         if (!n) return s;
         return {
           ...s,
-          categories: s.categories.map((c) => (c.id === id ? { ...c, name: n } : c)),
+          categories: s.categories.map((c) =>
+            c.id === id ? { ...c, name: n, color: color || c.color } : c
+          ),
         };
       }),
 

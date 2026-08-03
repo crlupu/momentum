@@ -8,7 +8,7 @@ import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
 import { readableText } from "@/lib/color";
-import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek, CAT_COLORS } from "@/lib/tracker";
+import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask, caloriesLeftThisWeek, CAT_COLORS, nextCategoryColor } from "@/lib/tracker";
 
 function GroupPicker({
   tracker,
@@ -245,14 +245,21 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
   // Which category is being renamed, and the name being typed for it.
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState(CAT_COLORS[0]);
+  // The colour a new category will be given. Starts on the next unused preset,
+  // which is what it would have been assigned anyway.
+  const [newColor, setNewColor] = useState(() => nextCategoryColor(s.categories));
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const n = newCat.trim();
     if (!n || pending) return;
-    const ok = await run(() => tracker.addCategory(n));
-    if (ok) setNewCat("");
+    // Cleared on the press, not on the network, and put back if refused.
+    setNewCat("");
+    const ok = await run(() => tracker.addCategory(n, newColor));
+    if (ok === false) setNewCat(n);
+    else setNewColor(nextCategoryColor([...s.categories, { color: newColor }]));
   };
 
   const save = async (e: FormEvent) => {
@@ -262,7 +269,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
     // reopens the editor with the draft intact.
     const id = editId;
     setEditId(null);
-    const ok = await run(() => tracker.renameCategory(id, editName));
+    const ok = await run(() => tracker.updateCategory(id, editName, editColor));
     if (ok === false) setEditId(id);
   };
 
@@ -278,7 +285,6 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
           editId === c.id ? (
             <li key={c.id} className="py-2">
               <form onSubmit={save} className="flex items-center gap-2">
-                <span className="cfg-dot shrink-0" style={{ background: c.color }} aria-hidden />
                 <Input
                   aria-label={`Rename ${c.name}`}
                   value={editName}
@@ -286,6 +292,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
                   className="min-w-0 flex-1"
                   autoFocus
                 />
+                <ColorPicker value={editColor} onChange={setEditColor} />
                 <Button
                   type="submit"
                   size="sm"
@@ -321,6 +328,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
                     onPress={() => {
                       setEditId(c.id);
                       setEditName(c.name);
+                      setEditColor(c.color);
                     }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -344,7 +352,8 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </ul>
       {editing && (
       <form onSubmit={submit} className="cfg-add">
-        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-[8rem] flex-1" />
+        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-0 flex-1" />
+        <ColorPicker value={newColor} onChange={setNewColor} />
         <Button
           type="submit"
           variant="primary"
@@ -370,8 +379,9 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
     e.preventDefault();
     const n = newGroup.trim();
     if (!n || pending) return;
+    setNewGroup("");
     const ok = await run(() => tracker.addGroup(n));
-    if (ok) setNewGroup("");
+    if (ok === false) setNewGroup(n);
   };
 
   return (
@@ -617,15 +627,22 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
   const add = async (e: FormEvent) => {
     e.preventDefault();
     if (pending || !name.trim()) return;
-    const ok = await run(() => tracker.addMealTag(name, color));
-    if (ok) setName("");
+    const n = name;
+    setName("");
+    const ok = await run(() => tracker.addMealTag(n, color));
+    if (ok === false) setName(n);
   };
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (pending || !editId || !editName.trim()) return;
-    const ok = await run(() => tracker.updateMealTag(editId, editName, editColor));
-    if (ok) setEditId(null);
+    // Closed on the press. Waiting for the write meant the row sat in its
+    // editor with the button dead, looking as though Save had done nothing —
+    // and offline, where a write is never acknowledged, it never closed at all.
+    const id = editId;
+    setEditId(null);
+    const ok = await run(() => tracker.updateMealTag(id, editName, editColor));
+    if (ok === false) setEditId(id);
   };
 
   return (
