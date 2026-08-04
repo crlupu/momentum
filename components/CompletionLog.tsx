@@ -23,6 +23,12 @@ type Entry = {
   /** Second line, e.g. the set-by-set breakdown of a workout. */
   detail?: string;
   date: string;
+  /**
+   * When it happened, as epoch milliseconds. Absent on anything recorded
+   * before timestamps existed, which sorts to the end of its own day rather
+   * than being given a made-up time.
+   */
+  at?: number;
   color: string;
   todoId?: string;
   /** What the confirmation dialog calls this entry. */
@@ -115,6 +121,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
         kind: "To-do",
         title: t.title,
         date: t.doneDate,
+        at: t.doneAt ?? undefined,
         color: KIND_COLOR["To-do"],
         todoId: t.id,
         what: `the to-do "${t.title}"`,
@@ -129,6 +136,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
         kind: "Goal",
         title: g.title,
         date: g.doneDate,
+        at: g.doneAt ?? undefined,
         color: KIND_COLOR.Goal,
         what: `the goal "${g.title}"`,
         onDelete: () => tracker.deleteGoal(g.id),
@@ -145,6 +153,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       kind: "Recurring",
       title,
       date: c.date,
+      at: c.at,
       color: KIND_COLOR.Recurring,
       what: `the "${title}" completion on ${c.date}`,
       onDelete: () => tracker.removeCompletion(c),
@@ -169,6 +178,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       title: `${w.name} — ${summary}`,
       detail: breakdown || undefined,
       date: w.date,
+      at: w.at,
       color: KIND_COLOR.Workout,
       what: `the ${w.name} session on ${w.date}`,
       onDelete: () => tracker.removeWorkoutSession(w.id),
@@ -184,6 +194,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       kind: "Calories",
       title: `${c.kcal.toLocaleString()} kcal${tag ? ` — ${tag.name}` : ""}`,
       date: c.date,
+      at: c.at,
       color: tag?.color || KIND_COLOR.Calories,
       what: `the ${c.kcal} kcal entry on ${c.date}`,
       onDelete: () => tracker.removeCalorieEntry(c.id),
@@ -202,6 +213,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       kind: "Macros",
       title: parts.join(" · "),
       date: m.date,
+      at: m.at,
       color: KIND_COLOR.Macros,
       what: `the ${parts.join(" and ")} entry on ${m.date}`,
       onDelete: () => tracker.removeMacroEntry(m.id),
@@ -215,13 +227,23 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       kind: "Cardio",
       title: `Cardio — ${c.minutes} min`,
       date: c.date,
+      at: c.at,
       color: KIND_COLOR.Cardio,
       what: `the ${c.minutes} min cardio on ${c.date}`,
       onDelete: () => tracker.removeCardio(c.id),
     });
   });
 
-  entries.sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
+  // Newest day first, and within a day the latest thing first. Anything
+  // without a timestamp falls to the bottom of its day: it is known to have
+  // happened that day and nothing more, and guessing a time would order it
+  // against entries that actually know theirs.
+  entries.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      (b.at ?? -Infinity) - (a.at ?? -Infinity) ||
+      a.title.localeCompare(b.title)
+  );
 
   const { ref: listRef, maxHeight } = useRowCap(entries.length);
 

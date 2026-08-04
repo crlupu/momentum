@@ -59,6 +59,13 @@ export type Goal = {
   target?: number;
   done: boolean;
   doneDate?: string | null;
+  /**
+   * When it was ticked, as epoch milliseconds. The date alone puts everything
+   * done on one day in an arbitrary order; this puts them in the order they
+   * happened. Absent on anything recorded before timestamps existed, which the
+   * log falls back from rather than guessing at.
+   */
+  doneAt?: number | null;
   subtasks?: Subtask[];
   /** Pinned goals stay at the top of their column. */
   pinned?: boolean;
@@ -70,10 +77,14 @@ export type TodoItem = {
   title: string;
   done: boolean;
   doneDate?: string | null;
+  /** When it was ticked. See Goal.doneAt. */
+  doneAt?: number | null;
 };
 
 export type Completion = {
   date: string;
+  /** When it was ticked. See Goal.doneAt. */
+  at?: number;
   catId: string;
   /** Set when the completion came from a group — one entry per group, not per task. */
   groupId?: string;
@@ -91,7 +102,7 @@ export type WeightEntry = { date: string; kg: number };
  * Several a day are allowed — a bike before lifting and a walk after are two
  * efforts, not one — so each has an id and the day's total is their sum.
  */
-export type CardioEntry = { id: string; date: string; minutes: number };
+export type CardioEntry = { id: string; date: string; minutes: number; at?: number };
 
 /** A meal category — breakfast, coffee, and so on — with its own colour. */
 export type MealTag = { id: string; name: string; color: string };
@@ -152,6 +163,8 @@ export type CalorieEntry = {
   id: string;
   date: string;
   kcal: number;
+  /** When it was logged. See Goal.doneAt. */
+  at?: number;
   /** Which meal it belonged to. Absent on entries logged before tags. */
   tagId?: string;
 };
@@ -284,6 +297,8 @@ export type WorkoutSession = {
   sets?: number;
   /** Elapsed time in whole minutes, from start to finish. */
   minutes?: number;
+  /** When it was finished. See Goal.doneAt. */
+  at?: number;
   /**
    * What was actually performed, exercise by exercise. Absent on sessions
    * logged before per-set detail was kept, which is why every reader of it
@@ -320,6 +335,8 @@ export type MacroEntry = {
   date: string;
   protein?: number;
   fiber?: number;
+  /** When it was logged. See Goal.doneAt. */
+  at?: number;
 };
 
 export type TrackerState = {
@@ -599,6 +616,7 @@ function migrate(raw: unknown): TrackerState {
     target: typeof g.target === "number" ? g.target : undefined,
     done: typeof g.done === "boolean" ? g.done : g.status === "done",
     doneDate: (g.doneDate as string) ?? null,
+    doneAt: typeof g.doneAt === "number" ? g.doneAt : null,
     pinned: g.pinned === true ? true : undefined,
     subtasks: Array.isArray(g.subtasks)
       ? (g.subtasks as Array<Record<string, unknown>>).map((t) => ({
@@ -616,6 +634,7 @@ function migrate(raw: unknown): TrackerState {
         title: t.title as string,
         done: !!t.done,
         doneDate: (t.doneDate as string) ?? null,
+        doneAt: typeof t.doneAt === "number" ? t.doneAt : null,
       }))
     : [];
 
@@ -1058,7 +1077,14 @@ export function useTracker() {
       commit((s) => ({
         ...s,
         goals: s.goals.map((g) =>
-          g.id === id ? { ...g, done: !g.done, doneDate: !g.done ? dateKey() : null } : g
+          g.id === id
+            ? {
+                ...g,
+                done: !g.done,
+                doneDate: !g.done ? dateKey() : null,
+                doneAt: !g.done ? Date.now() : null,
+              }
+            : g
         ),
       })),
 
@@ -1217,7 +1243,7 @@ export function useTracker() {
           ),
           completions: [
             ...s.completions,
-            { date: today, catId: r.catId, groupId: r.groupId, taskId: r.id },
+            { date: today, catId: r.catId, groupId: r.groupId, taskId: r.id, at: Date.now() },
           ],
         };
       }),
@@ -1295,7 +1321,14 @@ export function useTracker() {
       commit((s) => ({
         ...s,
         todos: s.todos.map((t) =>
-          t.id === id ? { ...t, done: !t.done, doneDate: !t.done ? dateKey() : null } : t
+          t.id === id
+            ? {
+                ...t,
+                done: !t.done,
+                doneDate: !t.done ? dateKey() : null,
+                doneAt: !t.done ? Date.now() : null,
+              }
+            : t
         ),
       })),
 
@@ -1342,6 +1375,7 @@ export function useTracker() {
           id: uid(),
           date: dateKey(),
           minutes: Math.round(minutes),
+          at: Date.now(),
         };
         const cardio = [...s.cardio, entry].sort((a, b) => a.date.localeCompare(b.date));
         return { ...s, cardio };
@@ -1503,7 +1537,12 @@ export function useTracker() {
     addCalories: (kcal: number, tagId?: string, date?: string) =>
       commit((s) => {
         if (!Number.isFinite(kcal) || kcal <= 0) return s;
-        const entry: CalorieEntry = { id: uid(), date: date || dateKey(), kcal: Math.round(kcal) };
+        const entry: CalorieEntry = {
+          id: uid(),
+          date: date || dateKey(),
+          kcal: Math.round(kcal),
+          at: Date.now(),
+        };
         if (tagId) entry.tagId = tagId;
         // Appended, so array order is the order things were eaten that day.
         // A stable sort keeps that order within each day while moving a
@@ -1557,7 +1596,7 @@ export function useTracker() {
         const p = protein != null && Number.isFinite(protein) && protein > 0 ? Math.round(protein) : undefined;
         const f = fiber != null && Number.isFinite(fiber) && fiber > 0 ? Math.round(fiber) : undefined;
         if (p === undefined && f === undefined) return s;
-        const entry: MacroEntry = { id: uid(), date: dateKey() };
+        const entry: MacroEntry = { id: uid(), date: dateKey(), at: Date.now() };
         if (p !== undefined) entry.protein = p;
         if (f !== undefined) entry.fiber = f;
         return { ...s, macros: [...s.macros, entry] };
@@ -1809,6 +1848,7 @@ export function useTracker() {
               total,
               sets,
               minutes,
+              at: Date.now(),
               exercises,
             },
           ],
