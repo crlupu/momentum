@@ -1346,7 +1346,7 @@ export function useTracker() {
       commit((s) => ({ ...s, cardio: s.cardio.filter((c) => c.id !== id) })),
 
     // ---- books ----
-    addBook: (title: string, pages: number, author?: string) =>
+    addBook: (title: string, pages: number, author?: string, coverId?: string | null) =>
       commit((s) => {
         const t = title.trim();
         if (!t) return s;
@@ -1360,7 +1360,20 @@ export function useTracker() {
         const color = choices[Math.floor(Math.random() * choices.length)];
         return {
           ...s,
-          books: [...s.books, { id: uid(), title: t, pages: n, read: 0, color, ...(a ? { author: a } : {}) }],
+          books: [
+            ...s.books,
+            {
+              id: uid(),
+              title: t,
+              pages: n,
+              read: 0,
+              color,
+              ...(a ? { author: a } : {}),
+              // Only when it came from a chosen suggestion. Left absent
+              // otherwise, which is what marks it for a lookup.
+              ...(coverId !== undefined ? { coverId } : {}),
+            },
+          ],
         };
       }),
 

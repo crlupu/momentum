@@ -9,7 +9,7 @@ import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
 import { readableText } from "@/lib/color";
 import { Tracker, Book, bookProgress, bookColor } from "@/lib/tracker";
-import { coverUrl, lookupBook } from "@/lib/covers";
+import { BookSuggestion, coverUrl, lookupBook, searchBooks } from "@/lib/covers";
 
 /**
  * The cover.
@@ -153,6 +153,59 @@ function AddPagesForm({
   );
 }
 
+/** How much has to be typed before it is worth asking. */
+const MIN_QUERY = 3;
+/** How long typing has to stop for. */
+const DEBOUNCE_MS = 350;
+
+/**
+ * Title suggestions while adding a book.
+ *
+ * Debounced and abortable, and never fired on a query shorter than a few
+ * characters: this runs on keystrokes against an API whose owners ask not to
+ * be crawled, so the point is to make one request per pause in typing rather
+ * than one per letter. The abort matters as much as the debounce — without it
+ * a slow answer to "har" could arrive after the answer to "harry" and replace
+ * a good list with a stale one.
+ */
+function useTitleSearch(query: string, enabled: boolean) {
+  const [results, setResults] = useState<BookSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!enabled || q.length < MIN_QUERY) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setSearching(true);
+    const timer = setTimeout(() => {
+      searchBooks(q, controller.signal)
+        .then((r) => {
+          setResults(r);
+          setSearching(false);
+        })
+        .catch((e) => {
+          // An abort is this effect being superseded, not a failure.
+          if ((e as Error)?.name !== "AbortError") {
+            setResults([]);
+            setSearching(false);
+          }
+        });
+    }, DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, enabled]);
+
+  return { results, searching };
+}
+
 /** Add a book, or edit one. The same fields either way. */
 function BookForm({
   tracker,
@@ -169,6 +222,27 @@ function BookForm({
   const [read, setRead] = useState(book ? String(book.read || "") : "");
   const { pending, run } = usePending();
 
+  // The cover from a chosen suggestion. Undefined means nothing was chosen, so
+  // the new book is left to be looked up in the usual way.
+  const [pickedCover, setPickedCover] = useState<string | null | undefined>(undefined);
+  // The title as it was when a suggestion was taken. Searching again for it
+  // would reopen the list underneath the answer just chosen.
+  const [chosen, setChosen] = useState<string | null>(null);
+  // Only when adding: an existing book's title is being corrected, not looked
+  // for, and a list dropping open under it would be in the way.
+  const suggesting = !book && chosen !== title.trim();
+  const { results, searching } = useTitleSearch(title, suggesting);
+
+  const choose = (s: BookSuggestion) => {
+    setTitle(s.title);
+    setChosen(s.title);
+    if (s.author) setAuthor(s.author);
+    // Only fills an empty length: a figure already typed is about the copy in
+    // hand, which beats a median across editions.
+    if (s.pages && !pages.trim()) setPages(String(s.pages));
+    setPickedCover(s.coverId ?? null);
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
@@ -180,19 +254,53 @@ function BookForm({
         await tracker.updateBook(book.id, t, n, author);
         return tracker.setBookProgress(book.id, Number(read) || 0);
       }
-      return tracker.addBook(t, n, author);
+      return tracker.addBook(t, n, author, pickedCover);
     });
   };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Input
-        aria-label="Title"
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        autoFocus={!book}
-      />
+      <div className="relative">
+        <Input
+          aria-label="Title"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            // Typing on past a chosen title means it wasn't the one.
+            setChosen(null);
+            setPickedCover(undefined);
+          }}
+          autoFocus={!book}
+        />
+
+        {suggesting && title.trim().length >= MIN_QUERY && (results.length > 0 || searching) && (
+          <ul className="book-suggest">
+            {results.map((s) => (
+              <li key={s.key}>
+                <button type="button" className="book-suggest__row" onClick={() => choose(s)}>
+                  {s.coverId ? (
+                    <img className="book-suggest__thumb" src={coverUrl(s.coverId, "S")} alt="" loading="lazy" />
+                  ) : (
+                    <span className="book-suggest__thumb book-suggest__thumb--none" aria-hidden />
+                  )}
+                  <span className="book-suggest__text">
+                    <span className="book-suggest__title">{s.title}</span>
+                    <span className="book-suggest__meta">
+                      {[s.author, s.year, s.pages ? `${s.pages} pages` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+            {searching && results.length === 0 && (
+              <li className="book-suggest__note">Searching…</li>
+            )}
+          </ul>
+        )}
+      </div>
       <Input
         aria-label="Author"
         placeholder="Author"
