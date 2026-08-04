@@ -155,8 +155,23 @@ function AddPagesForm({
 
 /** How much has to be typed before it is worth asking. */
 const MIN_QUERY = 3;
-/** How long typing has to stop for. */
-const DEBOUNCE_MS = 350;
+/**
+ * How long typing has to stop for before a request goes out.
+ *
+ * Long enough that a title typed at speed makes one request rather than
+ * several. The wait is only felt when you stop, and Open Library is slow often
+ * enough that a request fired mid-word is usually wasted anyway.
+ */
+const DEBOUNCE_MS = 700;
+/**
+ * How long a search is given before it is dropped.
+ *
+ * Open Library sometimes takes a very long time to answer. Without this the
+ * list sat on "Searching…" for as long as it took, and an answer that finally
+ * arrived half a minute later would drop a list over whatever had been typed
+ * since. Better to give up and say so.
+ */
+const TIMEOUT_MS = 6000;
 
 /**
  * Title suggestions while adding a book.
@@ -171,39 +186,59 @@ const DEBOUNCE_MS = 350;
 function useTitleSearch(query: string, enabled: boolean) {
   const [results, setResults] = useState<BookSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     const q = query.trim();
     if (!enabled || q.length < MIN_QUERY) {
       setResults([]);
       setSearching(false);
+      setTimedOut(false);
       return;
     }
 
     const controller = new AbortController();
+    // Distinguishes our own timeout from the abort that happens when the
+    // query changes: one is worth reporting, the other is routine.
+    let expired = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
     setSearching(true);
-    const timer = setTimeout(() => {
+    setTimedOut(false);
+
+    const debounce = setTimeout(() => {
+      timeout = setTimeout(() => {
+        expired = true;
+        controller.abort();
+      }, TIMEOUT_MS);
+
       searchBooks(q, controller.signal)
         .then((r) => {
           setResults(r);
           setSearching(false);
         })
         .catch((e) => {
-          // An abort is this effect being superseded, not a failure.
-          if ((e as Error)?.name !== "AbortError") {
+          if (expired) {
+            setResults([]);
+            setSearching(false);
+            setTimedOut(true);
+          } else if ((e as Error)?.name !== "AbortError") {
+            // A real failure. An abort is this effect being superseded.
             setResults([]);
             setSearching(false);
           }
-        });
+        })
+        .finally(() => clearTimeout(timeout));
     }, DEBOUNCE_MS);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(debounce);
+      clearTimeout(timeout);
       controller.abort();
     };
   }, [query, enabled]);
 
-  return { results, searching };
+  return { results, searching, timedOut };
 }
 
 /** Add a book, or edit one. The same fields either way. */
@@ -231,7 +266,7 @@ function BookForm({
   // Only when adding: an existing book's title is being corrected, not looked
   // for, and a list dropping open under it would be in the way.
   const suggesting = !book && chosen !== title.trim();
-  const { results, searching } = useTitleSearch(title, suggesting);
+  const { results, searching, timedOut } = useTitleSearch(title, suggesting);
 
   const choose = (s: BookSuggestion) => {
     setTitle(s.title);
@@ -274,7 +309,7 @@ function BookForm({
           autoFocus={!book}
         />
 
-        {suggesting && title.trim().length >= MIN_QUERY && (results.length > 0 || searching) && (
+        {suggesting && title.trim().length >= MIN_QUERY && (results.length > 0 || searching || timedOut) && (
           <ul className="book-suggest">
             {results.map((s) => (
               <li key={s.key}>
@@ -297,6 +332,11 @@ function BookForm({
             ))}
             {searching && results.length === 0 && (
               <li className="book-suggest__note">Searching…</li>
+            )}
+            {timedOut && (
+              <li className="book-suggest__note">
+                Search timed out. Type a little more, or just fill it in yourself.
+              </li>
             )}
           </ul>
         )}
