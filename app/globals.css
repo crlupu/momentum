@@ -1853,79 +1853,142 @@ html.dark {
 }
 
 /* ============================================================
-   The bookshelf.
-   Books stand on their ends and wrap into rows. Every book occupies a slot of
-   the same height whatever the height of the book in it, so the rows band the
-   shelf at a fixed interval — which is what lets one repeating background
-   draw a board under every row, full width, including a row holding a single
-   book. Drawing the board on the books themselves stopped it where the books
-   stopped, and a half-empty top row looked like a broken shelf.
+   Books.
+   A card each: a stand-in cover, the title and author, and how far through
+   it you are. A finished book is marked twice over — a tick in the corner
+   and a tinted card — because a corner mark alone is easy to miss when
+   scanning a long grid, and knowing at a glance which ones are done is the
+   whole point of looking.
    ============================================================ */
-.bookshelf {
-  --slot: 192px;
-  --board: 6px;
-  display: flex;
-  flex-wrap: wrap;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--slot) - var(--board)),
-    var(--book-shelf) calc(var(--slot) - var(--board)),
-    var(--book-shelf) var(--slot)
-  );
+.book-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .book-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Fixed height, so every row bands identically; the book sits on the board. */
-.book-slot {
-  display: flex;
-  align-items: flex-end;
-  height: var(--slot);
-  padding-bottom: var(--board);
-}
-
-.book-spine {
+.book-card {
   position: relative;
-  display: block;
-  margin: 0 2px;
-  cursor: pointer;
-  transition: transform 140ms ease;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-secondary);
+  border: 1px solid var(--default);
+}
+.book-card--done {
+  background: color-mix(in srgb, var(--c-green-50) 10%, var(--surface-secondary));
+  border-color: color-mix(in srgb, var(--c-green-50) 45%, var(--default));
 }
 
-.book-spine__title {
+.book-card__tick {
   position: absolute;
-  inset: 0;
-  /* Block, not flex. As a flex item the title was sized to its own content
-     and so never wrapped — it just ran off the end of the spine and was
-     clipped mid-word. As a block it wraps within the spine's height. */
-  display: block;
-  padding: 8px 1px;
-  /* Read bottom to top, the way a spine is read with the head to the left. */
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  overflow: hidden;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.15;
-  /* The inline axis runs up the spine, so this centres the title along it. */
-  text-align: center;
-  /* Wraps rather than truncating: in vertical text a long title would
-     otherwise be cut mid-word with no ellipsis to show for it, and a spine
-     is wide enough for two or three lines. */
-  white-space: normal;
-  overflow-wrap: anywhere;
-  /* Legible over both halves of the fill, which is why it is not tinted. */
-  color: var(--book-ink);
-  text-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  top: -1px;
+  right: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--c-green-50);
+  color: var(--ibm-white);
 }
-.book-spine__title--done { color: var(--book-ink-done); }
 
-.book-spine:hover { transform: translateY(-3px); }
-.book-spine:active { transform: translateY(-1px); }
-@media (prefers-reduced-motion: reduce) {
-  .book-spine:hover,
-  .book-spine:active { transform: none; }
+/* The cover is a button so it opens the book, but it must not look like one. */
+.book-card__open {
+  display: block;
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
-/* A finger has no hover, and a phone would leave the last book lifted. */
-@media (hover: none) {
-  .book-spine:hover { transform: none; }
+
+.book-cover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 84px;
+  overflow: hidden;
+  /* Squared at the spine, rounded at the fore edge, the way a closed book
+     looks from the front. */
+  border-radius: 2px 5px 5px 2px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+}
+/* The spine: a darker band down the binding edge. */
+.book-cover__spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 9px;
+  background: rgb(0 0 0 / 22%);
+  border-right: 1px solid rgb(255 255 255 / 12%);
+}
+.book-cover__initials {
+  padding-left: 9px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.book-card__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.book-card__title-btn {
+  display: block;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.book-card__title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+.book-card__author {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.book-card__meter {
+  height: 6px;
+  /* Not --book-unread: that is the same grey as the card, so an unread book
+     had no visible bar at all — the one state where seeing the empty track
+     matters most. Tinted from the foreground instead, so it stays visible in
+     either theme. */
+  background: color-mix(in srgb, var(--foreground) 16%, transparent);
+  overflow: hidden;
+}
+.book-card__meter > span {
+  display: block;
+  height: 100%;
+  transition: width 220ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-card__meter > span { transition: none; }
+}
+
+.book-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+.book-card__count {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
 }

@@ -107,9 +107,11 @@ export type MealTag = { id: string; name: string; color: string };
 export type Book = {
   id: string;
   title: string;
+  /** Optional: plenty of books are known by title alone. */
+  author?: string;
   pages: number;
   read: number;
-  /** Spine colour, picked when the book is added. */
+  /** Cover colour, picked when the book is added. */
   color?: string;
   /** The day it was finished, set when `read` first reaches `pages`. */
   doneDate?: string;
@@ -1335,18 +1337,22 @@ export function useTracker() {
       commit((s) => ({ ...s, cardio: s.cardio.filter((c) => c.id !== id) })),
 
     // ---- books ----
-    addBook: (title: string, pages: number) =>
+    addBook: (title: string, pages: number, author?: string) =>
       commit((s) => {
         const t = title.trim();
         if (!t) return s;
         const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
+        const a = author?.trim();
         // Random, but never the same as the book it will stand next to —
         // two identical spines side by side look like one wide book.
         const last = s.books[s.books.length - 1];
         const lastColor = last ? bookColor(last) : null;
         const choices = BOOK_COLORS.filter((c) => c !== lastColor);
         const color = choices[Math.floor(Math.random() * choices.length)];
-        return { ...s, books: [...s.books, { id: uid(), title: t, pages: n, read: 0, color }] };
+        return {
+          ...s,
+          books: [...s.books, { id: uid(), title: t, pages: n, read: 0, color, ...(a ? { author: a } : {}) }],
+        };
       }),
 
     /**
@@ -1373,20 +1379,50 @@ export function useTracker() {
         }),
       })),
 
-    updateBook: (id: string, title: string, pages: number) =>
+    updateBook: (id: string, title: string, pages: number, author?: string) =>
       commit((s) => {
         const t = title.trim();
         if (!t) return s;
         const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
+        const a = author?.trim();
         return {
           ...s,
           // Shortening a book below where we had read to would otherwise leave
           // it more than full, so the progress follows the new length down.
           books: s.books.map((b) =>
-            b.id === id ? { ...b, title: t, pages: n, read: n > 0 ? Math.min(b.read, n) : b.read } : b
+            b.id === id
+              ? {
+                  ...b,
+                  title: t,
+                  pages: n,
+                  author: a || undefined,
+                  read: n > 0 ? Math.min(b.read, n) : b.read,
+                }
+              : b
           ),
         };
       }),
+
+    /**
+     * Adds to a book's progress, for logging a session without having to
+     * remember or work out the page number you are now on.
+     */
+    addPagesRead: (id: string, delta: number) =>
+      commit((s) => ({
+        ...s,
+        books: s.books.map((b) => {
+          if (b.id !== id) return b;
+          if (!Number.isFinite(delta)) return b;
+          const next = Math.max(0, b.read + Math.round(delta));
+          const capped = b.pages > 0 ? Math.min(next, b.pages) : next;
+          const finished = b.pages > 0 && capped >= b.pages;
+          return {
+            ...b,
+            read: capped,
+            ...(finished ? { doneDate: b.doneDate ?? dateKey() } : { doneDate: undefined }),
+          };
+        }),
+      })),
 
     removeBook: (id: string) =>
       commit((s) => ({ ...s, books: s.books.filter((b) => b.id !== id) })),

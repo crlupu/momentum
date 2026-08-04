@@ -25,7 +25,7 @@ import WeightTracker from "@/components/WeightTracker";
 import CaloriesTracker from "@/components/CaloriesTracker";
 import MacroTracker from "@/components/MacroTracker";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
-import { Bookshelf } from "@/components/Bookshelf";
+import { Books } from "@/components/Books";
 import WorkoutsView from "@/components/WorkoutsView";
 import Charts from "@/components/Charts";
 import CompletionLog from "@/components/CompletionLog";
@@ -167,7 +167,7 @@ export default function Home() {
                     onToggle={() => toggle("books")}
                     isDesktop={isDesktop}
                   >
-                    <Bookshelf tracker={tracker} />
+                    <Books tracker={tracker} />
                   </Section>
 
                   <Section
@@ -235,7 +235,7 @@ export default function Home() {
                   <section id="books" className="section-panel scroll-mt-6">
                     <SectionBand id="books" />
                     <div className="section-panel__body">
-                      <Bookshelf tracker={tracker} />
+                      <Books tracker={tracker} />
                     </div>
                   </section>
 
