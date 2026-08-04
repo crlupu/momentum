@@ -95,6 +95,8 @@ function SubtaskRow({
             Current
             <Input
               type="number"
+              step="any"
+              inputMode="decimal"
               aria-label="Subtask current value"
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
@@ -105,6 +107,8 @@ function SubtaskRow({
             Target
             <Input
               type="number"
+              step="any"
+              inputMode="decimal"
               aria-label="Subtask target value"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
@@ -181,6 +185,8 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
         Current
         <Input
           type="number"
+          step="any"
+          inputMode="decimal"
           aria-label="Subtask current value"
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
@@ -191,6 +197,8 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
         Target
         <Input
           type="number"
+          step="any"
+          inputMode="decimal"
           aria-label="Subtask target value"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
@@ -370,6 +378,8 @@ function GoalCard({
                 Current
                 <Input
                   type="number"
+                  step="any"
+                  inputMode="decimal"
                   aria-label="Current value"
                   value={current}
                   onChange={(e) => setCurrent(e.target.value)}
@@ -380,6 +390,8 @@ function GoalCard({
                 Target
                 <Input
                   type="number"
+                  step="any"
+                  inputMode="decimal"
                   aria-label="Target value"
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}

@@ -112,11 +112,11 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
       <div className="flex gap-3">
         <label className="flex-1 text-xs text-foreground/50">
           Current
-          <Input type="number" aria-label="Current value" placeholder="132" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5" />
+          <Input type="number" step="any" inputMode="decimal" aria-label="Current value" placeholder="132" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5" />
         </label>
         <label className="flex-1 text-xs text-foreground/50">
           Target
-          <Input type="number" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
+          <Input type="number" step="any" inputMode="decimal" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
         </label>
       </div>
       <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
