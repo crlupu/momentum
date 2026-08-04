@@ -1549,6 +1549,9 @@ export function useTracker() {
 
     // ---- protein and fibre ----
     /** Logs protein and/or fibre for today. Either value may be left out. */
+    removeMacroEntry: (id: string) =>
+      commit((s) => ({ ...s, macros: s.macros.filter((e) => e.id !== id) })),
+
     addMacros: (protein: number | null, fiber: number | null) =>
       commit((s) => {
         const p = protein != null && Number.isFinite(protein) && protein > 0 ? Math.round(protein) : undefined;

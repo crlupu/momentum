@@ -18,7 +18,7 @@ function formatSet(set: SetRecord): string {
 
 type Entry = {
   key: string;
-  kind: "To-do" | "Goal" | "Recurring" | "Workout" | "Cardio";
+  kind: "To-do" | "Goal" | "Recurring" | "Workout" | "Cardio" | "Calories" | "Macros";
   title: string;
   /** Second line, e.g. the set-by-set breakdown of a workout. */
   detail?: string;
@@ -37,6 +37,8 @@ const KIND_COLOR: Record<Entry["kind"], string> = {
   Recurring: "#491d8b",
   Workout: "#8a3ffc",
   Cardio: "#42be65",
+  Calories: "#469c9b",
+  Macros: "#4491e1",
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
@@ -170,6 +172,39 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       color: KIND_COLOR.Workout,
       what: `the ${w.name} session on ${w.date}`,
       onDelete: () => tracker.removeWorkoutSession(w.id),
+    });
+  });
+
+  // Every calorie entry, not a daily total: the log is a record of things
+  // done, and a total is not something that was done at a moment.
+  s.calories.forEach((c) => {
+    const tag = c.tagId ? s.mealTags.find((m) => m.id === c.tagId) : undefined;
+    entries.push({
+      key: `kcal-${c.id}`,
+      kind: "Calories",
+      title: `${c.kcal.toLocaleString()} kcal${tag ? ` — ${tag.name}` : ""}`,
+      date: c.date,
+      color: tag?.color || KIND_COLOR.Calories,
+      what: `the ${c.kcal} kcal entry on ${c.date}`,
+      onDelete: () => tracker.removeCalorieEntry(c.id),
+    });
+  });
+
+  s.macros.forEach((m) => {
+    const parts = [
+      m.protein ? `${m.protein} g protein` : null,
+      m.fiber ? `${m.fiber} g fibre` : null,
+    ].filter(Boolean);
+    // An entry with neither is nothing to show.
+    if (!parts.length) return;
+    entries.push({
+      key: `macro-${m.id}`,
+      kind: "Macros",
+      title: parts.join(" · "),
+      date: m.date,
+      color: KIND_COLOR.Macros,
+      what: `the ${parts.join(" and ")} entry on ${m.date}`,
+      onDelete: () => tracker.removeMacroEntry(m.id),
     });
   });
 
