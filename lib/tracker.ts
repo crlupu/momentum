@@ -1428,6 +1428,24 @@ export function useTracker() {
       })),
 
     /**
+     * Records everything one lookup found: the cover, and the author when the
+     * book hasn't got one.
+     *
+     * An author already on the book is never overwritten. It was either typed
+     * or filled in from an earlier lookup and corrected since, and neither is
+     * something a guess from a title match should be allowed to undo.
+     */
+    resolveBook: (id: string, coverId: string | null, author?: string) =>
+      commit((s) => ({
+        ...s,
+        books: s.books.map((b) =>
+          b.id === id
+            ? { ...b, coverId, ...(!b.author?.trim() && author ? { author } : {}) }
+            : b
+        ),
+      })),
+
+    /**
      * Adds to a book's progress, for logging a session without having to
      * remember or work out the page number you are now on.
      */

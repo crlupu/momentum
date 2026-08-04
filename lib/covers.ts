@@ -22,29 +22,45 @@ export function coverUrl(coverId: string, size: CoverSize = "M"): string {
   return `https://covers.openlibrary.org/b/id/${coverId}-${size}.jpg`;
 }
 
+/** What one lookup can tell us about a book. */
+export type BookLookup = {
+  /** The cover id, or null when Open Library has no cover for it. */
+  coverId: string | null;
+  /** The author as Open Library has it, if it named one. */
+  author?: string;
+};
+
 /**
- * Finds a cover id for a book, or null if there isn't one.
+ * Looks a book up by title, and by author too when one is already known.
  *
- * Null is a real answer rather than a failure: plenty of books have no cover
- * on Open Library, and recording that stops us asking again every time the
- * page loads. A lookup that fails for any other reason — offline, a bad
- * response — throws, so the caller can leave the book unresolved and try again
- * later rather than recording "no cover" for a book that has one.
+ * The cover being null is a real answer rather than a failure: plenty of books
+ * have no cover, and recording that stops us asking again on every load. A
+ * lookup that fails for any other reason — offline, a bad response — throws,
+ * so the caller can leave the book unresolved and try again later rather than
+ * recording "no cover" for a book that has one.
  */
-export async function findCoverId(title: string, author?: string): Promise<string | null> {
+export async function lookupBook(title: string, author?: string): Promise<BookLookup> {
   const params = new URLSearchParams({
     title,
     limit: "1",
-    // Only the one field is needed; asking for the whole record would pull
-    // down a few hundred kilobytes per book for no reason.
-    fields: "cover_i",
+    // Only the fields used; asking for the whole record would pull down a few
+    // hundred kilobytes per book for no reason.
+    fields: "cover_i,author_name",
   });
   if (author?.trim()) params.set("author", author.trim());
 
   const res = await fetch(`${SEARCH}?${params.toString()}`);
   if (!res.ok) throw new Error(`Open Library returned ${res.status}`);
   const data: unknown = await res.json();
-  const docs = (data as { docs?: { cover_i?: number }[] })?.docs;
-  const id = docs?.[0]?.cover_i;
-  return typeof id === "number" && id > 0 ? String(id) : null;
+  const doc = (data as { docs?: { cover_i?: number; author_name?: string[] }[] })?.docs?.[0];
+
+  const id = doc?.cover_i;
+  // Several authors are possible; the first is the one the book is filed
+  // under, and a card has room for one name.
+  const name = doc?.author_name?.[0]?.trim();
+
+  return {
+    coverId: typeof id === "number" && id > 0 ? String(id) : null,
+    ...(name ? { author: name } : {}),
+  };
 }

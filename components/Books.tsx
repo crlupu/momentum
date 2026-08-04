@@ -9,7 +9,7 @@ import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
 import { readableText } from "@/lib/color";
 import { Tracker, Book, bookProgress, bookColor } from "@/lib/tracker";
-import { coverUrl, findCoverId } from "@/lib/covers";
+import { coverUrl, lookupBook } from "@/lib/covers";
 
 /**
  * The cover.
@@ -56,7 +56,8 @@ function Cover({ book }: { book: Book }) {
 }
 
 /**
- * Looks up covers for books that have never been looked up.
+ * Looks up the cover — and the author, where one is missing — for books that
+ * have never been looked up.
  *
  * One at a time and once per book: Open Library ask not to have their cover
  * API crawled, and a lookup that finds nothing records null so the question is
@@ -89,9 +90,9 @@ function useCoverLookup(tracker: Tracker, books: Book[]) {
     // — cancelling on cleanup threw away the answer to a lookup that had
     // already been made, and the book was never resolved. Only unmounting
     // stops it, and the write is harmless either way.
-    findCoverId(next.title, next.author)
-      .then((id) => {
-        if (alive.current) void tracker.setBookCover(next.id, id);
+    lookupBook(next.title, next.author)
+      .then(({ coverId, author }) => {
+        if (alive.current) void tracker.resolveBook(next.id, coverId, author);
       })
       .catch(() => {
         // Left unresolved on purpose: a reload will try again.
