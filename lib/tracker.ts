@@ -843,7 +843,12 @@ export function useTracker() {
    * is actually stored. Resolves true on success, false on failure.
    */
   const commit = async (fn: (s: TrackerState) => TrackerState): Promise<boolean> => {
-    const base = stateRef.current;
+    // The ref is kept in step by an effect, and a child's effect runs before
+    // its parent's — so a write made from a child effect on the render that
+    // first loaded the state found the ref still empty and was refused. The
+    // render's own state is the right answer whenever the ref has not caught
+    // up, and identical to it once it has.
+    const base = stateRef.current ?? state;
     if (!base) return false;
     const next = fn(base);
 

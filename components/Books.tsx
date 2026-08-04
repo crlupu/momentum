@@ -85,6 +85,21 @@ function useCoverLookup(tracker: Tracker, books: Book[]) {
     busy.current = true;
     tried.current.add(next.id);
 
+    // Another copy of the same book already resolved is as good an answer as
+    // the API's, and costs nothing. Only a book that was actually looked up
+    // counts — one still waiting has nothing to give.
+    const known = books.find(
+      (b) =>
+        b.id !== next.id &&
+        b.coverId !== undefined &&
+        normalise(b.title) === normalise(next.title)
+    );
+    if (known) {
+      void tracker.resolveBook(next.id, known.coverId ?? null, known.author);
+      busy.current = false;
+      return;
+    }
+
     // Deliberately not cancelled when this effect re-runs. The books array is
     // a new reference on every state change, so the effect re-runs constantly
     // — cancelling on cleanup threw away the answer to a lookup that had
@@ -151,6 +166,25 @@ function AddPagesForm({
       </div>
     </form>
   );
+}
+
+/** Loose comparison for matching titles typed by hand against stored ones. */
+function normalise(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/**
+ * Books already on the shelf whose titles contain what has been typed.
+ *
+ * Free and instant, because the whole shelf is already in memory — the
+ * Firestore document is read once and kept there. So this can be shown while
+ * the network search is still being waited on, and it is the answer to the
+ * question the search often turns out to be asking: have I got this already.
+ */
+function shelfMatches(books: Book[], query: string, limit = 4): Book[] {
+  const q = normalise(query);
+  if (!q) return [];
+  return books.filter((b) => normalise(b.title).includes(q)).slice(0, limit);
 }
 
 /** How much has to be typed before it is worth asking. */
@@ -251,6 +285,7 @@ function BookForm({
   book: Book | null;
   onClose: () => void;
 }) {
+  const shelf = tracker.state!.books;
   const [title, setTitle] = useState(book?.title ?? "");
   const [author, setAuthor] = useState(book?.author ?? "");
   const [pages, setPages] = useState(book ? String(book.pages || "") : "");
@@ -267,6 +302,24 @@ function BookForm({
   // for, and a list dropping open under it would be in the way.
   const suggesting = !book && chosen !== title.trim();
   const { results, searching, timedOut } = useTitleSearch(title, suggesting);
+
+  // The shelf is searched first and shown straight away; the network search
+  // fills in underneath when it arrives. A book already here is dropped from
+  // the network results rather than listed twice.
+  const mine = suggesting && title.trim().length >= MIN_QUERY ? shelfMatches(shelf, title) : [];
+  const seen = new Set(mine.map((b) => normalise(b.title)));
+  const remote = results.filter((r) => !seen.has(normalise(r.title)));
+
+  /** Takes everything already known about a book on the shelf. */
+  const chooseMine = (b: Book) => {
+    setTitle(b.title);
+    setChosen(b.title);
+    if (b.author) setAuthor(b.author);
+    if (b.pages && !pages.trim()) setPages(String(b.pages));
+    // Undefined would send the new copy off to be looked up again for an
+    // answer this one already has.
+    setPickedCover(b.coverId ?? null);
+  };
 
   const choose = (s: BookSuggestion) => {
     setTitle(s.title);
@@ -309,9 +362,29 @@ function BookForm({
           autoFocus={!book}
         />
 
-        {suggesting && title.trim().length >= MIN_QUERY && (results.length > 0 || searching || timedOut) && (
+        {suggesting &&
+          title.trim().length >= MIN_QUERY &&
+          (mine.length > 0 || remote.length > 0 || searching || timedOut) && (
           <ul className="book-suggest">
-            {results.map((s) => (
+            {mine.map((b) => (
+              <li key={`mine-${b.id}`}>
+                <button type="button" className="book-suggest__row" onClick={() => chooseMine(b)}>
+                  {b.coverId ? (
+                    <img className="book-suggest__thumb" src={coverUrl(b.coverId, "S")} alt="" loading="lazy" />
+                  ) : (
+                    <span className="book-suggest__thumb book-suggest__thumb--none" aria-hidden />
+                  )}
+                  <span className="book-suggest__text">
+                    <span className="book-suggest__title">{b.title}</span>
+                    <span className="book-suggest__meta">
+                      {[b.author, b.pages ? `${b.pages} pages` : null].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  <span className="book-suggest__tag">On your shelf</span>
+                </button>
+              </li>
+            ))}
+            {remote.map((s) => (
               <li key={s.key}>
                 <button type="button" className="book-suggest__row" onClick={() => choose(s)}>
                   {s.coverId ? (

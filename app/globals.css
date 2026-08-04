@@ -2057,6 +2057,18 @@ html.dark {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Marks a result that came from the shelf rather than the network. */
+.book-suggest__tag {
+  flex: none;
+  align-self: flex-start;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 .book-suggest__note {
   padding: 0.5rem;
   font-size: 12px;
