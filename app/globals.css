@@ -1928,6 +1928,14 @@ html.dark {
   background: rgb(0 0 0 / 22%);
   border-right: 1px solid rgb(255 255 255 / 12%);
 }
+/* A real cover keeps the same footprint as the drawn one, so swapping one for
+   the other never reflows the card. Cropped rather than letterboxed: covers
+   come in assorted aspect ratios and a fitted one would leave odd margins. */
+.book-cover--art {
+  object-fit: cover;
+  background: var(--book-unread);
+}
+
 .book-cover__initials {
   padding-left: 9px;
   font-size: 20px;

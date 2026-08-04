@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { Check, Plus, ImageOff } from "lucide-react";
 
 import { Button, Input } from "./ui";
 import { Modal } from "./Modal";
@@ -9,18 +9,25 @@ import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
 import { readableText } from "@/lib/color";
 import { Tracker, Book, bookProgress, bookColor } from "@/lib/tracker";
+import { coverUrl, findCoverId } from "@/lib/covers";
 
 /**
- * A stand-in cover.
+ * The cover.
  *
- * There is no artwork to show and asking for a cover image would be asking for
- * a chore, so the cover is built from what is already known: the book's colour,
- * a spine down the left edge, and its initials large enough to tell one from
- * another at a glance across a grid.
+ * A real one if Open Library had it, otherwise one built from what is already
+ * known: the book's colour, a darker band down the binding edge, and its
+ * initials. The drawn cover is also what shows when the image fails — offline,
+ * or a cover id that no longer resolves — so a book never appears as a broken
+ * image.
  */
 function Cover({ book }: { book: Book }) {
   const colour = bookColor(book);
   const ink = readableText(colour);
+  const [broken, setBroken] = useState(false);
+
+  // A new id deserves a fresh attempt, whatever happened to the last one.
+  useEffect(() => setBroken(false), [book.coverId]);
+
   const initials = book.title
     .split(/\s+/)
     .filter((w) => /[a-z0-9]/i.test(w[0] ?? ""))
@@ -28,12 +35,71 @@ function Cover({ book }: { book: Book }) {
     .map((w) => w[0].toUpperCase())
     .join("");
 
+  if (book.coverId && !broken) {
+    return (
+      <img
+        className="book-cover book-cover--art"
+        src={coverUrl(book.coverId, "M")}
+        alt=""
+        loading="lazy"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+
   return (
     <span className="book-cover" style={{ background: colour, color: ink }} aria-hidden>
       <span className="book-cover__spine" />
       <span className="book-cover__initials">{initials}</span>
     </span>
   );
+}
+
+/**
+ * Looks up covers for books that have never been looked up.
+ *
+ * One at a time and once per book: Open Library ask not to have their cover
+ * API crawled, and a lookup that finds nothing records null so the question is
+ * not asked again on every load. A lookup that fails outright — offline, a bad
+ * response — records nothing, leaving the book to be tried again later rather
+ * than marking a book as having no cover when it may well have one.
+ */
+function useCoverLookup(tracker: Tracker, books: Book[]) {
+  // Tried this session. Without it a failed lookup would be retried in a loop,
+  // since nothing about the book changes to stop it.
+  const tried = useRef<Set<string>>(new Set());
+  const busy = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const next = books.find((b) => b.coverId === undefined && !tried.current.has(b.id));
+    if (!next || busy.current) return;
+
+    busy.current = true;
+    tried.current.add(next.id);
+
+    // Deliberately not cancelled when this effect re-runs. The books array is
+    // a new reference on every state change, so the effect re-runs constantly
+    // — cancelling on cleanup threw away the answer to a lookup that had
+    // already been made, and the book was never resolved. Only unmounting
+    // stops it, and the write is harmless either way.
+    findCoverId(next.title, next.author)
+      .then((id) => {
+        if (alive.current) void tracker.setBookCover(next.id, id);
+      })
+      .catch(() => {
+        // Left unresolved on purpose: a reload will try again.
+      })
+      .finally(() => {
+        busy.current = false;
+      });
+  }, [books, tracker]);
 }
 
 /** Logs a reading session: pages read now, added to what was read before. */
@@ -155,6 +221,27 @@ function BookForm({
         />
       </div>
 
+      {book && (
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() => void tracker.setBookCover(book.id, undefined)}
+          >
+            Find cover
+          </Button>
+          {book.coverId && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onPress={() => void tracker.setBookCover(book.id, null)}
+            >
+              <ImageOff className="h-3.5 w-3.5" /> Use plain cover
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         {book ? (
           <DeleteButton
@@ -251,6 +338,7 @@ export function Books({ tracker }: { tracker: Tracker }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [logging, setLogging] = useState<Book | null>(null);
+  useCoverLookup(tracker, s.books);
 
   const finished = s.books.filter((b) => b.pages > 0 && b.read >= b.pages).length;
   const pagesRead = s.books.reduce((n, b) => n + Math.min(b.read, b.pages || b.read), 0);

@@ -113,6 +113,15 @@ export type Book = {
   read: number;
   /** Cover colour, picked when the book is added. */
   color?: string;
+  /**
+   * Open Library's id for the cover image.
+   *
+   * Three states, and the difference matters: undefined means it has not been
+   * looked up, null means it was looked up and there is no cover, and a string
+   * is the cover. Without the null the app would ask again on every load for
+   * every book that hasn't got one.
+   */
+  coverId?: string | null;
   /** The day it was finished, set when `read` first reaches `pages`. */
   doneDate?: string;
 };
@@ -1389,19 +1398,34 @@ export function useTracker() {
           ...s,
           // Shortening a book below where we had read to would otherwise leave
           // it more than full, so the progress follows the new length down.
-          books: s.books.map((b) =>
-            b.id === id
-              ? {
-                  ...b,
-                  title: t,
-                  pages: n,
-                  author: a || undefined,
-                  read: n > 0 ? Math.min(b.read, n) : b.read,
-                }
-              : b
-          ),
+          books: s.books.map((b) => {
+            if (b.id !== id) return b;
+            // A change of title or author is a change of book as far as the
+            // cover is concerned, so it goes back to unresolved and is looked
+            // up again rather than keeping the old book's picture.
+            const renamed = b.title !== t || (b.author ?? "") !== (a ?? "");
+            return {
+              ...b,
+              title: t,
+              pages: n,
+              author: a || undefined,
+              read: n > 0 ? Math.min(b.read, n) : b.read,
+              ...(renamed ? { coverId: undefined } : {}),
+            };
+          }),
         };
       }),
+
+    /**
+     * Records the result of a cover lookup — an id, or null for "looked and
+     * there isn't one". Setting it back to undefined marks the book for
+     * another look.
+     */
+    setBookCover: (id: string, coverId: string | null | undefined) =>
+      commit((s) => ({
+        ...s,
+        books: s.books.map((b) => (b.id === id ? { ...b, coverId } : b)),
+      })),
 
     /**
      * Adds to a book's progress, for logging a session without having to
