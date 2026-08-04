@@ -1874,12 +1874,14 @@ html.dark {
   display: flex;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: var(--surface-secondary);
-  border: 1px solid var(--default);
+  /* The same surface the goal cards sit on, so a card reads as a card
+     wherever it appears rather than as a panel peculiar to this section. */
+  background: var(--pane-bg);
+  border: 1px solid var(--pane-border);
 }
 .book-card--done {
-  background: color-mix(in srgb, var(--c-green-50) 10%, var(--surface-secondary));
-  border-color: color-mix(in srgb, var(--c-green-50) 45%, var(--default));
+  background: color-mix(in srgb, var(--c-green-50) 10%, var(--pane-bg));
+  border-color: color-mix(in srgb, var(--c-green-50) 45%, var(--pane-border));
 }
 
 .book-card__tick {
