@@ -491,6 +491,35 @@ function BookForm({
   );
 }
 
+/**
+ * Which pile a book belongs to. The order of these is the order they appear.
+ *
+ * Started first, because a book being read is the one you have come to the
+ * page for. Unstarted next, since choosing what to pick up next is the other
+ * reason to look. Finished last: they are kept for the record, and a shelf
+ * that has been used for a while is mostly them.
+ */
+function pile(b: Book): number {
+  const finished = b.pages > 0 && b.read >= b.pages;
+  if (finished) return 2;
+  return b.read > 0 ? 0 : 1;
+}
+
+/**
+ * Piles first, then alphabetical within each.
+ *
+ * Sorted by title with a collator rather than by comparing strings directly,
+ * so case is ignored and accented letters file next to their plain forms
+ * instead of after every unaccented title.
+ */
+const byTitle = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+
+function shelfOrder(books: Book[]): Book[] {
+  return [...books].sort(
+    (a, b) => pile(a) - pile(b) || byTitle.compare(a.title, b.title)
+  );
+}
+
 /** One book: cover, title, author, how far through, and a way to log more. */
 function BookCard({
   book,
@@ -501,7 +530,10 @@ function BookCard({
   onEdit: () => void;
   onAddPages: () => void;
 }) {
-  const pct = Math.round(bookProgress(book) * 100);
+  // Floored, not rounded: 299 of 300 pages rounds up to 100%, which read as
+  // finished on a card sitting in the unfinished pile with a page still to go.
+  // Only an actually finished book should show a hundred.
+  const pct = Math.floor(bookProgress(book) * 100);
   const done = book.pages > 0 && book.read >= book.pages;
   const colour = bookColor(book);
 
@@ -602,7 +634,7 @@ export function Books({ tracker }: { tracker: Tracker }) {
           </div>
 
           <div className="book-grid">
-            {s.books.map((b) => (
+            {shelfOrder(s.books).map((b) => (
               <BookCard
                 key={b.id}
                 book={b}
