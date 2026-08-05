@@ -11,9 +11,16 @@ import { readableText } from "@/lib/color";
 
 /** "60×10" — compact, because a session's breakdown lists many of them. */
 function formatSet(set: SetRecord): string {
-  if (set.weight != null && set.reps != null) return `${set.weight}×${set.reps}`;
-  if (set.weight != null) return `${set.weight}kg`;
-  return set.reps != null ? `×${set.reps}` : "–";
+  const body =
+    set.weight != null && set.reps != null
+      ? `${set.weight}×${set.reps}`
+      : set.weight != null
+        ? `${set.weight}kg`
+        : set.reps != null
+          ? `×${set.reps}`
+          : "–";
+  // Marked, or a one-arm set would read as half the work it was.
+  return set.oneArm ? `${body}/arm` : body;
 }
 
 type Entry = {

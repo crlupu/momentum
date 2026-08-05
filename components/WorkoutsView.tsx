@@ -358,12 +358,14 @@ function Elapsed({ startedAt }: { startedAt: number }) {
   );
 }
 
-/** "60 kg × 10", with whichever half is missing left out. */
+/** "60 kg × 10 reps", with whichever half is missing left out. */
 function formatSet(set: SetRecord): string {
   const parts: string[] = [];
   if (set.weight != null) parts.push(`${set.weight} kg`);
   if (set.reps != null) parts.push(`${set.reps} reps`);
-  return parts.length ? parts.join(" × ") : "–";
+  const body = parts.length ? parts.join(" × ") : "–";
+  // Noted, because per side is a different set from the same numbers both.
+  return set.oneArm ? `${body} · 1 arm` : body;
 }
 
 /**
@@ -475,6 +477,20 @@ function SetRow({
     <div className={className}>
       <div className="set-row__head">
         <span className="set-row__index">Set {index + 1}</span>
+
+        {/* In the head rather than the row of controls below: that row is
+            already a field, a field and three buttons, and a phone has no
+            width left in it. */}
+        <label className="set-row__onearm">
+          <input
+            type="checkbox"
+            checked={!!set.oneArm}
+            disabled={done}
+            onChange={(e) => void tracker.setSetOneArm(exerciseId, set.id, e.target.checked)}
+          />
+          1 arm
+        </label>
+
         {/* Last time's numbers: reference only, never editable. */}
         <span className="set-row__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
           {previous ? `last · ${formatSet(previous)}` : "no history"}

@@ -190,7 +190,16 @@ export type Exercise = {
 };
 
 /** The numbers that describe a single set. Shared by live and logged sets. */
-export type SetRecord = { weight?: number; reps?: number };
+export type SetRecord = {
+  weight?: number;
+  reps?: number;
+  /**
+   * A set done one arm at a time — a single-arm row, a lunge counted per leg.
+   * The weight and reps recorded are for the one side, so the set moved twice
+   * what it says, and its volume is doubled.
+   */
+  oneArm?: boolean;
+};
 
 /**
  * One set inside a live workout. A set is planned first and performed second:
@@ -226,7 +235,9 @@ export type ActiveWorkout = {
  */
 export function setLoad(set: SetRecord): number {
   const reps = set.reps != null && set.reps > 0 ? set.reps : 1;
-  return (set.weight ?? 0) * reps;
+  // Doubled for one-arm work: the numbers describe one side of it.
+  const sides = set.oneArm ? 2 : 1;
+  return (set.weight ?? 0) * reps * sides;
 }
 
 /** Volume of a live workout. Only sets marked done count — planned ones don't. */
@@ -1730,7 +1741,7 @@ export function useTracker() {
         const previous = ex.sets[ex.sets.length - 1];
         const history = lastPerformed(s.workoutSessions, exerciseId)?.sets ?? [];
         const seed: SetRecord = previous
-          ? { weight: previous.weight, reps: previous.reps }
+          ? { weight: previous.weight, reps: previous.reps, oneArm: previous.oneArm }
           : history[0] ?? { weight: ex.weight };
         return editSets(s, exerciseId, (sets) => [...sets, { id: uid(), ...seed, done: false }]);
       }),
@@ -1746,7 +1757,13 @@ export function useTracker() {
           if (!source) return sets;
           return [
             ...sets,
-            { id: uid(), weight: source.weight, reps: source.reps, done: false },
+            {
+              id: uid(),
+              weight: source.weight,
+              reps: source.reps,
+              oneArm: source.oneArm,
+              done: false,
+            },
           ];
         })
       ),
@@ -1797,6 +1814,13 @@ export function useTracker() {
         };
       }),
 
+    setSetOneArm: (exerciseId: string, setId: string, oneArm: boolean) =>
+      commit((s) =>
+        editSets(s, exerciseId, (sets) =>
+          sets.map((x) => (x.id === setId ? { ...x, oneArm } : x))
+        )
+      ),
+
     /**
      * The second step: the set has been performed. Only now does it count
      * towards the workout's volume, and only now can it be logged.
@@ -1832,7 +1856,7 @@ export function useTracker() {
             name: e.name,
             sets: e.sets
               .filter((x) => x.done)
-              .map((x) => ({ weight: x.weight, reps: x.reps })),
+              .map((x) => ({ weight: x.weight, reps: x.reps, oneArm: x.oneArm })),
           }))
           .filter((e) => e.sets.length > 0);
         return {
