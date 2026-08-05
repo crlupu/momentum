@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Button, Input } from "./ui";
-import { Pencil, Plus, Check, X, Palette } from "lucide-react";
+import { Pencil, Plus, Check, X, Palette } from "./icons";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";

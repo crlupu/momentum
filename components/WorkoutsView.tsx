@@ -12,7 +12,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Copy,
-} from "lucide-react";
+} from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing } from "./ConfigCard";

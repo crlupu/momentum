@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Check, Plus, ImageOff } from "lucide-react";
+import { Check, Plus, ImageOff } from "./icons";
 
 import { Button, Input } from "./ui";
 import { Modal } from "./Modal";

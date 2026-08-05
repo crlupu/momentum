@@ -1798,8 +1798,10 @@ html.dark {
 /* Carbon colours icons through its own selector, which would otherwise win. */
 .btn-delete-bare.cds--btn svg,
 .btn-delete-bare.cds--btn .cds--btn__icon {
-  fill: none;
-  stroke: currentColor;
+  /* Material icons are filled paths, not strokes: colouring the stroke here
+     would leave the icon present but invisible. */
+  fill: currentColor;
+  stroke: none;
   color: inherit;
 }
 
@@ -1837,8 +1839,10 @@ html.dark {
 /* Carbon paints icons through its own selector, which would otherwise win. */
 #config .cds--btn.btn-icon-only svg,
 #config .cds--btn.btn-icon-only .cds--btn__icon {
-  fill: none;
-  stroke: currentColor;
+  /* Material icons are filled paths, not strokes: colouring the stroke here
+     would leave the icon present but invisible. */
+  fill: currentColor;
+  stroke: none;
   color: inherit;
 }
 /* Delete keeps its meaning in red. Same specificity as the rule above, so

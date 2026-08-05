@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus, CalendarDays } from "lucide-react";
+import { Plus, CalendarDays } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 

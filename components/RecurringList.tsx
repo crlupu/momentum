@@ -2,7 +2,7 @@
 
 import { Button, Card } from "./ui";
 import { usePending } from "./ActionButton";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
 
 function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {

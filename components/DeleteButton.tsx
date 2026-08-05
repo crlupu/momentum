@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "./ui";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "./icons";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
 

@@ -12,7 +12,7 @@ import {
   CAT_COLORS,
   UNTAGGED_COLOR,
 } from "@/lib/tracker";
-import { Plus } from "lucide-react";
+import { Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
 import { StartWorkoutButton } from "./StartWorkoutButton";

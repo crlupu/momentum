@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "./ui";
-import { Play } from "lucide-react";
+import { Play } from "./icons";
 import { Modal } from "./Modal";
 import { Tracker } from "@/lib/tracker";
 

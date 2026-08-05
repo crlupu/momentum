@@ -7,7 +7,7 @@ import { Button } from "./ui";
 import {
   Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut, Dumbbell, Apple,
   BookOpen,
-} from "lucide-react";
+} from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";

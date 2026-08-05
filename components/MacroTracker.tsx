@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { Plus } from "lucide-react";
+import { Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, macroTotalsByDate } from "@/lib/tracker";
 

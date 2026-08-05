@@ -15,7 +15,7 @@ import {
   Plus,
   RotateCcw,
   Target,
-} from "lucide-react";
+} from "./icons";
 import { ProgressRing } from "./ProgressRing";
 import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
 

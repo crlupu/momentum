@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "./icons";
 import { sectionIndex, sectionTitle, type SectionId } from "@/components/sections";
 
 /**

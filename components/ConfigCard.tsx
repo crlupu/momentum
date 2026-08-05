@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, createContext, useCallback, useContext, useState } from "react";
-import { Settings, Check } from "lucide-react";
+import { Settings, Check } from "./icons";
 import { Button, Card } from "./ui";
 
 /**

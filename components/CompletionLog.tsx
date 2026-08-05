@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "./ui";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "./icons";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
