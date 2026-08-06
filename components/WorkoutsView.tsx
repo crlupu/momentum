@@ -54,6 +54,7 @@ function ExerciseRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(exercise.name);
   const [weight, setWeight] = useState(exercise.weight?.toString() ?? "");
+  const [oneArm, setOneArm] = useState(!!exercise.oneArm);
   const { pending, run } = usePending();
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
@@ -65,7 +66,7 @@ function ExerciseRow({
     // was typed, so if the write is refused it reopens with the draft intact.
     setEditing(false);
     const ok = await run(() =>
-      tracker.updateExercise(workout.id, exercise.id, name, num(weight))
+      tracker.updateExercise(workout.id, exercise.id, name, num(weight), oneArm)
     );
     if (!ok) setEditing(true);
   };
@@ -106,18 +107,32 @@ function ExerciseRow({
           onPress={() => {
             setName(exercise.name);
             setWeight(exercise.weight?.toString() ?? "");
+            setOneArm(!!exercise.oneArm);
             setEditing(false);
           }}
         >
           <X className="h-4 w-4" />
         </Button>
+        {/* Its own line: the row above is a name, a weight and two buttons,
+            and a label reading "one arm" does not abbreviate usefully. */}
+        <label className="exercise-onearm">
+          <input
+            type="checkbox"
+            checked={oneArm}
+            onChange={(e) => setOneArm(e.target.checked)}
+          />
+          One arm — counts double
+        </label>
       </form>
     );
   }
 
   return (
     <div className="group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0">
-      <span className="min-w-0 flex-1 truncate text-[15px]">{exercise.name}</span>
+      <span className="min-w-0 flex-1 truncate text-[15px]">
+        {exercise.name}
+        {exercise.oneArm && <span className="exercise-tag">1 arm</span>}
+      </span>
       <span className="font-mono-n shrink-0 text-[15px] font-semibold tabular-nums">
         {formatWeight(exercise.weight)}
       </span>
@@ -168,6 +183,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
   const [weight, setWeight] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [newOneArm, setNewOneArm] = useState(false);
   const [title, setTitle] = useState(workout.name);
   const { pending, run } = usePending();
 
@@ -178,6 +194,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
   const closeAdd = () => {
     setName("");
     setWeight("");
+    setNewOneArm(false);
     setAdding(false);
   };
 
@@ -189,15 +206,19 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
     e.preventDefault();
     if (pending || !name.trim()) return;
     const num = (v: string) => (v.trim() === "" ? null : Number(v));
-    const typed = { name, weight };
+    const typed = { name, weight, oneArm: newOneArm };
     // Clear straight away: the row is added optimistically, so waiting on the
     // save left the fields holding text that had already been committed.
     setName("");
     setWeight("");
-    const ok = await run(() => tracker.addExercise(workout.id, typed.name, num(typed.weight)));
+    setNewOneArm(false);
+    const ok = await run(() =>
+      tracker.addExercise(workout.id, typed.name, num(typed.weight), typed.oneArm)
+    );
     if (!ok) {
       setName(typed.name);
       setWeight(typed.weight);
+      setNewOneArm(typed.oneArm);
     }
   };
 
@@ -313,6 +334,16 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
               <X className="h-4 w-4" />
             </Button>
           </form>
+        ) : null}
+        {adding ? (
+          <label className="exercise-onearm">
+            <input
+              type="checkbox"
+              checked={newOneArm}
+              onChange={(e) => setNewOneArm(e.target.checked)}
+            />
+            One arm — counts double
+          </label>
         ) : (
           <Button variant="outline" className="mt-3" onPress={() => setAdding(true)}>
             <Plus className="h-4 w-4" /> Add exercise
@@ -363,9 +394,7 @@ function formatSet(set: SetRecord): string {
   const parts: string[] = [];
   if (set.weight != null) parts.push(`${set.weight} kg`);
   if (set.reps != null) parts.push(`${set.reps} reps`);
-  const body = parts.length ? parts.join(" × ") : "–";
-  // Noted, because per side is a different set from the same numbers both.
-  return set.oneArm ? `${body} · 1 arm` : body;
+  return parts.length ? parts.join(" × ") : "–";
 }
 
 /**
@@ -477,19 +506,6 @@ function SetRow({
     <div className={className}>
       <div className="set-row__head">
         <span className="set-row__index">Set {index + 1}</span>
-
-        {/* In the head rather than the row of controls below: that row is
-            already a field, a field and three buttons, and a phone has no
-            width left in it. */}
-        <label className="set-row__onearm">
-          <input
-            type="checkbox"
-            checked={!!set.oneArm}
-            disabled={done}
-            onChange={(e) => void tracker.setSetOneArm(exerciseId, set.id, e.target.checked)}
-          />
-          1 arm
-        </label>
 
         {/* Last time's numbers: reference only, never editable. */}
         <span className="set-row__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>

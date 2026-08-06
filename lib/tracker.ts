@@ -187,6 +187,16 @@ export type Exercise = {
   name: string;
   /** Working weight in kg. Left out for bodyweight movements. */
   weight?: number;
+  /**
+   * Done one arm or one leg at a time. The weight and reps recorded are for
+   * the one side, so the exercise moves twice what its sets say and its volume
+   * is doubled.
+   *
+   * A property of the movement rather than of a set, which is why it lives on
+   * the definition: a one-arm row is always a one-arm row, and saying so once
+   * beats saying it on every set of every session.
+   */
+  oneArm?: boolean;
 };
 
 /** The numbers that describe a single set. Shared by live and logged sets. */
@@ -194,9 +204,9 @@ export type SetRecord = {
   weight?: number;
   reps?: number;
   /**
-   * A set done one arm at a time — a single-arm row, a lunge counted per leg.
-   * The weight and reps recorded are for the one side, so the set moved twice
-   * what it says, and its volume is doubled.
+   * Set-level one-arm marking, as it was recorded before the flag moved to the
+   * exercise. Nothing writes it now, but sessions logged then still carry it
+   * and are still counted by it, so their totals do not change.
    */
   oneArm?: boolean;
 };
@@ -209,6 +219,8 @@ export type ActiveSet = SetRecord & { id: string; done?: boolean };
 
 export type ActiveExercise = {
   exerciseId: string;
+  /** Copied from the definition at the start. See Exercise.oneArm. */
+  oneArm?: boolean;
   /** Copied at start, so renaming or deleting mid-session can't break it. */
   name: string;
   /** The exercise's usual weight, used as the default for new sets. */
@@ -233,17 +245,19 @@ export type ActiveWorkout = {
  * Load moved by one set: weight × reps. Sets recorded before reps existed
  * count their weight once, so old sessions keep the total they were logged at.
  */
-export function setLoad(set: SetRecord): number {
+export function setLoad(set: SetRecord, oneArm = false): number {
   const reps = set.reps != null && set.reps > 0 ? set.reps : 1;
-  // Doubled for one-arm work: the numbers describe one side of it.
-  const sides = set.oneArm ? 2 : 1;
+  // Doubled for one-arm work: the numbers describe one side of it. The set's
+  // own flag is only ever set on sessions logged before the flag moved to the
+  // exercise, and is honoured so their totals stay as they were recorded.
+  const sides = oneArm || set.oneArm ? 2 : 1;
   return (set.weight ?? 0) * reps * sides;
 }
 
 /** Volume of a live workout. Only sets marked done count — planned ones don't. */
 export function activeWorkoutVolume(a: ActiveWorkout): number {
   return a.exercises.reduce(
-    (sum, e) => sum + e.sets.reduce((s, set) => (set.done ? s + setLoad(set) : s), 0),
+    (sum, e) => sum + e.sets.reduce((s, set) => (set.done ? s + setLoad(set, e.oneArm) : s), 0),
     0
   );
 }
@@ -322,6 +336,8 @@ export type WorkoutSession = {
 export type LoggedExercise = {
   exerciseId: string;
   name: string;
+  /** Whether it was done one side at a time. See Exercise.oneArm. */
+  oneArm?: boolean;
   sets: SetRecord[];
 };
 
@@ -1641,12 +1657,13 @@ export function useTracker() {
     removeWorkout: (workoutId: string) =>
       commit((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== workoutId) })),
 
-    addExercise: (workoutId: string, name: string, weight: number | null) =>
+    addExercise: (workoutId: string, name: string, weight: number | null, oneArm = false) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
         const ex: Exercise = { id: uid(), name: clean };
         if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
+        if (oneArm) ex.oneArm = true;
         return {
           ...s,
           workouts: s.workouts.map((w) =>
@@ -1655,7 +1672,13 @@ export function useTracker() {
         };
       }),
 
-    updateExercise: (workoutId: string, exerciseId: string, name: string, weight: number | null) =>
+    updateExercise: (
+      workoutId: string,
+      exerciseId: string,
+      name: string,
+      weight: number | null,
+      oneArm = false
+    ) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
@@ -1675,6 +1698,7 @@ export function useTracker() {
                           ...(weight != null && Number.isFinite(weight) && weight > 0
                             ? { weight }
                             : {}),
+                          ...(oneArm ? { oneArm: true } : {}),
                         }
                   ),
                 }
@@ -1721,6 +1745,9 @@ export function useTracker() {
               exerciseId: e.id,
               name: e.name,
               weight: e.weight,
+              // Copied at the start with the rest, so changing the definition
+              // mid-session cannot rewrite what is already being counted.
+              oneArm: e.oneArm,
               sets: [],
             })),
           },
@@ -1741,7 +1768,7 @@ export function useTracker() {
         const previous = ex.sets[ex.sets.length - 1];
         const history = lastPerformed(s.workoutSessions, exerciseId)?.sets ?? [];
         const seed: SetRecord = previous
-          ? { weight: previous.weight, reps: previous.reps, oneArm: previous.oneArm }
+          ? { weight: previous.weight, reps: previous.reps }
           : history[0] ?? { weight: ex.weight };
         return editSets(s, exerciseId, (sets) => [...sets, { id: uid(), ...seed, done: false }]);
       }),
@@ -1757,13 +1784,7 @@ export function useTracker() {
           if (!source) return sets;
           return [
             ...sets,
-            {
-              id: uid(),
-              weight: source.weight,
-              reps: source.reps,
-              oneArm: source.oneArm,
-              done: false,
-            },
+            { id: uid(), weight: source.weight, reps: source.reps, done: false },
           ];
         })
       ),
@@ -1814,13 +1835,6 @@ export function useTracker() {
         };
       }),
 
-    setSetOneArm: (exerciseId: string, setId: string, oneArm: boolean) =>
-      commit((s) =>
-        editSets(s, exerciseId, (sets) =>
-          sets.map((x) => (x.id === setId ? { ...x, oneArm } : x))
-        )
-      ),
-
     /**
      * The second step: the set has been performed. Only now does it count
      * towards the workout's volume, and only now can it be logged.
@@ -1854,9 +1868,8 @@ export function useTracker() {
           .map((e) => ({
             exerciseId: e.exerciseId,
             name: e.name,
-            sets: e.sets
-              .filter((x) => x.done)
-              .map((x) => ({ weight: x.weight, reps: x.reps, oneArm: x.oneArm })),
+            oneArm: e.oneArm,
+            sets: e.sets.filter((x) => x.done).map((x) => ({ weight: x.weight, reps: x.reps })),
           }))
           .filter((e) => e.sets.length > 0);
         return {

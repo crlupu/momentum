@@ -1655,27 +1655,35 @@ html.dark {
   user-select: none;
 }
 
-/* Sits between the set number and last time's figures, which are pushed to
-   the right by the head being a space-between row. */
-.set-row__onearm {
+/* One-arm marking, on the exercise definition rather than on a set. */
+.exercise-onearm {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  margin-right: auto;
-  margin-left: 0.6rem;
-  font-size: 0.6875rem;
+  gap: 0.4rem;
+  width: 100%;
+  padding-bottom: 0.5rem;
+  font-size: 0.75rem;
   color: var(--muted);
   cursor: pointer;
   user-select: none;
 }
-.set-row__onearm input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--c-green-50);
+.exercise-onearm input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
   cursor: pointer;
 }
-.set-row--done .set-row__onearm { color: var(--c-green-40); }
-.set-row--done .set-row__onearm input { cursor: default; }
+
+/* Marks a one-arm exercise in the read-only list. */
+.exercise-tag {
+  margin-left: 0.45rem;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
 
 .set-row__body {
   display: flex;
