@@ -83,6 +83,8 @@ function ExerciseRow({
         />
         <Input
           type="number"
+          step="any"
+          inputMode="decimal"
           aria-label="Weight in kg"
           placeholder="kg"
           value={weight}
@@ -307,6 +309,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             />
             <Input
               type="number"
+              step="any"
               inputMode="decimal"
               aria-label="Weight in kg"
               placeholder="kg"
@@ -438,6 +441,10 @@ function NumberField({
   return (
     <Input
       type="number"
+      // A number input without a step accepts whole numbers only, so 12.5 kg
+      // was a step mismatch and the browser refused it. Reps are counted, so
+      // they keep the whole-number step; a weight is measured and does not.
+      step={inputMode === "decimal" ? "any" : "1"}
       inputMode={inputMode}
       aria-label={label}
       placeholder={placeholder}
