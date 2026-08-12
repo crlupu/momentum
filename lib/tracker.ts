@@ -1741,15 +1741,27 @@ export function useTracker() {
             workoutId,
             name: w.name,
             startedAt: Date.now(),
-            exercises: w.exercises.map((e) => ({
-              exerciseId: e.id,
-              name: e.name,
-              weight: e.weight,
-              // Copied at the start with the rest, so changing the definition
-              // mid-session cannot rewrite what is already being counted.
-              oneArm: e.oneArm,
-              sets: [],
-            })),
+            exercises: w.exercises.map((e) => {
+              // Laid out as it was done last time, so the usual session is a
+              // matter of ticking sets off rather than typing them in. The
+              // numbers are a starting point: they are still editable, and
+              // nothing counts until a set is marked done.
+              const previous = lastPerformed(s.workoutSessions, e.id)?.sets ?? [];
+              return {
+                exerciseId: e.id,
+                name: e.name,
+                weight: e.weight,
+                // Copied at the start with the rest, so changing the definition
+                // mid-session cannot rewrite what is already being counted.
+                oneArm: e.oneArm,
+                sets: previous.map((set) => ({
+                  id: uid(),
+                  weight: set.weight,
+                  reps: set.reps,
+                  done: false,
+                })),
+              };
+            }),
           },
         };
       }),
