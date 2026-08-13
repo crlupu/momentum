@@ -157,10 +157,8 @@ function ExerciseRow({
 
 function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
   const [name, setName] = useState("");
-  const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newOneArm, setNewOneArm] = useState(false);
-  const [title, setTitle] = useState(workout.name);
   const { pending, run } = usePending();
 
   const doneToday = tracker
@@ -199,57 +197,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
 
   return (
     <div>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          {renaming ? (
-            <form
-              className="flex flex-1 items-center gap-2"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const ok = await run(() => tracker.renameWorkout(workout.id, title));
-                if (ok) setRenaming(false);
-              }}
-            >
-              <Input
-                aria-label="Workout name"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="flex-1"
-                autoFocus
-              />
-              <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save name">
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                isIconOnly
-                aria-label="Cancel rename"
-                onPress={() => {
-                  setTitle(workout.name);
-                  setRenaming(false);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </form>
-          ) : (
-            <>
-              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
-                {workout.name}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                isIconOnly
-                aria-label={`Rename ${workout.name}`}
-                onPress={() => setRenaming(true)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            </>
-          )}
-        </div>
-
         {workout.exercises.length === 0 ? (
           <p className="py-2 text-[15px] text-foreground/60">
             No exercises yet. Add the first one below.
@@ -723,38 +670,95 @@ function WorkoutRow({
   onToggle: () => void;
   editing: boolean;
 }) {
+  // Renaming happens here, on the name already shown, rather than on a second
+  // copy of it inside the editor below.
+  const [renaming, setRenaming] = useState(false);
+  const [title, setTitle] = useState(workout.name);
+  const { run } = usePending();
+
+  const saveName = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setRenaming(false);
+    const ok = await run(() => tracker.renameWorkout(workout.id, title));
+    if (ok === false) setRenaming(true);
+  };
+
   return (
     <div className="border-b border-foreground/10 last:border-b-0">
       <div className="cfg-row">
-        {editing ? (
-          <button
-            onClick={onToggle}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-            aria-expanded={expanded}
-          >
-            <ChevronRight
-              className={"h-3.5 w-3.5 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
-              aria-hidden
+        {renaming ? (
+          <form onSubmit={saveName} className="flex min-w-0 flex-1 items-center gap-2">
+            <Input
+              aria-label="Workout name"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="min-w-0 flex-1"
+              autoFocus
             />
-            <span className="truncate text-[15px]">{workout.name}</span>
-          </button>
+            <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save name">
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              isIconOnly
+              aria-label="Cancel rename"
+              onPress={() => {
+                setTitle(workout.name);
+                setRenaming(false);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </form>
+        ) : editing ? (
+          <>
+            <button
+              onClick={onToggle}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left"
+              aria-expanded={expanded}
+            >
+              <ChevronRight
+                className={"h-3.5 w-3.5 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
+                aria-hidden
+              />
+              <span className="truncate text-[15px]">{workout.name}</span>
+            </button>
+            <span className="cfg-meta">
+              {workout.exercises.length}{" "}
+              {workout.exercises.length === 1 ? "exercise" : "exercises"}
+            </span>
+            <span className="cfg-actions">
+              {/* The pencil renames. Opening the workout is the row itself,
+                  which the chevron already says. */}
+              <Button
+                size="sm"
+                variant="outline"
+                isIconOnly
+                aria-label={`Rename ${workout.name}`}
+                onPress={() => {
+                  setTitle(workout.name);
+                  setRenaming(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <DeleteButton
+                what={`the workout "${workout.name}"`}
+                iconOnly
+                onDelete={() => tracker.removeWorkout(workout.id)}
+              />
+            </span>
+          </>
         ) : (
-          <span className="cfg-label">{workout.name}</span>
-        )}
-        <span className="cfg-meta">
-          {workout.exercises.length}{" "}
-          {workout.exercises.length === 1 ? "exercise" : "exercises"}
-        </span>
-        {editing && (
-          <span className="cfg-actions">
-            {/* No edit button: the whole row is the control, and the chevron
-                beside the name already says so. */}
-            <DeleteButton
-              what={`the workout "${workout.name}"`}
-              iconOnly
-              onDelete={() => tracker.removeWorkout(workout.id)}
-            />
-          </span>
+          <>
+            <span className="cfg-label">{workout.name}</span>
+            <span className="cfg-meta">
+              {workout.exercises.length}{" "}
+              {workout.exercises.length === 1 ? "exercise" : "exercises"}
+            </span>
+          </>
         )}
       </div>
 
