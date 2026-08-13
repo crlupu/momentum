@@ -31,11 +31,6 @@ import {
   lastPerformed,
 } from "@/lib/tracker";
 
-/** "70 kg", or a dash when the movement carries no weight. */
-function formatWeight(w?: number): string {
-  return typeof w === "number" ? `${w} kg` : "–";
-}
-
 /* ------------------------------ exercise row ----------------------------- */
 
 function ExerciseRow({
@@ -53,11 +48,8 @@ function ExerciseRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(exercise.name);
-  const [weight, setWeight] = useState(exercise.weight?.toString() ?? "");
   const [oneArm, setOneArm] = useState(!!exercise.oneArm);
   const { pending, run } = usePending();
-
-  const num = (v: string) => (v.trim() === "" ? null : Number(v));
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +58,7 @@ function ExerciseRow({
     // was typed, so if the write is refused it reopens with the draft intact.
     setEditing(false);
     const ok = await run(() =>
-      tracker.updateExercise(workout.id, exercise.id, name, num(weight), oneArm)
+      tracker.updateExercise(workout.id, exercise.id, name, null, oneArm)
     );
     if (!ok) setEditing(true);
   };
@@ -80,16 +72,6 @@ function ExerciseRow({
           onChange={(e) => setName(e.target.value)}
           className="min-w-[8rem] flex-1"
           autoFocus
-        />
-        <Input
-          type="number"
-          step="any"
-          inputMode="decimal"
-          aria-label="Weight in kg"
-          placeholder="kg"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          className="w-[4.5rem]"
         />
         <Button
           type="submit"
@@ -108,15 +90,14 @@ function ExerciseRow({
           aria-label="Cancel"
           onPress={() => {
             setName(exercise.name);
-            setWeight(exercise.weight?.toString() ?? "");
             setOneArm(!!exercise.oneArm);
             setEditing(false);
           }}
         >
           <X className="h-4 w-4" />
         </Button>
-        {/* Its own line: the row above is a name, a weight and two buttons,
-            and a label reading "one arm" does not abbreviate usefully. */}
+        {/* Its own line: a label reading "one arm" does not abbreviate into
+            the row above. */}
         <label className="exercise-onearm">
           <input
             type="checkbox"
@@ -131,13 +112,7 @@ function ExerciseRow({
 
   return (
     <div className="group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0">
-      <span className="min-w-0 flex-1 truncate text-[15px]">
-        {exercise.name}
-        {exercise.oneArm && <span className="exercise-tag">1 arm</span>}
-      </span>
-      <span className="font-mono-n shrink-0 text-[15px] font-semibold tabular-nums">
-        {formatWeight(exercise.weight)}
-      </span>
+      <span className="min-w-0 flex-1 truncate text-[15px]">{exercise.name}</span>
       <span className="flex shrink-0 items-center gap-1">
         <Button
           size="sm"
@@ -182,7 +157,6 @@ function ExerciseRow({
 
 function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
   const [name, setName] = useState("");
-  const [weight, setWeight] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newOneArm, setNewOneArm] = useState(false);
@@ -195,7 +169,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
 
   const closeAdd = () => {
     setName("");
-    setWeight("");
     setNewOneArm(false);
     setAdding(false);
   };
@@ -208,25 +181,25 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
     e.preventDefault();
     if (pending || !name.trim()) return;
     const num = (v: string) => (v.trim() === "" ? null : Number(v));
-    const typed = { name, weight, oneArm: newOneArm };
+    const typed = { name, oneArm: newOneArm };
     // Clear straight away: the row is added optimistically, so waiting on the
     // save left the fields holding text that had already been committed.
     setName("");
-    setWeight("");
     setNewOneArm(false);
+    // No weight: a set takes its numbers from the last time the exercise was
+    // performed, so asking for one here was asking for a figure nothing read.
     const ok = await run(() =>
-      tracker.addExercise(workout.id, typed.name, num(typed.weight), typed.oneArm)
+      tracker.addExercise(workout.id, typed.name, null, typed.oneArm)
     );
     if (!ok) {
       setName(typed.name);
-      setWeight(typed.weight);
       setNewOneArm(typed.oneArm);
     }
   };
 
   return (
     <div>
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-2">
           {renaming ? (
             <form
               className="flex flex-1 items-center gap-2"
@@ -261,9 +234,17 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             </form>
           ) : (
             <>
-              {/* the list row above already shows the name and delete */}
-              <Button size="sm" variant="outline" onPress={() => setRenaming(true)}>
-                <Pencil className="h-3.5 w-3.5" /> Rename
+              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+                {workout.name}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                isIconOnly
+                aria-label={`Rename ${workout.name}`}
+                onPress={() => setRenaming(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
               </Button>
             </>
           )}
@@ -275,12 +256,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
           </p>
         ) : (
           <div>
-            {/* column headings, so the weight column reads as a column */}
-            <div className="flex items-center gap-3 border-b border-foreground/10 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground/50">
-              <span className="flex-1">Exercise</span>
-              <span>Weight</span>
-              <span className="w-[132px]" aria-hidden />
-            </div>
             {workout.exercises.map((ex, i) => (
               <ExerciseRow
                 key={ex.id}
@@ -306,16 +281,6 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
               onChange={(e) => setName(e.target.value)}
               className="min-w-0 flex-1"
               autoFocus
-            />
-            <Input
-              type="number"
-              step="any"
-              inputMode="decimal"
-              aria-label="Weight in kg"
-              placeholder="kg"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="w-16 shrink-0"
             />
             <Button
               type="submit"
@@ -782,15 +747,8 @@ function WorkoutRow({
         </span>
         {editing && (
           <span className="cfg-actions">
-            <Button
-              size="sm"
-              variant="outline"
-              isIconOnly
-              aria-label={`Edit ${workout.name}`}
-              onPress={onToggle}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
+            {/* No edit button: the whole row is the control, and the chevron
+                beside the name already says so. */}
             <DeleteButton
               what={`the workout "${workout.name}"`}
               iconOnly
