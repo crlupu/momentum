@@ -606,6 +606,17 @@ body {
 }
 .cds--btn svg { flex: none; }
 
+/* Icons follow the button's own colour.
+   Carbon fills its button icons through a selector of its own, which beat the
+   `fill: currentColor` these icons carry. It went unnoticed while the button
+   colour and Carbon's fill happened to agree, and showed the moment they did
+   not: a selected pill flips to a white background with dark text, and the
+   icon stayed near-white on it. */
+.cds--btn svg,
+.cds--btn .cds--btn__icon {
+  fill: currentColor;
+}
+
 /* Tiles: the app's cards control their own padding */
 .cds--tile {
   padding: 0;

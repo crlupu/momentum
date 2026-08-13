@@ -21,7 +21,7 @@ function TodoCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; don
           (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent")
         }
       >
-        {done && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
+        {done && <Check className="h-2.5 w-2.5" />}
       </span>
     </button>
   );
