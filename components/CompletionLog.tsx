@@ -263,6 +263,19 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     });
   };
 
+  /**
+   * The time an entry was recorded, where it is known.
+   *
+   * The list has been ordered by this since timestamps were added, but every
+   * row said only the date, so a day's entries looked identically labelled and
+   * their order read as arbitrary. Anything logged before timestamps existed
+   * still has only a date to show, and shows only that.
+   */
+  const fmtTime = (at?: number) =>
+    at == null
+      ? null
+      : new Date(at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
   return (
     <div>
       <Card>
@@ -291,8 +304,11 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                       <span className="mt-0.5 block text-xs text-foreground/50">{e.detail}</span>
                     )}
                   </span>
-                  <span className="font-mono-n shrink-0 text-xs text-foreground/50">
+                  <span className="font-mono-n shrink-0 text-right text-xs leading-tight text-foreground/50">
                     {fmt(e.date)}
+                    {fmtTime(e.at) && (
+                      <span className="block text-foreground/40">{fmtTime(e.at)}</span>
+                    )}
                   </span>
                   {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
                   <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />
