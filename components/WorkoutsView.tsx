@@ -332,6 +332,7 @@ function NumberField({
   locked?: boolean;
   inputMode?: "decimal" | "numeric";
 }) {
+  const decimal = inputMode === "decimal";
   const stored = value?.toString() ?? "";
   const [text, setText] = useState(stored);
 
@@ -340,7 +341,16 @@ function NumberField({
 
   const commit = () => {
     if (text === stored) return;
-    onCommit(text.trim() === "" ? null : Number(text));
+    const cleaned = text.trim().replace(",", ".");
+    if (cleaned === "") return onCommit(null);
+    const n = Number(cleaned);
+    // A half-typed "12." parses as 12, which would be committed as the weight
+    // if typing paused there. Only a number that is actually finished counts.
+    if (!Number.isFinite(n) || cleaned.endsWith(".")) return;
+    // Reps are whole. Anything after the separator is dropped rather than
+    // rounded: 8.5 repetitions is not a thing that happened, and 8 is the
+    // half of it that certainly did.
+    onCommit(decimal ? n : Math.floor(n));
   };
 
   useEffect(() => {
@@ -352,17 +362,34 @@ function NumberField({
 
   return (
     <Input
-      type="number"
-      // A number input without a step accepts whole numbers only, so 12.5 kg
-      // was a step mismatch and the browser refused it. Reps are counted, so
-      // they keep the whole-number step; a weight is measured and does not.
-      step={inputMode === "decimal" ? "any" : "1"}
+      /*
+       * Text, not number.
+       *
+       * A number input drops whatever it cannot parse, and what it can parse
+       * depends on the keyboard: a Romanian or German phone offers a comma as
+       * the decimal key, and "12,5" arrived as "125" — ten times the weight,
+       * silently. It also reports a half-typed "12." as "12", so pausing
+       * mid-number committed the wrong figure.
+       *
+       * Holding the raw text and parsing it here accepts either separator and
+       * knows when a number is unfinished. inputMode still asks the phone for
+       * the numeric keypad, so nothing changes about what is easy to type.
+       */
+      type="text"
       inputMode={inputMode}
       aria-label={label}
       placeholder={placeholder}
       value={text}
       disabled={locked}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        const raw = e.target.value;
+        // Digits and at most one separator, in both fields. Refusing the
+        // separator outright in the reps field looked tidier but was worse:
+        // React restores the rejected keystroke, so "8,5" arrived as "8"
+        // then "85" — a tenfold error, silently. Better to let it be typed
+        // and drop the fraction when it is read.
+        if (/^[0-9]*[.,]?[0-9]*$/.test(raw)) setText(raw);
+      }}
       onBlur={commit}
       className="min-w-0 flex-1"
     />
