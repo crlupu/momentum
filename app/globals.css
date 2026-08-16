@@ -2186,3 +2186,21 @@ html.dark {
 @media (prefers-reduced-motion: reduce) {
   .path-meter > span { transition: none; }
 }
+
+/* A goal in the path's chooser: a checkbox saying whether it is on the path. */
+.path-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0;
+  cursor: pointer;
+  user-select: none;
+}
+.path-pick input {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}

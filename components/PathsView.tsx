@@ -78,13 +78,19 @@ function PathForm({
 }
 
 /**
- * Picks goals to put on a path.
+ * Chooses which goals are on a path.
  *
- * Chooses from goals that already exist rather than creating them here: a goal
- * on a path is an ordinary goal, and making a second way to create one would
- * mean two kinds of goal that only differed in where they were typed.
+ * Every goal is listed with a checkbox showing whether it is on the path, so
+ * the dialog says what the path currently holds rather than only offering what
+ * it does not — and a goal put on by mistake comes off in the same place it
+ * went on. Checking appends to the end of the order; the order itself is
+ * changed on the path.
+ *
+ * Goals are chosen from the ones that already exist rather than created here:
+ * a goal on a path is an ordinary goal, and a second way to make one would
+ * mean two kinds differing only in where they were typed.
  */
-function AddGoalsDialog({
+function ChooseGoalsDialog({
   tracker,
   path,
   onClose,
@@ -95,31 +101,38 @@ function AddGoalsDialog({
 }) {
   const s = tracker.state!;
   const { run } = usePending();
-  const available = s.goals.filter((g) => !path.goalIds.includes(g.id));
+
+  const toggle = (goalId: string, on: boolean) =>
+    void run(() =>
+      on ? tracker.addGoalToPath(path.id, goalId) : tracker.removeGoalFromPath(path.id, goalId)
+    );
 
   return (
     <div className="flex flex-col gap-3">
-      {available.length === 0 ? (
+      {s.goals.length === 0 ? (
         <p className="text-[15px] text-foreground/60">
-          Every goal is already on this path. Add a goal in the section below, then put it here.
+          No goals yet. Add one in the section below, then put it on this path.
         </p>
       ) : (
         <ul className="max-h-[50vh] list-none divide-y divide-foreground/10 overflow-y-auto p-0">
-          {available.map((g) => (
-            <li key={g.id}>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 py-2.5 text-left"
-                onClick={() => void run(() => tracker.addGoalToPath(path.id, g.id))}
-              >
-                <Plus className="h-3.5 w-3.5 shrink-0 text-foreground/50" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-[15px]">{g.title}</span>
-                <span className="font-mono-n shrink-0 text-xs text-foreground/50">
-                  {g.done ? "done" : `${goalPct(g)}%`}
-                </span>
-              </button>
-            </li>
-          ))}
+          {s.goals.map((g) => {
+            const on = path.goalIds.includes(g.id);
+            return (
+              <li key={g.id}>
+                <label className="path-pick">
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={(e) => toggle(g.id, e.target.checked)}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[15px]">{g.title}</span>
+                  <span className="font-mono-n shrink-0 text-xs text-foreground/50">
+                    {g.done ? "done" : `${goalPct(g)}%`}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
         </ul>
       )}
       <div className="flex justify-end">
@@ -269,7 +282,7 @@ function PathCard({ tracker, path }: { tracker: Tracker; path: Path }) {
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onPress={() => setPicking(true)}>
-                <Plus className="h-3.5 w-3.5" /> Add goal
+                <Plus className="h-3.5 w-3.5" /> Choose goals
               </Button>
               <Button
                 size="sm"
@@ -295,8 +308,8 @@ function PathCard({ tracker, path }: { tracker: Tracker; path: Path }) {
         <Modal open={editing} onClose={() => setEditing(false)} title="Edit path">
           <PathForm tracker={tracker} path={path} onClose={() => setEditing(false)} />
         </Modal>
-        <Modal open={picking} onClose={() => setPicking(false)} title="Add goals to path">
-          <AddGoalsDialog tracker={tracker} path={path} onClose={() => setPicking(false)} />
+        <Modal open={picking} onClose={() => setPicking(false)} title="Goals on this path">
+          <ChooseGoalsDialog tracker={tracker} path={path} onClose={() => setPicking(false)} />
         </Modal>
       </Card.Content>
     </Card>
