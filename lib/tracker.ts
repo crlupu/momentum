@@ -71,6 +71,25 @@ export type Goal = {
   pinned?: boolean;
 };
 
+/**
+ * A long undertaking made of goals — "become a software architect" — where no
+ * single goal is the whole of it and the order they are taken in matters.
+ *
+ * Holds its goals by id rather than owning them, so a goal is the same goal
+ * whether it is on a path or not: it keeps its category, its subtasks and its
+ * place in the goals list, and can be worked on without going through the
+ * path. The path adds sequence and a total, nothing else.
+ */
+export type Path = {
+  id: string;
+  title: string;
+  /** What it is for, in a sentence. Optional; plenty need no explaining. */
+  note?: string;
+  catId?: string;
+  /** Its goals, in the order they are meant to be taken. */
+  goalIds: string[];
+};
+
 /** A one-off task: just a title and a tick. */
 export type TodoItem = {
   id: string;
@@ -373,6 +392,7 @@ export type TrackerState = {
   recurringGroups: RecurringGroup[];
   todos: TodoItem[];
   completions: Completion[];
+  paths: Path[];
   weights: WeightEntry[];
   cardio: CardioEntry[];
   books: Book[];
@@ -474,6 +494,7 @@ const DEFAULT_STATE: TrackerState = {
   recurringGroups: [],
   todos: [],
   completions: [],
+  paths: [],
   weights: [],
   cardio: [],
   books: [],
@@ -601,6 +622,29 @@ export function goalPct(g: Goal): number {
   return Math.max(0, Math.min(100, Math.floor(((g.current ?? 0) / g.target) * 100)));
 }
 
+/** The goals on a path, in the path's order, skipping any since deleted. */
+export function pathGoals(p: Path, goals: Goal[]): Goal[] {
+  return p.goalIds
+    .map((id) => goals.find((g) => g.id === id))
+    .filter((g): g is Goal => !!g);
+}
+
+/**
+ * A path's percentage: the mean of its goals' own percentages.
+ *
+ * Each goal counts once whatever it contains, so a goal made of twenty
+ * subtasks does not drown out one made of a single number — on a path, a goal
+ * is a step, and steps are equal. A goal marked done counts as complete even
+ * if it carries no figures, because ticking it is the whole way some goals are
+ * finished.
+ */
+export function pathPct(p: Path, goals: Goal[]): number {
+  const list = pathGoals(p, goals);
+  if (list.length === 0) return 0;
+  const total = list.reduce((sum, g) => sum + (g.done ? 100 : goalPct(g)), 0);
+  return Math.max(0, Math.min(100, Math.floor(total / list.length)));
+}
+
 function migrate(raw: unknown): TrackerState {
   const s = (raw ?? {}) as Record<string, unknown>;
   const categories = Array.isArray(s.categories)
@@ -678,6 +722,17 @@ function migrate(raw: unknown): TrackerState {
   const cardio: CardioEntry[] = Array.isArray(s.cardio) ? (s.cardio as CardioEntry[]) : [];
 
   // Added after the rest, so older saved state has no key at all.
+  const paths: Path[] = Array.isArray(s.paths)
+    ? (s.paths as Array<Record<string, unknown>>).map((x) => ({
+        id: (x.id as string) ?? uid(),
+        title: (x.title as string) ?? "",
+        note: (x.note as string) || undefined,
+        catId: (x.catId as string) || undefined,
+        goalIds: Array.isArray(x.goalIds) ? (x.goalIds as string[]).filter((g) => typeof g === "string") : [],
+      }))
+    : [];
+
+  // Added after the rest, so older saved state has no key at all.
   const books: Book[] = Array.isArray(s.books) ? (s.books as Book[]) : [];
 
   const calories: CalorieEntry[] = Array.isArray(s.calories)
@@ -726,6 +781,7 @@ function migrate(raw: unknown): TrackerState {
     recurringGroups,
     todos,
     completions,
+    paths,
     weights,
     cardio,
     books,
@@ -1086,6 +1142,70 @@ export function useTracker() {
         ),
       })),
 
+    // ---- paths ----
+    addPath: (title: string, catId?: string, note?: string) =>
+      commit((s) => {
+        const t = title.trim();
+        if (!t) return s;
+        return {
+          ...s,
+          paths: [
+            ...s.paths,
+            { id: uid(), title: t, goalIds: [], ...(catId ? { catId } : {}), ...(note?.trim() ? { note: note.trim() } : {}) },
+          ],
+        };
+      }),
+
+    updatePath: (id: string, title: string, catId?: string, note?: string) =>
+      commit((s) => {
+        const t = title.trim();
+        if (!t) return s;
+        return {
+          ...s,
+          paths: s.paths.map((p) =>
+            p.id === id ? { ...p, title: t, catId: catId || undefined, note: note?.trim() || undefined } : p
+          ),
+        };
+      }),
+
+    /** Removes the path only. Its goals are goals in their own right and stay. */
+    removePath: (id: string) =>
+      commit((s) => ({ ...s, paths: s.paths.filter((p) => p.id !== id) })),
+
+    /** Puts an existing goal on a path, at the end. Ignores one already on it. */
+    addGoalToPath: (pathId: string, goalId: string) =>
+      commit((s) => ({
+        ...s,
+        paths: s.paths.map((p) =>
+          p.id === pathId && !p.goalIds.includes(goalId)
+            ? { ...p, goalIds: [...p.goalIds, goalId] }
+            : p
+        ),
+      })),
+
+    /** Takes a goal off a path. The goal itself is untouched. */
+    removeGoalFromPath: (pathId: string, goalId: string) =>
+      commit((s) => ({
+        ...s,
+        paths: s.paths.map((p) =>
+          p.id === pathId ? { ...p, goalIds: p.goalIds.filter((g) => g !== goalId) } : p
+        ),
+      })),
+
+    moveGoalOnPath: (pathId: string, goalId: string, dir: -1 | 1) =>
+      commit((s) => ({
+        ...s,
+        paths: s.paths.map((p) => {
+          if (p.id !== pathId) return p;
+          const i = p.goalIds.indexOf(goalId);
+          const j = i + dir;
+          if (i === -1 || j < 0 || j >= p.goalIds.length) return p;
+          const next = [...p.goalIds];
+          [next[i], next[j]] = [next[j], next[i]];
+          return { ...p, goalIds: next };
+        }),
+      })),
+
     setGoalProgress: (id: string, current: number | null, target: number | null) =>
       commit((s) => ({
         ...s,
@@ -1126,7 +1246,17 @@ export function useTracker() {
         }),
       })),
 
-    deleteGoal: (id: string) => commit((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) })),
+    deleteGoal: (id: string) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.filter((g) => g.id !== id),
+        // Taken off any path too. pathGoals skips a missing id either way, but
+        // leaving it would keep a dead step in the path's stored order and
+        // bring it back if the id were ever reused.
+        paths: s.paths.map((p) =>
+          p.goalIds.includes(id) ? { ...p, goalIds: p.goalIds.filter((g) => g !== id) } : p
+        ),
+      })),
 
     toggleGoalPin: (id: string) =>
       commit((s) => ({

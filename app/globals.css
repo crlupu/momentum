@@ -2125,3 +2125,64 @@ html.dark {
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ============================================================
+   Paths.
+   A long undertaking made of goals, shown above the goals themselves. The
+   bar is the mean of its goals' own percentages, so each goal counts once
+   whatever it is made of.
+   ============================================================ */
+.path-meter {
+  display: block;
+  height: 6px;
+  margin-top: 0.6rem;
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  overflow: hidden;
+}
+.path-meter > span {
+  display: block;
+  height: 100%;
+  transition: width 220ms ease;
+}
+
+.path-step {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+}
+/* The step's place in the order, or a tick once it is finished. */
+.path-step__no {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--default);
+}
+.path-step__no--done {
+  color: var(--ibm-white);
+  background: var(--c-green-50);
+  border-color: transparent;
+}
+
+.path-step__meter {
+  display: block;
+  height: 3px;
+  margin-top: 0.35rem;
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+  overflow: hidden;
+}
+.path-step__meter > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .path-meter > span { transition: none; }
+}

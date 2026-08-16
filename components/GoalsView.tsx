@@ -17,6 +17,7 @@ import {
   Target,
 } from "./icons";
 import { ProgressRing } from "./ProgressRing";
+import { PathsView } from "./PathsView";
 import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
 
 function SubtaskRow({
@@ -517,6 +518,13 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
 
   return (
     <div>
+      {/* Paths sit above the goals they are made of, in the same section: a
+          path is only its goals seen together, and putting it elsewhere would
+          mean crossing between two screens to work on one. */}
+      <div className="mb-5">
+        <PathsView tracker={tracker} />
+      </div>
+
       <div className="mb-4 flex items-end justify-between">
         <div>
           <p className="text-sm text-foreground/60">
