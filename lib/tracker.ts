@@ -216,6 +216,41 @@ export type Exercise = {
    * beats saying it on every set of every session.
    */
   oneArm?: boolean;
+  /**
+   * How long it is held or worked, in seconds, for a movement measured in time
+   * rather than in repetitions — a plank, a minute of jumping jacks. Where a
+   * block sets its own work interval this overrides it, which is what lets a
+   * warm-up give each movement its own length.
+   */
+  seconds?: number;
+  /** A cue worth remembering while doing it. Shown while it is running. */
+  note?: string;
+  /**
+   * The block it belongs to, or undefined for the workout's main body. The
+   * exercise list stays flat and in order — blocks group it rather than own
+   * it, so everything that reads a workout's exercises still reads them all.
+   */
+  blockId?: string;
+};
+
+/**
+ * A named stretch of a workout, performed its own way.
+ *
+ * "sets" is the ordinary kind: exercises done for weight and repetitions, at
+ * whatever pace. "circuit" is a timed round — every exercise for the same work
+ * interval with the same rest between, repeated for a number of rounds, which
+ * is how a warm-up or a conditioning block is actually done.
+ */
+export type WorkoutBlock = {
+  id: string;
+  name: string;
+  mode: "sets" | "circuit";
+  /** circuit: how many times through the list. */
+  rounds?: number;
+  /** circuit: seconds of work per exercise, unless the exercise sets its own. */
+  workSeconds?: number;
+  /** circuit: seconds of rest after each exercise. */
+  restSeconds?: number;
 };
 
 /** The numbers that describe a single set. Shared by live and logged sets. */
@@ -238,6 +273,10 @@ export type ActiveSet = SetRecord & { id: string; done?: boolean };
 
 export type ActiveExercise = {
   exerciseId: string;
+  /** Copied from the definition. See Exercise.seconds, .note and .blockId. */
+  seconds?: number;
+  note?: string;
+  blockId?: string;
   /** Copied from the definition at the start. See Exercise.oneArm. */
   oneArm?: boolean;
   /** Copied at start, so renaming or deleting mid-session can't break it. */
@@ -323,7 +362,19 @@ export type Workout = {
   id: string;
   name: string;
   exercises: Exercise[];
+  /** Optional grouping. A workout with none is one unnamed block of sets. */
+  blocks?: WorkoutBlock[];
 };
+
+/** The exercises of one block, in the workout's own order. */
+export function blockExercises(w: Workout, blockId?: string): Exercise[] {
+  return w.exercises.filter((e) => (e.blockId ?? undefined) === blockId);
+}
+
+/** How long one exercise runs in a circuit: its own time, or the block's. */
+export function exerciseSeconds(e: Exercise, b?: WorkoutBlock): number {
+  return e.seconds ?? b?.workSeconds ?? 40;
+}
 
 /**
  * A completed workout. The total is a snapshot of the summed exercise weights
@@ -1787,13 +1838,22 @@ export function useTracker() {
     removeWorkout: (workoutId: string) =>
       commit((s) => ({ ...s, workouts: s.workouts.filter((w) => w.id !== workoutId) })),
 
-    addExercise: (workoutId: string, name: string, weight: number | null, oneArm = false) =>
+    addExercise: (
+      workoutId: string,
+      name: string,
+      weight: number | null,
+      oneArm = false,
+      extra?: { seconds?: number | null; note?: string; blockId?: string }
+    ) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
         const ex: Exercise = { id: uid(), name: clean };
         if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
         if (oneArm) ex.oneArm = true;
+        if (extra?.seconds != null && extra.seconds > 0) ex.seconds = Math.round(extra.seconds);
+        if (extra?.note?.trim()) ex.note = extra.note.trim();
+        if (extra?.blockId) ex.blockId = extra.blockId;
         return {
           ...s,
           workouts: s.workouts.map((w) =>
@@ -1807,7 +1867,8 @@ export function useTracker() {
       exerciseId: string,
       name: string,
       weight: number | null,
-      oneArm = false
+      oneArm = false,
+      extra?: { seconds?: number | null; note?: string }
     ) =>
       commit((s) => {
         const clean = name.trim();
@@ -1829,6 +1890,11 @@ export function useTracker() {
                             ? { weight }
                             : {}),
                           ...(oneArm ? { oneArm: true } : {}),
+                          ...(extra?.seconds != null && extra.seconds > 0
+                            ? { seconds: Math.round(extra.seconds) }
+                            : {}),
+                          ...(extra?.note?.trim() ? { note: extra.note.trim() } : {}),
+                          ...(e.blockId ? { blockId: e.blockId } : {}),
                         }
                   ),
                 }
@@ -1861,6 +1927,57 @@ export function useTracker() {
       })),
 
     /** Begins a workout. Nothing is logged until it is finished. */
+    /** Adds a block. Its exercises are added to it afterwards, like any other. */
+    addBlock: (workoutId: string, name: string, mode: "sets" | "circuit") =>
+      commit((s) => {
+        const clean = name.trim();
+        if (!clean) return s;
+        const block: WorkoutBlock =
+          mode === "circuit"
+            ? { id: uid(), name: clean, mode, rounds: 3, workSeconds: 40, restSeconds: 20 }
+            : { id: uid(), name: clean, mode };
+        return {
+          ...s,
+          workouts: s.workouts.map((w) =>
+            w.id === workoutId ? { ...w, blocks: [...(w.blocks ?? []), block] } : w
+          ),
+        };
+      }),
+
+    updateBlock: (workoutId: string, blockId: string, patch: Partial<Omit<WorkoutBlock, "id">>) =>
+      commit((s) => ({
+        ...s,
+        workouts: s.workouts.map((w) =>
+          w.id !== workoutId
+            ? w
+            : {
+                ...w,
+                blocks: (w.blocks ?? []).map((b) => (b.id === blockId ? { ...b, ...patch } : b)),
+              }
+        ),
+      })),
+
+    /**
+     * Removes a block. Its exercises go back to the workout's main body rather
+     * than being deleted with it — losing a list of movements because its
+     * heading was removed would be a surprising way to lose them.
+     */
+    removeBlock: (workoutId: string, blockId: string) =>
+      commit((s) => ({
+        ...s,
+        workouts: s.workouts.map((w) =>
+          w.id !== workoutId
+            ? w
+            : {
+                ...w,
+                blocks: (w.blocks ?? []).filter((b) => b.id !== blockId),
+                exercises: w.exercises.map((e) =>
+                  e.blockId === blockId ? { ...e, blockId: undefined } : e
+                ),
+              }
+        ),
+      })),
+
     startWorkout: (workoutId: string) =>
       commit((s) => {
         const w = s.workouts.find((x) => x.id === workoutId);
@@ -1884,6 +2001,9 @@ export function useTracker() {
                 // Copied at the start with the rest, so changing the definition
                 // mid-session cannot rewrite what is already being counted.
                 oneArm: e.oneArm,
+                seconds: e.seconds,
+                note: e.note,
+                blockId: e.blockId,
                 sets: previous.map((set) => ({
                   id: uid(),
                   weight: set.weight,

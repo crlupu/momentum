@@ -16,9 +16,12 @@ import {
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing } from "./ConfigCard";
+import { CircuitPlayer } from "./CircuitPlayer";
 import {
   Tracker,
   Workout,
+  WorkoutBlock,
+  blockExercises,
   Exercise,
   dateKey,
   ActiveWorkout,
@@ -30,6 +33,216 @@ import {
   activeWorkoutPlannedSets,
   lastPerformed,
 } from "@/lib/tracker";
+
+/* --------------------------------- blocks -------------------------------- */
+
+/** A block's heading, its timings if it is a circuit, and its exercises. */
+function BlockSection({
+  tracker,
+  workout,
+  block,
+}: {
+  tracker: Tracker;
+  workout: Workout;
+  block: WorkoutBlock;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [secs, setSecs] = useState("");
+  const [note, setNote] = useState("");
+  const { pending, run } = usePending();
+  const mine = blockExercises(workout, block.id);
+  const circuit = block.mode === "circuit";
+
+  const num = (v: string) => (v.trim() === "" ? null : Number(v));
+
+  const add = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || pending) return;
+    const typed = { name, secs, note };
+    setName("");
+    setSecs("");
+    setNote("");
+    const ok = await run(() =>
+      tracker.addExercise(workout.id, typed.name, null, false, {
+        seconds: num(typed.secs),
+        note: typed.note,
+        blockId: block.id,
+      })
+    );
+    if (!ok) {
+      setName(typed.name);
+      setSecs(typed.secs);
+      setNote(typed.note);
+    }
+  };
+
+  return (
+    <div className="cfg-block">
+      <div className="cfg-block__head">
+        <span className="cfg-block__name">{block.name}</span>
+        <span className="cfg-block__mode">{circuit ? "circuit" : "sets"}</span>
+        <DeleteButton
+          what={`the block "${block.name}"`}
+          iconOnly
+          bare
+          onDelete={() => tracker.removeBlock(workout.id, block.id)}
+        />
+      </div>
+
+      {circuit && (
+        <div className="cfg-block__timing">
+          {(
+            [
+              ["rounds", "Rounds", block.rounds ?? 3],
+              ["workSeconds", "Work s", block.workSeconds ?? 40],
+              ["restSeconds", "Rest s", block.restSeconds ?? 20],
+            ] as const
+          ).map(([key, label, value]) => (
+            <label key={key} className="cfg-block__field">
+              {label}
+              <Input
+                type="number"
+                inputMode="numeric"
+                aria-label={`${block.name} ${label}`}
+                value={String(value)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n) && n >= 0) {
+                    void tracker.updateBlock(workout.id, block.id, { [key]: n });
+                  }
+                }}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      {mine.map((ex) => (
+        <ExerciseRow
+          key={ex.id}
+          tracker={tracker}
+          workout={workout}
+          exercise={ex}
+          index={workout.exercises.indexOf(ex)}
+          count={workout.exercises.length}
+        />
+      ))}
+
+      {adding ? (
+        <form onSubmit={add} className="mt-2 flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Input
+              aria-label={`Add an exercise to ${block.name}`}
+              placeholder="Push-ups…"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="min-w-0 flex-1"
+              autoFocus
+            />
+            {/* Blank means the block's own work interval; a figure here is for
+                a movement that runs longer or shorter than the rest. */}
+            <Input
+              type="number"
+              inputMode="numeric"
+              aria-label="Seconds"
+              placeholder="secs"
+              value={secs}
+              onChange={(e) => setSecs(e.target.value)}
+              className="w-16 shrink-0"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              aria-label="Cue"
+              placeholder="Cue (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <Button type="submit" variant="primary" isIconOnly aria-label="Add exercise to block" isDisabled={pending}>
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" isIconOnly aria-label="Done adding" onPress={() => setAdding(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button size="sm" variant="outline" className="mt-2" onPress={() => setAdding(true)}>
+          <Plus className="h-3.5 w-3.5" /> Add to {block.name}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** Creates a block. Its exercises are added to it afterwards. */
+function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [mode, setMode] = useState<"sets" | "circuit">("circuit");
+  const { pending, run } = usePending();
+
+  const add = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || pending) return;
+    const typed = name;
+    setName("");
+    setOpen(false);
+    const ok = await run(() => tracker.addBlock(workout.id, typed, mode));
+    if (!ok) {
+      setName(typed);
+      setOpen(true);
+    }
+  };
+
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" className="mt-3" onPress={() => setOpen(true)}>
+        <Plus className="h-3.5 w-3.5" /> Add block
+      </Button>
+    );
+  }
+
+  return (
+    <form onSubmit={add} className="mt-3 flex flex-col gap-2">
+      <Input
+        aria-label="Block name"
+        placeholder="Warm-up…"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        autoFocus
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className={mode === "circuit" ? "pill-selected" : ""}
+          onPress={() => setMode("circuit")}
+        >
+          Timed circuit
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className={mode === "sets" ? "pill-selected" : ""}
+          onPress={() => setMode("sets")}
+        >
+          Sets
+        </Button>
+        <span className="ml-auto flex gap-2">
+          <Button type="submit" variant="primary" isIconOnly aria-label="Add block" isDisabled={pending}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" isIconOnly aria-label="Cancel block" onPress={() => setOpen(false)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </span>
+      </div>
+    </form>
+  );
+}
 
 /* ------------------------------ exercise row ----------------------------- */
 
@@ -197,24 +410,32 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
 
   return (
     <div>
-        {workout.exercises.length === 0 ? (
+        {workout.exercises.length === 0 && (workout.blocks ?? []).length === 0 ? (
           <p className="py-2 text-[15px] text-foreground/60">
             No exercises yet. Add the first one below.
           </p>
         ) : (
           <div>
-            {workout.exercises.map((ex, i) => (
+            {/* The main body first — exercises in no block — then each block
+                under its own heading. */}
+            {blockExercises(workout, undefined).map((ex) => (
               <ExerciseRow
                 key={ex.id}
                 tracker={tracker}
                 workout={workout}
                 exercise={ex}
-                index={i}
+                index={workout.exercises.indexOf(ex)}
                 count={workout.exercises.length}
               />
             ))}
+
+            {(workout.blocks ?? []).map((b) => (
+              <BlockSection key={b.id} tracker={tracker} workout={workout} block={b} />
+            ))}
           </div>
         )}
+
+        <AddBlockRow tracker={tracker} workout={workout} />
 
         {/* The add row never wraps: the cancel button belongs beside the field
             it cancels, not stranded on a line of its own. The name field
@@ -634,6 +855,19 @@ export function ActiveWorkoutPanel({
   const planned = activeWorkoutPlannedSets(active);
   const sessions = tracker.state!.workoutSessions;
 
+  // The definition holds the blocks; the live copy only knows which block each
+  // exercise came from, so they are paired back up here.
+  const definition = tracker.state!.workouts.find((w) => w.id === active.workoutId);
+  const circuits = (definition?.blocks ?? [])
+    .filter((b) => b.mode === "circuit")
+    .map((block) => ({
+      block,
+      exercises: active.exercises.filter((e) => e.blockId === block.id),
+    }))
+    .filter((c) => c.exercises.length > 0);
+  const circuitIds = new Set(circuits.flatMap((c) => c.exercises.map((e) => e.exerciseId)));
+  const plain = active.exercises.filter((e) => !circuitIds.has(e.exerciseId));
+
   return (
     <div className="card p-4 md:p-5" style={{ borderColor: "var(--accent)" }}>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -646,8 +880,21 @@ export function ActiveWorkoutPanel({
         </span>
       </div>
 
+      {/* Circuit blocks are run by the clock rather than filled in by hand, so
+          they get the timer instead of set rows. Anything not in a circuit
+          block — including every workout that has no blocks at all — is
+          unchanged. */}
+      {circuits.map(({ block, exercises }) => (
+        <div key={block.id} className="mb-4">
+          <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
+            {block.name}
+          </p>
+          <CircuitPlayer tracker={tracker} block={block} exercises={exercises} />
+        </div>
+      ))}
+
       <div className="space-y-3">
-        {active.exercises.map((e) => (
+        {plain.map((e) => (
           <ExerciseBlock
             key={e.exerciseId}
             tracker={tracker}
