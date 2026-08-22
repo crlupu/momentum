@@ -885,10 +885,7 @@ export function ActiveWorkoutPanel({
           block — including every workout that has no blocks at all — is
           unchanged. */}
       {circuits.map(({ block, exercises }) => (
-        <div key={block.id} className="mb-4">
-          <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-            {block.name}
-          </p>
+        <div key={block.id} className="mb-3">
           <CircuitPlayer tracker={tracker} block={block} exercises={exercises} />
         </div>
       ))}
@@ -917,7 +914,10 @@ export function ActiveWorkoutPanel({
           </Button>
           <Button
             className="btn-success"
-            isDisabled={pending || sets === 0}
+            // Enabled once anything has been done. A circuit is ticked off by
+            // the clock and never records a set, so requiring one left the
+            // button dead for the whole of a timed workout.
+            isDisabled={pending || (sets === 0 && !active.exercises.some((e) => e.done))}
             onPress={() => void run(() => tracker.finishWorkout())}
           >
             <CheckCircle2 className="h-4 w-4" /> Mark as done

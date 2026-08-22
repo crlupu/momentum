@@ -2121,7 +2121,12 @@ export function useTracker() {
         if (!a) return s;
         const total = activeWorkoutVolume(a);
         const sets = activeWorkoutSets(a);
-        if (sets === 0) return { ...s, activeWorkout: null };
+        // A circuit has no sets at all — its exercises are ticked off by the
+        // clock — so a workout counts as performed if anything at all was
+        // done, not only if a set was. Judging it by sets alone threw away
+        // every timed workout ever finished.
+        const anyDone = sets > 0 || a.exercises.some((e) => e.done);
+        if (!anyDone) return { ...s, activeWorkout: null };
         // Elapsed time to the nearest minute, never recorded as zero.
         const minutes = Math.max(1, Math.round((Date.now() - a.startedAt) / 60000));
         // Only completed sets are recorded. Anything still planned when the
@@ -2133,7 +2138,9 @@ export function useTracker() {
             oneArm: e.oneArm,
             sets: e.sets.filter((x) => x.done).map((x) => ({ weight: x.weight, reps: x.reps })),
           }))
-          .filter((e) => e.sets.length > 0);
+          // A timed exercise carries no sets but was still performed, so it is
+          // kept on the record by having been marked done.
+          .filter((e, i) => e.sets.length > 0 || a.exercises[i]?.done);
         return {
           ...s,
           activeWorkout: null,

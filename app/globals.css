@@ -2397,3 +2397,37 @@ html.dark {
   inline-size: 2.25rem;
   block-size: 2.25rem;
 }
+
+/* A finished circuit block: its name, a tick, and nothing else to read. */
+.circuit--done {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--c-green-50) 16%, var(--pane-bg));
+  border: 1px solid color-mix(in srgb, var(--c-green-50) 50%, var(--pane-border));
+}
+.circuit__done-tick {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ibm-white);
+  background: var(--c-green-50);
+}
+.circuit__done-name {
+  min-width: 0;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+.circuit__done-meta {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+}

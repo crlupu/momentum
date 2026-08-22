@@ -75,7 +75,18 @@ export function CircuitPlayer({
 
   const step = steps[at];
   const workSteps = steps.filter((s) => s.kind === "work").length;
-  const workDone = steps.slice(0, at).filter((s) => s.kind === "work").length;
+  /**
+   * Whether the block is finished, taken from its exercises rather than from a
+   * flag here: the last round marks each one done, and reading that survives
+   * the component being re-rendered by anything else on the page.
+   */
+  const finished = exercises.length > 0 && exercises.every((e) => e.done);
+  // Steps behind the current one, plus the one in progress once it is over.
+  // Counting only what is strictly behind left the last step uncounted, so a
+  // finished block read 20 of 21 and never reached the end.
+  const workDone = finished
+    ? workSteps
+    : steps.slice(0, at).filter((s) => s.kind === "work").length;
 
   /** A short buzz at each change, so the phone can be face down in a pocket. */
   const buzz = (pattern: number | number[]) => {
@@ -130,6 +141,36 @@ export function CircuitPlayer({
     );
   }
 
+  /**
+   * A finished block folds away to its name and a tick.
+   *
+   * Once it is done there is nothing left to read in it, and a workout of two
+   * blocks would otherwise keep a spent clock and a list of seven exercises on
+   * screen above the one still to do. Pressing it opens it again, for a round
+   * more or to correct a mis-tap.
+   */
+  if (finished) {
+    return (
+      <button
+        type="button"
+        className="circuit circuit--done"
+        onClick={() => {
+          void Promise.all(
+            exercises.map((e) => tracker.setExerciseDone(e.exerciseId, false))
+          ).then(() => goTo(0));
+        }}
+      >
+        <span className="circuit__done-tick" aria-hidden>
+          <Check className="h-4 w-4" />
+        </span>
+        <span className="circuit__done-name">{block.name}</span>
+        <span className="circuit__done-meta">
+          {workSteps} of {workSteps} · done
+        </span>
+      </button>
+    );
+  }
+
   const resting = step.kind === "rest";
   const rounds = Math.max(1, block.rounds ?? 1);
   const pct = step.seconds > 0 ? ((step.seconds - left) / step.seconds) * 100 : 0;
@@ -137,7 +178,9 @@ export function CircuitPlayer({
   return (
     <div className={"circuit" + (resting ? " circuit--rest" : "")}>
       <div className="circuit__top">
-        <span className="circuit__phase">{resting ? "Rest" : "Work"}</span>
+        <span className="circuit__phase">
+          {block.name} · {resting ? "Rest" : "Work"}
+        </span>
         <span className="circuit__count">
           Round {step.round}/{rounds} · {workDone}/{workSteps}
         </span>
