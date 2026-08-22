@@ -770,7 +770,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
         aria-label="Choose colour"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-10 items-center justify-center"
+        className="cfg-swatch-btn flex items-center justify-center"
         style={{ background: value, border: "1px solid var(--default)" }}
       >
         <Palette className="h-4 w-4" style={{ color: readableText(value) }} aria-hidden />
