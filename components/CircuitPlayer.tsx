@@ -74,6 +74,7 @@ export function CircuitPlayer({
   const endsAt = useRef<number>(0);
 
   const step = steps[at];
+  const rounds = Math.max(1, block.rounds ?? 1);
   const workSteps = steps.filter((s) => s.kind === "work").length;
   /**
    * Whether the block is finished, taken from its exercises rather than from a
@@ -133,6 +134,28 @@ export function CircuitPlayer({
     buzz(30);
   };
 
+  /**
+   * Moves on, having done the exercise rather than abandoned it.
+   *
+   * Skipping is how a set that finished early gets moved past — the work was
+   * done, the clock was just still running — so it counts the same as letting
+   * the timer run out. That means the same rule about rounds: the tick says
+   * the exercise is finished for the session, so it is only set on the last
+   * round, when there is nothing of it left to come.
+   */
+  const skip = () => {
+    buzz(20);
+    if (step.kind === "work" && step.round === rounds) {
+      void tracker.setExerciseDone(step.exercise.exerciseId, true);
+    }
+    if (at + 1 >= steps.length) {
+      // The last step: there is nowhere to move on to, so the block ends.
+      setRunning(false);
+      return;
+    }
+    goTo(at + 1);
+  };
+
   if (!step) {
     return (
       <p className="py-2 text-[15px] text-foreground/60">
@@ -172,7 +195,6 @@ export function CircuitPlayer({
   }
 
   const resting = step.kind === "rest";
-  const rounds = Math.max(1, block.rounds ?? 1);
   const pct = step.seconds > 0 ? ((step.seconds - left) / step.seconds) * 100 : 0;
 
   return (
@@ -206,11 +228,7 @@ export function CircuitPlayer({
         )}
         <Button
           variant="outline"
-          isDisabled={at + 1 >= steps.length}
-          onPress={() => {
-            buzz(20);
-            goTo(at + 1);
-          }}
+          onPress={skip}
         >
           Skip
         </Button>
