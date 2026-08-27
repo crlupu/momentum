@@ -199,14 +199,14 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
   if (!open) {
     return (
-      <Button size="sm" variant="outline" className="mt-3" onPress={() => setOpen(true)}>
-        <Plus className="h-3.5 w-3.5" /> Add block
+      <Button variant="outline" onPress={() => setOpen(true)}>
+        <Plus className="h-4 w-4" /> Add block
       </Button>
     );
   }
 
   return (
-    <form onSubmit={add} className="mt-3 flex flex-col gap-2">
+    <form onSubmit={add} className="flex w-full flex-col gap-2">
       <Input
         aria-label="Block name"
         placeholder="Warm-up…"
@@ -435,13 +435,18 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
           </div>
         )}
 
+        {/* Both add controls share a row with a gap. They were siblings in
+            flow, so the two buttons sat against each other with nothing
+            between them. Each form takes the full width, pushing the other
+            control onto its own line while it is open. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
         <AddBlockRow tracker={tracker} workout={workout} />
 
         {/* The add row never wraps: the cancel button belongs beside the field
             it cancels, not stranded on a line of its own. The name field
             carries min-w-0 so it is what gets squeezed. */}
         {adding ? (
-          <form onSubmit={addExercise} className="mt-3 flex items-center gap-2" onKeyDown={onEscape}>
+          <form onSubmit={addExercise} className="flex w-full items-center gap-2" onKeyDown={onEscape}>
             <Input
               aria-label={`Add an exercise to ${workout.name}`}
               placeholder="Bench press…"
@@ -481,10 +486,11 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             One arm — counts double
           </label>
         ) : (
-          <Button variant="outline" className="mt-3" onPress={() => setAdding(true)}>
+          <Button variant="outline" onPress={() => setAdding(true)}>
             <Plus className="h-4 w-4" /> Add exercise
           </Button>
         )}
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
           <span className="text-xs text-foreground/60">
