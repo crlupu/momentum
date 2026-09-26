@@ -1705,27 +1705,6 @@ export function useTracker() {
         ),
       })),
 
-    /**
-     * Adds to a book's progress, for logging a session without having to
-     * remember or work out the page number you are now on.
-     */
-    addPagesRead: (id: string, delta: number) =>
-      commit((s) => ({
-        ...s,
-        books: s.books.map((b) => {
-          if (b.id !== id) return b;
-          if (!Number.isFinite(delta)) return b;
-          const next = Math.max(0, b.read + Math.round(delta));
-          const capped = b.pages > 0 ? Math.min(next, b.pages) : next;
-          const finished = b.pages > 0 && capped >= b.pages;
-          return {
-            ...b,
-            read: capped,
-            ...(finished ? { doneDate: b.doneDate ?? dateKey() } : { doneDate: undefined }),
-          };
-        }),
-      })),
-
     removeBook: (id: string) =>
       commit((s) => ({ ...s, books: s.books.filter((b) => b.id !== id) })),
 

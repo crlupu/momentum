@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Check, Plus, ImageOff } from "./icons";
+import { BookOpen, Check, Plus, ImageOff } from "./icons";
 
 import { Button, Input } from "./ui";
 import { Modal } from "./Modal";
@@ -118,8 +118,11 @@ function useCoverLookup(tracker: Tracker, books: Book[]) {
   }, [books, tracker]);
 }
 
-/** Logs a reading session: pages read now, added to what was read before. */
-function AddPagesForm({
+/**
+ * Sets the page you are on. The number printed on the page in front of you is
+ * easier to know than how many pages have gone by since last time.
+ */
+function SetPageForm({
   tracker,
   book,
   onClose,
@@ -128,16 +131,15 @@ function AddPagesForm({
   book: Book;
   onClose: () => void;
 }) {
-  const [n, setN] = useState("");
+  const [n, setN] = useState(book.read > 0 ? String(book.read) : "");
   const { pending, run } = usePending();
-  const left = Math.max(0, book.pages - book.read);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const v = Number(n);
-    if (!Number.isFinite(v) || v <= 0 || pending) return;
+    if (!Number.isFinite(v) || v < 0 || pending) return;
     onClose();
-    await run(() => tracker.addPagesRead(book.id, v));
+    await run(() => tracker.setBookProgress(book.id, v));
   };
 
   return (
@@ -145,23 +147,27 @@ function AddPagesForm({
       <Input
         type="number"
         inputMode="numeric"
-        aria-label="Pages read now"
-        placeholder="Pages read now"
+        min="0"
+        max={book.pages > 0 ? String(book.pages) : undefined}
+        aria-label="Current page"
+        placeholder="Current page"
         value={n}
         onChange={(e) => setN(e.target.value)}
+        // Selected, so typing the new page replaces the old one outright.
+        onFocus={(e) => e.target.select()}
         autoFocus
       />
       <p className="text-xs text-foreground/50">
         {book.pages > 0
-          ? `On page ${book.read} of ${book.pages} — ${left} to go.`
-          : `${book.read} pages read so far.`}
+          ? `Currently on page ${book.read} of ${book.pages}.`
+          : `Currently on page ${book.read}.`}
       </p>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onPress={onClose}>
           Cancel
         </Button>
         <Button type="submit" variant="primary" isDisabled={pending || n.trim() === ""}>
-          Add
+          Set
         </Button>
       </div>
     </form>
@@ -425,8 +431,8 @@ function BookForm({
           <Input
             type="number"
             inputMode="numeric"
-            aria-label="Pages read"
-            placeholder="Pages read"
+            aria-label="Current page"
+            placeholder="Current page"
             value={read}
             onChange={(e) => setRead(e.target.value)}
             className="min-w-0 flex-1"
@@ -520,15 +526,15 @@ function shelfOrder(books: Book[]): Book[] {
   );
 }
 
-/** One book: cover, title, author, how far through, and a way to log more. */
+/** One book: cover, title, author, how far through, and a way to set the page. */
 function BookCard({
   book,
   onEdit,
-  onAddPages,
+  onSetPage,
 }: {
   book: Book;
   onEdit: () => void;
-  onAddPages: () => void;
+  onSetPage: () => void;
 }) {
   // Floored, not rounded: 299 of 300 pages rounds up to 100%, which read as
   // finished on a card sitting in the unfinished pile with a page still to go.
@@ -577,8 +583,8 @@ function BookCard({
             )}
           </span>
           {!done && (
-            <Button size="sm" variant="outline" onPress={onAddPages}>
-              <Plus className="h-3.5 w-3.5" /> Pages
+            <Button size="sm" variant="outline" onPress={onSetPage}>
+              <BookOpen className="h-3.5 w-3.5" /> Page
             </Button>
           )}
         </div>
@@ -639,7 +645,7 @@ export function Books({ tracker }: { tracker: Tracker }) {
                 key={b.id}
                 book={b}
                 onEdit={() => setEditing(b)}
-                onAddPages={() => setLogging(b)}
+                onSetPage={() => setLogging(b)}
               />
             ))}
           </div>
@@ -658,9 +664,9 @@ export function Books({ tracker }: { tracker: Tracker }) {
           <BookForm tracker={tracker} book={editingBook} onClose={() => setEditing(null)} />
         )}
       </Modal>
-      <Modal open={!!loggingBook} onClose={() => setLogging(null)} title="Add pages">
+      <Modal open={!!loggingBook} onClose={() => setLogging(null)} title="Current page">
         {loggingBook && (
-          <AddPagesForm tracker={tracker} book={loggingBook} onClose={() => setLogging(null)} />
+          <SetPageForm tracker={tracker} book={loggingBook} onClose={() => setLogging(null)} />
         )}
       </Modal>
     </div>
