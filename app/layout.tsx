@@ -3,6 +3,7 @@ import "./carbon.scss";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { AppShell } from "@/components/AppShell";
 
 // GitHub Pages serves the app under /momentum/, Vercel serves it at the root.
 const BASE = process.env.GITHUB_PAGES === "true" ? "/momentum" : "";
@@ -55,7 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="text-foreground">
-        <Providers>{children}</Providers>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
         <ServiceWorker base={BASE} />
       </body>
     </html>

@@ -11,20 +11,20 @@ Tailwind CSS 4 · next-themes · Firebase v12 · dnd-kit · react-icons.
 
 ## Sections
 
-The page is one long scroll of sections, in the order defined in
-`components/sections.ts` (the single source of truth for ids, titles and the
-numbered index). On narrow screens each section collapses behind its heading.
+Each section has its own page, reached from the menu (☰). Goals is the home
+page. `components/sections.ts` is the single source of truth for each
+section's id, title, path and numbered index.
 
-| Section | What it holds | Main components |
-| --- | --- | --- |
-| Goals | Goals with subtasks, grouped into paths | `GoalsView`, `PathsView` |
-| Tasks | Daily todos and recurring tasks (daily / weekly / biweekly / monthly) | `TodoList`, `RecurringList` |
-| Fitness | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
-| Nutrition | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
-| Books | A shelf of books with covers and progress; set the current page from the card | `Books` |
-| Progress | Completion charts and a month calendar | `Charts` |
-| Log | History of completed tasks, workout sessions and cardio | `CompletionLog` |
-| Configuration | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
+| Section | Path | What it holds | Main components |
+| --- | --- | --- | --- |
+| Goals | `/` | Goals with subtasks, grouped into paths | `GoalsView`, `PathsView` |
+| Tasks | `/tasks` | Daily todos and recurring tasks (daily / weekly / biweekly / monthly) | `TodoList`, `RecurringList` |
+| Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
+| Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
+| Books | `/books` | A shelf of books with covers and progress; set the current page from the card | `Books` |
+| Progress | `/progress` | Completion charts and a month calendar | `Charts` |
+| Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |
+| Configuration | `/configuration` | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
 
 ### Books
 - Book covers and missing authors are looked up from Open Library
@@ -71,8 +71,14 @@ sign in with it. Well within the Spark free tier for personal use.
 
 ## Code layout
 
-- `app/`: `page.tsx` lays out every section; `layout.tsx`, `providers.tsx`
-  (theme), and the global styles `globals.css` + `carbon.scss`.
+- `app/`: one folder per page (`page.tsx` is Goals, `tasks/page.tsx` and
+  so on), plus `layout.tsx`, `providers.tsx` (theme), and the global styles
+  `globals.css` + `carbon.scss`.
+- `components/AppShell.tsx`: mounted once in the root layout. It holds the
+  tracker (`useTracker`), the top bar and menu, the sign-in gate, and the
+  New goal / New recurring task dialogs, so they carry over when you change
+  page. Pages get what they need from `useShell()` / `usePageTracker()`, and
+  each one wraps its content in `SectionPage` (`components/Section.tsx`).
 - `components/`: one file per feature, plus shared UI: `ui.tsx` (wrappers
   around Carbon inputs, buttons and cards), `Modal`, `DeleteButton`, and
   `ActionButton` (`usePending`, for buttons that wait on a save). Icons come from `components/icons.ts`, which re-exports
@@ -84,7 +90,8 @@ sign in with it. Well within the Spark free tier for personal use.
 - `lib/color.ts`: contrast and readable-text helpers.
 - `scripts/palette-audit.py`: checks the rendered DOM against the colour
   palette and regenerates the Carbon `--cds-*` token overrides.
-- `public/sw.js`: service worker. Page navigations try the network first;
+- `public/sw.js`: service worker. Pages, and the payloads the router fetches
+  when you change page, try the network first and are cached per address;
   hashed assets are served from the cache first.
 
 ## Data model

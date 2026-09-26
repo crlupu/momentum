@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useState } from "react";
 import { Button } from "./ui";
@@ -11,17 +12,22 @@ import {
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
+import { sectionPath, sectionTitle, type SectionId } from "./sections";
 
-const NAV = [
-  { id: "goals", label: "Goals", icon: Target, color: "var(--sec-goals)" },
-  { id: "tasks", label: "Tasks", icon: Repeat, color: "var(--sec-tasks)" },
-  { id: "fitness", label: "Fitness", icon: Dumbbell, color: "var(--sec-fitness)" },
-  { id: "nutrition", label: "Nutrition", icon: Apple, color: "var(--sec-nutrition)" },
-  { id: "books", label: "Books", icon: BookOpen, color: "var(--sec-books)" },
-  { id: "charts", label: "Progress", icon: BarChart3, color: "var(--sec-charts)" },
-  { id: "log", label: "Log", icon: ScrollText, color: "var(--sec-log)" },
-  { id: "config", label: "Configuration", icon: Settings, color: "var(--sec-config)" },
+/** The menu, in the order of the sections registry. Titles and pages come from there. */
+const NAV: { id: SectionId; icon: typeof Target }[] = [
+  { id: "goals", icon: Target },
+  { id: "tasks", icon: Repeat },
+  { id: "fitness", icon: Dumbbell },
+  { id: "nutrition", icon: Apple },
+  { id: "books", icon: BookOpen },
+  { id: "charts", icon: BarChart3 },
+  { id: "log", icon: ScrollText },
+  { id: "config", icon: Settings },
 ];
+
+/** Trailing slashes are emitted for static hosting; compare without them. */
+const trim = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p);
 
 /** One top-bar stat: the figure, then a filled colour-coded label beside it. */
 function TopStat({
@@ -98,9 +104,10 @@ function SidebarInner({
   tracker: Tracker;
   onAddGoal: () => void;
   onAddRecurring: () => void;
-  onNavigate: (id: string) => void;
+  onNavigate: () => void;
   onClose?: () => void;
 }) {
+  const current = trim(usePathname() ?? "/");
   return (
     <div className="flex h-full flex-col gap-1 p-4">
       <div className="mb-4 flex items-center justify-between px-1">
@@ -127,16 +134,25 @@ function SidebarInner({
       <div className="my-2 h-px bg-foreground/10" />
 
       <nav className="flex flex-col gap-1">
-        {NAV.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => onNavigate(n.id)}
-            className="flex items-center gap-3 px-3 py-2.5 text-left text-[15px] text-foreground/70 hover:bg-foreground/[0.06] hover:text-foreground"
-          >
-            <n.icon className="h-4 w-4" style={{ color: n.color }} />
-            {n.label}
-          </button>
-        ))}
+        {NAV.map((n) => {
+          const href = sectionPath(n.id);
+          const active = trim(href) === current;
+          return (
+            <Link
+              key={n.id}
+              href={href}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
+              className={
+                "flex items-center gap-3 px-3 py-2.5 text-left text-[15px] hover:bg-foreground/[0.06] hover:text-foreground " +
+                (active ? "bg-foreground/[0.08] font-semibold text-foreground" : "text-foreground/70")
+              }
+            >
+              <n.icon className="h-4 w-4" style={{ color: `var(--sec-${n.id})` }} />
+              {sectionTitle(n.id)}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-auto flex items-center justify-between pt-4">
@@ -155,24 +171,12 @@ export function Sidebar({
   tracker,
   onAddGoal,
   onAddRecurring,
-  onNavigate,
 }: {
   tracker: Tracker;
   onAddGoal: () => void;
   onAddRecurring: () => void;
-  /** Lets the page open a collapsed section before we scroll to it. */
-  onNavigate?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-
-  const go = (id: string) => {
-    setOpen(false);
-    onNavigate?.(id);
-    // Let the section expand before scrolling, or we'd aim at the old height.
-    requestAnimationFrame(() =>
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
-    );
-  };
 
   return (
     <>
@@ -203,7 +207,7 @@ export function Sidebar({
               tracker={tracker}
               onAddGoal={() => { onAddGoal(); setOpen(false); }}
               onAddRecurring={() => { onAddRecurring(); setOpen(false); }}
-              onNavigate={go}
+              onNavigate={() => setOpen(false)}
               onClose={() => setOpen(false)}
             />
           </aside>

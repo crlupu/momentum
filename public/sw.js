@@ -9,7 +9,8 @@
  *
  * Two strategies, because the two kinds of request want opposite things:
  *
- * Navigations go to the network first and fall back to the cache. A stale
+ * Navigations, and the router's page payloads, go to the network first and
+ * fall back to the cache. A stale
  * shell would otherwise be served indefinitely and a deploy would never be
  * picked up.
  *
@@ -18,7 +19,7 @@
  * is never wrong, and going to the network for them is a waste of a radio.
  */
 
-const VERSION = "momentum-v1";
+const VERSION = "momentum-v2";
 const SHELL = "./";
 
 self.addEventListener("install", (event) => {
@@ -70,16 +71,31 @@ self.addEventListener("fetch", (event) => {
   // Library have their own ideas about freshness and are none of our business.
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
 
-  if (request.mode === "navigate") {
+  // Page loads, and the payloads the router fetches when moving between pages
+  // (flagged by the RSC header or its _rsc query). Each page is kept under its
+  // own address: one shared slot would hand back whichever page was visited
+  // last, whatever was asked for. A page never visited falls back to the home
+  // page, which is better than nothing.
+  const url = new URL(request.url);
+  const isPage = request.mode === "navigate";
+  const isPayload = request.headers.get("RSC") === "1" || url.searchParams.has("_rsc");
+  if (isPage || isPayload) {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put(SHELL, copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put(request, copy));
+          }
           return res;
         })
         // No network: the last good copy of the page, which is the whole point.
-        .catch(() => caches.match(SHELL).then((hit) => hit ?? Response.error()))
+        .catch(() =>
+          caches
+            .match(request)
+            .then((hit) => hit ?? (isPage ? caches.match(SHELL) : undefined))
+            .then((hit) => hit ?? Response.error())
+        )
     );
     return;
   }
