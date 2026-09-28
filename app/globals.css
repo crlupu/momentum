@@ -1928,10 +1928,11 @@ html.dark {
 
 /* The colour swatch is a hand-rolled button rather than a Carbon one, so it
    missed the sizing above and stood 4px taller than everything beside it. */
+/* Round, like the colour swatches and dots it stands for. */
 .cfg-swatch-btn {
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  border-radius: var(--r-control);
+  border-radius: var(--r-pill);
 }
 
 /* A finished circuit block: its name, a tick, and nothing else to read. */

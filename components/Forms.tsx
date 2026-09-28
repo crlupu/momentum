@@ -744,7 +744,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="cfg-swatch-btn flex items-center justify-center"
-        style={{ background: value, border: "1px solid var(--default)" }}
+        style={{ background: value }}
       >
         <Palette className="h-4 w-4" style={{ color: readableText(value) }} aria-hidden />
       </button>
@@ -753,8 +753,8 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
         // Right-aligned: the swatch sits near the right edge of a narrow card,
         // and a left-aligned panel would hang off it.
         <div
-          className="absolute right-0 top-full z-50 mt-1 w-max p-2 shadow-lg"
-          style={{ background: "var(--surface-secondary)", border: "1px solid var(--default)" }}
+          className="absolute right-0 top-full z-50 mt-2 w-max rounded-[var(--r-card)] p-2.5"
+          style={{ background: "var(--overlay)", boxShadow: "var(--lift-shadow)" }}
         >
           <div className="grid grid-cols-5 gap-1.5">
             {CAT_COLORS.map((c) => {

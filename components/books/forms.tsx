@@ -70,7 +70,7 @@ export function TrackForm({
             aria-label={c}
             aria-pressed={color === c}
             onClick={() => setColor(c)}
-            className="h-7 w-7"
+            className="h-7 w-7 rounded-full"
             style={{
               background: c,
               outline: color === c ? "2px solid var(--foreground)" : undefined,
