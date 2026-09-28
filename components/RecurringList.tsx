@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, PanelHeader } from "./ui";
+import { Card, PanelHeader } from "./ui";
 import { usePending } from "./ActionButton";
 import { Check, Plus } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
@@ -40,9 +40,9 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   return (
     <div>
       <PanelHeader title="Recurring" color="var(--sec-recurring)">
-        <Button size="sm" variant="outline" onPress={onAdd}>
-          <Plus className="h-3.5 w-3.5" /> New
-        </Button>
+        <button type="button" className="text-action" onClick={onAdd}>
+          <Plus className="h-5 w-5" aria-hidden /> New
+        </button>
       </PanelHeader>
 
       <Card>

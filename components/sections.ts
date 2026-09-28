@@ -13,11 +13,11 @@ export type SectionId =
  * page each one lives on — the order here *is* the order, so it can't drift
  * out of step with the menu the way a parallel map could.
  *
- * Goals are the home page; every other section has a page of its own.
+ * Today is the home page; every other section has a page of its own.
  */
 export const SECTIONS = [
-  { id: "goals", title: "Goals", path: "/" },
-  { id: "tasks", title: "Tasks", path: "/tasks" },
+  { id: "tasks", title: "Today", path: "/" },
+  { id: "goals", title: "Goals", path: "/goals" },
   { id: "fitness", title: "Fitness", path: "/fitness" },
   { id: "nutrition", title: "Nutrition", path: "/nutrition" },
   { id: "books", title: "Books", path: "/books" },
@@ -40,5 +40,5 @@ export const trimPath = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p
 /** The section a path belongs to; the home page for anything unknown. */
 export function sectionForPath(path: string): SectionId {
   const p = trimPath(path);
-  return SECTIONS.find((s) => trimPath(s.path) === p)?.id ?? "goals";
+  return SECTIONS.find((s) => trimPath(s.path) === p)?.id ?? "tasks";
 }

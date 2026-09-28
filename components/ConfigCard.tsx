@@ -1,8 +1,7 @@
 "use client";
 
 import { ReactNode, createContext, useCallback, useContext, useState } from "react";
-import { Settings, Check } from "./icons";
-import { Button, Card, PanelHeader } from "./ui";
+import { Card, PanelHeader } from "./ui";
 
 /**
  * Whether the surrounding configuration card is in edit mode. Cards read this
@@ -35,17 +34,18 @@ export function ConfigCard({ title, children }: { title: string; children: React
 
   return (
     <div>
-      <PanelHeader title={title} color="var(--sec-config)">
-        <Button
-          size="sm"
-          variant={editing ? "primary" : "outline"}
-          isIconOnly
-          aria-label={editing ? `Finish editing ${title}` : `Configure ${title}`}
+      <PanelHeader title={title}>
+        {/* Edit / Done, in words: the convention for a list that turns
+            editable, and clearer than a gear. */}
+        <button
+          type="button"
+          className="text-action"
+          aria-label={editing ? `Done editing ${title}` : `Edit ${title}`}
           aria-pressed={editing}
-          onPress={() => setEditing((v) => !v)}
+          onClick={() => setEditing((v) => !v)}
         >
-          {editing ? <Check className="h-3.5 w-3.5" /> : <Settings className="h-3.5 w-3.5" />}
-        </Button>
+          {editing ? "Done" : "Edit"}
+        </button>
       </PanelHeader>
       <Card className={editing ? "config-card--editing" : undefined}>
         <Card.Content className="p-4 md:p-5">

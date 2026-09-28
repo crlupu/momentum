@@ -31,7 +31,12 @@ const BARS = [
 /** A quarter of the bar's width. */
 const RADIUS = 2;
 
-export function Logo({ className }: { className?: string }) {
+/**
+ * The mark in the app's colours: the two fallen dominoes in jade — done,
+ * momentum gathered — and the one still standing in ink, the next thing to
+ * do. Pass `mono` for a single colour (currentColor) where jade would clash.
+ */
+export function Logo({ className, mono }: { className?: string; mono?: boolean }) {
   return (
     <svg
       viewBox="0 0 44 30"
@@ -49,6 +54,7 @@ export function Logo({ className }: { className?: string }) {
           height={b.h}
           rx={RADIUS}
           transform={`rotate(${b.angle} ${b.cx} ${b.cy})`}
+          fill={mono || i === BARS.length - 1 ? "currentColor" : "var(--accent)"}
         />
       ))}
     </svg>

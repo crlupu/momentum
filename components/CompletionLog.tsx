@@ -45,14 +45,15 @@ type Entry = {
   onDelete: () => Promise<unknown>;
 };
 
+/** Each kind's dot, from the data palette (--data-* in globals.css). */
 const KIND_COLOR: Record<Entry["kind"], string> = {
-  "To-do": "#33b1ff",
-  Goal: "#0f62fe",
-  Recurring: "#491d8b",
-  Workout: "#8a3ffc",
-  Cardio: "#42be65",
-  Calories: "#469c9b",
-  Macros: "#4491e1",
+  "To-do": "#11779d",
+  Goal: "#2168e4",
+  Recurring: "#635fd9",
+  Workout: "#ce352a",
+  Cardio: "#b75014",
+  Calories: "#97640c",
+  Macros: "#64761c",
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
@@ -255,10 +256,8 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                   <ul className="list-none divide-y divide-foreground/10 p-0">
                     {day.items.map((e) => (
                       <li key={e.key} className="flex items-center gap-2.5 py-2.5">
-                        <span
-                          className="w-[4.75rem] shrink-0 px-2 py-[3px] text-center text-[11px] font-semibold leading-none"
-                          style={{ background: e.color, color: readableText(e.color) }}
-                        >
+                        <span className="log-kind">
+                          <span className="cat-dot" style={{ background: e.color }} aria-hidden />
                           {e.kind}
                         </span>
                         <span className="min-w-0 flex-1 break-words text-[15px]">

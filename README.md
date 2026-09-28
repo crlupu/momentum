@@ -12,16 +12,16 @@ Tailwind CSS 4 · next-themes · Firebase v12 · dnd-kit · react-icons.
 ## Sections
 
 Each section has its own page. On a desktop (1056px and wider) a sidebar lists
-them all. On phones and tablets a tab bar holds Goals, Tasks, Fitness,
+them all. On phones and tablets a tab bar holds Today, Goals, Fitness,
 Nutrition and Books, and the More button beside each page title opens
-Progress, Log, Settings and the appearance setting. Goals is the home page.
+Progress, Log, Settings and the appearance setting. Today is the home page.
 `components/sections.ts` is the single source of truth for each section's id,
 title and path.
 
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
-| Goals | `/` | Goals with subtasks, grouped into paths | `GoalsView`, `PathsView` |
-| Tasks | `/tasks` | Daily todos and recurring tasks (daily / weekly / biweekly / monthly) | `TodoList`, `RecurringList` |
+| Today | `/` | The day's momentum ring and figures, recurring tasks (daily / weekly / biweekly / monthly) and to-dos. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
+| Goals | `/goals` | Goals with subtasks, grouped into paths | `GoalsView`, `PathsView` |
 | Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
 | Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
 | Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
@@ -50,8 +50,8 @@ The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/b
   (queues), Phases, Notes (searchable key ideas and quotes) and History (finished and
   dropped books, charts, year in review). A book's own page has its sessions,
   notes and quotes, and status timeline.
-- A track counts toward the top bar's *done today / not done* once it has an open book
-  and a target, and it is done when today's pages reach the target.
+- A track counts toward Today's momentum ring once it has an open book and a target,
+  and it is done when today's pages reach the target.
 - **Import plan** reads a reading plan written in Markdown (`lib/planImport.ts`): a table of
   tracks, `## Phase … (Q4 2026)` headings with a `**Track**` line above each numbered list,
   a `## Slow lane (continuous)` list and a `## Dropped` list. Importing again updates what's
@@ -89,7 +89,7 @@ sign in with it. Well within the Spark free tier for personal use.
 
 ## Code layout
 
-- `app/`: one folder per page (`page.tsx` is Goals, `tasks/page.tsx` and
+- `app/`: one folder per page (`page.tsx` is Today, `goals/page.tsx` and
   so on), plus `layout.tsx`, `providers.tsx` (theme), and the global styles
   `globals.css` + `carbon.scss`.
 - `components/AppShell.tsx`: mounted once in the root layout. It holds the
@@ -107,8 +107,6 @@ sign in with it. Well within the Spark free tier for personal use.
   the `useTracker()` hook, which returns the state plus every action.
 - `lib/firebase.ts`, `lib/firebaseConfig.ts`: Firebase setup.
 - `lib/color.ts`: contrast and readable-text helpers.
-- `scripts/palette-audit.py`: checks the rendered DOM against the colour
-  palette and regenerates the Carbon `--cds-*` token overrides.
 - `public/sw.js`: service worker. Pages, and the payloads the router fetches
   when you change page, try the network first and are cached per address;
   hashed assets are served from the cache first.
@@ -123,21 +121,27 @@ of truth.
 - Every change goes through `commit(fn)` in `useTracker`, which applies a pure
   `state => state` function, then caches and writes the whole document.
 - New fields must be optional or given defaults in `migrate()`, because old
-  documents are loaded through it. Colours from earlier themes are remapped
-  there via `LEGACY_CATEGORY_COLORS`.
+  documents are loaded through it. Colours saved under earlier palettes
+  (categories, meal tags, tracks, books) are moved onto the current one by
+  `currentColor()`.
 - `firestore.rules` restricts each user to their own document.
 
 ## Conventions
 
-- Colours come only from the palette (`CAT_COLORS`, the Carbon values).
-  `BOOK_COLORS` is the subset that white text is legible on.
+- Colour has two layers, both in `globals.css`:
+  - **Interface:** ink on paper (`--foreground`, `--muted`, `--surface`,
+    `--background`) with one accent, jade (`--accent`, `--accent-text`), which
+    only ever means progress: checkmarks, rings, progress bars, the primary
+    button, the current tab. Amber (`--warning`) means behind or over; red
+    (`--danger`) means destructive. Sections have no colours of their own.
+  - **Data:** people's own colours (categories, meal tags, tracks, books) come
+    from `CAT_COLORS` / `--data-*`: eleven hues at one luminance, each 5.0:1
+    with white text and 3.4:1 on the dark card. There's no green or teal, so
+    nothing can be mistaken for the accent. Charts use `--chart-1` (jade) and
+    `--chart-2` (indigo).
 - Dates are local `YYYY-MM-DD` keys (`dateKey()`), and weeks start on Monday.
   They are shown with `lib/dates.ts` ("28 Sep", with the year only when it isn't this one,
   and times on a 24-hour clock), so every page writes them the same way.
-- Each section has a tint (`--tint-*` for fills, `--sec-*` for text, in
-  `globals.css`). AppShell sets `data-section` on `<html>`, and the page's
-  tint becomes `--accent`: its title, primary buttons, checkmarks and focus
-  rings. Everything else stays neutral grey. Red only means destructive.
 - Type is the system face (SF Pro on Apple devices). Figures use `.font-mono-n`,
   which is the rounded variant with tabular digits. Nothing is smaller than 11px,
   and secondary text uses `--muted` (at least 4.5:1), never an opacity of the

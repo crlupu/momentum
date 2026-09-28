@@ -1,18 +1,13 @@
 "use client";
 
-import { useShell } from "@/components/AppShell";
-import { SectionPage } from "@/components/Section";
-import RecurringList from "@/components/RecurringList";
-import TodoList from "@/components/TodoList";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function TasksPage() {
-  const { tracker, openRecurring } = useShell();
-  return (
-    <SectionPage id="tasks">
-      <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
-        <RecurringList tracker={tracker} onAdd={openRecurring} />
-        <TodoList tracker={tracker} />
-      </div>
-    </SectionPage>
-  );
+/** Tasks became Today, at the home page. Old links and bookmarks land there. */
+export default function TasksRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
+  return null;
 }

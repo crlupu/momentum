@@ -17,7 +17,7 @@ export function TrackDot({ color, size = 8 }: { color: string; size?: number }) 
   return (
     <span
       aria-hidden
-      className="inline-block shrink-0"
+      className="inline-block shrink-0 rounded-full"
       style={{ width: size, height: size, background: color }}
     />
   );

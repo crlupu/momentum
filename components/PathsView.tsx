@@ -323,9 +323,9 @@ export function PathsView({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <PanelHeader title="Paths" color="var(--sec-goals)">
-        <Button size="sm" variant="outline" onPress={() => setAdding(true)}>
-          <Plus className="h-3.5 w-3.5" /> New path
-        </Button>
+        <button type="button" className="text-action" onClick={() => setAdding(true)}>
+          <Plus className="h-5 w-5" aria-hidden /> New path
+        </button>
       </PanelHeader>
 
       {s.paths.length === 0 ? (

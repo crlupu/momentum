@@ -23,12 +23,10 @@ import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtas
 function SubtaskRow({
   goalId,
   t,
-  color,
   tracker,
 }: {
   goalId: string;
   t: Subtask;
-  color: string;
   tracker: Tracker;
 }) {
   const [editing, setEditing] = useState(false);
@@ -70,15 +68,8 @@ function SubtaskRow({
         </span>
       </div>
 
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
-        <div
-          className="h-full"
-          style={{
-            width: `${pct}%`,
-            background: color,
-            transition: "width .3s ease",
-          }}
-        />
+      <div className="progress-track mt-1 h-1.5">
+        <div className="progress-fill" style={{ width: `${pct}%` }} />
       </div>
 
       {editing && (
@@ -312,27 +303,14 @@ function GoalCard({
             >
               <Pencil className="h-4 w-4" />
             </Button>
-            {showProgress && <ProgressRing pct={pct} color={c.color} size={48} />}
+            {showProgress && <ProgressRing pct={pct} color="var(--accent)" size={48} />}
           </div>
         </div>
-
-        {showProgress && (
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
-            <div
-              className="h-full"
-              style={{
-                width: `${pct}%`,
-                background: c.color,
-                transition: "width .3s ease",
-              }}
-            />
-          </div>
-        )}
 
         {(g.subtasks?.length ?? 0) > 0 && (
           <ul className="mt-3 list-none divide-y divide-foreground/10 p-0">
             {(g.subtasks ?? []).map((t) => (
-              <SubtaskRow key={t.id} goalId={g.id} t={t} color={c.color} tracker={tracker} />
+              <SubtaskRow key={t.id} goalId={g.id} t={t} tracker={tracker} />
             ))}
           </ul>
         )}

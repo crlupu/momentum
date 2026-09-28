@@ -17,7 +17,7 @@ export function ProgressRing({
   const fontSize = size >= 48 ? (pct >= 100 ? 12 : 13) : 11;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${pct}% complete`}>
-      <circle cx={cx} cy={cx} r={r} fill="none" stroke="currentColor" className="text-foreground/10" strokeWidth={stroke} />
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke="var(--accent-track)" strokeWidth={stroke} />
       <circle
         cx={cx}
         cy={cx}

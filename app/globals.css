@@ -72,339 +72,239 @@
 }
 
 /* ============================================================
-   The official palette.
-   Seven hue families x ten steps, sampled from the source matrix. The matrix
-   carries no neutrals, so black, white and the Cool Gray ramp are kept
-   alongside it for surfaces, borders and text.
+   Colour.
 
-   Two rules govern how a step is chosen, both measured rather than eyeballed:
-     - A fill carrying white text uses step 60. It is the lightest step that
-       clears AA against white in every family (4.90:1 to 5.30:1) and still
-       holds about 4:1 against the black ground.
-     - Accent text sitting directly on a ground uses step 50 on dark and
-       step 70 on light, since a fill's requirements and text's are opposite.
+   Momentum is ink on paper with one colour that means one thing:
+   jade, for progress. A checkmark, a progress ring, a primary button,
+   the fallen dominoes in the mark — anything jade is something done or
+   something to do next. Nothing else on screen competes with it.
+
+     ink        text and icons: #1D1D1F on light, white on dark
+     paper      the page ground and the cards on it
+     jade       progress, completion, the primary action
+     amber      a warning: behind pace, over budget
+     red        destructive, and nothing else
+
+   People's own data (categories, meal tags, reading tracks, book spines)
+   draws from a separate palette, --data-*, used only on small marks: a
+   dot, a chip, a spine. Every data colour sits in the same luminance
+   band, so each carries white text at 5.0:1 and still reads at 3.4:1 on
+   the dark card — one set of colours that works everywhere, with no
+   colour louder than its neighbours.
    ============================================================ */
 :root {
-  /* green */
-  --c-green-100: #0d1b0a;
-  --c-green-90: #133115;
-  --c-green-80: #1d471f;
-  --c-green-70: #2d6130;
-  --c-green-60: #3c7e40;
-  --c-green-50: #4e9f52;
-  --c-green-40: #65b96b;
-  --c-green-30: #7ad381;
-  --c-green-20: #adecb7;
-  --c-green-10: #defae3;
-  /* teal */
-  --c-teal-100: #0a191c;
-  --c-teal-90: #102f34;
-  --c-teal-80: #1b4448;
-  --c-teal-70: #28605f;
-  --c-teal-60: #357a77;
-  --c-teal-50: #469c9b;
-  --c-teal-40: #53b5b4;
-  --c-teal-30: #64d1ce;
-  --c-teal-20: #9febeb;
-  --c-teal-10: #e0f8f8;
-  /* cyan */
-  --c-cyan-100: #0c192a;
-  --c-cyan-90: #0e2a4f;
-  --c-cyan-80: #173d6e;
-  --c-cyan-70: #25579c;
-  --c-cyan-60: #3271be;
-  --c-cyan-50: #4491e1;
-  --c-cyan-40: #59aff8;
-  --c-cyan-30: #84c8f9;
-  --c-cyan-20: #bce5f9;
-  --c-cyan-10: #e4f5fc;
-  /* blue */
-  --c-blue-100: #05103e;
-  --c-blue-90: #091970;
-  --c-blue-80: #1330a5;
-  --c-blue-70: #1e48d2;
-  --c-blue-60: #2860f3;
-  --c-blue-50: #5489f3;
-  --c-blue-40: #79a3f5;
-  --c-blue-30: #9dc0f8;
-  --c-blue-20: #ccddfb;
-  --c-blue-10: #edf4fc;
-  /* purple */
-  --c-purple-100: #1b1030;
-  --c-purple-90: #331668;
-  --c-purple-80: #492390;
-  --c-purple-70: #6534c3;
-  --c-purple-60: #8044f4;
-  --c-purple-50: #a173f7;
-  --c-purple-40: #b48ff8;
-  --c-purple-30: #cbb1fa;
-  --c-purple-20: #e2d6fa;
-  --c-purple-10: #f7effa;
-  /* magenta */
-  --c-magenta-100: #250b16;
-  --c-magenta-90: #4e0b2a;
-  --c-magenta-80: #691838;
-  --c-magenta-70: #95294d;
-  --c-magenta-60: #be3964;
-  --c-magenta-50: #dc5f89;
-  --c-magenta-40: #e87ea2;
-  --c-magenta-30: #f1a5c1;
-  --c-magenta-20: #f6d2de;
-  --c-magenta-10: #fcf1f7;
-  /* red */
-  --c-red-100: #280a0a;
-  --c-red-90: #470c0e;
-  --c-red-80: #6b1a17;
-  --c-red-70: #952825;
-  --c-red-60: #cd3b3b;
-  --c-red-50: #e95958;
-  --c-red-40: #ed7f7e;
-  --c-red-30: #f2a7ab;
-  --c-red-20: #f3d3d4;
-  --c-red-10: #fcf1ef;
+  --data-blue: #2168e4;
+  --data-indigo: #635fd9;
+  --data-violet: #8c4ed3;
+  --data-magenta: #b23bb2;
+  --data-pink: #ca2f72;
+  --data-red: #ce352a;
+  --data-orange: #b75014;
+  --data-amber: #97640c;
+  --data-olive: #64761c;
+  --data-cyan: #11779d;
+  --data-slate: #646f7f;
 
-  /* Neutrals — not in the matrix, retained for surfaces and type. */
-  --ibm-black: #000000;
-  --ibm-cool-gray-100: #121619;
-  --ibm-cool-gray-80: #343a3f;
-  --ibm-cool-gray-40: #a2a9b0;
-  --ibm-cool-gray-20: #dde1e6;
-  --ibm-cool-gray-10: #f2f4f8;
-  --ibm-white: #ffffff;
-}
-
-/* ============================================================
-   Section tints.
-   Each section owns one hue, and a page takes its section's hue as the
-   accent: its title, its primary buttons, its checkmarks and the selected
-   tab. Everything else stays neutral, so the colour on screen always says
-   which part of the app you are in. Red is deliberately absent — it means
-   destructive, nothing else.
-
-   Two values per section, both measured:
-     --tint-*  a fill that carries white text: 4.9:1 to 6.7:1.
-     --sec-*   the same hue as text on the page ground: at least 4.5:1 on
-               #F2F2F7 in light, at least 7:1 on #1C1C1E in dark.
-   ============================================================ */
-:root {
-  --tint-goals: #6e3fd6;
-  --tint-tasks: #1f5fd9;
-  --tint-fitness: #237a36;
-  --tint-nutrition: #0b7a75;
-  --tint-books: #a95109;
-  --tint-charts: #0a6ea8;
-  --tint-log: #bf2e6b;
-  --tint-config: #5b5b63;
-
-  --sec-recurring: var(--sec-tasks);
-  --sec-todos: var(--sec-tasks);
-  --sec-weight: var(--sec-fitness);
-  --sec-calories: var(--sec-nutrition);
-
-  /* Ink on a tint fill is always white: every fill above clears 4.5:1. */
-  --ink-goals: #ffffff;
-  --ink-tasks: #ffffff;
-  --ink-fitness: #ffffff;
-  --ink-nutrition: #ffffff;
-  --ink-books: #ffffff;
-  --ink-charts: #ffffff;
-  --ink-log: #ffffff;
-  --ink-config: #ffffff;
-
-  /* Heatmap ramp, ascending in lightness through the palette. */
-  --scale-1: var(--ibm-cool-gray-80);
-  --scale-2: var(--c-purple-70);
-  --scale-3: var(--c-blue-60);
-  --scale-4: var(--c-purple-60);
-  --scale-5: var(--c-cyan-50);
-
-  /* Second series where one chart carries two. */
-  --signal: var(--c-green-50);
-
-  /* Shape. Continuous-feeling corners, sized by what the shape holds:
-     cards are the largest, controls smaller, chips fully round. */
-  --r-card: 14px;
+  /* Shape. Corners sized by what the shape holds: cards largest,
+     controls smaller, chips fully round. */
+  --r-card: 16px;
   --r-control: 10px;
   --r-small: 6px;
   --r-pill: 999px;
 
   /* Type. The system face everywhere — SF Pro on Apple devices, Segoe UI
      and Roboto elsewhere. Figures use the rounded variant where the
-     platform has one (SF Pro Rounded), with tabular digits so columns
-     line up. */
+     platform has one (SF Pro Rounded), with tabular digits. */
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-figure: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif;
 
-  /* Floating bars: the tab bar and the sidebar. */
-  --tabbar-h: 3.5rem;
-  --sidebar-w: 15.5rem;
+  --tabbar-h: 3.25rem;
+  --sidebar-w: 15rem;
 }
 
 :root,
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  /* Grouped ground and the cards on it. */
-  --background: #f2f2f7;
-  --foreground: #000000;
 
-  --surface: #ffffff;
-  --surface-secondary: #f2f2f7;
-  --surface-tertiary: #e5e5ea;
-
+  /* Paper */
+  --background: #f2f3f1;            /* the ground: grey with a breath of green */
+  --surface: #ffffff;               /* cards */
+  --surface-secondary: #f2f3f1;
+  --surface-tertiary: #e6e8e5;
   --overlay: #ffffff;
-  --overlay-foreground: #000000;
 
-  /* Secondary text: 5.2:1 on white, 4.7:1 on the ground. */
-  --muted: #6c6c70;
+  /* Ink */
+  --foreground: #1d1d1f;            /* 16.8:1 on white */
+  --overlay-foreground: #1d1d1f;
+  --muted: #6b6e6c;                 /* 5.2:1 on white, 4.6:1 on the ground */
+  --faint: #a4a7a5;                 /* placeholders' neighbours, never body text */
 
-  --border: #d1d1d6;
-  --border-strong: #8a8a8e;   /* 3.4:1 on white: enough for a control edge */
-  --separator: #d8d8dc;
+  /* Lines */
+  --separator: #e1e3e0;
+  --border: #d9dcd8;
+  --border-strong: #8b8e8c;         /* 3.3:1 on white: a control's edge */
 
-  --accent: var(--tint-tasks);
+  /* Jade */
+  --accent: #09795a;                /* white on it 5.4:1; as text 5.4:1 on white */
+  --accent-text: #09795a;
   --accent-foreground: #ffffff;
-  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-soft: rgba(9, 121, 90, 0.11);
+  --accent-soft-strong: rgba(9, 121, 90, 0.18);
+  --accent-track: rgba(9, 121, 90, 0.14);
 
-  --success: #237a36;
-  --danger: #d70015;
-  --danger-hover: #b50012;
+  /* Status */
+  --warning: #9a5b00;               /* 5.4:1 on white */
+  --warning-soft: rgba(191, 120, 0, 0.12);
+  --success: var(--accent);
+  --danger: #d0302f;                /* 5.1:1 on white */
+  --danger-hover: #b32423;
   --danger-foreground: #ffffff;
-  --danger-soft: color-mix(in srgb, #d70015 10%, transparent);
-  --danger-soft-hover: color-mix(in srgb, #d70015 16%, transparent);
-  --danger-soft-foreground: #d70015;
+  --danger-soft: rgba(208, 48, 47, 0.1);
+  --danger-soft-hover: rgba(208, 48, 47, 0.16);
+  --danger-soft-foreground: #d0302f;
 
-  --selected-bg: var(--accent);
+  /* Fills for quiet controls */
+  --default: rgba(118, 122, 118, 0.12);
+  --fill-hover: rgba(118, 122, 118, 0.2);
+
+  --selected-bg: var(--foreground);
   --selected-fg: #ffffff;
 
-  --radius: var(--r-control);
+  /* Bars and elevation */
+  --bar-bg: rgba(248, 249, 247, 0.78);
+  --bar-border: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --lift-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  --blanket: rgba(0, 0, 0, 0.28);
 
-  /* A neutral fill for controls that aren't primary. */
-  --default: rgba(120, 120, 128, 0.12);
-  --fill-hover: rgba(120, 120, 128, 0.2);
-  --book-unread: #c7c7cc;
-  --book-fill: var(--tint-books);
-  --book-shelf: #8d6a4b;
+  /* Fields */
+  --field-bg: #ffffff;
+  --field-border: #d4d7d3;
+  --field-placeholder: #6b6e6c;
+
+  /* Charts: series one is always jade; a second series is indigo, which
+     no status colour uses. Neutral bars are the ring track grey. */
+  --chart-1: var(--accent);
+  --chart-2: var(--data-indigo);
+  --chart-neutral: #cfd2ce;
+  --chart-grid: #e6e8e5;
+
+  --radius: var(--r-control);
+  --pane-bg: var(--surface);
+  --pane-bg-strong: var(--surface);
+  --pane-border: transparent;
+  --pane-hairline: var(--separator);
+  --book-unread: #d2d5d1;
+  --book-fill: var(--data-slate);
+  --book-shelf: #8a7a66;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
-  --blanket: rgba(0, 0, 0, 0.32);
-
-  --field-bg: #ffffff;
-  --field-border: #c7c7cc;
-  --field-placeholder: #6c6c70;
-
-  --pane-bg: #ffffff;
-  --pane-bg-strong: #ffffff;
-  --pane-border: transparent;
-  --pane-hairline: #d8d8dc;
-
-  --bar-bg: rgba(249, 249, 251, 0.82);
-  --bar-border: rgba(60, 60, 67, 0.18);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-  --sec-goals: #6e3fd6;
-  --sec-tasks: #1f5fd9;
-  --sec-fitness: #237a36;
-  --sec-nutrition: #0b7a75;
-  --sec-books: #a95109;
-  --sec-charts: #0a6ea8;
-  --sec-log: #bf2e6b;
-  --sec-config: #5b5b63;
 }
 
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #ffffff;
 
+  --background: #000000;
   --surface: #1c1c1e;
   --surface-secondary: #2c2c2e;
   --surface-tertiary: #3a3a3c;
-
   --overlay: #1c1c1e;
+
+  --foreground: #ffffff;
   --overlay-foreground: #ffffff;
+  --muted: #9c9e9d;                 /* 6.3:1 on a card, 7.8:1 on the ground */
+  --faint: #5f615f;
 
-  /* 6.4:1 on a card, 7.9:1 on the ground. */
-  --muted: #9e9ea6;
+  --separator: #2f302f;
+  --border: #38393a;
+  --border-strong: #6e706f;         /* 3.4:1 on a card */
 
-  --border: #38383a;
-  --border-strong: #6e6e73;   /* 3.4:1 on a card */
-  --separator: #38383a;
+  /* Jade brightens for the dark: a luminous fill carrying dark ink, the
+     way the system's own filled buttons do at night. */
+  --accent: #3ddc97;                /* dark ink on it 9.2:1; as text 9.6:1 */
+  --accent-text: #3ddc97;
+  --accent-foreground: #03261a;
+  --accent-soft: rgba(61, 220, 151, 0.14);
+  --accent-soft-strong: rgba(61, 220, 151, 0.22);
+  --accent-track: rgba(61, 220, 151, 0.16);
 
-  --accent: var(--tint-tasks);
-  --accent-foreground: #ffffff;
-  --accent-soft: color-mix(in srgb, var(--accent) 24%, transparent);
-
-  --success: #5fd27a;
-  --danger: #ff6961;
+  --warning: #ffc453;
+  --warning-soft: rgba(255, 196, 83, 0.14);
+  --success: var(--accent);
+  --danger: #ff6b61;
   --danger-hover: #ff453a;
   --danger-foreground: #ffffff;
-  --danger-soft: color-mix(in srgb, #ff453a 16%, transparent);
-  --danger-soft-hover: color-mix(in srgb, #ff453a 24%, transparent);
-  --danger-soft-foreground: #ff6961;
+  --danger-soft: rgba(255, 107, 97, 0.15);
+  --danger-soft-hover: rgba(255, 107, 97, 0.22);
+  --danger-soft-foreground: #ff6b61;
 
-  --selected-bg: var(--accent);
-  --selected-fg: #ffffff;
+  --default: rgba(120, 120, 128, 0.24);
+  --fill-hover: rgba(120, 120, 128, 0.34);
+
+  --selected-bg: #ffffff;
+  --selected-fg: #1d1d1f;
+
+  --bar-bg: rgba(18, 18, 20, 0.78);
+  --bar-border: rgba(255, 255, 255, 0.1);
+  --card-shadow: none;
+  --lift-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --blanket: rgba(0, 0, 0, 0.55);
+
+  --field-bg: #2c2c2e;
+  --field-border: #3f4040;
+  --field-placeholder: #9c9e9d;
+
+  --chart-1: var(--accent);
+  --chart-2: #8f8cf0;               /* indigo, lifted for the dark */
+  --chart-neutral: #3a3b3c;
+  --chart-grid: #2c2c2e;
 
   --radius: var(--r-control);
-
-  --default: rgba(118, 118, 128, 0.24);
-  --fill-hover: rgba(118, 118, 128, 0.34);
-  --book-unread: #48484a;
-  --book-fill: var(--tint-books);
-  --book-shelf: #6b4f38;
+  --pane-bg: var(--surface);
+  --pane-bg-strong: var(--surface-secondary);
+  --pane-border: transparent;
+  --pane-hairline: var(--separator);
+  --book-unread: #48494a;
+  --book-fill: var(--data-slate);
+  --book-shelf: #6b5d4d;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
-  --blanket: rgba(0, 0, 0, 0.56);
-
-  --field-bg: #2c2c2e;
-  --field-border: #48484a;
-  --field-placeholder: #9e9ea6;
-
-  --pane-bg: #1c1c1e;
-  --pane-bg-strong: #2c2c2e;
-  --pane-border: transparent;
-  --pane-hairline: #38383a;
-
-  --bar-bg: rgba(22, 22, 24, 0.8);
-  --bar-border: rgba(84, 84, 88, 0.6);
-  --card-shadow: none;
-
-  --sec-goals: #b99bff;
-  --sec-tasks: #7aaeff;
-  --sec-fitness: #5fd27a;
-  --sec-nutrition: #4fd1c8;
-  --sec-books: #ffa35c;
-  --sec-charts: #5cc2f5;
-  --sec-log: #ff86b5;
-  --sec-config: #b4b4bc;
 }
 
-/* The page's section sets the accent. AppShell writes data-section on
-   <html>, so dialogs portalled into <body> pick it up too. */
-html[data-section="goals"] { --accent: var(--tint-goals); }
-html[data-section="tasks"] { --accent: var(--tint-tasks); }
-html[data-section="fitness"] { --accent: var(--tint-fitness); }
-html[data-section="nutrition"] { --accent: var(--tint-nutrition); }
-html[data-section="books"] { --accent: var(--tint-books); }
-html[data-section="charts"] { --accent: var(--tint-charts); }
-html[data-section="log"] { --accent: var(--tint-log); }
-html[data-section="config"] { --accent: var(--tint-config); }
+/* Names older rules still reach for, mapped onto the scheme above.
+   Sections no longer carry colours of their own: every section speaks
+   in ink and jade. */
+:root,
+.light,
+.dark {
+  --sec-goals: var(--accent-text);
+  --sec-tasks: var(--accent-text);
+  --sec-fitness: var(--accent-text);
+  --sec-nutrition: var(--accent-text);
+  --sec-books: var(--accent-text);
+  --sec-charts: var(--accent-text);
+  --sec-log: var(--accent-text);
+  --sec-config: var(--accent-text);
+  --sec-recurring: var(--accent-text);
+  --sec-todos: var(--accent-text);
+  --sec-weight: var(--chart-1);
+  --sec-calories: var(--chart-1);
 
-/* Accent as text: the section's readable variant rather than its fill. */
-html[data-section] { --accent-text: var(--sec-tasks); }
-html[data-section="goals"] { --accent-text: var(--sec-goals); }
-html[data-section="fitness"] { --accent-text: var(--sec-fitness); }
-html[data-section="nutrition"] { --accent-text: var(--sec-nutrition); }
-html[data-section="books"] { --accent-text: var(--sec-books); }
-html[data-section="charts"] { --accent-text: var(--sec-charts); }
-html[data-section="log"] { --accent-text: var(--sec-log); }
-html[data-section="config"] { --accent-text: var(--sec-config); }
+  /* Heatmap ramp: jade, rising in strength. */
+  --scale-1: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --scale-2: color-mix(in srgb, var(--accent) 42%, var(--surface));
+  --scale-3: color-mix(in srgb, var(--accent) 62%, var(--surface));
+  --scale-4: color-mix(in srgb, var(--accent) 82%, var(--surface));
+  --scale-5: var(--accent);
+
+  --signal: var(--chart-2);
+}
 
 /* ============================================================
    Carbon system scales.
@@ -588,12 +488,12 @@ body {
   font-weight: 600;
 }
 
-/* Positive action ("mark as done"). White on it: 5.0:1. */
+/* Positive action ("mark as done"): jade, like every other completion. */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: var(--tint-fitness);
+  background-color: var(--accent);
   background-image: none;
-  color: #ffffff;
+  color: var(--accent-foreground);
   border-color: transparent;
 }
 @media (hover: hover) {
@@ -856,7 +756,7 @@ textarea::placeholder {
    ============================================================ */
 .sec-band {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.75rem;
   inline-size: 100%;
   margin: 0;
@@ -870,11 +770,18 @@ textarea::placeholder {
   flex: 1 1 auto;
   min-inline-size: 0;
   margin: 0;
-  color: var(--band-color);
+  color: var(--foreground);
   font-size: 2.125rem;      /* large title, 34 */
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+}
+/* A line of context above the title: today's date on Today. */
+.sec-band__subtitle {
+  margin: 0 0 0.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 .sec-band--md .sec-band__title {
   font-size: 1.25rem;
@@ -1115,7 +1022,7 @@ button {
   block-size: 1.75rem;
   border-radius: var(--r-pill);
   flex: none;
-  box-shadow: inset 0 0 0 1px var(--ibm-cool-gray-100);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
   transition: transform 0.12s ease;
 }
 .cfg-swatch:hover {
@@ -1123,7 +1030,7 @@ button {
 }
 .cfg-swatch--on {
   box-shadow:
-    inset 0 0 0 1px var(--ibm-cool-gray-100),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
     0 0 0 2px var(--surface),
     0 0 0 4px var(--foreground);
 }
@@ -1162,632 +1069,55 @@ button {
 }
 
 /* ============================================================
-   Carbon theme tokens, remapped onto the palette.
-   GENERATED by scripts/palette-audit.py — do not hand-edit. Carbon
-   components paint from their own --cds-* tokens rather than this app's, so
-   restricting the app's tokens is not enough on its own. Each token below is
-   pinned to whichever palette colour sits nearest it, per theme. Unlayered,
-   so it beats the carbon layer.
+   Carbon's own tokens, pointed at the scheme above.
+   Carbon components paint from --cds-* custom properties rather than this
+   app's. Only the ones the four Carbon components in use (Button,
+   TextInput, Tile, Toggle) actually read are mapped; the rest keep
+   Carbon's defaults and never reach the screen. Unlayered, so these beat
+   the theme mixins in carbon.scss.
    ============================================================ */
-
-html.light {
-  --cds-ai-aura-hover-background: var(--c-blue-10);
-  --cds-ai-aura-hover-start: var(--c-blue-50);
-  --cds-ai-aura-start: var(--c-blue-50);
-  --cds-ai-aura-start-sm: var(--c-blue-50);
-  --cds-ai-border-end: var(--c-blue-40);
-  --cds-ai-border-start: var(--c-blue-30);
-  --cds-ai-border-strong: var(--c-blue-50);
-  --cds-ai-drop-shadow: var(--c-blue-60);
-  --cds-ai-inner-shadow: var(--c-blue-50);
-  --cds-ai-overlay: var(--c-blue-100);
-  --cds-ai-popover-background: var(--ibm-white);
-  --cds-ai-popover-caret-bottom: var(--c-blue-40);
-  --cds-ai-popover-caret-bottom-background: var(--c-blue-10);
-  --cds-ai-popover-caret-bottom-background-actions: var(--c-blue-10);
-  --cds-ai-popover-caret-center: var(--c-blue-30);
-  --cds-ai-popover-shadow-outer-01: var(--c-blue-70);
-  --cds-ai-popover-shadow-outer-02: var(--ibm-black);
-  --cds-ai-skeleton-background: var(--c-blue-20);
-  --cds-ai-skeleton-element-background: var(--c-blue-50);
-  --cds-background: var(--ibm-cool-gray-10);
-  --cds-background-active: var(--ibm-cool-gray-40);
-  --cds-background-brand: var(--c-blue-60);
-  --cds-background-hover: var(--ibm-cool-gray-40);
-  --cds-background-inverse: var(--ibm-cool-gray-80);
-  --cds-background-inverse-hover: var(--ibm-cool-gray-80);
-  --cds-background-selected: var(--ibm-cool-gray-40);
-  --cds-background-selected-hover: var(--ibm-cool-gray-40);
-  --cds-border-disabled: var(--c-red-20);
-  --cds-border-interactive: var(--c-blue-60);
-  --cds-border-inverse: var(--ibm-cool-gray-100);
-  --cds-border-strong-01: var(--ibm-cool-gray-40);
-  --cds-border-strong-02: var(--ibm-cool-gray-40);
-  --cds-border-strong-03: var(--ibm-cool-gray-40);
-  --cds-border-subtle-00: var(--c-red-20);
-  --cds-border-subtle-01: var(--ibm-cool-gray-20);
-  --cds-border-subtle-02: var(--c-red-20);
-  --cds-border-subtle-03: var(--ibm-cool-gray-20);
-  --cds-border-subtle-selected-01: var(--c-red-20);
-  --cds-border-subtle-selected-02: var(--c-red-20);
-  --cds-border-subtle-selected-03: var(--c-red-20);
-  --cds-border-tile-01: var(--ibm-cool-gray-40);
-  --cds-border-tile-02: var(--c-red-20);
-  --cds-border-tile-03: var(--ibm-cool-gray-40);
-  --cds-button-danger-active: var(--c-red-80);
-  --cds-button-danger-hover: var(--c-red-70);
-  --cds-button-danger-primary: var(--c-red-60);
-  --cds-button-danger-secondary: var(--c-red-60);
-  --cds-button-disabled: var(--c-red-20);
-  --cds-button-primary: var(--c-blue-60);
-  --cds-button-primary-active: var(--c-blue-80);
-  --cds-button-primary-hover: var(--c-blue-70);
-  --cds-button-secondary: var(--ibm-cool-gray-80);
-  --cds-button-secondary-active: var(--c-teal-60);
-  --cds-button-secondary-hover: var(--ibm-cool-gray-80);
-  --cds-button-separator: var(--ibm-cool-gray-20);
-  --cds-button-tertiary: var(--c-blue-60);
-  --cds-button-tertiary-active: var(--c-blue-80);
-  --cds-button-tertiary-hover: var(--c-blue-70);
-  --cds-chat-avatar-agent: var(--ibm-cool-gray-80);
-  --cds-chat-avatar-bot: var(--c-teal-60);
-  --cds-chat-avatar-user: var(--c-blue-60);
-  --cds-chat-bubble-agent: var(--ibm-white);
-  --cds-chat-bubble-agent-text: var(--ibm-cool-gray-100);
-  --cds-chat-bubble-border: var(--ibm-cool-gray-20);
-  --cds-chat-bubble-user: var(--ibm-cool-gray-20);
-  --cds-chat-bubble-user-text: var(--ibm-cool-gray-100);
-  --cds-chat-button: var(--c-blue-60);
-  --cds-chat-button-active: var(--ibm-cool-gray-40);
-  --cds-chat-button-hover: var(--ibm-cool-gray-40);
-  --cds-chat-button-selected: var(--ibm-cool-gray-40);
-  --cds-chat-button-text-hover: var(--c-blue-70);
-  --cds-chat-button-text-selected: var(--c-teal-70);
-  --cds-chat-header-background: var(--ibm-white);
-  --cds-chat-header-text: var(--ibm-cool-gray-100);
-  --cds-chat-prompt-background: var(--ibm-white);
-  --cds-chat-prompt-border-start: var(--ibm-cool-gray-10);
-  --cds-chat-prompt-text: var(--ibm-cool-gray-100);
-  --cds-chat-shell-background: var(--ibm-white);
-  --cds-content-switcher-background: var(--ibm-cool-gray-20);
-  --cds-content-switcher-background-hover: var(--c-red-20);
-  --cds-content-switcher-selected: var(--ibm-white);
-  --cds-field-01: var(--ibm-white);
-  --cds-field-02: var(--ibm-cool-gray-10);
-  --cds-field-03: var(--ibm-white);
-  --cds-field-hover-01: var(--ibm-cool-gray-20);
-  --cds-field-hover-02: var(--ibm-cool-gray-20);
-  --cds-field-hover-03: var(--ibm-cool-gray-20);
-  --cds-focus: var(--c-blue-60);
-  --cds-focus-inset: var(--ibm-white);
-  --cds-focus-inverse: var(--ibm-white);
-  --cds-highlight: var(--c-blue-20);
-  --cds-icon-disabled: var(--ibm-cool-gray-100);
-  --cds-icon-interactive: var(--c-blue-60);
-  --cds-icon-inverse: var(--ibm-white);
-  --cds-icon-on-color: var(--ibm-white);
-  --cds-icon-on-color-disabled: var(--ibm-cool-gray-40);
-  --cds-icon-primary: var(--ibm-cool-gray-100);
-  --cds-icon-secondary: var(--c-teal-70);
-  --cds-interactive: var(--c-blue-60);
-  --cds-layer-01: var(--ibm-white);
-  --cds-layer-02: var(--ibm-cool-gray-10);
-  --cds-layer-03: var(--ibm-white);
-  --cds-layer-accent-01: var(--ibm-cool-gray-20);
-  --cds-layer-accent-02: var(--ibm-cool-gray-20);
-  --cds-layer-accent-03: var(--ibm-cool-gray-20);
-  --cds-layer-accent-active-01: var(--ibm-cool-gray-40);
-  --cds-layer-accent-active-02: var(--ibm-cool-gray-40);
-  --cds-layer-accent-active-03: var(--ibm-cool-gray-40);
-  --cds-layer-accent-hover-01: var(--c-red-20);
-  --cds-layer-accent-hover-02: var(--c-red-20);
-  --cds-layer-accent-hover-03: var(--c-red-20);
-  --cds-layer-active-01: var(--c-red-20);
-  --cds-layer-active-02: var(--c-red-20);
-  --cds-layer-active-03: var(--c-red-20);
-  --cds-layer-background-01: var(--ibm-cool-gray-10);
-  --cds-layer-background-02: var(--ibm-white);
-  --cds-layer-background-03: var(--ibm-cool-gray-10);
-  --cds-layer-hover-01: var(--ibm-cool-gray-20);
-  --cds-layer-hover-02: var(--ibm-cool-gray-20);
-  --cds-layer-hover-03: var(--ibm-cool-gray-20);
-  --cds-layer-selected-01: var(--ibm-cool-gray-20);
-  --cds-layer-selected-02: var(--ibm-cool-gray-20);
-  --cds-layer-selected-03: var(--ibm-cool-gray-20);
-  --cds-layer-selected-disabled: var(--ibm-cool-gray-40);
-  --cds-layer-selected-hover-01: var(--c-red-20);
-  --cds-layer-selected-hover-02: var(--c-red-20);
-  --cds-layer-selected-hover-03: var(--c-red-20);
-  --cds-layer-selected-inverse: var(--ibm-cool-gray-100);
-  --cds-link-inverse: var(--c-blue-40);
-  --cds-link-inverse-active: var(--ibm-cool-gray-10);
-  --cds-link-inverse-hover: var(--c-blue-30);
-  --cds-link-inverse-visited: var(--c-purple-40);
-  --cds-link-primary: var(--c-blue-60);
-  --cds-link-primary-hover: var(--c-blue-70);
-  --cds-link-secondary: var(--c-blue-70);
-  --cds-link-visited: var(--c-purple-60);
-  --cds-notification-action-hover: var(--ibm-white);
-  --cds-notification-action-tertiary-inverse: var(--ibm-white);
-  --cds-notification-action-tertiary-inverse-active: var(--c-red-20);
-  --cds-notification-action-tertiary-inverse-hover: var(--ibm-cool-gray-10);
-  --cds-notification-action-tertiary-inverse-text: var(--ibm-cool-gray-100);
-  --cds-notification-action-tertiary-inverse-text-on-color-disabled: var(--ibm-white);
-  --cds-notification-background-error: var(--c-red-10);
-  --cds-notification-background-info: var(--c-blue-10);
-  --cds-notification-background-success: var(--c-green-10);
-  --cds-notification-background-warning: var(--c-red-10);
-  --cds-overlay: var(--ibm-black);
-  --cds-shadow: var(--ibm-black);
-  --cds-skeleton-background: var(--ibm-cool-gray-20);
-  --cds-skeleton-element: var(--c-red-20);
-  --cds-status-blue: var(--c-blue-70);
-  --cds-status-gray: var(--c-teal-60);
-  --cds-status-green: var(--c-green-50);
-  --cds-status-orange: var(--c-red-50);
-  --cds-status-orange-outline: var(--c-red-60);
-  --cds-status-purple: var(--c-purple-60);
-  --cds-status-red: var(--c-red-60);
-  --cds-status-yellow: var(--c-red-40);
-  --cds-status-yellow-outline: var(--c-red-70);
-  --cds-support-caution-major: var(--c-red-50);
-  --cds-support-caution-minor: var(--c-red-40);
-  --cds-support-caution-undefined: var(--c-purple-60);
-  --cds-support-error: var(--c-red-60);
-  --cds-support-error-inverse: var(--c-red-50);
-  --cds-support-info: var(--c-blue-70);
-  --cds-support-info-inverse: var(--c-blue-50);
-  --cds-support-success: var(--c-green-50);
-  --cds-support-success-inverse: var(--c-green-40);
-  --cds-support-warning: var(--c-red-40);
-  --cds-support-warning-inverse: var(--c-red-40);
-  --cds-syntax-angle-bracket: var(--c-teal-60);
-  --cds-syntax-annotation: var(--c-teal-60);
-  --cds-syntax-arithmetic-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-atom: var(--ibm-cool-gray-100);
-  --cds-syntax-attribute: var(--c-cyan-70);
-  --cds-syntax-attribute-name: var(--c-cyan-70);
-  --cds-syntax-attribute-value: var(--ibm-cool-gray-100);
-  --cds-syntax-bitwise-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-block-comment: var(--c-green-60);
-  --cds-syntax-bool: var(--ibm-cool-gray-100);
-  --cds-syntax-brace: var(--ibm-cool-gray-80);
-  --cds-syntax-bracket: var(--ibm-cool-gray-80);
-  --cds-syntax-character: var(--ibm-cool-gray-100);
-  --cds-syntax-class-name: var(--c-teal-60);
-  --cds-syntax-color: var(--ibm-cool-gray-100);
-  --cds-syntax-comment: var(--c-green-60);
-  --cds-syntax-compare-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-constant: var(--c-blue-60);
-  --cds-syntax-content: var(--ibm-cool-gray-100);
-  --cds-syntax-content-separator: var(--ibm-cool-gray-80);
-  --cds-syntax-control-keyword: var(--c-purple-70);
-  --cds-syntax-control-operator: var(--c-purple-70);
-  --cds-syntax-definition: var(--c-cyan-70);
-  --cds-syntax-definition-keyword: var(--c-cyan-70);
-  --cds-syntax-definition-operator: var(--c-cyan-70);
-  --cds-syntax-deleted: var(--c-magenta-20);
-  --cds-syntax-deref-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-doc-comment: var(--c-green-60);
-  --cds-syntax-doc-string: var(--ibm-cool-gray-100);
-  --cds-syntax-document-meta: var(--c-green-60);
-  --cds-syntax-emphasis: var(--ibm-cool-gray-100);
-  --cds-syntax-escape: var(--ibm-cool-gray-80);
-  --cds-syntax-float: var(--c-green-60);
-  --cds-syntax-function: var(--c-red-70);
-  --cds-syntax-heading: var(--c-cyan-70);
-  --cds-syntax-heading-1: var(--c-cyan-70);
-  --cds-syntax-heading-2: var(--c-cyan-70);
-  --cds-syntax-heading-3: var(--c-cyan-70);
-  --cds-syntax-heading-4: var(--c-cyan-70);
-  --cds-syntax-heading-5: var(--c-cyan-70);
-  --cds-syntax-heading-6: var(--c-cyan-70);
-  --cds-syntax-inserted: var(--c-green-20);
-  --cds-syntax-integer: var(--c-green-60);
-  --cds-syntax-invalid: var(--c-red-60);
-  --cds-syntax-keyword: var(--c-blue-60);
-  --cds-syntax-label-name: var(--c-blue-60);
-  --cds-syntax-line-comment: var(--c-green-60);
-  --cds-syntax-link: var(--c-blue-60);
-  --cds-syntax-list: var(--ibm-cool-gray-100);
-  --cds-syntax-literal: var(--ibm-cool-gray-100);
-  --cds-syntax-local: var(--c-blue-60);
-  --cds-syntax-logic-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-macro-name: var(--ibm-cool-gray-100);
-  --cds-syntax-meta: var(--c-green-60);
-  --cds-syntax-modifier: var(--c-blue-60);
-  --cds-syntax-module-keyword: var(--c-purple-70);
-  --cds-syntax-monospace: var(--ibm-cool-gray-100);
-  --cds-syntax-name: var(--c-blue-60);
-  --cds-syntax-namespace: var(--c-teal-60);
-  --cds-syntax-null: var(--ibm-cool-gray-100);
-  --cds-syntax-number: var(--c-green-60);
-  --cds-syntax-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-operator-keyword: var(--c-blue-60);
-  --cds-syntax-paren: var(--ibm-cool-gray-80);
-  --cds-syntax-processing-instruction: var(--ibm-cool-gray-100);
-  --cds-syntax-property-name: var(--c-cyan-70);
-  --cds-syntax-punctuation: var(--ibm-cool-gray-80);
-  --cds-syntax-quote: var(--c-green-60);
-  --cds-syntax-regexp: var(--c-purple-70);
-  --cds-syntax-self: var(--c-teal-60);
-  --cds-syntax-separator: var(--ibm-cool-gray-80);
-  --cds-syntax-special: var(--c-blue-60);
-  --cds-syntax-special-string: var(--c-purple-60);
-  --cds-syntax-square-bracket: var(--ibm-cool-gray-80);
-  --cds-syntax-standard: var(--c-blue-60);
-  --cds-syntax-strikethrough: var(--ibm-cool-gray-100);
-  --cds-syntax-string: var(--ibm-cool-gray-100);
-  --cds-syntax-strong: var(--ibm-cool-gray-100);
-  --cds-syntax-tag: var(--c-teal-60);
-  --cds-syntax-tag-name: var(--c-teal-60);
-  --cds-syntax-type: var(--c-teal-60);
-  --cds-syntax-type-name: var(--c-teal-60);
-  --cds-syntax-type-operator: var(--c-teal-60);
-  --cds-syntax-unit: var(--c-green-60);
-  --cds-syntax-update-operator: var(--ibm-cool-gray-80);
-  --cds-syntax-url: var(--ibm-cool-gray-80);
-  --cds-syntax-variable: var(--c-blue-60);
-  --cds-syntax-variable-name: var(--c-blue-60);
-  --cds-tag-background-blue: var(--c-blue-20);
-  --cds-tag-background-cool-gray: var(--ibm-cool-gray-20);
-  --cds-tag-background-cyan: var(--c-cyan-20);
-  --cds-tag-background-gray: var(--ibm-cool-gray-20);
-  --cds-tag-background-green: var(--c-green-20);
-  --cds-tag-background-magenta: var(--c-magenta-20);
-  --cds-tag-background-purple: var(--c-purple-20);
-  --cds-tag-background-red: var(--c-magenta-20);
-  --cds-tag-background-teal: var(--c-teal-20);
-  --cds-tag-background-warm-gray: var(--ibm-cool-gray-20);
-  --cds-tag-border-blue: var(--c-blue-40);
-  --cds-tag-border-cool-gray: var(--ibm-cool-gray-40);
-  --cds-tag-border-cyan: var(--c-cyan-40);
-  --cds-tag-border-gray: var(--ibm-cool-gray-40);
-  --cds-tag-border-green: var(--c-green-40);
-  --cds-tag-border-magenta: var(--c-magenta-40);
-  --cds-tag-border-purple: var(--c-purple-40);
-  --cds-tag-border-red: var(--c-red-40);
-  --cds-tag-border-teal: var(--c-teal-40);
-  --cds-tag-border-warm-gray: var(--ibm-cool-gray-40);
-  --cds-tag-color-blue: var(--c-blue-70);
-  --cds-tag-color-cool-gray: var(--ibm-cool-gray-100);
-  --cds-tag-color-cyan: var(--c-cyan-70);
-  --cds-tag-color-gray: var(--ibm-cool-gray-100);
-  --cds-tag-color-green: var(--c-green-70);
-  --cds-tag-color-magenta: var(--c-magenta-70);
-  --cds-tag-color-purple: var(--c-purple-70);
-  --cds-tag-color-red: var(--c-red-70);
-  --cds-tag-color-teal: var(--c-teal-70);
-  --cds-tag-color-warm-gray: var(--ibm-cool-gray-100);
-  --cds-tag-hover-blue: var(--c-blue-20);
-  --cds-tag-hover-cool-gray: var(--ibm-cool-gray-20);
-  --cds-tag-hover-cyan: var(--c-cyan-30);
-  --cds-tag-hover-gray: var(--c-red-20);
-  --cds-tag-hover-green: var(--c-green-30);
-  --cds-tag-hover-magenta: var(--c-magenta-20);
-  --cds-tag-hover-purple: var(--c-purple-20);
-  --cds-tag-hover-red: var(--c-red-20);
-  --cds-tag-hover-teal: var(--c-teal-30);
-  --cds-tag-hover-warm-gray: var(--c-red-20);
-  --cds-text-disabled: var(--ibm-cool-gray-100);
-  --cds-text-error: var(--c-red-60);
-  --cds-text-helper: var(--c-teal-60);
-  --cds-text-inverse: var(--ibm-white);
-  --cds-text-on-color: var(--ibm-white);
-  --cds-text-on-color-disabled: var(--ibm-cool-gray-40);
-  --cds-text-placeholder: var(--ibm-cool-gray-100);
-  --cds-text-primary: var(--ibm-cool-gray-100);
-  --cds-text-secondary: var(--c-teal-70);
-  --cds-toggle-off: var(--ibm-cool-gray-40);
-}
-
+html.light,
 html.dark {
-  --cds-ai-aura-hover-background: var(--ibm-cool-gray-80);
-  --cds-ai-aura-hover-start: var(--c-blue-50);
-  --cds-ai-aura-start: var(--c-blue-50);
-  --cds-ai-aura-start-sm: var(--c-blue-50);
-  --cds-ai-border-end: var(--c-blue-50);
-  --cds-ai-border-start: var(--c-blue-30);
-  --cds-ai-border-strong: var(--c-blue-40);
-  --cds-ai-drop-shadow: var(--ibm-black);
-  --cds-ai-inner-shadow: var(--c-blue-50);
-  --cds-ai-overlay: var(--ibm-black);
-  --cds-ai-popover-background: var(--ibm-cool-gray-100);
-  --cds-ai-popover-caret-bottom: var(--c-blue-50);
-  --cds-ai-popover-caret-bottom-background: var(--c-cyan-90);
-  --cds-ai-popover-caret-bottom-background-actions: var(--c-teal-90);
-  --cds-ai-popover-caret-center: var(--c-cyan-60);
-  --cds-ai-popover-shadow-outer-01: var(--ibm-black);
-  --cds-ai-popover-shadow-outer-02: var(--ibm-black);
-  --cds-ai-skeleton-background: var(--c-blue-40);
-  --cds-ai-skeleton-element-background: var(--c-blue-40);
-  --cds-background: var(--ibm-cool-gray-100);
-  --cds-background-active: var(--ibm-cool-gray-40);
-  --cds-background-brand: var(--c-blue-60);
-  --cds-background-hover: var(--ibm-cool-gray-40);
-  --cds-background-inverse: var(--ibm-cool-gray-10);
-  --cds-background-inverse-hover: var(--ibm-cool-gray-20);
-  --cds-background-selected: var(--ibm-cool-gray-40);
-  --cds-background-selected-hover: var(--ibm-cool-gray-40);
-  --cds-border-disabled: var(--ibm-cool-gray-40);
-  --cds-border-interactive: var(--c-blue-50);
-  --cds-border-inverse: var(--ibm-cool-gray-10);
-  --cds-border-strong-01: var(--c-teal-60);
-  --cds-border-strong-02: var(--ibm-cool-gray-40);
-  --cds-border-strong-03: var(--ibm-cool-gray-40);
-  --cds-border-subtle-00: var(--ibm-cool-gray-80);
-  --cds-border-subtle-01: var(--c-teal-70);
-  --cds-border-subtle-02: var(--c-teal-60);
-  --cds-border-subtle-03: var(--c-teal-60);
-  --cds-border-subtle-selected-01: var(--c-teal-60);
-  --cds-border-subtle-selected-02: var(--ibm-cool-gray-40);
-  --cds-border-subtle-selected-03: var(--ibm-cool-gray-40);
-  --cds-border-tile-01: var(--c-teal-70);
-  --cds-border-tile-02: var(--c-teal-60);
-  --cds-border-tile-03: var(--ibm-cool-gray-40);
-  --cds-button-danger-active: var(--c-red-80);
-  --cds-button-danger-hover: var(--c-red-70);
-  --cds-button-danger-primary: var(--c-red-60);
-  --cds-button-danger-secondary: var(--c-red-50);
-  --cds-button-disabled: var(--ibm-cool-gray-40);
-  --cds-button-primary: var(--c-blue-60);
-  --cds-button-primary-active: var(--c-blue-80);
-  --cds-button-primary-hover: var(--c-blue-70);
-  --cds-button-secondary: var(--c-teal-60);
-  --cds-button-secondary-active: var(--ibm-cool-gray-80);
-  --cds-button-secondary-hover: var(--c-teal-70);
-  --cds-button-separator: var(--ibm-cool-gray-100);
-  --cds-button-tertiary: var(--ibm-white);
-  --cds-button-tertiary-active: var(--c-red-20);
-  --cds-button-tertiary-hover: var(--ibm-cool-gray-10);
-  --cds-chat-avatar-agent: var(--c-red-20);
-  --cds-chat-avatar-bot: var(--ibm-cool-gray-40);
-  --cds-chat-avatar-user: var(--c-blue-50);
-  --cds-chat-bubble-agent: var(--c-teal-90);
-  --cds-chat-bubble-agent-text: var(--ibm-cool-gray-10);
-  --cds-chat-bubble-border: var(--c-teal-70);
-  --cds-chat-bubble-user: var(--ibm-cool-gray-80);
-  --cds-chat-bubble-user-text: var(--ibm-cool-gray-10);
-  --cds-chat-button: var(--c-blue-40);
-  --cds-chat-button-active: var(--ibm-cool-gray-40);
-  --cds-chat-button-hover: var(--ibm-cool-gray-40);
-  --cds-chat-button-selected: var(--ibm-cool-gray-40);
-  --cds-chat-button-text-hover: var(--c-blue-30);
-  --cds-chat-button-text-selected: var(--c-red-20);
-  --cds-chat-header-background: var(--c-teal-90);
-  --cds-chat-header-text: var(--ibm-cool-gray-10);
-  --cds-chat-prompt-background: var(--ibm-cool-gray-100);
-  --cds-chat-prompt-border-start: var(--c-teal-90);
-  --cds-chat-prompt-text: var(--ibm-cool-gray-10);
-  --cds-chat-shell-background: var(--c-teal-90);
-  --cds-content-switcher-background-hover: var(--ibm-cool-gray-40);
-  --cds-content-switcher-selected: var(--ibm-cool-gray-40);
-  --cds-field-01: var(--c-teal-90);
-  --cds-field-02: var(--ibm-cool-gray-80);
-  --cds-field-03: var(--c-teal-70);
-  --cds-field-hover-01: var(--ibm-cool-gray-80);
-  --cds-field-hover-02: var(--ibm-cool-gray-80);
-  --cds-field-hover-03: var(--c-teal-70);
-  --cds-focus: var(--ibm-white);
-  --cds-focus-inset: var(--ibm-cool-gray-100);
-  --cds-focus-inverse: var(--c-blue-60);
-  --cds-highlight: var(--c-blue-90);
-  --cds-icon-disabled: var(--ibm-cool-gray-10);
-  --cds-icon-interactive: var(--ibm-white);
-  --cds-icon-inverse: var(--ibm-cool-gray-100);
-  --cds-icon-on-color: var(--ibm-white);
-  --cds-icon-on-color-disabled: var(--ibm-white);
-  --cds-icon-primary: var(--ibm-cool-gray-10);
-  --cds-icon-secondary: var(--c-red-20);
-  --cds-interactive: var(--c-blue-50);
-  --cds-layer-01: var(--c-teal-90);
-  --cds-layer-02: var(--ibm-cool-gray-80);
-  --cds-layer-03: var(--c-teal-70);
-  --cds-layer-accent-01: var(--ibm-cool-gray-80);
-  --cds-layer-accent-02: var(--c-teal-70);
-  --cds-layer-accent-03: var(--c-teal-60);
-  --cds-layer-accent-active-01: var(--c-teal-60);
-  --cds-layer-accent-active-02: var(--ibm-cool-gray-40);
-  --cds-layer-accent-active-03: var(--ibm-cool-gray-80);
-  --cds-layer-accent-hover-01: var(--ibm-cool-gray-80);
-  --cds-layer-accent-hover-02: var(--c-teal-70);
-  --cds-layer-accent-hover-03: var(--c-teal-70);
-  --cds-layer-active-01: var(--c-teal-70);
-  --cds-layer-active-02: var(--c-teal-60);
-  --cds-layer-active-03: var(--ibm-cool-gray-40);
-  --cds-layer-background-01: var(--ibm-cool-gray-100);
-  --cds-layer-background-02: var(--c-teal-90);
-  --cds-layer-background-03: var(--ibm-cool-gray-80);
-  --cds-layer-hover-01: var(--ibm-cool-gray-80);
-  --cds-layer-hover-02: var(--ibm-cool-gray-80);
-  --cds-layer-hover-03: var(--c-teal-70);
-  --cds-layer-selected-01: var(--ibm-cool-gray-80);
-  --cds-layer-selected-02: var(--c-teal-70);
-  --cds-layer-selected-03: var(--c-teal-60);
-  --cds-layer-selected-disabled: var(--ibm-cool-gray-40);
-  --cds-layer-selected-hover-01: var(--ibm-cool-gray-80);
-  --cds-layer-selected-hover-02: var(--c-teal-70);
-  --cds-layer-selected-hover-03: var(--c-teal-70);
-  --cds-layer-selected-inverse: var(--ibm-cool-gray-10);
-  --cds-link-inverse: var(--c-blue-60);
-  --cds-link-inverse-active: var(--ibm-cool-gray-100);
-  --cds-link-inverse-hover: var(--c-blue-70);
-  --cds-link-inverse-visited: var(--c-purple-60);
-  --cds-link-primary: var(--c-blue-40);
-  --cds-link-primary-hover: var(--c-blue-30);
-  --cds-link-secondary: var(--c-blue-30);
-  --cds-link-visited: var(--c-purple-40);
-  --cds-notification-action-tertiary-inverse: var(--c-blue-60);
-  --cds-notification-action-tertiary-inverse-active: var(--c-blue-80);
-  --cds-notification-action-tertiary-inverse-hover: var(--c-blue-70);
-  --cds-notification-action-tertiary-inverse-text: var(--ibm-white);
-  --cds-notification-action-tertiary-inverse-text-on-color-disabled: var(--ibm-cool-gray-40);
-  --cds-notification-background-error: var(--c-teal-90);
-  --cds-notification-background-info: var(--c-teal-90);
-  --cds-notification-background-success: var(--c-teal-90);
-  --cds-notification-background-warning: var(--c-teal-90);
-  --cds-overlay: var(--ibm-black);
-  --cds-shadow: var(--ibm-black);
-  --cds-skeleton-background: var(--c-teal-90);
-  --cds-skeleton-element: var(--ibm-cool-gray-80);
-  --cds-status-blue: var(--c-blue-50);
-  --cds-status-gray: var(--ibm-cool-gray-40);
-  --cds-status-green: var(--c-green-40);
-  --cds-status-orange: var(--c-red-50);
-  --cds-status-orange-outline: var(--c-red-50);
-  --cds-status-purple: var(--c-purple-50);
-  --cds-status-red: var(--c-red-50);
-  --cds-status-yellow: var(--c-red-40);
-  --cds-status-yellow-outline: var(--c-red-40);
-  --cds-support-caution-major: var(--c-red-50);
-  --cds-support-caution-minor: var(--c-red-40);
-  --cds-support-caution-undefined: var(--c-purple-50);
-  --cds-support-error: var(--c-red-50);
-  --cds-support-error-inverse: var(--c-red-60);
-  --cds-support-info: var(--c-blue-50);
-  --cds-support-info-inverse: var(--c-blue-70);
-  --cds-support-success: var(--c-green-40);
-  --cds-support-success-inverse: var(--c-green-50);
-  --cds-support-warning: var(--c-red-40);
-  --cds-support-warning-inverse: var(--c-red-40);
-  --cds-syntax-angle-bracket: var(--ibm-cool-gray-40);
-  --cds-syntax-annotation: var(--c-teal-40);
-  --cds-syntax-arithmetic-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-atom: var(--ibm-cool-gray-10);
-  --cds-syntax-attribute: var(--c-cyan-40);
-  --cds-syntax-attribute-name: var(--c-cyan-40);
-  --cds-syntax-attribute-value: var(--ibm-cool-gray-10);
-  --cds-syntax-bitwise-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-block-comment: var(--c-green-40);
-  --cds-syntax-bool: var(--ibm-cool-gray-10);
-  --cds-syntax-brace: var(--ibm-cool-gray-20);
-  --cds-syntax-bracket: var(--ibm-cool-gray-20);
-  --cds-syntax-character: var(--ibm-cool-gray-10);
-  --cds-syntax-class-name: var(--c-teal-30);
-  --cds-syntax-color: var(--ibm-cool-gray-10);
-  --cds-syntax-comment: var(--c-green-40);
-  --cds-syntax-compare-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-constant: var(--c-blue-50);
-  --cds-syntax-content: var(--ibm-cool-gray-10);
-  --cds-syntax-content-separator: var(--ibm-cool-gray-20);
-  --cds-syntax-control-keyword: var(--c-purple-40);
-  --cds-syntax-control-operator: var(--c-purple-40);
-  --cds-syntax-definition: var(--c-cyan-40);
-  --cds-syntax-definition-keyword: var(--c-cyan-40);
-  --cds-syntax-definition-operator: var(--c-cyan-40);
-  --cds-syntax-deleted: var(--c-red-70);
-  --cds-syntax-deref-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-doc-comment: var(--c-green-40);
-  --cds-syntax-doc-string: var(--ibm-cool-gray-10);
-  --cds-syntax-document-meta: var(--c-green-40);
-  --cds-syntax-emphasis: var(--ibm-cool-gray-10);
-  --cds-syntax-escape: var(--ibm-cool-gray-20);
-  --cds-syntax-float: var(--c-green-30);
-  --cds-syntax-function: var(--c-red-40);
-  --cds-syntax-heading: var(--c-cyan-40);
-  --cds-syntax-heading-1: var(--c-cyan-40);
-  --cds-syntax-heading-2: var(--c-cyan-40);
-  --cds-syntax-heading-3: var(--c-cyan-40);
-  --cds-syntax-heading-4: var(--c-cyan-40);
-  --cds-syntax-heading-5: var(--c-cyan-40);
-  --cds-syntax-heading-6: var(--c-cyan-40);
-  --cds-syntax-inserted: var(--c-green-60);
-  --cds-syntax-integer: var(--c-green-30);
-  --cds-syntax-invalid: var(--c-red-50);
-  --cds-syntax-keyword: var(--c-blue-50);
-  --cds-syntax-label-name: var(--c-blue-30);
-  --cds-syntax-line-comment: var(--c-green-40);
-  --cds-syntax-link: var(--c-blue-50);
-  --cds-syntax-list: var(--ibm-cool-gray-10);
-  --cds-syntax-literal: var(--ibm-cool-gray-10);
-  --cds-syntax-local: var(--c-blue-30);
-  --cds-syntax-logic-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-macro-name: var(--ibm-cool-gray-10);
-  --cds-syntax-meta: var(--c-green-40);
-  --cds-syntax-modifier: var(--c-blue-50);
-  --cds-syntax-module-keyword: var(--c-purple-40);
-  --cds-syntax-monospace: var(--ibm-cool-gray-10);
-  --cds-syntax-name: var(--c-blue-30);
-  --cds-syntax-namespace: var(--c-teal-30);
-  --cds-syntax-null: var(--ibm-cool-gray-10);
-  --cds-syntax-number: var(--c-green-30);
-  --cds-syntax-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-operator-keyword: var(--c-blue-50);
-  --cds-syntax-paren: var(--ibm-cool-gray-20);
-  --cds-syntax-processing-instruction: var(--ibm-cool-gray-10);
-  --cds-syntax-property-name: var(--c-cyan-40);
-  --cds-syntax-punctuation: var(--ibm-cool-gray-20);
-  --cds-syntax-quote: var(--c-green-40);
-  --cds-syntax-regexp: var(--c-purple-40);
-  --cds-syntax-self: var(--c-teal-30);
-  --cds-syntax-separator: var(--ibm-cool-gray-20);
-  --cds-syntax-special: var(--c-blue-50);
-  --cds-syntax-special-string: var(--c-purple-40);
-  --cds-syntax-square-bracket: var(--ibm-cool-gray-20);
-  --cds-syntax-standard: var(--c-blue-50);
-  --cds-syntax-strikethrough: var(--ibm-cool-gray-10);
-  --cds-syntax-string: var(--ibm-cool-gray-10);
-  --cds-syntax-strong: var(--ibm-cool-gray-10);
-  --cds-syntax-tag: var(--c-teal-30);
-  --cds-syntax-tag-name: var(--c-teal-30);
-  --cds-syntax-type: var(--c-teal-30);
-  --cds-syntax-type-name: var(--c-teal-30);
-  --cds-syntax-type-operator: var(--c-teal-30);
-  --cds-syntax-unit: var(--c-green-30);
-  --cds-syntax-update-operator: var(--ibm-cool-gray-20);
-  --cds-syntax-url: var(--ibm-cool-gray-20);
-  --cds-syntax-variable: var(--c-blue-30);
-  --cds-syntax-variable-name: var(--c-blue-30);
-  --cds-tag-background-blue: var(--c-blue-70);
-  --cds-tag-background-cool-gray: var(--c-teal-70);
-  --cds-tag-background-cyan: var(--c-cyan-70);
-  --cds-tag-background-gray: var(--c-teal-70);
-  --cds-tag-background-green: var(--c-green-70);
-  --cds-tag-background-magenta: var(--c-magenta-70);
-  --cds-tag-background-purple: var(--c-purple-70);
-  --cds-tag-background-red: var(--c-red-70);
-  --cds-tag-background-teal: var(--c-teal-70);
-  --cds-tag-background-warm-gray: var(--ibm-cool-gray-80);
-  --cds-tag-border-blue: var(--c-blue-50);
-  --cds-tag-border-cool-gray: var(--ibm-cool-gray-40);
-  --cds-tag-border-cyan: var(--c-cyan-50);
-  --cds-tag-border-gray: var(--ibm-cool-gray-40);
-  --cds-tag-border-green: var(--c-green-50);
-  --cds-tag-border-magenta: var(--c-magenta-50);
-  --cds-tag-border-purple: var(--c-purple-50);
-  --cds-tag-border-red: var(--c-red-50);
-  --cds-tag-border-teal: var(--c-teal-50);
-  --cds-tag-border-warm-gray: var(--ibm-cool-gray-40);
-  --cds-tag-color-blue: var(--c-blue-20);
-  --cds-tag-color-cool-gray: var(--ibm-cool-gray-10);
-  --cds-tag-color-cyan: var(--c-cyan-20);
-  --cds-tag-color-gray: var(--ibm-cool-gray-10);
-  --cds-tag-color-green: var(--c-green-20);
-  --cds-tag-color-magenta: var(--c-magenta-20);
-  --cds-tag-color-purple: var(--c-purple-20);
-  --cds-tag-color-red: var(--c-magenta-20);
-  --cds-tag-color-teal: var(--c-teal-20);
-  --cds-tag-color-warm-gray: var(--c-red-10);
-  --cds-tag-hover-blue: var(--c-blue-60);
-  --cds-tag-hover-cool-gray: var(--c-teal-60);
-  --cds-tag-hover-cyan: var(--c-cyan-60);
-  --cds-tag-hover-gray: var(--c-teal-70);
-  --cds-tag-hover-green: var(--c-green-70);
-  --cds-tag-hover-magenta: var(--c-magenta-60);
-  --cds-tag-hover-purple: var(--c-purple-70);
-  --cds-tag-hover-red: var(--c-red-70);
-  --cds-tag-hover-teal: var(--c-teal-70);
-  --cds-tag-hover-warm-gray: var(--c-teal-70);
-  --cds-text-disabled: var(--ibm-cool-gray-10);
-  --cds-text-error: var(--c-red-40);
-  --cds-text-helper: var(--ibm-cool-gray-40);
-  --cds-text-inverse: var(--ibm-cool-gray-100);
-  --cds-text-on-color: var(--ibm-white);
-  --cds-text-on-color-disabled: var(--ibm-white);
-  --cds-text-placeholder: var(--ibm-cool-gray-10);
-  --cds-text-primary: var(--ibm-cool-gray-10);
-  --cds-text-secondary: var(--c-red-20);
-  --cds-toggle-off: var(--c-teal-60);
+  --cds-background: var(--background);
+  --cds-layer-01: var(--surface);
+  --cds-layer-02: var(--surface);
+  --cds-layer-03: var(--surface);
+  --cds-field-01: var(--field-bg);
+  --cds-field-02: var(--field-bg);
+  --cds-field-03: var(--field-bg);
+  --cds-field-hover-01: var(--field-bg);
+  --cds-field-hover-02: var(--field-bg);
+  --cds-field-hover-03: var(--field-bg);
+  --cds-border-subtle-00: var(--separator);
+  --cds-border-subtle-01: var(--separator);
+  --cds-border-subtle-02: var(--separator);
+  --cds-border-subtle-03: var(--separator);
+  --cds-border-strong-01: var(--field-border);
+  --cds-border-strong-02: var(--field-border);
+  --cds-border-strong-03: var(--field-border);
+  --cds-border-interactive: var(--accent);
+  --cds-text-primary: var(--foreground);
+  --cds-text-secondary: var(--muted);
+  --cds-text-helper: var(--muted);
+  --cds-text-placeholder: var(--field-placeholder);
+  --cds-text-on-color: #ffffff;
+  --cds-text-disabled: var(--faint);
+  --cds-text-error: var(--danger);
+  --cds-icon-primary: var(--foreground);
+  --cds-icon-secondary: var(--muted);
+  --cds-icon-on-color: #ffffff;
+  --cds-focus: var(--accent);
+  --cds-focus-inset: var(--surface);
+  --cds-interactive: var(--accent);
+  --cds-link-primary: var(--accent-text);
+  --cds-support-error: var(--danger);
+  --cds-button-primary: var(--accent);
+  --cds-button-secondary: var(--default);
+  --cds-button-tertiary: var(--foreground);
+  --cds-button-danger-primary: var(--danger);
+  --cds-button-disabled: var(--default);
+  --cds-toggle-off: var(--border-strong);
+  --cds-support-success: var(--accent);
 }
 
 /* ============================================================
@@ -1883,10 +1213,10 @@ html.dark {
 
 /* ---- done ---- */
 .set-row--done {
-  border-left-color: var(--c-green-50);
-  background: color-mix(in srgb, var(--c-green-50) 12%, var(--surface-secondary));
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-secondary));
 }
-.set-row--done .set-row__index { color: var(--c-green-40); }
+.set-row--done .set-row__index { color: var(--accent-text); }
 /* Locked fields read as a record, not a form. */
 .set-row--done .cds--text-input:disabled {
   color: var(--foreground);
@@ -1894,7 +1224,7 @@ html.dark {
   opacity: 0.85;
   font-weight: 600;
 }
-.set-row__undo.cds--btn { color: var(--c-green-40); }
+.set-row__undo.cds--btn { color: var(--accent-text); }
 
 /* ---- tap feedback ----
    A press, not a celebration: the row dips under the finger and springs back,
@@ -1935,11 +1265,11 @@ html.dark {
   border-bottom: none;
 }
 .exercise--done {
-  border-left: 3px solid var(--c-green-50);
+  border-left: 3px solid var(--accent);
   padding-left: 0.625rem;
 }
 .exercise__reopen.cds--btn {
-  color: var(--c-green-40);
+  color: var(--accent-text);
 }
 
 .exercise__record {
@@ -1994,14 +1324,17 @@ html.dark {
   background: transparent;
   /* A 1px outline would still read as a button sitting in the row. */
   border: none;
-  color: var(--danger);
+  /* Grey at rest: a column of red bins down a list shouts over the list.
+     The red arrives when the pointer or focus does, and the confirming
+     step is red regardless. */
+  color: var(--muted);
 }
 .btn-delete-bare.cds--btn:hover,
 .btn-delete-bare.cds--btn:active,
-.btn-delete-bare.cds--btn:focus {
-  background: transparent;
+.btn-delete-bare.cds--btn:focus-visible {
+  background: var(--danger-soft);
   border: none;
-  color: var(--danger-hover);
+  color: var(--danger);
 }
 /* Carbon colours icons through its own selector, which would otherwise win. */
 .btn-delete-bare.cds--btn svg,
@@ -2092,8 +1425,8 @@ html.dark {
   border: 1px solid var(--pane-border);
 }
 .book-card--done {
-  background: color-mix(in srgb, var(--c-green-50) 10%, var(--pane-bg));
-  border-color: color-mix(in srgb, var(--c-green-50) 45%, var(--pane-border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--pane-bg));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--pane-border));
 }
 
 .book-card__tick {
@@ -2105,8 +1438,8 @@ html.dark {
   justify-content: center;
   width: 22px;
   height: 22px;
-  background: var(--c-green-50);
-  color: var(--ibm-white);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 /* The cover is a button so it opens the book, but it must not look like one. */
@@ -2332,8 +1665,8 @@ html.dark {
   border: 1px solid var(--default);
 }
 .path-step__no--done {
-  color: var(--ibm-white);
-  background: var(--c-green-50);
+  color: var(--accent-foreground);
+  background: var(--accent);
   border-color: transparent;
 }
 
@@ -2384,8 +1717,8 @@ html.dark {
   border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--pane-border));
 }
 .circuit--rest {
-  background: color-mix(in srgb, var(--c-green-50) 12%, var(--pane-bg));
-  border-color: color-mix(in srgb, var(--c-green-50) 40%, var(--pane-border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--pane-bg));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--pane-border));
 }
 
 .circuit__top {
@@ -2401,7 +1734,7 @@ html.dark {
   text-transform: uppercase;
   color: var(--accent);
 }
-.circuit--rest .circuit__phase { color: var(--c-green-40); }
+.circuit--rest .circuit__phase { color: var(--accent-text); }
 .circuit__count { font-size: 12px; color: var(--muted); }
 
 .circuit__name {
@@ -2437,7 +1770,7 @@ html.dark {
   height: 100%;
   background: var(--accent);
 }
-.circuit--rest .circuit__bar > span { background: var(--c-green-50); }
+.circuit--rest .circuit__bar > span { background: var(--accent); }
 
 .circuit__actions {
   display: flex;
@@ -2574,8 +1907,8 @@ html.dark {
   padding: 0.7rem 0.9rem;
   text-align: left;
   cursor: pointer;
-  background: color-mix(in srgb, var(--c-green-50) 16%, var(--pane-bg));
-  border: 1px solid color-mix(in srgb, var(--c-green-50) 50%, var(--pane-border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--pane-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--pane-border));
 }
 .circuit__done-tick {
   display: flex;
@@ -2584,8 +1917,8 @@ html.dark {
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: var(--ibm-white);
-  background: var(--c-green-50);
+  color: var(--accent-foreground);
+  background: var(--accent);
 }
 .circuit__done-name {
   min-width: 0;
@@ -2650,10 +1983,10 @@ html.dark {
   background: color-mix(in srgb, var(--rd-s, var(--muted)) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--rd-s, var(--muted)) 50%, transparent);
 }
-.rd-status--active { --rd-s: var(--c-blue-50); }
-.rd-status--paused { --rd-s: var(--c-purple-50); }
-.rd-status--finished { --rd-s: var(--c-green-50); }
-.rd-status--dropped { --rd-s: var(--c-red-50); }
+.rd-status--active { --rd-s: var(--chart-2); }
+.rd-status--paused { --rd-s: var(--warning); }
+.rd-status--finished { --rd-s: var(--accent); }
+.rd-status--dropped { --rd-s: var(--muted); }
 
 .rd-today,
 .rd-tracks {
@@ -2709,8 +2042,8 @@ html.dark {
   background: var(--default);
 }
 .rd-target--done {
-  background: color-mix(in srgb, var(--c-green-50) 18%, transparent);
-  border-color: color-mix(in srgb, var(--c-green-50) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 .rd-open { padding-block: 0.75rem 0.25rem; }
@@ -2735,8 +2068,8 @@ html.dark {
 .rd-stall {
   margin-top: 0.6rem;
   padding: 0.6rem;
-  background: color-mix(in srgb, var(--c-purple-50) 10%, transparent);
-  border-left: 3px solid var(--c-purple-50);
+  background: color-mix(in srgb, var(--chart-2) 10%, transparent);
+  border-left: 3px solid var(--chart-2);
 }
 
 .rd-sub {
@@ -2840,9 +2173,9 @@ html.dark {
   border: 1px solid color-mix(in srgb, var(--rd-f, var(--muted)) 55%, transparent);
 }
 .rd-flag--done,
-.rd-flag--on-track { --rd-f: var(--c-green-50); }
-.rd-flag--at-risk { --rd-f: var(--c-purple-50); }
-.rd-flag--behind { --rd-f: var(--c-red-50); }
+.rd-flag--on-track { --rd-f: var(--accent); }
+.rd-flag--at-risk { --rd-f: var(--warning); }
+.rd-flag--behind { --rd-f: var(--danger); }
 
 .rd-note {
   display: flex;
@@ -2945,10 +2278,10 @@ html.dark {
   gap: 0.5rem;
   min-inline-size: 0;
   margin: 0;
-  font-size: 1.0625rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0;
+  font-size: 1.25rem;        /* title 3 */
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   color: var(--foreground);
 }
 .panel-head__side {
@@ -2970,10 +2303,10 @@ html.dark {
   gap: 0.5rem;
   margin: 0 0 0.25rem;
   padding-block-end: 0.35rem;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--foreground);
-  border-bottom: 1px solid var(--border-strong);
+  color: var(--muted);
+  border-bottom: 0.5px solid var(--separator);
 }
 
 /* What an import will do, shown before it is done. */
@@ -3061,10 +2394,6 @@ html.dark {
   gap: 0.125rem;
 }
 .sidebar__gap { block-size: 0.75rem; }
-.sidebar__today {
-  padding: 0.75rem 0.625rem 0;
-  border-block-start: 0.5px solid var(--bar-border);
-}
 .sidebar__foot {
   margin-block-start: auto;
   display: flex;
@@ -3088,76 +2417,19 @@ html.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 1.625rem;
-  block-size: 1.625rem;
-  border-radius: 7px;
-  background: var(--link-tint, var(--tint-config));
-  color: #ffffff;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--muted);
   flex: none;
 }
-.side-link__icon svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.side-link__icon svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+.side-link.is-active .side-link__icon { color: var(--accent-text); }
 @media (hover: hover) {
   .side-link:hover { background: var(--default); }
 }
 .side-link.is-active {
-  background: var(--default);
+  background: var(--accent-soft);
   font-weight: 600;
-}
-
-/* Today's figures in the sidebar: label left, figure right. */
-.today-list { margin: 0; display: flex; flex-direction: column; gap: 0.375rem; }
-.today-list__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-}
-.today-list dt { color: var(--muted); }
-.today-list dd { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--foreground); }
-.today-list dd.is-negative,
-.today-strip dd.is-negative { color: var(--danger); }
-
-/* ---- Today strip (phones and tablets) ---- */
-.today-strip {
-  display: flex;
-  gap: 0.5rem;
-  margin-block-end: 0;
-  margin-inline: calc(-1 * max(1rem, env(safe-area-inset-left)));
-  padding-inline: max(1rem, env(safe-area-inset-left));
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: max(1rem, env(safe-area-inset-left));
-}
-.today-strip::-webkit-scrollbar { display: none; }
-@media (min-width: 42rem) {
-  .today-strip { margin-inline: -1.5rem; padding-inline: 1.5rem; scroll-padding-inline: 1.5rem; }
-}
-.today-strip__item {
-  display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
-  flex: none;
-  min-inline-size: 5.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--r-control);
-  background: var(--surface);
-  box-shadow: var(--card-shadow);
-  scroll-snap-align: start;
-}
-.today-strip dt {
-  font-size: 0.75rem;
-  line-height: 1.3;
-  color: var(--muted);
-  white-space: nowrap;
-}
-.today-strip dd {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--foreground);
 }
 
 /* ---- Tab bar ---- */
@@ -3189,7 +2461,7 @@ html.dark {
   color: var(--muted);
 }
 .tabbar__tab svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
-.tabbar__tab.is-active { color: var(--link-tint); font-weight: 600; }
+.tabbar__tab.is-active { color: var(--accent-text); font-weight: 600; }
 @media (min-width: 42rem) {
   /* Regular width: icon beside its label, as on a tablet. */
   .tabbar__tab { flex-direction: row; gap: 0.375rem; font-size: 0.8125rem; }
@@ -3205,7 +2477,7 @@ html.dark {
   block-size: 2.75rem;
   flex: none;
   border-radius: var(--r-pill);
-  color: var(--accent-text, var(--foreground));
+  color: var(--accent-text);
 }
 .more-button svg {
   inline-size: 1.75rem;
@@ -3328,7 +2600,8 @@ html.dark {
   inline-size: 1.75rem;
   block-size: 1.75rem;
   border-radius: 7px;
-  color: #ffffff;
+  background: var(--default);
+  color: var(--foreground);
   flex: none;
 }
 .inset-list__icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
@@ -3401,4 +2674,169 @@ html.dark {
   flex: none;
 }
 
+} /* @layer components */
+
+@layer components {
+
+/* ============================================================
+   Compact title bar (phones and tablets).
+   Slides in when the large title has scrolled away.
+   ============================================================ */
+.nav-compact {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-start: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: calc(2.75rem + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 3.5rem 0;
+  border-block-end: 0.5px solid var(--bar-border);
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-moderate-01) var(--easing-standard-productive),
+    transform var(--duration-moderate-02) var(--easing-standard-expressive);
+}
+.nav-compact.is-shown { opacity: 1; transform: none; pointer-events: auto; }
+.nav-compact__title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-compact__more {
+  position: absolute;
+  inset-inline-end: max(0.5rem, env(safe-area-inset-right));
+  inset-block-end: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-compact { transition: opacity var(--duration-fast-02) linear; transform: none; }
+}
+
+/* ============================================================
+   Progress bar: jade on a jade-tinted track. The one bar style for
+   anything measured against a target.
+   ============================================================ */
+.progress-track {
+  inline-size: 100%;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--accent-track);
+}
+.progress-fill {
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: inline-size var(--duration-moderate-02) var(--easing-standard-expressive);
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill { transition: none; }
+}
+
+/* ============================================================
+   Momentum card: the Today page's opening.
+   ============================================================ */
+.momentum {
+  padding: 1.25rem;
+}
+.momentum__top {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.momentum__ring { flex: none; }
+.momentum__headline {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.momentum__detail {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+.momentum__figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 0.5px solid var(--separator);
+}
+.momentum__figures > li + li { box-shadow: inset 0.5px 0 0 var(--separator); }
+.momentum__figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-block-size: 2.75rem;
+  padding: 0.875rem 0.75rem 0;
+  border-radius: var(--r-control);
+  color: var(--foreground);
+}
+.momentum__figures > li:first-child .momentum__figure { padding-inline-start: 0; }
+@media (hover: hover) {
+  .momentum__figure:hover .momentum__label { color: var(--foreground); }
+}
+.momentum__value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.momentum__value.is-warn { color: var(--warning); }
+.momentum__label {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--muted);
+}
+@media (min-width: 42rem) {
+  .momentum { padding: 1.5rem; }
+  .momentum__figures { margin-block-start: 1.5rem; }
+}
+
+/* ============================================================
+   Log: what kind of entry, as a quiet capsule with its dot.
+   ============================================================ */
+.log-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: none;
+  inline-size: 6.25rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--default);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+} /* @layer components */
+
+@layer components {
+/* A text button in the section's header row: "Edit", "Done", "New". */
+.text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-block-size: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  margin-inline-end: -0.5rem;
+  border-radius: var(--r-control);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--accent-text);
+}
+.text-action[aria-pressed="true"] { font-weight: 600; }
+@media (hover: hover) {
+  .text-action:hover { background: var(--accent-soft); }
+}
+@media (pointer: coarse) {
+  .text-action { min-block-size: 2.75rem; }
+}
 } /* @layer components */

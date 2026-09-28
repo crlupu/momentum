@@ -56,6 +56,7 @@ export {
   MdMenu as Menu,
   MdTrackChanges as Target,
   MdRepeat as Repeat,
+  MdToday as Today,
   MdFitnessCenter as Dumbbell,
   MdRestaurant as Apple,
   MdMenuBook as BookOpen,

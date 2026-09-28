@@ -1,18 +1,18 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { sectionTitle, type SectionId } from "@/components/sections";
 import { useShell } from "@/components/AppShell";
-import { TodayStats } from "@/components/TodayStats";
 import { MoreHorizontal } from "@/components/icons";
 
 /**
  * The heading that introduces a section: its title, as the page's large
- * title, in the section's own colour.
+ * title, with an optional line of context beneath it.
  */
 export function SectionBand({
   id,
   title,
+  subtitle,
   size = "lg",
   className: extraClass,
   children,
@@ -20,6 +20,7 @@ export function SectionBand({
   id: SectionId;
   /** Defaults to the registry title; pass only to override it. */
   title?: string;
+  subtitle?: ReactNode;
   size?: "lg" | "md";
   className?: string;
   /** Anything that sits at the trailing end of the title row. */
@@ -28,52 +29,85 @@ export function SectionBand({
   const className = ["sec-band", size === "md" ? "sec-band--md" : "", extraClass]
     .filter(Boolean)
     .join(" ");
-  const style = { ["--band-color" as string]: `var(--sec-${id})` } as React.CSSProperties;
 
   return (
-    <div className={className} style={style}>
-      <h1 className="sec-band__title">{title ?? sectionTitle(id)}</h1>
+    <div className={className}>
+      <div className="min-w-0 flex-1">
+        {subtitle && <p className="sec-band__subtitle">{subtitle}</p>}
+        <h1 className="sec-band__title">{title ?? sectionTitle(id)}</h1>
+      </div>
       {children}
     </div>
   );
 }
 
 /**
- * A section's page: its title, today's figures, then its content.
+ * A section's page: its title, then its content.
+ *
+ * On a phone the large title scrolls away with the page, and a compact bar
+ * with the title in small type slides in at the top — the pattern people
+ * know from every iPhone app. It carries the More button, so that is never
+ * out of reach.
  *
  * Also names the browser tab after the section. The pages are client
- * components, which can't export metadata, and a tab reading "Momentum" on
- * every page gives no clue which one it is.
+ * components, which can't export metadata.
  */
 export function SectionPage({
   id,
   size = "lg",
+  subtitle,
   children,
 }: {
   id: SectionId;
   size?: "lg" | "md";
+  subtitle?: ReactNode;
   children: ReactNode;
 }) {
-  const { tracker, openMore } = useShell();
+  const { openMore } = useShell();
+  const titleRef = useRef<HTMLDivElement>(null);
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    document.title = id === "goals" ? "Momentum" : `${sectionTitle(id)} · Momentum`;
+    document.title = id === "tasks" ? "Momentum" : `${sectionTitle(id)} · Momentum`;
   }, [id]);
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting), {
+      rootMargin: "-8px 0px 0px 0px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const more = (
+    <button type="button" onClick={openMore} aria-label="More" className="more-button lg:hidden">
+      <MoreHorizontal aria-hidden />
+    </button>
+  );
 
   return (
     <section id={id} className="section-panel">
-      <SectionBand id={id} size={size}>
-        {/* Phones and tablets only: the sidebar holds these on a desktop. */}
+      {/* Compact bar: phones and tablets, once the large title is gone. */}
+      <div className={"nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")} aria-hidden={!compact}>
+        <span className="nav-compact__title">{sectionTitle(id)}</span>
         <button
           type="button"
           onClick={openMore}
           aria-label="More"
-          className="more-button lg:hidden"
+          tabIndex={compact ? 0 : -1}
+          className="more-button nav-compact__more"
         >
           <MoreHorizontal aria-hidden />
         </button>
-      </SectionBand>
-      <TodayStats tracker={tracker} layout="strip" className="mt-3 lg:hidden" />
+      </div>
+
+      <div ref={titleRef}>
+        <SectionBand id={id} size={size} subtitle={subtitle}>
+          {more}
+        </SectionBand>
+      </div>
       <div className="section-panel__body">{children}</div>
     </section>
   );

@@ -5,18 +5,17 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Target, Repeat, BarChart3, ScrollText, Settings, LogOut, Dumbbell, Apple, BookOpen,
+  X, Target, Today, BarChart3, ScrollText, Settings, LogOut, Dumbbell, Apple, BookOpen,
   ChevronRight,
 } from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
-import { TodayStats } from "./TodayStats";
 import { Tracker } from "@/lib/tracker";
 import { sectionPath, sectionTitle, trimPath, type SectionId } from "./sections";
 
 const ICON: Record<SectionId, typeof Target> = {
+  tasks: Today,
   goals: Target,
-  tasks: Repeat,
   fitness: Dumbbell,
   nutrition: Apple,
   books: BookOpen,
@@ -27,11 +26,11 @@ const ICON: Record<SectionId, typeof Target> = {
 
 /**
  * The sections, split by what they are for. The first five are where things
- * get recorded, and are the phone's tabs. Progress and Log look back over
- * what was recorded; Settings shapes the rest. On a phone those three live
- * behind More.
+ * get recorded, and are the phone's tabs: Today first, since that is where
+ * the app opens. Progress and Log look back over what was recorded; Settings
+ * shapes the rest. On a phone those three live behind More.
  */
-const TRACK: SectionId[] = ["goals", "tasks", "fitness", "nutrition", "books"];
+const TRACK: SectionId[] = ["tasks", "goals", "fitness", "nutrition", "books"];
 const REVIEW: SectionId[] = ["charts", "log"];
 
 function useCurrentPath() {
@@ -48,7 +47,6 @@ function NavLink({ id, current, onNavigate }: { id: SectionId; current: string; 
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={"side-link" + (active ? " is-active" : "")}
-      style={{ ["--link-tint" as string]: `var(--tint-${id})` }}
     >
       <span className="side-link__icon" aria-hidden>
         <Icon />
@@ -61,15 +59,16 @@ function NavLink({ id, current, onNavigate }: { id: SectionId; current: string; 
 /**
  * Desktop navigation: a sidebar that is always there, from 1056px up.
  *
- * Holds navigation and today's figures — nothing that acts. New goals and
- * new tasks are made on their own pages, next to the lists they join.
+ * Navigation only — nothing that acts. New goals and new tasks are made on
+ * their own pages, next to the lists they join, and today's figures live on
+ * Today. Icons are monochrome; the current page is marked in jade.
  */
 export function Sidebar({ tracker }: { tracker: Tracker }) {
   const current = useCurrentPath();
   return (
     <aside className="sidebar bar-material" aria-label="Sections">
-      <Link href="/" className="sidebar__brand" aria-label="Momentum, go to Goals">
-        <Logo className="h-5 w-auto text-[var(--tint-tasks)]" />
+      <Link href="/" className="sidebar__brand" aria-label="Momentum, go to Today">
+        <Logo className="h-5 w-auto" />
         <span>Momentum</span>
       </Link>
 
@@ -79,11 +78,6 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
         {REVIEW.map((id) => <NavLink key={id} id={id} current={current} />)}
         <NavLink id="config" current={current} />
       </nav>
-
-      <section className="sidebar__today" aria-labelledby="sidebar-today">
-        <h2 id="sidebar-today" className="group-label">Today</h2>
-        <TodayStats tracker={tracker} layout="list" />
-      </section>
 
       <div className="sidebar__foot">
         <ThemeSwitch className="w-full" />
@@ -116,7 +110,6 @@ export function TabBar() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={"tabbar__tab" + (active ? " is-active" : "")}
-            style={{ ["--link-tint" as string]: `var(--sec-${id})` }}
           >
             <Icon aria-hidden />
             <span>{sectionTitle(id)}</span>
@@ -180,7 +173,7 @@ export function MoreSheet({
                   aria-current={active ? "page" : undefined}
                   className="inset-list__row"
                 >
-                  <span className="inset-list__icon" style={{ background: `var(--tint-${id})` }} aria-hidden>
+                  <span className="inset-list__icon" aria-hidden>
                     <Icon />
                   </span>
                   <span className="flex-1">{sectionTitle(id)}</span>

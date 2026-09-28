@@ -39,7 +39,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // The browser's own bars match the page ground in either appearance.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f3f1" },
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };

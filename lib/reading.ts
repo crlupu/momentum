@@ -14,6 +14,7 @@
 import {
   BOOK_COLORS,
   bookColor,
+  currentColor,
   dateKey,
   uid,
   type Book,
@@ -99,7 +100,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-technical",
     name: "Technical",
-    color: "#0f62fe",
+    color: "#2168e4",
     wipLimit: 1,
     dailyTarget: 20,
     slot: "12:15 iPad block",
@@ -108,7 +109,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-nontechnical",
     name: "Non-technical",
-    color: "#ba4e00",
+    color: "#b75014",
     wipLimit: 1,
     dailyTarget: 30,
     slot: "Evening",
@@ -117,7 +118,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-slow",
     name: "Slow lane",
-    color: "#8a3ffc",
+    color: "#8c4ed3",
     wipLimit: 1,
     dailyTarget: 10,
     slot: "Morning coffee",
@@ -189,7 +190,7 @@ export function migrateReading(
     ? (s.readingTracks as Array<Record<string, unknown>>).map((t) => ({
         id: (t.id as string) ?? uid(),
         name: (t.name as string) ?? "Track",
-        color: (t.color as string) ?? BOOK_COLORS[0],
+        color: currentColor(t.color as string | undefined) ?? BOOK_COLORS[0],
         wipLimit: Math.max(1, Math.round(num(t.wipLimit, 1))),
         dailyTarget: Math.max(0, Math.round(num(t.dailyTarget, 0))),
         slot: (t.slot as string) || undefined,
@@ -229,6 +230,7 @@ export function migrateReading(
           : "queued";
     return {
       ...b,
+      color: currentColor(b.color),
       pages,
       read,
       trackId: b.trackId && trackIds.has(b.trackId) ? b.trackId : firstTrack,

@@ -1,11 +1,9 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { Tracker, useTracker } from "@/lib/tracker";
 import { AuthGate } from "./AuthGate";
 import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
-import { sectionForPath } from "./sections";
 import { Modal } from "./Modal";
 import { GoalForm, RecurringForm } from "./Forms";
 
@@ -45,15 +43,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [goalOpen, setGoalOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const section = sectionForPath(usePathname() ?? "/");
   // Behind the sign-in screen there is nothing to navigate to yet.
   const gated = tracker.firebaseConfigured && !tracker.user;
-
-  // The page's section tints the whole document, dialogs included — they
-  // are portalled into <body>, so the attribute has to sit above it.
-  useEffect(() => {
-    document.documentElement.dataset.section = section;
-  }, [section]);
 
   const shell: Shell = {
     tracker,

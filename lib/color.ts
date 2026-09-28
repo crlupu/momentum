@@ -15,8 +15,8 @@ export function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const WHITE = "#ffffff"; // IBM White
-const INK = "#121619"; // IBM Cool Gray 100
+const WHITE = "#ffffff";
+const INK = "#1d1d1f"; // the app's ink
 
 /**
  * Picks the more legible text colour for a given background.

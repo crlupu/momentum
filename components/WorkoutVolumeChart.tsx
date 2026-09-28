@@ -21,9 +21,10 @@ import { ActiveWorkoutPanel } from "./WorkoutsView";
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 /* The two time lines. Both are time, so they share a scale; they need to be
-   told apart at a glance, hence warm for lifting and cool for cardio. */
-const LIFT_LINE = "#ff8389";
-const CARDIO_LINE = "#42be65";
+   told apart at a glance: lifting is the first series (jade), cardio the
+   second (indigo). */
+const LIFT_LINE = "var(--chart-1)";
+const CARDIO_LINE = "var(--chart-2)";
 /** Each workout keeps one colour, so a bar says which workout it was. */
 function workoutColor(workoutId: string, order: string[]): string {
   const i = order.indexOf(workoutId);
@@ -300,7 +301,7 @@ function DayChart({
       <Card.Content className="p-4 md:p-5">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="inline-block h-2 w-2 shrink-0" style={{ background: colour }} aria-hidden />
+            <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: colour }} aria-hidden />
             <span className="truncate text-[15px] font-semibold">{title}</span>
           </span>
           <span className="font-mono-n shrink-0 text-xs" style={{ color: LABEL }}>

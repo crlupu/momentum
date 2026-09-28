@@ -8,7 +8,7 @@ import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 
 /** Section accent; follows the theme so it stays visible on dark. */
-const ACCENT = "var(--sec-calories)";
+const ACCENT = "var(--chart-1)";
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 
@@ -104,11 +104,10 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 showPicker(), whose support is patchier than a tap's. */}
             <span className="relative shrink-0">
               <span
-                className="flex h-10 w-10 items-center justify-center"
+                className="flex h-10 w-10 items-center justify-center rounded-[var(--r-control)] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
                 style={{
-                  background: "var(--surface-secondary)",
-                  border: "1px solid var(--default)",
-                  color: loggingToday ? "var(--muted)" : "var(--accent)",
+                  background: loggingToday ? "var(--default)" : "var(--accent-soft)",
+                  color: loggingToday ? "var(--muted)" : "var(--accent-text)",
                 }}
                 aria-hidden
               >

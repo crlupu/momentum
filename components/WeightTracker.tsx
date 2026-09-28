@@ -9,8 +9,8 @@ import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
 /** Section accent; follows the theme so it stays visible on dark. */
-const ACCENT = "var(--sec-weight)";
-const GRID = "var(--border)";
+const ACCENT = "var(--chart-1)";
+const GRID = "var(--chart-grid)";
 const LABEL = "var(--muted)";
 
 /** The window the chart shows. */

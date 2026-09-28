@@ -44,7 +44,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
   };
 
   return (
-    <div>
+    <div id="todo" className="scroll-mt-20">
       <PanelHeader title="To do" color="var(--sec-todos)" />
 
       <Card>

@@ -10,8 +10,8 @@ const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 
 /** Protein reads teal→blue, fibre green→teal, so the two series stay apart. */
-const PROTEIN = "var(--sec-nutrition)";
-const FIBER = "var(--signal)";
+const PROTEIN = "var(--chart-1)";
+const FIBER = "var(--chart-2)";
 // The same colour for a series everywhere it appears — legend, figure, meter
 // and bars — so the legend actually keys the chart. Both are mid-tones that
 // read on either theme's surface.

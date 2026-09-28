@@ -234,15 +234,15 @@ export type CalorieEntry = {
 
 /** Seeded the first time a device runs a build that has tags. */
 const DEFAULT_MEAL_TAGS: MealTag[] = [
-  { id: "mt1", name: "Breakfast", color: "#0f62fe" },
-  { id: "mt2", name: "Lunch", color: "#33b1ff" },
-  { id: "mt3", name: "Dinner", color: "#8a3ffc" },
-  { id: "mt4", name: "Snack", color: "#ff8389" },
-  { id: "mt5", name: "Coffee", color: "#491d8b" },
+  { id: "mt1", name: "Breakfast", color: "#b75014" },
+  { id: "mt2", name: "Lunch", color: "#11779d" },
+  { id: "mt3", name: "Dinner", color: "#635fd9" },
+  { id: "mt4", name: "Snack", color: "#ca2f72" },
+  { id: "mt5", name: "Coffee", color: "#97640c" },
 ];
 
 /** Colour shown for entries with no tag, or whose tag has been deleted. */
-export const UNTAGGED_COLOR = "#a2a9b0";
+export const UNTAGGED_COLOR = "#8b8e8c";
 
 /** One exercise inside a workout, with the weight it's performed at. */
 export type Exercise = {
@@ -512,19 +512,28 @@ export type TrackerState = {
 
 /* The full chromatic range of the palette, plus its one usable neutral. */
 /**
- * The colours a category or meal tag can be given. Carbon values throughout,
- * ordered by hue so the grid reads as a spectrum rather than a jumble, and
- * running light and dark within each family so neighbours stay distinguishable
- * on a small dot.
+ * The colours a category, meal tag, reading track or book can be given.
  *
- * The original seven are all still here and in the same form, so anything
- * already using one still matches a preset and shows as selected.
+ * Eleven hues, ordered round the wheel, all at the same luminance: each
+ * carries white text at 5.0:1 and still reads at 3.4:1 as a dot on the dark
+ * card, so no colour is louder than its neighbours and every one works as a
+ * dot, a chip and a spine alike. Mirrors --data-* in globals.css.
+ *
+ * Green and teal are left out on purpose: jade is the app's accent and means
+ * progress, and a category that looked like it would muddy that.
  */
 export const CAT_COLORS = [
-  "#0f62fe", "#78a9ff", "#0072c3", "#33b1ff", "#08bdba",
-  "#007d79", "#24a148", "#42be65", "#a7f0ba", "#f1c21b",
-  "#ff832b", "#ba4e00", "#da1e28", "#ff8389", "#ee5396",
-  "#9f1853", "#8a3ffc", "#be95ff", "#491d8b", "#a2a9b0",
+  "#2168e4", // blue
+  "#635fd9", // indigo
+  "#8c4ed3", // violet
+  "#b23bb2", // magenta
+  "#ca2f72", // pink
+  "#ce352a", // red
+  "#b75014", // orange
+  "#97640c", // amber
+  "#64761c", // olive
+  "#11779d", // cyan
+  "#646f7f", // slate
 ];
 
 /**
@@ -553,11 +562,11 @@ export function nextCategoryColor(existing: { color: string }[]): string {
 const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c1", name: "Work", color: "#0f62fe" },
-  { id: "c2", name: "Pressio", color: "#a7f0ba" },
-  { id: "c3", name: "Learning", color: "#8a3ffc" },
-  { id: "c4", name: "Gym", color: "#ff8389" },
-  { id: "c5", name: "Personal", color: "#33b1ff" },
+  { id: "c1", name: "Work", color: "#2168e4" },
+  { id: "c2", name: "Pressio", color: "#64761c" },
+  { id: "c3", name: "Learning", color: "#8c4ed3" },
+  { id: "c4", name: "Gym", color: "#ce352a" },
+  { id: "c5", name: "Personal", color: "#11779d" },
 ];
 
 /** Colours from every earlier theme → their current-palette replacements.
@@ -585,6 +594,29 @@ const LEGACY_CATEGORY_COLORS: Record<string, string> = {
   "#a56eff": "#491d8b", "#da1e28": "#ff8389", "#f1c21b": "#a7f0ba",
   "#161616": "#121619", "#c6c6c6": "#a2a9b0", "#33b1ff": "#33b1ff",
 };
+
+/** The Carbon-era palette → today's. Every colour the app ever offered as a
+ *  preset lands on the nearest hue that is still offered; greens go to olive
+ *  and teals to cyan, since green now belongs to the accent. */
+const CARBON_TO_CURRENT: Record<string, string> = {
+  "#0f62fe": "#2168e4", "#78a9ff": "#635fd9", "#0072c3": "#2168e4", "#33b1ff": "#11779d",
+  "#08bdba": "#11779d", "#007d79": "#11779d", "#24a148": "#64761c", "#42be65": "#64761c",
+  "#a7f0ba": "#64761c", "#f1c21b": "#97640c", "#ff832b": "#b75014", "#ba4e00": "#b75014",
+  "#da1e28": "#ce352a", "#ff8389": "#ce352a", "#ee5396": "#ca2f72", "#9f1853": "#b23bb2",
+  "#8a3ffc": "#8c4ed3", "#be95ff": "#8c4ed3", "#491d8b": "#635fd9", "#a2a9b0": "#646f7f",
+  "#121619": "#646f7f",
+};
+
+/**
+ * Moves a colour saved under any earlier palette onto the current one.
+ * A colour the reader chose outside every preset is left as it is.
+ */
+export function currentColor(color: string | undefined): string | undefined {
+  if (!color) return color;
+  const c = color.toLowerCase();
+  const carbon = LEGACY_CATEGORY_COLORS[c] ?? c;
+  return CARBON_TO_CURRENT[carbon] ?? color;
+}
 
 const DEFAULT_STATE: TrackerState = {
   categories: DEFAULT_CATEGORIES,
@@ -753,9 +785,9 @@ function migrate(raw: unknown): TrackerState {
   const categories = Array.isArray(s.categories)
     ? (s.categories as Category[]).map((c) => ({
         ...c,
-        // Colours saved before the rebrand are moved onto the palette;
+        // Colours saved under an earlier palette are moved onto this one;
         // anything the user picked themselves is left untouched.
-        color: LEGACY_CATEGORY_COLORS[c.color?.toLowerCase()] ?? c.color,
+        color: currentColor(c.color) ?? c.color,
       }))
     : DEFAULT_CATEGORIES;
 
@@ -845,7 +877,7 @@ function migrate(raw: unknown): TrackerState {
   // Absent means this state predates tags, so seed the defaults. An empty
   // array means the reader deleted them all, which we leave alone.
   const mealTags: MealTag[] = Array.isArray(s.mealTags)
-    ? (s.mealTags as MealTag[])
+    ? (s.mealTags as MealTag[]).map((t) => ({ ...t, color: currentColor(t.color) ?? t.color }))
     : DEFAULT_MEAL_TAGS;
 
   // Added after the first release, so older saved state has no macros key.
