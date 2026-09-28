@@ -75,35 +75,46 @@
    Colour.
 
    Momentum is ink on paper with one colour that means one thing:
-   jade, for progress. A checkmark, a progress ring, a primary button,
-   the fallen dominoes in the mark — anything jade is something done or
-   something to do next. Nothing else on screen competes with it.
+   ultraviolet, #7D55FF, for progress. A checkmark, a progress ring, a
+   primary button, the current tab, the fallen dominoes in the mark —
+   anything ultraviolet is something done or the next thing to do.
 
-     ink        text and icons: #1D1D1F on light, white on dark
-     paper      the page ground and the cards on it
-     jade       progress, completion, the primary action
-     amber      a warning: behind pace, over budget
-     red        destructive, and nothing else
+   It is the same colour in light and dark. It sits in the narrow band
+   where one value works on both grounds: 4.1:1 on the light ground, 3.7:1
+   on a dark card, 4.6:1 on black, and it carries white text at 4.55:1. No
+   colour can also be small *text* on both grounds (that would need it to
+   be darker and lighter at once), so the accent never carries text: text
+   is ink, and the accent goes to the shape, the fill or the icon beside it.
+   In the dark it glows, once: the ring on Today.
+
+     ink          text and icons: #1D1D1F on light, white on dark
+     paper        the page ground and the cards on it
+     ultraviolet  progress, completion, the primary action
+     amber        a warning: behind pace, over budget
+     red          destructive, and nothing else
 
    People's own data (categories, meal tags, reading tracks, book spines)
    draws from a separate palette, --data-*, used only on small marks: a
    dot, a chip, a spine. Every data colour sits in the same luminance
    band, so each carries white text at 5.0:1 and still reads at 3.4:1 on
-   the dark card — one set of colours that works everywhere, with no
-   colour louder than its neighbours.
+   the dark card. There is no violet or indigo in it, so nothing can be
+   mistaken for the accent.
    ============================================================ */
 :root {
   --data-blue: #2168e4;
-  --data-indigo: #635fd9;
-  --data-violet: #8c4ed3;
+  --data-cyan: #11779d;
+  --data-teal: #127c72;
+  --data-green: #287d47;
   --data-magenta: #b23bb2;
   --data-pink: #ca2f72;
   --data-red: #ce352a;
   --data-orange: #b75014;
   --data-amber: #97640c;
   --data-olive: #64761c;
-  --data-cyan: #11779d;
   --data-slate: #646f7f;
+
+  /* Ultraviolet: one value for both themes. */
+  --uv: #7d55ff;
 
   /* Shape. Corners sized by what the shape holds: cards largest,
      controls smaller, chips fully round. */
@@ -147,13 +158,14 @@
   --border: #d9dcd8;
   --border-strong: #8b8e8c;         /* 3.3:1 on white: a control's edge */
 
-  /* Jade */
-  --accent: #09795a;                /* white on it 5.4:1; as text 5.4:1 on white */
-  --accent-text: #09795a;
-  --accent-foreground: #ffffff;
-  --accent-soft: rgba(9, 121, 90, 0.11);
-  --accent-soft-strong: rgba(9, 121, 90, 0.18);
-  --accent-track: rgba(9, 121, 90, 0.14);
+  /* Ultraviolet */
+  --accent: var(--uv);
+  --accent-text: var(--foreground);  /* the accent never carries text */
+  --accent-foreground: #ffffff;      /* 4.55:1 */
+  --accent-soft: rgba(125, 85, 255, 0.12);
+  --accent-soft-strong: rgba(125, 85, 255, 0.2);
+  --accent-track: rgba(125, 85, 255, 0.16);
+  --accent-glow: none;
 
   /* Status */
   --warning: #9a5b00;               /* 5.4:1 on white */
@@ -185,10 +197,10 @@
   --field-border: #d4d7d3;
   --field-placeholder: #6b6e6c;
 
-  /* Charts: series one is always jade; a second series is indigo, which
-     no status colour uses. Neutral bars are the ring track grey. */
+  /* Charts: series one is always ultraviolet; a second series is teal,
+     which no status colour uses. */
   --chart-1: var(--accent);
-  --chart-2: var(--data-indigo);
+  --chart-2: var(--data-teal);
   --chart-neutral: #cfd2ce;
   --chart-grid: #e6e8e5;
 
@@ -224,14 +236,14 @@
   --border: #38393a;
   --border-strong: #6e706f;         /* 3.4:1 on a card */
 
-  /* Jade brightens for the dark: a luminous fill carrying dark ink, the
-     way the system's own filled buttons do at night. */
-  --accent: #3ddc97;                /* dark ink on it 9.2:1; as text 9.6:1 */
-  --accent-text: #3ddc97;
-  --accent-foreground: #03261a;
-  --accent-soft: rgba(61, 220, 151, 0.14);
-  --accent-soft-strong: rgba(61, 220, 151, 0.22);
-  --accent-track: rgba(61, 220, 151, 0.16);
+  --accent: var(--uv);
+  --accent-text: var(--foreground);
+  --accent-foreground: #ffffff;
+  --accent-soft: rgba(125, 85, 255, 0.22);
+  --accent-soft-strong: rgba(125, 85, 255, 0.32);
+  --accent-track: rgba(125, 85, 255, 0.24);
+  /* The neon moment: light spilling from the one lit element. */
+  --accent-glow: drop-shadow(0 0 6px rgba(125, 85, 255, 0.7)) drop-shadow(0 0 18px rgba(125, 85, 255, 0.35));
 
   --warning: #ffc453;
   --warning-soft: rgba(255, 196, 83, 0.14);
@@ -260,7 +272,7 @@
   --field-placeholder: #9c9e9d;
 
   --chart-1: var(--accent);
-  --chart-2: #8f8cf0;               /* indigo, lifted for the dark */
+  --chart-2: #3cc4b6;               /* teal, lifted for the dark */
   --chart-neutral: #3a3b3c;
   --chart-grid: #2c2c2e;
 
@@ -279,24 +291,24 @@
 
 /* Names older rules still reach for, mapped onto the scheme above.
    Sections no longer carry colours of their own: every section speaks
-   in ink and jade. */
+   in ink and ultraviolet. Used for marks (dots), never for text. */
 :root,
 .light,
 .dark {
-  --sec-goals: var(--accent-text);
-  --sec-tasks: var(--accent-text);
-  --sec-fitness: var(--accent-text);
-  --sec-nutrition: var(--accent-text);
-  --sec-books: var(--accent-text);
-  --sec-charts: var(--accent-text);
-  --sec-log: var(--accent-text);
-  --sec-config: var(--accent-text);
-  --sec-recurring: var(--accent-text);
-  --sec-todos: var(--accent-text);
+  --sec-goals: var(--accent);
+  --sec-tasks: var(--accent);
+  --sec-fitness: var(--accent);
+  --sec-nutrition: var(--accent);
+  --sec-books: var(--accent);
+  --sec-charts: var(--accent);
+  --sec-log: var(--accent);
+  --sec-config: var(--accent);
+  --sec-recurring: var(--accent);
+  --sec-todos: var(--accent);
   --sec-weight: var(--chart-1);
   --sec-calories: var(--chart-1);
 
-  /* Heatmap ramp: jade, rising in strength. */
+  /* Heatmap ramp: ultraviolet, rising in strength. */
   --scale-1: color-mix(in srgb, var(--accent) 22%, var(--surface));
   --scale-2: color-mix(in srgb, var(--accent) 42%, var(--surface));
   --scale-3: color-mix(in srgb, var(--accent) 62%, var(--surface));
@@ -488,7 +500,7 @@ body {
   font-weight: 600;
 }
 
-/* Positive action ("mark as done"): jade, like every other completion. */
+/* Positive action ("mark as done"): the accent, like every other completion. */
 .btn-success.cds--btn,
 .btn-success {
   background-color: var(--accent);
@@ -2423,7 +2435,7 @@ html.dark {
   flex: none;
 }
 .side-link__icon svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
-.side-link.is-active .side-link__icon { color: var(--accent-text); }
+.side-link.is-active .side-link__icon { color: var(--accent); }
 @media (hover: hover) {
   .side-link:hover { background: var(--default); }
 }
@@ -2461,7 +2473,8 @@ html.dark {
   color: var(--muted);
 }
 .tabbar__tab svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
-.tabbar__tab.is-active { color: var(--accent-text); font-weight: 600; }
+.tabbar__tab.is-active { color: var(--foreground); font-weight: 600; }
+.tabbar__tab.is-active svg { fill: var(--accent); }
 @media (min-width: 42rem) {
   /* Regular width: icon beside its label, as on a tablet. */
   .tabbar__tab { flex-direction: row; gap: 0.375rem; font-size: 0.8125rem; }
@@ -2477,7 +2490,7 @@ html.dark {
   block-size: 2.75rem;
   flex: none;
   border-radius: var(--r-pill);
-  color: var(--accent-text);
+  color: var(--accent);
 }
 .more-button svg {
   inline-size: 1.75rem;
@@ -2718,7 +2731,7 @@ html.dark {
 }
 
 /* ============================================================
-   Progress bar: jade on a jade-tinted track. The one bar style for
+   Progress bar: ultraviolet on a tinted track. The one bar style for
    anything measured against a target.
    ============================================================ */
 .progress-track {
@@ -2748,7 +2761,10 @@ html.dark {
   align-items: center;
   gap: 1.25rem;
 }
-.momentum__ring { flex: none; }
+/* The glow is drawn by the whole ring: filters on an SVG's own shapes
+   aren't applied by every browser. Only the arc is bright enough to throw
+   visible light, so the track and the figure barely pick it up. */
+.momentum__ring { flex: none; overflow: visible; filter: var(--accent-glow); }
 .momentum__headline {
   margin: 0;
   font-size: 1.375rem;
@@ -2829,10 +2845,11 @@ html.dark {
   margin-inline-end: -0.5rem;
   border-radius: var(--r-control);
   font-size: 1rem;
-  font-weight: 500;
-  color: var(--accent-text);
+  font-weight: 600;
+  color: var(--foreground);
 }
-.text-action[aria-pressed="true"] { font-weight: 600; }
+.text-action svg { fill: var(--accent); }
+.text-action[aria-pressed="true"] { color: var(--accent-foreground); background: var(--accent); }
 @media (hover: hover) {
   .text-action:hover { background: var(--accent-soft); }
 }

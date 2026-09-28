@@ -49,7 +49,7 @@ type Entry = {
 const KIND_COLOR: Record<Entry["kind"], string> = {
   "To-do": "#11779d",
   Goal: "#2168e4",
-  Recurring: "#635fd9",
+  Recurring: "#127c72",
   Workout: "#ce352a",
   Cardio: "#b75014",
   Calories: "#97640c",

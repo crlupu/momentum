@@ -21,8 +21,8 @@ import { ActiveWorkoutPanel } from "./WorkoutsView";
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
 /* The two time lines. Both are time, so they share a scale; they need to be
-   told apart at a glance: lifting is the first series (jade), cardio the
-   second (indigo). */
+   told apart at a glance: lifting is the first series (ultraviolet), cardio the
+   second (teal). */
 const LIFT_LINE = "var(--chart-1)";
 const CARDIO_LINE = "var(--chart-2)";
 /** Each workout keeps one colour, so a bar says which workout it was. */

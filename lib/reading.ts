@@ -118,7 +118,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-slow",
     name: "Slow lane",
-    color: "#8c4ed3",
+    color: "#b23bb2",
     wipLimit: 1,
     dailyTarget: 10,
     slot: "Morning coffee",

@@ -236,7 +236,7 @@ export type CalorieEntry = {
 const DEFAULT_MEAL_TAGS: MealTag[] = [
   { id: "mt1", name: "Breakfast", color: "#b75014" },
   { id: "mt2", name: "Lunch", color: "#11779d" },
-  { id: "mt3", name: "Dinner", color: "#635fd9" },
+  { id: "mt3", name: "Dinner", color: "#127c72" },
   { id: "mt4", name: "Snack", color: "#ca2f72" },
   { id: "mt5", name: "Coffee", color: "#97640c" },
 ];
@@ -519,20 +519,20 @@ export type TrackerState = {
  * card, so no colour is louder than its neighbours and every one works as a
  * dot, a chip and a spine alike. Mirrors --data-* in globals.css.
  *
- * Green and teal are left out on purpose: jade is the app's accent and means
- * progress, and a category that looked like it would muddy that.
+ * Violet and indigo are left out on purpose: ultraviolet is the app's accent
+ * and means progress, and a category that looked like it would muddy that.
  */
 export const CAT_COLORS = [
   "#2168e4", // blue
-  "#635fd9", // indigo
-  "#8c4ed3", // violet
+  "#11779d", // cyan
+  "#127c72", // teal
+  "#287d47", // green
   "#b23bb2", // magenta
   "#ca2f72", // pink
   "#ce352a", // red
   "#b75014", // orange
   "#97640c", // amber
   "#64761c", // olive
-  "#11779d", // cyan
   "#646f7f", // slate
 ];
 
@@ -563,8 +563,8 @@ const KEY = "momentum:v1";
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: "c1", name: "Work", color: "#2168e4" },
-  { id: "c2", name: "Pressio", color: "#64761c" },
-  { id: "c3", name: "Learning", color: "#8c4ed3" },
+  { id: "c2", name: "Pressio", color: "#287d47" },
+  { id: "c3", name: "Learning", color: "#b23bb2" },
   { id: "c4", name: "Gym", color: "#ce352a" },
   { id: "c5", name: "Personal", color: "#11779d" },
 ];
@@ -595,16 +595,19 @@ const LEGACY_CATEGORY_COLORS: Record<string, string> = {
   "#161616": "#121619", "#c6c6c6": "#a2a9b0", "#33b1ff": "#33b1ff",
 };
 
-/** The Carbon-era palette → today's. Every colour the app ever offered as a
- *  preset lands on the nearest hue that is still offered; greens go to olive
- *  and teals to cyan, since green now belongs to the accent. */
+/** Every earlier palette → today's. Each colour the app ever offered as a
+ *  preset lands on the nearest hue still offered; violets and indigos go to
+ *  magenta and blue, since violet now belongs to the accent. */
 const CARBON_TO_CURRENT: Record<string, string> = {
-  "#0f62fe": "#2168e4", "#78a9ff": "#635fd9", "#0072c3": "#2168e4", "#33b1ff": "#11779d",
-  "#08bdba": "#11779d", "#007d79": "#11779d", "#24a148": "#64761c", "#42be65": "#64761c",
-  "#a7f0ba": "#64761c", "#f1c21b": "#97640c", "#ff832b": "#b75014", "#ba4e00": "#b75014",
+  // Carbon era
+  "#0f62fe": "#2168e4", "#78a9ff": "#2168e4", "#0072c3": "#2168e4", "#33b1ff": "#11779d",
+  "#08bdba": "#127c72", "#007d79": "#127c72", "#24a148": "#287d47", "#42be65": "#287d47",
+  "#a7f0ba": "#287d47", "#f1c21b": "#97640c", "#ff832b": "#b75014", "#ba4e00": "#b75014",
   "#da1e28": "#ce352a", "#ff8389": "#ce352a", "#ee5396": "#ca2f72", "#9f1853": "#b23bb2",
-  "#8a3ffc": "#8c4ed3", "#be95ff": "#8c4ed3", "#491d8b": "#635fd9", "#a2a9b0": "#646f7f",
+  "#8a3ffc": "#b23bb2", "#be95ff": "#b23bb2", "#491d8b": "#2168e4", "#a2a9b0": "#646f7f",
   "#121619": "#646f7f",
+  // jade era: its violet and indigo presets
+  "#8c4ed3": "#b23bb2", "#635fd9": "#2168e4",
 };
 
 /**

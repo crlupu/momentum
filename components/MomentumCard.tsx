@@ -10,7 +10,7 @@ const STROKE = 10;
 /**
  * The day's momentum: how much of today's routine is done, as one ring.
  *
- * The one large piece of colour in the app. It fills in jade as routines
+ * The one large piece of colour in the app. It fills in ultraviolet as routines
  * and reading targets are ticked off, and closes when the day is done.
  * Below it, the figures from the other sections that change daily, each a
  * link to the page that holds them.
