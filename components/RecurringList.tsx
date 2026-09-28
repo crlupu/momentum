@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, PanelHeader } from "./ui";
+import { Card, PanelHeader, AddButton } from "./ui";
 import { usePending } from "./ActionButton";
-import { Check, Plus } from "./icons";
+import { Check } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
 
 function RecurringCheckbox({ tracker, id, done, label }: { tracker: Tracker; id: string; done: boolean; label: string }) {
@@ -40,9 +40,7 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   return (
     <div>
       <PanelHeader title="Recurring" color="var(--sec-recurring)">
-        <button type="button" className="text-action" onClick={onAdd}>
-          <Plus className="h-5 w-5" aria-hidden /> New
-        </button>
+        <AddButton label="New task" onPress={onAdd} />
       </PanelHeader>
 
       <Card>

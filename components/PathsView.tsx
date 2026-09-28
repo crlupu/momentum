@@ -2,19 +2,18 @@
 
 import { FormEvent, useState } from "react";
 
-import { Button, Card, Input, PanelHeader } from "./ui";
+import { Button, Card, Input, PanelHeader, AddButton } from "./ui";
 import { Modal } from "./Modal";
 import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
-import { ArrowDown, ArrowUp, Check, ChevronRight, Pencil, Plus, X } from "./icons";
+import { ArrowDown, ArrowUp, Check, ChevronRight, Pencil, X } from "./icons";
 import { Tracker, Goal, Path, goalPct, pathGoals, pathPct } from "@/lib/tracker";
 
 /** Add a path, or edit one. */
 function PathForm({
   tracker,
   path,
-  onClose,
-}: {
+  onClose }: {
   tracker: Tracker;
   path: Path | null;
   onClose: () => void;
@@ -93,8 +92,7 @@ function PathForm({
 function ChooseGoalsDialog({
   tracker,
   path,
-  onClose,
-}: {
+  onClose }: {
   tracker: Tracker;
   path: Path;
   onClose: () => void;
@@ -150,8 +148,7 @@ function StepRow({
   path,
   goal,
   index,
-  last,
-}: {
+  last }: {
   tracker: Tracker;
   path: Path;
   goal: Goal;
@@ -281,9 +278,7 @@ function PathCard({ tracker, path }: { tracker: Tracker; path: Path }) {
             )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" onPress={() => setPicking(true)}>
-                <Plus className="h-3.5 w-3.5" /> Choose goals
-              </Button>
+              <AddButton label="Choose goals" onPress={() => setPicking(true)} />
               <Button
                 size="sm"
                 variant="outline"
@@ -323,9 +318,7 @@ export function PathsView({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <PanelHeader title="Paths" color="var(--sec-goals)">
-        <button type="button" className="text-action" onClick={() => setAdding(true)}>
-          <Plus className="h-5 w-5" aria-hidden /> New path
-        </button>
+        <AddButton label="New path" onPress={() => setAdding(true)} />
       </PanelHeader>
 
       {s.paths.length === 0 ? (

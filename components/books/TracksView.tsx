@@ -9,18 +9,16 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
+  type DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+  verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button } from "../ui";
-import { ChevronDown, ChevronRight, GripVertical, Play, Plus, Settings, Unarchive } from "../icons";
+import { Button, AddButton } from "../ui";
+import { ChevronDown, ChevronRight, GripVertical, Play, Settings, Unarchive } from "../icons";
 import { Tracker, Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -45,9 +43,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "track", trackId: null })}>
-          <Plus className="h-3.5 w-3.5" /> New track
-        </Button>
+        <AddButton label="New track" onPress={() => flow.open({ kind: "track", trackId: null })} />
       </div>
       {archived.length > 0 && (
         <div>
@@ -121,15 +117,11 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
           </span>
         </div>
         <span className="flex items-center gap-1">
-          <Button
+          <AddButton
             size="sm"
-            variant="ghost"
-            isIconOnly
             aria-label={`Add a book to ${track.name}`}
             onPress={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          />
           <Button
             size="sm"
             variant="ghost"
@@ -154,7 +146,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
               </button>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <RowTitle book={b} />
-                <Meter book={b} colour={track.color} />
+                <Meter book={b} />
                 <ProgressText book={b} />
               </div>
             </li>

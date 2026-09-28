@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input, PanelHeader } from "./ui";
+import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDateAuto } from "@/lib/dates";
-import { Plus, CalendarDays } from "./icons";
+import { CalendarDays } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 
@@ -107,8 +107,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 className="flex h-10 w-10 items-center justify-center rounded-[var(--r-control)] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
                 style={{
                   background: loggingToday ? "var(--default)" : "var(--accent-soft)",
-                  color: loggingToday ? "var(--muted)" : "var(--accent-text)",
-                }}
+                  color: loggingToday ? "var(--muted)" : "var(--accent-text)" }}
                 aria-hidden
               >
                 <CalendarDays className="h-4 w-4" />
@@ -122,15 +121,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               />
             </span>
-            <Button
-              type="submit"
-              variant="primary"
-              isIconOnly
-              aria-label="Add"
-              isDisabled={pending}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <AddButton type="submit" aria-label="Add" isDisabled={pending} />
           </div>
           {s.mealTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -143,8 +134,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   style={{
                     ["--chip-color" as string]: m.color,
                     opacity: tagId && tagId !== m.id ? 0.45 : 1,
-                    outline: tagId === m.id ? `1px solid ${m.color}` : undefined,
-                  }}
+                    outline: tagId === m.id ? `1px solid ${m.color}` : undefined }}
                   aria-pressed={tagId === m.id}
                 >
                   <span className="cat-chip__dot" aria-hidden />
@@ -181,8 +171,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   className="flex w-full max-w-[22px] flex-col-reverse overflow-hidden rounded-t-[3px]"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
-                    background: counts[i] ? undefined : TRACK,
-                  }}
+                    background: counts[i] ? undefined : TRACK }}
                 >
                   {(entriesByDate[dateKey(d)] ?? []).map((e, j, all) => (
                     <div
@@ -193,8 +182,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                         background: colorOf(e.tagId),
                         // A 2px gap of the card's own colour between meals,
                         // drawn over the segment so the stack keeps its height.
-                        boxShadow: j < all.length - 1 ? "inset 0 2px 0 var(--pane-bg)" : undefined,
-                      }}
+                        boxShadow: j < all.length - 1 ? "inset 0 2px 0 var(--pane-bg)" : undefined }}
                     />
                   ))}
                 </div>

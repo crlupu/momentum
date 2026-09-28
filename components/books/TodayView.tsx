@@ -200,7 +200,7 @@ function OpenBook({
             <span className="book-card__title">{book.title}</span>
             {book.author && <span className="book-card__author">{book.author}</span>}
           </button>
-          <Meter book={book} colour={track.color} />
+          <Meter book={book} />
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
             <ProgressText book={book} />
             {pace.perDay > 0 && (

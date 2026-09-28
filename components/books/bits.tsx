@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import type { Book } from "@/lib/tracker";
-import { bookColor, bookProgress } from "@/lib/tracker";
+import { bookProgress } from "@/lib/tracker";
 import { STATUS_LABEL, type BookStatus, type ReadingTrack } from "@/lib/reading";
 
 export { fmtDate, fmtDateAuto, monthLabel } from "@/lib/dates";
@@ -37,14 +37,16 @@ export function StatusBadge({ status }: { status: BookStatus }) {
   return <span className={`rd-status rd-status--${status}`}>{STATUS_LABEL[status]}</span>;
 }
 
-/** The thin bar under a book, in its own colour. */
-export function Meter({ book, colour }: { book: Book; colour?: string }) {
+/** The thin bar under a book: progress, so in the accent like every other
+ *  progress bar. The book's and track's own colours stay on the cover and
+ *  the dot, where they say which book or lane this is. */
+export function Meter({ book }: { book: Book }) {
   // Floored, not rounded: 299 of 300 pages rounds up to 100%, which read as
   // finished with a page still to go.
   const pct = book.status === "finished" ? 100 : Math.floor(bookProgress(book) * 100);
   return (
     <div className="book-card__meter" aria-hidden>
-      <span style={{ width: `${pct}%`, background: colour ?? bookColor(book) }} />
+      <span style={{ width: `${pct}%` }} />
     </div>
   );
 }

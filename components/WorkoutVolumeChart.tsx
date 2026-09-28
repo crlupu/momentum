@@ -2,7 +2,7 @@
 
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button, PanelHeader } from "./ui";
+import { Card, Input, Button, PanelHeader, AddButton } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -10,9 +10,8 @@ import {
   workoutMinutesByDate,
   cardioMinutesByDate,
   CAT_COLORS,
-  UNTAGGED_COLOR,
-} from "@/lib/tracker";
-import { Plus } from "./icons";
+  UNTAGGED_COLOR } from "@/lib/tracker";
+import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
 import { StartWorkoutButton } from "./StartWorkoutButton";
@@ -92,8 +91,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
       tooltip: (i) =>
         `${w.name}: ${vol[i].toLocaleString()} kg` +
         (mins[i] ? ` · ${mins[i]} min` : "") +
-        ` on ${keys[i]}`,
-    });
+        ` on ${keys[i]}` });
   }
   // Cardio belongs to no workout, so it gets a chart of its own. Its bars are
   // minutes — there is no weight to plot — so it carries no second line.
@@ -107,8 +105,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
       minutes: null,
       lineColour: CARDIO_LINE,
       lineLabel: "minutes",
-      tooltip: (i) => `Cardio: ${cardio[i]} min on ${keys[i]}`,
-    });
+      tooltip: (i) => `Cardio: ${cardio[i]} min on ${keys[i]}` });
   }
 
   return (
@@ -212,9 +209,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
 
   return (
     <>
-      <Button size="sm" variant="outline" onPress={() => setOpen(true)}>
-        <Plus className="h-3.5 w-3.5" /> Add cardio
-      </Button>
+      <AddButton label="Add cardio" onPress={() => setOpen(true)} />
 
       <Modal open={open} onClose={close} title="Add cardio">
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -276,8 +271,7 @@ function DayChart({
   minutes,
   lineColour,
   lineLabel,
-  tooltip,
-}: {
+  tooltip }: {
   title: string;
   colour: string;
   days: Date[];
@@ -331,8 +325,7 @@ function DayChart({
                 title={values[i] ? tooltip(i) : undefined}
                 style={{
                   height: Math.max(2, (values[i] / max) * 68),
-                  background: values[i] ? colour : TRACK,
-                }}
+                  background: values[i] ? colour : TRACK }}
               />
               <span className="text-[11px] leading-none tabular-nums" style={{ color: LABEL }}>
                 {d.getDate()}
@@ -360,8 +353,7 @@ function DayChart({
 function TimeLine({
   points,
   max,
-  color,
-}: {
+  color }: {
   points: { i: number; m: number }[];
   /** Top of the shared scale, in minutes. */
   max: number;
@@ -408,8 +400,7 @@ function TimeLine({
             style={{
               left: `${((p.i + 0.5) / 14) * 100}%`,
               bottom: (p.m / max) * 78,
-              background: color,
-            }}
+              background: color }}
           />
         ))}
       </div>

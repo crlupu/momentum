@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Button, Input } from "./ui";
-import { Pencil, Plus, Check, X, Palette } from "./icons";
+import { Button, Input, AddButton } from "./ui";
+import { Pencil, Check, X, Palette } from "./icons";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
@@ -13,8 +13,7 @@ import { Tracker, Frequency, FREQUENCIES, FREQ_LABEL, FREQ_ORDER, RecurringTask,
 function GroupPicker({
   tracker,
   groupId,
-  setGroupId,
-}: {
+  setGroupId }: {
   tracker: Tracker;
   groupId: string;
   setGroupId: (id: string) => void;
@@ -50,8 +49,7 @@ function GroupPicker({
 function CatPicker({
   tracker,
   catId,
-  setCatId,
-}: {
+  setCatId }: {
   tracker: Tracker;
   catId: string;
   setCatId: (id: string) => void;
@@ -174,8 +172,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
 export function RecurringEditForm({
   tracker,
   task,
-  onDone,
-}: {
+  onDone }: {
   tracker: Tracker;
   task: RecurringTask;
   onDone: () => void;
@@ -354,15 +351,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       <form onSubmit={submit} className="cfg-add">
         <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-0 flex-1" />
         <ColorPicker value={newColor} onChange={setNewColor} />
-        <Button
-          type="submit"
-          variant="primary"
-          isIconOnly
-          aria-label="Add"
-          isDisabled={pending}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <AddButton type="submit" aria-label="Add" isDisabled={pending} />
       </form>
       )}
     </div>
@@ -428,15 +417,7 @@ export function GroupsCard({ tracker }: { tracker: Tracker }) {
       {editing && (
       <form onSubmit={submit} className="cfg-add">
         <Input aria-label="New group name" placeholder="New group…" value={newGroup} onChange={(e) => setNewGroup(e.target.value)} className="min-w-[8rem] flex-1" />
-        <Button
-          type="submit"
-          variant="primary"
-          isIconOnly
-          aria-label="Add"
-          isDisabled={pending}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <AddButton type="submit" aria-label="Add" isDisabled={pending} />
       </form>
       )}
     </div>
@@ -713,15 +694,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
           className="min-w-0 flex-1"
         />
         <ColorPicker value={color} onChange={setColor} />
-        <Button
-          type="submit"
-          variant="primary"
-          isIconOnly
-          aria-label="Add meal tag"
-          isDisabled={pending}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <AddButton type="submit" aria-label="Add meal tag" isDisabled={pending} />
       </form>
       )}
     </div>

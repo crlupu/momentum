@@ -58,7 +58,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
           {meta.length > 0 && (
             <span className="text-xs text-[var(--muted)]">{meta.join(" · ")}</span>
           )}
-          <Meter book={book} colour={track?.color} />
+          <Meter book={book} />
           <ProgressText book={book} />
         </div>
       </div>

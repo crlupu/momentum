@@ -2,9 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
-import { Button, Input, PanelHeader } from "./ui";
+import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
-import { Plus } from "./icons";
+import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
 
@@ -134,8 +134,7 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
           style={{
             left: x(shown.i),
             top: Math.max(0, y(shown.kg) - 52),
-            transform: shown.i > DAYS / 2 ? "translateX(-100%)" : undefined,
-          }}
+            transform: shown.i > DAYS / 2 ? "translateX(-100%)" : undefined }}
         >
           <div className="font-semibold">{shown.kg} kg</div>
           <div>{fmtDateAuto(shown.date)}</div>
@@ -182,15 +181,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
             onChange={(e) => setKg(e.target.value)}
             className="flex-1"
           />
-          <Button
-            type="submit"
-            variant="primary"
-            isIconOnly
-            aria-label="Add"
-            isDisabled={pending}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
         </form>
 
         <div className="mb-1 text-xs" style={{ color: LABEL }}>

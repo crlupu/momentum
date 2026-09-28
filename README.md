@@ -136,9 +136,8 @@ of truth.
     It is used for shapes, fills and icons, never for text, because no
     single colour can be readable text on both a white and a dark card.
     `--accent-text` is plain ink, and text on the accent is white (3.4:1:
-    fine for icons and large bold text, below AA for small labels). In dark
-    mode the Today ring glows (`--accent-glow`). Amber (`--warning`) means
-    behind or over; red (`--danger`) means destructive.
+    fine for icons and large bold text, below AA for small labels). Amber
+    (`--warning`) means behind or over; red (`--danger`) means destructive.
     Sections have no colours of their own.
   - **Data:** people's own colours (categories, meal tags, tracks, books) come
     from `CAT_COLORS` / `--data-*`: eleven hues at one luminance, each 5.0:1

@@ -88,7 +88,6 @@
    colour can also be small *text* on both grounds (that would need it to
    be darker and lighter at once), so the accent never carries text: text
    is ink, and the accent goes to the shape, the fill or the icon beside it.
-   In the dark it glows, once: the ring on Today.
 
      ink            text and icons: #1D1D1F on light, white on dark
      paper          the page ground and the cards on it
@@ -168,7 +167,6 @@
   --accent-soft: rgba(26, 140, 255, 0.12);
   --accent-soft-strong: rgba(26, 140, 255, 0.2);
   --accent-track: rgba(26, 140, 255, 0.16);
-  --accent-glow: none;
 
   /* Status */
   --warning: #9a5b00;               /* 5.4:1 on white */
@@ -245,9 +243,6 @@
   --accent-soft: rgba(26, 140, 255, 0.2);
   --accent-soft-strong: rgba(26, 140, 255, 0.3);
   --accent-track: rgba(26, 140, 255, 0.24);
-  /* The neon moment: light spilling from the one lit element. */
-  --accent-glow: drop-shadow(0 0 6px rgba(26, 140, 255, 0.75)) drop-shadow(0 0 18px rgba(26, 140, 255, 0.4));
-
   --warning: #ffc453;
   --warning-soft: rgba(255, 196, 83, 0.14);
   --success: var(--accent);
@@ -1200,12 +1195,13 @@ html.dark {
 /* Marks a one-arm exercise in the read-only list. */
 .exercise-tag {
   margin-left: 0.45rem;
-  padding: 1px 5px;
-  font-size: 0.6875rem;
+  padding: 1px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--r-pill);
+  color: var(--foreground);
+  background: var(--accent-soft);
 }
 
 .set-row__body {
@@ -1280,8 +1276,10 @@ html.dark {
   border-bottom: none;
 }
 .exercise--done {
-  border-left: 3px solid var(--accent);
-  padding-left: 0.625rem;
+  margin-inline: -0.625rem;
+  padding-inline: 0.625rem;
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
 }
 .exercise__reopen.cds--btn {
   color: var(--accent-text);
@@ -1376,25 +1374,25 @@ html.dark {
    Only icon-only buttons. Anything with a label keeps its background,
    since those are deliberate actions rather than row furniture.
    ============================================================ */
-#config .cds--btn.btn-icon-only {
+#config .cds--btn.btn-icon-only:not(.btn-add) {
   background: transparent;
   border: none;
   color: var(--accent-text);
 }
-#config .cds--btn.btn-icon-only:hover,
-#config .cds--btn.btn-icon-only:active,
-#config .cds--btn.btn-icon-only:focus {
+#config .cds--btn.btn-icon-only:not(.btn-add):hover,
+#config .cds--btn.btn-icon-only:not(.btn-add):active,
+#config .cds--btn.btn-icon-only:not(.btn-add):focus {
   background: transparent;
   border: none;
   color: var(--foreground);
 }
-#config .cds--btn.btn-icon-only:disabled {
+#config .cds--btn.btn-icon-only:not(.btn-add):disabled {
   background: transparent;
   border: none;
 }
 /* Carbon paints icons through its own selector, which would otherwise win. */
-#config .cds--btn.btn-icon-only svg,
-#config .cds--btn.btn-icon-only .cds--btn__icon {
+#config .cds--btn.btn-icon-only:not(.btn-add) svg,
+#config .cds--btn.btn-icon-only:not(.btn-add) .cds--btn__icon {
   /* Material icons are filled paths, not strokes: colouring the stroke here
      would leave the icon present but invisible. */
   fill: currentColor;
@@ -1437,7 +1435,8 @@ html.dark {
   /* The same surface the goal cards sit on, so a card reads as a card
      wherever it appears rather than as a panel peculiar to this section. */
   background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
 }
 .book-card--done {
   background: color-mix(in srgb, var(--accent) 10%, var(--pane-bg));
@@ -1538,12 +1537,15 @@ html.dark {
      had no visible bar at all — the one state where seeing the empty track
      matters most. Tinted from the foreground instead, so it stays visible in
      either theme. */
-  background: color-mix(in srgb, var(--foreground) 16%, transparent);
+  background: var(--accent-track);
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 .book-card__meter > span {
   display: block;
   height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
   transition: width 220ms ease;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1567,8 +1569,9 @@ html.dark {
   margin-top: 2px;
   max-height: 258px;
   overflow-y: auto;
-  background: var(--pane-bg-strong);
-  border: 1px solid var(--border-strong);
+  background: var(--overlay);
+  border-radius: var(--r-control);
+  box-shadow: var(--lift-shadow);
 }
 .book-suggest__row {
   display: flex;
@@ -1621,12 +1624,13 @@ html.dark {
 .book-suggest__tag {
   flex: none;
   align-self: flex-start;
-  padding: 1px 5px;
-  font-size: 0.6875rem;
+  padding: 1px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--r-pill);
+  color: var(--foreground);
+  background: var(--accent-soft);
 }
 
 .book-suggest__note {
@@ -1651,7 +1655,8 @@ html.dark {
   display: block;
   height: 6px;
   margin-top: 0.6rem;
-  background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  background: var(--accent-track);
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 .path-meter > span {
@@ -1677,7 +1682,8 @@ html.dark {
   font-size: 11px;
   font-weight: 700;
   color: var(--muted);
-  border: 1px solid var(--default);
+  border-radius: var(--r-pill);
+  background: var(--default);
 }
 .path-step__no--done {
   color: var(--accent-foreground);
@@ -1689,7 +1695,8 @@ html.dark {
   display: block;
   height: 3px;
   margin-top: 0.35rem;
-  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+  background: var(--accent-track);
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 .path-step__meter > span {
@@ -1726,14 +1733,15 @@ html.dark {
    work and rest, so which one is running can be told from across a room and
    at a glance, which is all the attention available mid-burpee.
    ============================================================ */
+/* Work is tinted with the accent; rest drops to neutral grey, so the two
+   phases still read apart at a glance. */
 .circuit {
-  padding: 0.9rem;
-  background: color-mix(in srgb, var(--accent) 12%, var(--pane-bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--pane-border));
+  padding: 1rem;
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--accent) 14%, var(--pane-bg));
 }
 .circuit--rest {
-  background: color-mix(in srgb, var(--accent) 12%, var(--pane-bg));
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--pane-border));
+  background: color-mix(in srgb, var(--foreground) 7%, var(--pane-bg));
 }
 
 .circuit__top {
@@ -1743,11 +1751,9 @@ html.dark {
   gap: 0.5rem;
 }
 .circuit__phase {
-  font-size: 12px;
+  font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
+  color: var(--foreground);
 }
 .circuit--rest .circuit__phase { color: var(--accent-text); }
 .circuit__count { font-size: 12px; color: var(--muted); }
@@ -1818,7 +1824,8 @@ html.dark {
   font-size: 0.6875rem;
   font-weight: 700;
   color: var(--muted);
-  border: 1px solid var(--default);
+  border-radius: var(--r-pill);
+  background: var(--default);
 }
 
 /* A block in the workout editor: its own heading, timings and exercises. */
@@ -1833,18 +1840,17 @@ html.dark {
   gap: 0.5rem;
 }
 .cfg-block__name {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--muted);
 }
 .cfg-block__mode {
-  padding: 1px 5px;
-  font-size: 0.6875rem;
+  padding: 1px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--accent);
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--r-pill);
+  color: var(--foreground);
+  background: var(--accent-soft);
 }
 .cfg-block__head .btn-delete-bare { margin-left: auto; }
 
@@ -1903,7 +1909,8 @@ html.dark {
 .cfg-block__mode {
   border: 0;
   padding: 0;
-  opacity: 0.8;
+  background: none;
+  color: var(--muted);
 }
 
 /* The colour swatch is a hand-rolled button rather than a Carbon one, so it
@@ -1922,8 +1929,9 @@ html.dark {
   padding: 0.7rem 0.9rem;
   text-align: left;
   cursor: pointer;
-  background: color-mix(in srgb, var(--accent) 16%, var(--pane-bg));
-  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--pane-border));
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: var(--r-card);
 }
 .circuit__done-tick {
   display: flex;
@@ -1934,6 +1942,7 @@ html.dark {
   height: 24px;
   color: var(--accent-foreground);
   background: var(--accent);
+  border-radius: var(--r-pill);
 }
 .circuit__done-name {
   min-width: 0;
@@ -1995,13 +2004,15 @@ html.dark {
   line-height: 1.5;
   border-radius: var(--r-pill);
   color: var(--foreground);
-  background: color-mix(in srgb, var(--rd-s, var(--muted)) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rd-s, var(--muted)) 50%, transparent);
+  background: color-mix(in srgb, var(--rd-s, var(--muted)) 16%, transparent);
+  border: 0;
 }
-.rd-status--active { --rd-s: var(--chart-2); }
+/* Reading is in progress, so it takes the accent; paused is a warning;
+   finished and dropped are over, and go neutral. */
+.rd-status--active { --rd-s: var(--accent); }
 .rd-status--paused { --rd-s: var(--warning); }
-.rd-status--finished { --rd-s: var(--accent); }
-.rd-status--dropped { --rd-s: var(--muted); }
+.rd-status--finished { --rd-s: var(--muted); }
+.rd-status--dropped { --rd-s: var(--muted); color: var(--muted); }
 
 .rd-today,
 .rd-tracks {
@@ -2018,7 +2029,7 @@ html.dark {
   padding: 0.875rem 1rem 1rem;
   background: var(--pane-bg);
   border-radius: var(--r-card);
-  box-shadow: var(--card-shadow), inset 0 3px 0 var(--track);
+  box-shadow: var(--card-shadow);
 }
 .rd-track__head {
   display: flex;
@@ -2036,7 +2047,7 @@ html.dark {
 .rd-track__bar > span {
   display: block;
   height: 100%;
-  background: var(--track);
+  background: var(--accent);
   transition: width 220ms ease;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2080,19 +2091,19 @@ html.dark {
   margin-top: 0.5rem;
 }
 
+/* A nudge about a stalled book: a warning, so amber, and a rounded
+   panel like every other. */
 .rd-stall {
   margin-top: 0.6rem;
-  padding: 0.6rem;
-  background: color-mix(in srgb, var(--chart-2) 10%, transparent);
-  border-left: 3px solid var(--chart-2);
+  padding: 0.75rem;
+  border-radius: var(--r-control);
+  background: var(--warning-soft);
 }
 
 .rd-sub {
   margin: 0.9rem 0 0.25rem;
-  font-size: 11px;
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--muted);
 }
 
@@ -2150,11 +2161,13 @@ html.dark {
 .book-cover--sm .book-cover__initials { padding-left: 6px; font-size: 14px; }
 
 .rd-phase {
-  padding: 0.75rem;
+  padding: 1rem;
   background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
 }
-.rd-phase--current { border-left: 3px solid var(--accent); }
+/* The current phase says so in its dates ("now"); it needs no stripe. */
+.rd-phase--current { box-shadow: var(--card-shadow), inset 0 0 0 1.5px var(--accent-soft-strong); }
 .rd-phase__tracks {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -2179,13 +2192,14 @@ html.dark {
 
 /* The phase verdict: a word, with a tint behind it. */
 .rd-flag {
-  padding: 1px 7px;
+  padding: 2px 10px;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   color: var(--foreground);
-  background: color-mix(in srgb, var(--rd-f, var(--muted)) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rd-f, var(--muted)) 55%, transparent);
+  background: color-mix(in srgb, var(--rd-f, var(--muted)) 16%, transparent);
+  border: 0;
+  border-radius: var(--r-pill);
 }
 .rd-flag--done,
 .rd-flag--on-track { --rd-f: var(--accent); }
@@ -2196,11 +2210,12 @@ html.dark {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  padding: 0.6rem;
+  padding: 0.75rem;
   background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
+  border-radius: var(--r-control);
+  box-shadow: var(--card-shadow);
 }
-.rd-note--quote { border-left: 3px solid var(--border-strong); }
+.rd-note--quote { background: var(--surface); }
 .rd-note--quote p:first-child { font-style: italic; }
 .rd-note__icon { flex: none; padding-top: 2px; color: var(--muted); }
 
@@ -2326,10 +2341,9 @@ html.dark {
 
 /* What an import will do, shown before it is done. */
 .rd-import {
-  padding: 0.75rem;
-  background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
-  border-left: 3px solid var(--accent);
+  padding: 0.875rem;
+  background: var(--accent-soft);
+  border-radius: var(--r-control);
 }
 .rd-import code,
 .rd-import + * code { font-size: 12px; }
@@ -2764,10 +2778,7 @@ html.dark {
   align-items: center;
   gap: 1.25rem;
 }
-/* The glow is drawn by the whole ring: filters on an SVG's own shapes
-   aren't applied by every browser. Only the arc is bright enough to throw
-   visible light, so the track and the figure barely pick it up. */
-.momentum__ring { flex: none; overflow: visible; filter: var(--accent-glow); }
+.momentum__ring { flex: none; }
 .momentum__headline {
   margin: 0;
   font-size: 1.375rem;

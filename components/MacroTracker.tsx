@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input, PanelHeader } from "./ui";
-import { Plus } from "./icons";
+import { Button, Input, PanelHeader, AddButton } from "./ui";
+import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, macroTotalsByDate } from "@/lib/tracker";
 
@@ -49,8 +49,7 @@ function TargetMeter({
   value,
   target,
   fill,
-  solid,
-}: {
+  solid }: {
   label: string;
   value: number;
   target?: number;
@@ -79,8 +78,7 @@ function TargetMeter({
             style={{
               width: `${Math.min(100, pct)}%`,
               backgroundImage: fill,
-              transition: "width .3s ease",
-            }}
+              transition: "width .3s ease" }}
           />
         ) : null}
       </div>
@@ -107,8 +105,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
   const someTarget = !!(s.proteinTarget || s.fiberTarget);
   const pctSeries = series.map((v) => ({
     protein: s.proteinTarget ? (v.protein / s.proteinTarget) * 100 : 0,
-    fiber: s.fiberTarget ? (v.fiber / s.fiberTarget) * 100 : 0,
-  }));
+    fiber: s.fiberTarget ? (v.fiber / s.fiberTarget) * 100 : 0 }));
   const plotted = asPercent ? pctSeries : series;
   // Keep 100% on the scale so a full day always reaches the reference line,
   // and let overshoot extend above it.
@@ -158,15 +155,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
             onChange={(e) => setFiber(e.target.value)}
             className="flex-1"
           />
-          <Button
-            type="submit"
-            variant="primary"
-            isIconOnly
-            aria-label="Add"
-            isDisabled={pending}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
         </form>
 
         <div className="mb-1 flex items-stretch gap-5">
@@ -234,8 +223,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                       height: Math.max(2, Math.min(1, plotted[i].protein / max) * 84),
                       // one shorthand only: setting `background` alongside
                       // `backgroundImage` clears the gradient
-                      background: series[i].protein ? PROTEIN : TRACK,
-                    }}
+                      background: series[i].protein ? PROTEIN : TRACK }}
                   />
                   <div
                     className="w-full max-w-[9px]"
@@ -246,8 +234,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                     }
                     style={{
                       height: Math.max(2, Math.min(1, plotted[i].fiber / max) * 84),
-                      background: series[i].fiber ? FIBER : TRACK,
-                    }}
+                      background: series[i].fiber ? FIBER : TRACK }}
                   />
                 </div>
                 <span

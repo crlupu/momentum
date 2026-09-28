@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "./ui";
-import { ListPlus, Plus, Upload } from "./icons";
+import { Button, AddButton } from "./ui";
+import { ListPlus, Upload } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
@@ -68,15 +68,15 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
           />
         </div>
         <span className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "import" })}>
-            <Upload className="h-3.5 w-3.5" /> Import plan
+          <Button variant="ghost" onPress={() => flow.open({ kind: "import" })}>
+            <Upload className="h-4 w-4" /> Import plan
           </Button>
-          <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "bulk" })}>
-            <ListPlus className="h-3.5 w-3.5" /> Add several
-          </Button>
-          <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "edit", bookId: null })}>
-            <Plus className="h-3.5 w-3.5" /> Add book
-          </Button>
+          <AddButton
+            label="Add several"
+            icon={<ListPlus className="h-4 w-4" aria-hidden />}
+            onPress={() => flow.open({ kind: "bulk" })}
+          />
+          <AddButton label="Add book" onPress={() => flow.open({ kind: "edit", bookId: null })} />
         </span>
       </div>
 

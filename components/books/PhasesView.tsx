@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "../ui";
-import { Pencil, Plus } from "../icons";
+import { Button, AddButton } from "../ui";
+import { Pencil } from "../icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
@@ -12,8 +12,7 @@ const FLAG_LABEL: Record<R.PhaseFlag, string> = {
   "on-track": "On track",
   "at-risk": "At risk",
   behind: "Behind",
-  unknown: "No projection yet",
-};
+  unknown: "No projection yet" };
 
 /**
  * The plan in blocks. Each phase shows how far through it is, when it will
@@ -45,9 +44,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
               Import a plan
             </Button>
           )}
-          <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "phase", phaseId: null })}>
-            <Plus className="h-3.5 w-3.5" /> New phase
-          </Button>
+          <AddButton label="New phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
         </span>
       </div>
 

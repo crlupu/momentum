@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Chip, Input } from "./ui";
+import { Button, Card, Chip, Input, AddButton } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import {
   ArrowDown,
   ArrowUp,
   Check,
-  ListPlus,
   Pencil,
   Pin,
   PinOff,
-  Plus,
   RotateCcw,
   Target,
 } from "./icons";
@@ -158,9 +156,7 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
 
   if (!open) {
     return (
-      <Button size="sm" variant="outline" className="mt-2" onPress={() => setOpen(true)}>
-        <ListPlus className="h-4 w-4" /> Subtask
-      </Button>
+      <AddButton label="Add subtask" className="mt-2" onPress={() => setOpen(true)} />
     );
   }
 
@@ -509,9 +505,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
             {todo.length} to do · {inProgress.length} in progress · {done.length} done
           </p>
         </div>
-        <Button variant="primary" onPress={onAdd}>
-          <Plus className="h-4 w-4" /> New goal
-        </Button>
+        <AddButton label="New goal" onPress={onAdd} />
       </div>
 
       {active.length === 0 && done.length === 0 ? (

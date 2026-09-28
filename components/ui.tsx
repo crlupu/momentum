@@ -8,6 +8,7 @@
  */
 
 import { ReactNode, useId } from "react";
+import { Plus } from "./icons";
 import {
   Button as CarbonButton,
   TextInput,
@@ -76,6 +77,53 @@ export function Button({
     >
       {children}
     </CarbonButton>
+  );
+}
+
+/* ------------------------------ AddButton ------------------------------- */
+
+/**
+ * The one button for adding or creating anything: a filled button in the
+ * accent with a plus, the same size everywhere. With a label it reads
+ * "+ New goal"; without one it is the square + beside an input, and then
+ * needs an aria-label.
+ */
+export function AddButton({
+  label,
+  icon,
+  onPress,
+  type = "button",
+  isDisabled,
+  className,
+  size = "md",
+  ...rest
+}: {
+  label?: ReactNode;
+  /** "sm" only beside other small icon buttons, so a row lines up. */
+  size?: "sm" | "md";
+  /** Replaces the plus, for an add that is more specific ("Add several"). */
+  icon?: ReactNode;
+  onPress?: () => void;
+  type?: "button" | "submit";
+  isDisabled?: boolean;
+  className?: string;
+  "aria-label"?: string;
+}) {
+  const ariaLabel = (rest as Record<string, unknown>)["aria-label"] as string | undefined;
+  return (
+    <Button
+      variant="primary"
+      size={size}
+      type={type}
+      isIconOnly={!label}
+      isDisabled={isDisabled}
+      onPress={onPress}
+      aria-label={ariaLabel}
+      className={["btn-add", className].filter(Boolean).join(" ")}
+    >
+      {icon ?? <Plus className="h-4 w-4" aria-hidden />}
+      {label}
+    </Button>
   );
 }
 

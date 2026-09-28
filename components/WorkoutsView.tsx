@@ -1,9 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Button, Input } from "./ui";
+import { Button, Input, AddButton } from "./ui";
 import {
-  Plus,
   Pencil,
   ArrowUp,
   ArrowDown,
@@ -11,8 +10,7 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
-  Copy,
-} from "./icons";
+  Copy } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { useConfigEditing } from "./ConfigCard";
@@ -31,8 +29,7 @@ import {
   activeWorkoutVolume,
   activeWorkoutSets,
   activeWorkoutPlannedSets,
-  lastPerformed,
-} from "@/lib/tracker";
+  lastPerformed } from "@/lib/tracker";
 
 /* --------------------------------- blocks -------------------------------- */
 
@@ -40,8 +37,7 @@ import {
 function BlockSection({
   tracker,
   workout,
-  block,
-}: {
+  block }: {
   tracker: Tracker;
   workout: Workout;
   block: WorkoutBlock;
@@ -67,8 +63,7 @@ function BlockSection({
       tracker.addExercise(workout.id, typed.name, null, false, {
         seconds: num(typed.secs),
         note: typed.note,
-        blockId: block.id,
-      })
+        blockId: block.id })
     );
     if (!ok) {
       setName(typed.name);
@@ -169,9 +164,7 @@ function BlockSection({
           </div>
         </form>
       ) : (
-        <Button size="sm" variant="outline" className="mt-2" onPress={() => setAdding(true)}>
-          <Plus className="h-3.5 w-3.5" /> Add to {block.name}
-        </Button>
+        <AddButton label={`Add to ${block.name}`} className="mt-2" onPress={() => setAdding(true)} />
       )}
     </div>
   );
@@ -199,9 +192,7 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
   if (!open) {
     return (
-      <Button variant="outline" onPress={() => setOpen(true)}>
-        <Plus className="h-4 w-4" /> Add block
-      </Button>
+      <AddButton label="Add block" onPress={() => setOpen(true)} />
     );
   }
 
@@ -251,8 +242,7 @@ function ExerciseRow({
   workout,
   exercise,
   index,
-  count,
-}: {
+  count }: {
   tracker: Tracker;
   workout: Workout;
   exercise: Exercise;
@@ -486,9 +476,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             One arm — counts double
           </label>
         ) : (
-          <Button variant="outline" onPress={() => setAdding(true)}>
-            <Plus className="h-4 w-4" /> Add exercise
-          </Button>
+          <AddButton label="Add exercise" onPress={() => setAdding(true)} />
         )}
         </div>
 
@@ -550,8 +538,7 @@ function NumberField({
   onCommit,
   placeholder,
   locked,
-  inputMode = "decimal",
-}: {
+  inputMode = "decimal" }: {
   label: string;
   value?: number;
   onCommit: (n: number | null) => void;
@@ -654,8 +641,7 @@ function SetRow({
   exerciseId,
   index,
   set,
-  previous,
-}: {
+  previous }: {
   tracker: Tracker;
   exerciseId: string;
   index: number;
@@ -763,8 +749,7 @@ function SetRow({
 function ExerciseBlock({
   tracker,
   exercise: e,
-  history,
-}: {
+  history }: {
   tracker: Tracker;
   exercise: ActiveExercise;
   history: { date: string; sets: SetRecord[] } | null;
@@ -833,14 +818,7 @@ function ExerciseBlock({
               />
             ))}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="mt-2"
-            onPress={() => void tracker.addSet(e.exerciseId)}
-          >
-            <Plus className="h-3.5 w-3.5" /> Add set
-          </Button>
+          <AddButton label="Add set" className="mt-2" onPress={() => void tracker.addSet(e.exerciseId)} />
         </>
       )}
     </div>
@@ -850,8 +828,7 @@ function ExerciseBlock({
 /** The workout in progress. Nothing here is logged until it is finished. */
 export function ActiveWorkoutPanel({
   tracker,
-  active,
-}: {
+  active }: {
   tracker: Tracker;
   active: ActiveWorkout;
 }) {
@@ -868,8 +845,7 @@ export function ActiveWorkoutPanel({
     .filter((b) => b.mode === "circuit")
     .map((block) => ({
       block,
-      exercises: active.exercises.filter((e) => e.blockId === block.id),
-    }))
+      exercises: active.exercises.filter((e) => e.blockId === block.id) }))
     .filter((c) => c.exercises.length > 0);
   const circuitIds = new Set(circuits.flatMap((c) => c.exercises.map((e) => e.exerciseId)));
   const plain = active.exercises.filter((e) => !circuitIds.has(e.exerciseId));
@@ -942,8 +918,7 @@ function WorkoutRow({
   workout,
   expanded,
   onToggle,
-  editing,
-}: {
+  editing }: {
   tracker: Tracker;
   workout: Workout;
   expanded: boolean;
@@ -1121,9 +1096,7 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
       ) : editing ? (
-        <Button variant="outline" className="cfg-add" onPress={() => setCreating(true)}>
-          <Plus className="h-4 w-4" /> New workout
-        </Button>
+        <AddButton label="New workout" className="mt-3" onPress={() => setCreating(true)} />
       ) : null}
     </div>
   );

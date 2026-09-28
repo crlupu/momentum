@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input, PanelHeader } from "./ui";
-import { Check, Plus } from "./icons";
+import { Button, Card, Input, PanelHeader, AddButton } from "./ui";
+import { Check } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";
 
@@ -57,15 +57,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
               onChange={(e) => setTitle(e.target.value)}
               className="flex-1"
             />
-            <Button
-              type="submit"
-              variant="primary"
-              isIconOnly
-              aria-label="Add to-do"
-              isDisabled={pending}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <AddButton type="submit" aria-label="Add to-do" isDisabled={pending} />
           </form>
 
           {open.length === 0 ? (
