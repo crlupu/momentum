@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "./icons";
 
@@ -19,6 +19,7 @@ export function Modal({
   wide?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
+  const titleId = useId();
   useEffect(() => setMounted(true), []);
 
   // Close on Escape.
@@ -41,20 +42,18 @@ export function Modal({
       className="fixed inset-0 z-[100] flex items-end justify-center p-0 md:items-center md:p-4"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div className="scrim absolute inset-0" onClick={onClose} aria-hidden />
       <div
-        className={"overlay-surface relative z-10 max-h-[92vh] w-full overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-h-[88vh] md:pb-5 " + (wide ? "md:max-w-2xl" : "md:max-w-md")}
+        className={"dialog overlay-surface " + (wide ? "md:max-w-2xl" : "md:max-w-md")}
         style={{ color: "var(--overlay-foreground)" }}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold">{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-foreground/50 hover:text-foreground"
-          >
-            <X className="h-5 w-5" />
+        <div className="sheet__grabber md:hidden" aria-hidden />
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 id={titleId} className="text-xl font-bold">{title}</h2>
+          <button onClick={onClose} aria-label="Close" className="icon-circle">
+            <X aria-hidden />
           </button>
         </div>
         {children}

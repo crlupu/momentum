@@ -411,7 +411,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
   return (
     <div>
         {workout.exercises.length === 0 && (workout.blocks ?? []).length === 0 ? (
-          <p className="py-2 text-[15px] text-foreground/60">
+          <p className="py-2 text-[15px] text-[var(--muted)]">
             No exercises yet. Add the first one below.
           </p>
         ) : (
@@ -493,12 +493,12 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-[var(--muted)]">
             {workout.exercises.length}{" "}
             {workout.exercises.length === 1 ? "exercise" : "exercises"}
             {doneToday > 0 && <span className="ml-2">· done {doneToday}× today</span>}
           </span>
-          <span className="text-xs text-foreground/50">Start it from Fitness</span>
+          <span className="text-xs text-[var(--muted)]">Start it from Fitness</span>
         </div>
     </div>
   );
@@ -787,7 +787,7 @@ function ExerciseBlock({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
-        <span className="shrink-0 text-xs text-foreground/50">
+        <span className="shrink-0 text-xs text-[var(--muted)]">
           {empty ? "no sets" : `${doneCount}/${e.sets.length} done`}
         </span>
         {/* Only offered once there is something to finish. */}
@@ -908,7 +908,7 @@ export function ActiveWorkoutPanel({
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-        <span className="text-xs text-foreground/60">
+        <span className="text-xs text-[var(--muted)]">
           {sets} of {planned} {planned === 1 ? "set" : "sets"} ·{" "}
           <span className="font-mono-n text-sm font-bold text-foreground">
             {total.toLocaleString()} kg

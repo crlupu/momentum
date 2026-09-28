@@ -6,22 +6,20 @@ import { Check, Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";
 
-function TodoCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {
+function TodoCheckbox({ tracker, id, done, label }: { tracker: Tracker; id: string; done: boolean; label: string }) {
   const { pending, run } = usePending();
   return (
     <button
-      aria-label={done ? "Mark not done" : "Mark done"}
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      aria-label={label}
       disabled={pending}
       onClick={() => void run(() => tracker.toggleTodo(id))}
-      className="-m-2 flex shrink-0 items-center justify-center p-2"
+      className={"check" + (done ? " check--on" : "")}
     >
-      <span
-        className={
-          "flex h-[17px] w-[17px] items-center justify-center border-2 transition-colors " +
-          (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent")
-        }
-      >
-        {done && <Check className="h-2.5 w-2.5" />}
+      <span className="check__ring">
+        {done && <Check className="h-4 w-4" aria-hidden />}
       </span>
     </button>
   );
@@ -71,21 +69,18 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
           </form>
 
           {open.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">Nothing to do — add something below.</p>
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do. Add a to-do above.</p>
           ) : (
             <ul
               className={
                 "list-none p-0 " +
-                (open.length > 5 ? "max-h-[228px] overflow-y-auto pr-1 recurring-scroll" : "")
+                (open.length > 5 ? "max-h-[17rem] overflow-y-auto pr-1 recurring-scroll" : "")
               }
             >
               {open.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center gap-2 border-b border-foreground/10 px-1 py-3 last:border-b-0"
-                >
-                  <span className="min-w-0 flex-1 break-words text-[15px]">{t.title}</span>
-                  <TodoCheckbox tracker={tracker} id={t.id} done={t.done} />
+                <li key={t.id} className="task-row">
+                  <TodoCheckbox tracker={tracker} id={t.id} done={t.done} label={t.title} />
+                  <span className="task-row__title">{t.title}</span>
                 </li>
               ))}
             </ul>

@@ -65,12 +65,12 @@ function SubtaskRow({
         >
           {t.title}
         </button>
-        <span className="font-mono-n shrink-0 text-[11px] text-foreground/50">
+        <span className="font-mono-n shrink-0 text-[11px] text-[var(--muted)]">
           {hasTarget ? `${t.current ?? 0}/${t.target}` : "—"}
         </span>
       </div>
 
-      <div className="mt-1 h-1.5 w-full overflow-hidden bg-foreground/10">
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
         <div
           className="h-full"
           style={{
@@ -83,7 +83,7 @@ function SubtaskRow({
 
       {editing && (
         <div className="mt-2 flex flex-col gap-2">
-          <label className="block text-[11px] text-foreground/60">
+          <label className="block text-[11px] text-[var(--muted)]">
             Name
             <Input
               aria-label="Subtask name"
@@ -92,7 +92,7 @@ function SubtaskRow({
               className="mt-0.5 w-full"
             />
           </label>
-          <label className="block text-[11px] text-foreground/60">
+          <label className="block text-[11px] text-[var(--muted)]">
             Current
             <Input
               type="number"
@@ -104,7 +104,7 @@ function SubtaskRow({
               className="mt-0.5 w-full"
             />
           </label>
-          <label className="block text-[11px] text-foreground/60">
+          <label className="block text-[11px] text-[var(--muted)]">
             Target
             <Input
               type="number"
@@ -182,7 +182,7 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
         onChange={(e) => setTitle(e.target.value)}
         autoFocus
       />
-      <label className="block text-[11px] text-foreground/60">
+      <label className="block text-[11px] text-[var(--muted)]">
         Current
         <Input
           type="number"
@@ -194,7 +194,7 @@ function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
           className="mt-0.5 w-full"
         />
       </label>
-      <label className="block text-[11px] text-foreground/60">
+      <label className="block text-[11px] text-[var(--muted)]">
         Target
         <Input
           type="number"
@@ -277,11 +277,11 @@ function GoalCard({
             <div
               className={
                 "font-display text-base font-semibold " +
-                (g.done ? "text-foreground/45 line-through" : "")
+                (g.done ? "text-[var(--muted)] line-through" : "")
               }
             >
               {g.pinned && (
-                <Pin className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-foreground/45" aria-label="Pinned" />
+                <Pin className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--muted)]" aria-label="Pinned" />
               )}
               {g.title}
             </div>
@@ -290,10 +290,10 @@ function GoalCard({
                 {c.name}
               </Chip>
               {derived ? (
-                <span className="text-xs text-foreground/50">from subtasks</span>
+                <span className="text-xs text-[var(--muted)]">from subtasks</span>
               ) : (
                 hasOwnTarget && (
-                  <span className="font-mono-n text-xs text-foreground/50">
+                  <span className="font-mono-n text-xs text-[var(--muted)]">
                     {g.current ?? 0} / {g.target}
                   </span>
                 )
@@ -317,7 +317,7 @@ function GoalCard({
         </div>
 
         {showProgress && (
-          <div className="mt-3 h-2 w-full overflow-hidden bg-foreground/10">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-foreground/10">
             <div
               className="h-full"
               style={{
@@ -342,7 +342,7 @@ function GoalCard({
 
         {expanded && (
           <div className="mt-3 border-t border-foreground/10 pt-3">
-            <label className="block text-[11px] text-foreground/60">
+            <label className="block text-[11px] text-[var(--muted)]">
               Name
               <Input
                 aria-label="Goal name"
@@ -353,7 +353,7 @@ function GoalCard({
             </label>
 
             <div className="mt-2">
-              <div className="mb-1 text-[11px] text-foreground/60">Category</div>
+              <div className="mb-1 text-[11px] text-[var(--muted)]">Category</div>
               <div className="flex flex-wrap gap-1.5">
                 {tracker.state!.categories.map((cat) => (
                   <Button
@@ -364,7 +364,7 @@ function GoalCard({
                     onPress={() => setCatId(cat.id)}
                   >
                     <span
-                      className="inline-block h-2 w-2"
+                      className="inline-block h-2 w-2 rounded-full"
                       style={{ background: cat.color }}
                       aria-hidden
                     />
@@ -375,7 +375,7 @@ function GoalCard({
             </div>
 
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="block text-[11px] text-foreground/60">
+              <label className="block text-[11px] text-[var(--muted)]">
                 Current
                 <Input
                   type="number"
@@ -387,7 +387,7 @@ function GoalCard({
                   className="mt-0.5 w-full"
                 />
               </label>
-              <label className="block text-[11px] text-foreground/60">
+              <label className="block text-[11px] text-[var(--muted)]">
                 Target
                 <Input
                   type="number"
@@ -488,7 +488,7 @@ function GoalCard({
 
 function ColumnHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">{children}</div>
+    <h2 className="group-label">{children}</h2>
   );
 }
 
@@ -527,7 +527,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
 
       <div className="mb-4 flex items-end justify-between">
         <div>
-          <p className="text-sm text-foreground/60">
+          <p className="text-sm text-[var(--muted)]">
             {todo.length} to do · {inProgress.length} in progress · {done.length} done
           </p>
         </div>
@@ -540,7 +540,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
         <Card>
           <Card.Content className="p-8 text-center">
             <Target className="mx-auto mb-3 h-8 w-8 text-foreground/30" />
-            <p className="text-foreground/60">No goals yet. Add one to start tracking progress.</p>
+            <p className="text-[var(--muted)]">No goals yet. Add one to start tracking progress.</p>
           </Card.Content>
         </Card>
       ) : (
@@ -549,7 +549,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
             <ColumnHeader>To do</ColumnHeader>
             <div className="space-y-3">
               {todo.length === 0 ? (
-                <p className="px-1 text-sm text-foreground/40">Nothing to do.</p>
+                <p className="px-1 text-sm text-[var(--muted)]">Nothing to do.</p>
               ) : (
                 todo.map((g, i) => (
                   <GoalCard
@@ -568,7 +568,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
             <ColumnHeader>In progress</ColumnHeader>
             <div className="space-y-3">
               {inProgress.length === 0 ? (
-                <p className="px-1 text-sm text-foreground/40">Nothing in progress.</p>
+                <p className="px-1 text-sm text-[var(--muted)]">Nothing in progress.</p>
               ) : (
                 inProgress.map((g, i) => (
                   <GoalCard
@@ -588,13 +588,13 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
 
       {done.length > 0 && (
         <>
-          <div className="mb-2 mt-6 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">Completed</div>
+          <h2 className="group-label mt-6">Completed</h2>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {done.map((g) => (
               <Card key={g.id}>
                 <Card.Content className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 break-words text-[15px] text-foreground/45 line-through">{g.title}</span>
+                    <span className="flex-1 break-words text-[15px] text-[var(--muted)] line-through">{g.title}</span>
                     <ActionButton
                       size="sm"
                       variant="ghost"

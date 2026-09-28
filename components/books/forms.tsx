@@ -106,7 +106,7 @@ export function TrackForm({
       <Field label="Time slot (optional)">
         <input value={slot} onChange={(e) => setSlot(e.target.value)} placeholder="e.g. Evening" />
       </Field>
-      <p className="text-xs text-foreground/50">
+      <p className="text-xs text-[var(--muted)]">
         Rest days can be missed without breaking the streak. Each track&apos;s limit is its own, so a
         book open in one never blocks another.
       </p>
@@ -145,7 +145,7 @@ export function TrackForm({
         </span>
       </div>
       {track && !track.archived && open > 0 && (
-        <p className="text-xs text-foreground/50">
+        <p className="text-xs text-[var(--muted)]">
           Archiving hides the track from Today and its counters. Its books stay where they are.
         </p>
       )}
@@ -199,7 +199,7 @@ export function PhaseForm({
       <Field label="Goal (optional)">
         <textarea rows={2} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="What this phase is for" />
       </Field>
-      <p className="text-xs text-foreground/50">Books are put in a phase from their edit form, or when adding several.</p>
+      <p className="text-xs text-[var(--muted)]">Books are put in a phase from their edit form, or when adding several.</p>
       <div className="flex items-center justify-between gap-2">
         {phase ? (
           <DeleteButton
@@ -289,13 +289,13 @@ export function BulkAddForm({
           {list.map((b, i) => (
             <li key={i} className="truncate py-0.5">
               <span className="font-semibold">{b.title}</span>
-              {b.author && <span className="text-foreground/60"> · {b.author}</span>}
-              {b.pages && <span className="text-foreground/60"> · {b.pages} pages</span>}
+              {b.author && <span className="text-[var(--muted)]"> · {b.author}</span>}
+              {b.pages && <span className="text-[var(--muted)]"> · {b.pages} pages</span>}
             </li>
           ))}
         </ul>
       )}
-      <p className="text-xs text-foreground/50">
+      <p className="text-xs text-[var(--muted)]">
         They join the end of the track&apos;s queue, in this order. A page count in brackets after a line
         is picked up; covers and missing authors are looked up afterwards.
       </p>
@@ -398,7 +398,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
               them): {list(plan.skipped)}
             </p>
           )}
-          <p className="mt-2 text-xs text-foreground/50">
+          <p className="mt-2 text-xs text-[var(--muted)]">
             Covers, missing authors and page counts are looked up afterwards, a book at a time.
           </p>
         </div>

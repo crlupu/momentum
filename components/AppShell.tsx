@@ -1,9 +1,11 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Tracker, useTracker } from "@/lib/tracker";
 import { AuthGate } from "./AuthGate";
-import { Sidebar } from "./Sidebar";
+import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
+import { sectionForPath } from "./sections";
 import { Modal } from "./Modal";
 import { GoalForm, RecurringForm } from "./Forms";
 
@@ -11,6 +13,8 @@ type Shell = {
   tracker: Tracker;
   openGoal: () => void;
   openRecurring: () => void;
+  /** The phone's More sheet: Progress, Log, Settings, appearance. */
+  openMore: () => void;
 };
 
 const ShellContext = createContext<Shell | null>(null);
@@ -40,38 +44,37 @@ export function AppShell({ children }: { children: ReactNode }) {
   const tracker = useTracker();
   const [goalOpen, setGoalOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const section = sectionForPath(usePathname() ?? "/");
+  // Behind the sign-in screen there is nothing to navigate to yet.
+  const gated = tracker.firebaseConfigured && !tracker.user;
+
+  // The page's section tints the whole document, dialogs included — they
+  // are portalled into <body>, so the attribute has to sit above it.
+  useEffect(() => {
+    document.documentElement.dataset.section = section;
+  }, [section]);
 
   const shell: Shell = {
     tracker,
     openGoal: () => setGoalOpen(true),
     openRecurring: () => setRecurringOpen(true),
+    openMore: () => setMoreOpen(true),
   };
 
   return (
     <ShellContext.Provider value={shell}>
-      <div className="min-h-screen">
-        <Sidebar
-          tracker={tracker}
-          onAddGoal={() => setGoalOpen(true)}
-          onAddRecurring={() => setRecurringOpen(true)}
-        />
+      <div className={"app-frame min-h-screen" + (gated ? " is-gated" : "")}>
+        {!gated && <Sidebar tracker={tracker} />}
 
-        <main>
+        <main className="app-main">
           <AuthGate tracker={tracker}>
             {!tracker.state ? (
-              <p className="p-6 text-foreground/60">Loading…</p>
+              <p className="p-6 text-[var(--muted)]">Loading…</p>
             ) : (
-              <div className="mx-auto max-w-[99rem] space-y-8 px-2 py-5 md:px-4 lg:px-6">
+              <div className="app-content">
                 {tracker.syncError && (
-                  <div
-                    role="alert"
-                    className="border px-4 py-3 text-sm"
-                    style={{
-                      borderColor: "color-mix(in srgb, var(--danger) 45%, transparent)",
-                      background: "color-mix(in srgb, var(--danger) 12%, transparent)",
-                      color: "var(--danger)",
-                    }}
-                  >
+                  <div role="alert" className="sync-alert">
                     {tracker.syncError} Your data is still saved on this device.
                   </div>
                 )}
@@ -80,6 +83,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </AuthGate>
         </main>
+
+        {!gated && <TabBar />}
+        <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} tracker={tracker} />
 
         <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
           <GoalForm tracker={tracker} onDone={() => setGoalOpen(false)} />

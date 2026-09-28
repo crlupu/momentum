@@ -68,7 +68,7 @@ export function DeleteButton({
         <p className="mb-1 text-[15px]">
           Delete <span className="font-semibold">{what}</span>?
         </p>
-        <p className="mb-4 text-sm text-foreground/60">This can&apos;t be undone.</p>
+        <p className="mb-4 text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onPress={() => setOpen(false)} isDisabled={pending}>
             Cancel

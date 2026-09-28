@@ -44,7 +44,7 @@ export function AuthGate({
 
   // Waiting for Firebase to report auth state.
   if (!tracker.authReady) {
-    return <p className="pt-10 text-center text-foreground/60">Connecting…</p>;
+    return <p className="pt-10 text-center text-[var(--muted)]">Connecting…</p>;
   }
 
   // Signed in: show the app.
@@ -65,7 +65,7 @@ export function AuthGate({
           <h2 className="font-display mb-1 text-xl font-bold">
             {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>
-          <p className="mb-4 text-sm text-foreground/60">
+          <p className="mb-4 text-sm text-[var(--muted)]">
             {mode === "signin"
               ? "Sign in to sync your progress across devices."
               : "Your tasks, board, and history will sync everywhere you sign in."}
@@ -80,7 +80,7 @@ export function AuthGate({
             Continue with Google
           </Button>
 
-          <div className="my-4 flex items-center gap-3 text-xs text-foreground/40">
+          <div className="my-4 flex items-center gap-3 text-xs text-[var(--muted)]">
             <span className="h-px flex-1 bg-foreground/10" />
             or
             <span className="h-px flex-1 bg-foreground/10" />
@@ -122,7 +122,7 @@ export function AuthGate({
           </form>
 
           <button
-            className="mt-4 w-full text-center text-sm text-foreground/60 hover:text-foreground"
+            className="mt-4 w-full text-center text-sm text-[var(--muted)] hover:text-foreground"
             onClick={() => {
               setMode(mode === "signin" ? "signup" : "signin");
               tracker.clearAuthError();

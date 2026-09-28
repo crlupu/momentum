@@ -1,8 +1,8 @@
 # Momentum — Progress Tracker
 
 A personal progress system in one page: goals, daily and recurring tasks,
-fitness, nutrition, reading and progress charts. Light theme by default with a
-dark-mode switch. Data syncs across devices via Firebase (Firestore + Google or
+fitness, nutrition, reading and progress charts. Follows the device's light or
+dark appearance, with a setting to pin either one. Data syncs across devices via Firebase (Firestore + Google or
 email/password sign-in), and falls back to local-only mode until Firebase is
 configured. Works offline as an installable PWA.
 
@@ -11,9 +11,12 @@ Tailwind CSS 4 · next-themes · Firebase v12 · dnd-kit · react-icons.
 
 ## Sections
 
-Each section has its own page, reached from the menu (☰). Goals is the home
-page. `components/sections.ts` is the single source of truth for each
-section's id, title, path and numbered index.
+Each section has its own page. On a desktop (1056px and wider) a sidebar lists
+them all. On phones and tablets a tab bar holds Goals, Tasks, Fitness,
+Nutrition and Books, and the More button beside each page title opens
+Progress, Log, Settings and the appearance setting. Goals is the home page.
+`components/sections.ts` is the single source of truth for each section's id,
+title and path.
 
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
@@ -24,7 +27,7 @@ section's id, title, path and numbered index.
 | Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
 | Progress | `/progress` | Completion charts and a month calendar | `Charts` |
 | Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |
-| Configuration | `/configuration` | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
+| Settings | `/configuration` | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
 
 ### Books (reading tracks)
 The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/books/`.
@@ -90,7 +93,8 @@ sign in with it. Well within the Spark free tier for personal use.
   so on), plus `layout.tsx`, `providers.tsx` (theme), and the global styles
   `globals.css` + `carbon.scss`.
 - `components/AppShell.tsx`: mounted once in the root layout. It holds the
-  tracker (`useTracker`), the top bar and menu, the sign-in gate, and the
+  tracker (`useTracker`), the navigation (`Sidebar.tsx`: sidebar, tab bar and
+  More sheet), the sign-in gate, and the
   New goal / New recurring task dialogs, so they carry over when you change
   page. Pages get what they need from `useShell()` / `usePageTracker()`, and
   each one wraps its content in `SectionPage` (`components/Section.tsx`).
@@ -130,6 +134,16 @@ of truth.
 - Dates are local `YYYY-MM-DD` keys (`dateKey()`), and weeks start on Monday.
   They are shown with `lib/dates.ts` ("28 Sep", with the year only when it isn't this one,
   and times on a 24-hour clock), so every page writes them the same way.
+- Each section has a tint (`--tint-*` for fills, `--sec-*` for text, in
+  `globals.css`). AppShell sets `data-section` on `<html>`, and the page's
+  tint becomes `--accent`: its title, primary buttons, checkmarks and focus
+  rings. Everything else stays neutral grey. Red only means destructive.
+- Type is the system face (SF Pro on Apple devices). Figures use `.font-mono-n`,
+  which is the rounded variant with tabular digits. Nothing is smaller than 11px,
+  and secondary text uses `--muted` (at least 4.5:1), never an opacity of the
+  foreground colour.
+- Controls are at least 44px tall on touch screens. Hover styles sit behind
+  `@media (hover: hover)`, so a tap doesn't leave them stuck on.
 - Every card is introduced by `PanelHeader` (`components/ui.tsx`). Charts are drawn at their
   measured width (`components/useWidth.ts`) and a fixed height, so their text stays the same
   size on a phone and a desktop.

@@ -9,10 +9,9 @@ export type SectionId =
   | "config";
 
 /**
- * The sections, in menu order. Single source of truth for id, title, the page
- * each one lives on and the index shown in each band's eyebrow — the order
- * here *is* the order, so it can't drift out of step with the menu the way a
- * parallel map could.
+ * The sections, in menu order. Single source of truth for id, title and the
+ * page each one lives on — the order here *is* the order, so it can't drift
+ * out of step with the menu the way a parallel map could.
  *
  * Goals are the home page; every other section has a page of its own.
  */
@@ -24,13 +23,8 @@ export const SECTIONS = [
   { id: "books", title: "Books", path: "/books" },
   { id: "charts", title: "Progress", path: "/progress" },
   { id: "log", title: "Log", path: "/log" },
-  { id: "config", title: "Configuration", path: "/configuration" },
+  { id: "config", title: "Settings", path: "/configuration" },
 ] as const satisfies ReadonlyArray<{ id: SectionId; title: string; path: string }>;
-
-/** Zero-padded position in the list above, e.g. "03". */
-export function sectionIndex(id: SectionId): string {
-  return String(SECTIONS.findIndex((s) => s.id === id) + 1).padStart(2, "0");
-}
 
 export function sectionTitle(id: SectionId): string {
   return SECTIONS.find((s) => s.id === id)!.title;
@@ -38,4 +32,13 @@ export function sectionTitle(id: SectionId): string {
 
 export function sectionPath(id: SectionId): string {
   return SECTIONS.find((s) => s.id === id)!.path;
+}
+
+/** Trailing slashes are emitted for static hosting; compare without them. */
+export const trimPath = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p);
+
+/** The section a path belongs to; the home page for anything unknown. */
+export function sectionForPath(path: string): SectionId {
+  const p = trimPath(path);
+  return SECTIONS.find((s) => trimPath(s.path) === p)?.id ?? "goals";
 }

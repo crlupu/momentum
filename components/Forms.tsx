@@ -22,7 +22,7 @@ function GroupPicker({
   const s = tracker.state!;
   return (
     <div>
-      <div className="mb-1.5 text-xs text-foreground/50">
+      <div className="mb-1.5 text-xs text-[var(--muted)]">
         Group (optional) — doing one task in a group covers the rest
       </div>
       <select
@@ -39,7 +39,7 @@ function GroupPicker({
         ))}
       </select>
       {s.recurringGroups.length === 0 && (
-        <p className="mt-1.5 text-xs text-foreground/45">
+        <p className="mt-1.5 text-xs text-[var(--muted)]">
           Create groups in the Groups section below.
         </p>
       )}
@@ -59,7 +59,7 @@ function CatPicker({
   const s = tracker.state!;
   return (
     <div>
-      <div className="mb-1.5 text-xs text-foreground/50">Category</div>
+      <div className="mb-1.5 text-xs text-[var(--muted)]">Category</div>
       <div className="flex flex-wrap gap-2">
         {s.categories.map((c) => (
           <Button
@@ -69,7 +69,7 @@ function CatPicker({
             className={catId === c.id ? "pill-selected" : ""}
             onPress={() => setCatId(c.id)}
           >
-            <span className="inline-block h-2.5 w-2.5" style={{ background: c.color }} aria-hidden />
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
             {c.name}
           </Button>
         ))}
@@ -110,11 +110,11 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
       <Input aria-label="Goal title" placeholder="e.g. Read Atomic Habits" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
       <div className="flex gap-3">
-        <label className="flex-1 text-xs text-foreground/50">
+        <label className="flex-1 text-xs text-[var(--muted)]">
           Current
           <Input type="number" step="any" inputMode="decimal" aria-label="Current value" placeholder="132" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5" />
         </label>
-        <label className="flex-1 text-xs text-foreground/50">
+        <label className="flex-1 text-xs text-[var(--muted)]">
           Target
           <Input type="number" step="any" inputMode="decimal" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
         </label>
@@ -147,7 +147,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
       <Input aria-label="Task title" placeholder="e.g. Morning workout" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
       <div>
-        <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
+        <div className="mb-1.5 text-xs text-[var(--muted)]">Frequency</div>
         <div className="flex flex-wrap gap-2">
           {FREQUENCIES.map((f) => (
             <Button
@@ -200,7 +200,7 @@ export function RecurringEditForm({
       <Input aria-label="Task title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
       <div>
-        <div className="mb-1.5 text-xs text-foreground/50">Frequency</div>
+        <div className="mb-1.5 text-xs text-[var(--muted)]">Frequency</div>
         <div className="flex flex-wrap gap-2">
           {FREQUENCIES.map((f) => (
             <Button
@@ -474,7 +474,7 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                 <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px]">{r.title}</span>
-                  <span className="block text-[11px] text-foreground/50">
+                  <span className="block text-[11px] text-[var(--muted)]">
                     {c.name} · {FREQ_LABEL[r.freq]}
                     {r.groupId ? ` · ${groupName(r.groupId)}` : ""}
                   </span>
@@ -547,22 +547,22 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {none ? (
-            <p className="text-[15px] text-foreground/60">No daily targets set.</p>
+            <p className="text-[15px] text-[var(--muted)]">No daily targets set.</p>
           ) : (
             <div className="space-y-3">
               <div>
                 <div className="font-mono-n text-2xl font-bold leading-none">
                   {s.proteinTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-foreground/60">g / day</span>
+                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">g / day</span>
                 </div>
-                <div className="mt-1.5 text-[13px] text-foreground/60">protein</div>
+                <div className="mt-1.5 text-[13px] text-[var(--muted)]">protein</div>
               </div>
               <div>
                 <div className="font-mono-n text-2xl font-bold leading-none">
                   {s.fiberTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-foreground/60">g / day</span>
+                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">g / day</span>
                 </div>
-                <div className="mt-1.5 text-[13px] text-foreground/60">fibre</div>
+                <div className="mt-1.5 text-[13px] text-[var(--muted)]">fibre</div>
               </div>
             </div>
           )}
@@ -575,7 +575,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
   return (
     <form onSubmit={submit}>
       <div className="flex gap-3">
-        <label className="block flex-1 text-[11px] text-foreground/60">
+        <label className="block flex-1 text-[11px] text-[var(--muted)]">
           Protein / day (g)
           <Input
             type="number"
@@ -587,7 +587,7 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
             autoFocus
           />
         </label>
-        <label className="block flex-1 text-[11px] text-foreground/60">
+        <label className="block flex-1 text-[11px] text-[var(--muted)]">
           Fibre / day (g)
           <Input
             type="number"
@@ -847,21 +847,21 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
               <>
                 <div className="font-mono-n text-2xl font-bold leading-none">
                   {budget}
-                  <span className="ml-1 text-sm font-medium text-foreground/60">kcal / day</span>
+                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">kcal / day</span>
                 </div>
-                <div className="mt-1.5 text-[13px] text-foreground/60">
+                <div className="mt-1.5 text-[13px] text-[var(--muted)]">
                   {budget * 7} kcal per week
                 </div>
               </>
             ) : (
-              <p className="text-[15px] text-foreground/60">No daily budget set.</p>
+              <p className="text-[15px] text-[var(--muted)]">No daily budget set.</p>
             )}
           </div>
 
         </div>
 
         {left != null && (
-          <div className="mt-3 border-t border-foreground/10 pt-3 text-[13px] text-foreground/60">
+          <div className="mt-3 border-t border-foreground/10 pt-3 text-[13px] text-[var(--muted)]">
             <span className="font-mono-n font-semibold text-foreground">{left}</span> kcal left this
             week
           </div>
@@ -872,7 +872,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
 
   return (
     <form onSubmit={submit}>
-      <label className="block text-[11px] text-foreground/60">
+      <label className="block text-[11px] text-[var(--muted)]">
         Daily budget
         <Input
           type="number"
@@ -894,7 +894,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
           Save budget
         </Button>
       </div>
-      <p className="mt-2 text-[11px] text-foreground/50">
+      <p className="mt-2 text-[11px] text-[var(--muted)]">
         Leave empty to remove the budget. The top bar shows what&apos;s left for the week.
       </p>
     </form>

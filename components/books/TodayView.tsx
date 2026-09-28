@@ -23,12 +23,12 @@ export function TodayView({ tracker }: { tracker: Tracker }) {
   const pagesToday = R.pagesOn(s, today);
 
   if (tracks.length === 0) {
-    return <p className="text-[15px] text-foreground/60">No tracks. Add one from Tracks.</p>;
+    return <p className="text-[15px] text-[var(--muted)]">No tracks. Add one from Tracks.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-foreground/60">
+      <p className="text-xs text-[var(--muted)]">
         <span className="font-mono-n text-sm font-bold text-foreground">{pagesToday}</span> pages today
         {units.length > 0 && (
           <>
@@ -79,7 +79,7 @@ function TrackToday({
             <TrackDot color={track.color} />
             {track.name}
           </span>
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-foreground/60">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--muted)]">
             {track.slot && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" /> {track.slot}
@@ -99,7 +99,7 @@ function TrackToday({
             <span className="opacity-70">/ {track.dailyTarget} pages</span>
           </span>
         ) : (
-          <span className="text-xs text-foreground/50">
+          <span className="text-xs text-[var(--muted)]">
             {read} pages · no target
           </span>
         )}
@@ -112,7 +112,7 @@ function TrackToday({
 
       {open.length === 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-2 py-2">
-          <span className="text-sm text-foreground/60">Nothing open.</span>
+          <span className="text-sm text-[var(--muted)]">Nothing open.</span>
           {next && (
             <Button size="sm" variant="outline" onPress={() => flow.start(next.id)}>
               <Play className="h-3.5 w-3.5" /> Start {next.title}
@@ -204,7 +204,7 @@ function OpenBook({
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
             <ProgressText book={book} />
             {pace.perDay > 0 && (
-              <span className="text-xs text-foreground/50">
+              <span className="text-xs text-[var(--muted)]">
                 {fmtPace(pace.perDay)}/day{pace.eta ? ` · done ~${fmtDateAuto(pace.eta)}` : ""}
               </span>
             )}

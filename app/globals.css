@@ -20,42 +20,42 @@
    more room to break something.
    ============================================================ */
 @theme {
-  /* Type: Carbon's productive ladder is 12 / 14 / 16 / 20 / 28 / 32 / 42 / 54.
-     Size, leading and tracking travel together, as they do in the system.
-     Weight is deliberately left out — the app's existing font-semibold and
-     font-bold choices carry emphasis, and baking a weight in here would
-     silently override every one of them. */
-  --text-xs: 0.75rem;                 /* label-01     */
+  /* Type: the iOS ladder, in rem so it follows the browser's text size.
+     12 caption / 14 footnote-to-subheadline / 16 body / 17 headline /
+     20 title 3 / 22 title 2 / 28 title 1 / 34 large title.
+     Size, leading and tracking travel together. Weight is left to the
+     call site — font-semibold and font-bold carry emphasis there. */
+  --text-xs: 0.75rem;
   --text-xs--line-height: 1.33333;
-  --text-xs--letter-spacing: 0.32px;
+  --text-xs--letter-spacing: 0px;
 
-  --text-sm: 0.875rem;                /* body-01      */
+  --text-sm: 0.875rem;
   --text-sm--line-height: 1.42857;
-  --text-sm--letter-spacing: 0.16px;
+  --text-sm--letter-spacing: 0px;
 
-  --text-base: 1rem;                  /* body-02      */
+  --text-base: 1rem;
   --text-base--line-height: 1.5;
   --text-base--letter-spacing: 0px;
 
-  --text-lg: 1rem;                    /* heading-02   */
-  --text-lg--line-height: 1.5;
-  --text-lg--letter-spacing: 0px;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.4;
+  --text-lg--letter-spacing: -0.005em;
 
-  --text-xl: 1.25rem;                 /* heading-03   */
-  --text-xl--line-height: 1.4;
-  --text-xl--letter-spacing: 0px;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.3;
+  --text-xl--letter-spacing: -0.01em;
 
-  --text-2xl: 1.75rem;                /* heading-04   */
-  --text-2xl--line-height: 1.28572;
-  --text-2xl--letter-spacing: 0px;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.27;
+  --text-2xl--letter-spacing: -0.01em;
 
-  --text-3xl: 2rem;                   /* heading-05   */
-  --text-3xl--line-height: 1.25;
-  --text-3xl--letter-spacing: 0px;
+  --text-3xl: 1.75rem;
+  --text-3xl--line-height: 1.2;
+  --text-3xl--letter-spacing: -0.015em;
 
-  --text-4xl: 2.625rem;               /* heading-06   */
-  --text-4xl--line-height: 1.19;
-  --text-4xl--letter-spacing: 0px;
+  --text-4xl: 2.125rem;
+  --text-4xl--line-height: 1.2;
+  --text-4xl--letter-spacing: -0.02em;
 
   /* Breakpoints: Carbon's, not Tailwind's. sm 320 / md 672 / lg 1056 /
      xl 1312 / max 1584. The app's `sm:` and `md:` prefixes now break where
@@ -173,33 +173,43 @@
   --ibm-white: #ffffff;
 }
 
-/* One hue family per section. Red is deliberately absent — it means
-   destructive, nothing else. Accents are text on a ground, so they take
-   step 50 on dark and step 70 on light. */
+/* ============================================================
+   Section tints.
+   Each section owns one hue, and a page takes its section's hue as the
+   accent: its title, its primary buttons, its checkmarks and the selected
+   tab. Everything else stays neutral, so the colour on screen always says
+   which part of the app you are in. Red is deliberately absent — it means
+   destructive, nothing else.
+
+   Two values per section, both measured:
+     --tint-*  a fill that carries white text: 4.9:1 to 6.7:1.
+     --sec-*   the same hue as text on the page ground: at least 4.5:1 on
+               #F2F2F7 in light, at least 7:1 on #1C1C1E in dark.
+   ============================================================ */
 :root {
-  --sec-goals: var(--c-purple-50);
-  --sec-tasks: var(--c-blue-50);
-  --sec-fitness: var(--c-green-50);
-  --sec-nutrition: var(--c-teal-50);
-  --sec-books: var(--c-orange-50, #ff832b);
-  --sec-charts: var(--c-cyan-50);
-  --sec-log: var(--c-magenta-50);
-  --sec-config: var(--ibm-cool-gray-40);
+  --tint-goals: #6e3fd6;
+  --tint-tasks: #1f5fd9;
+  --tint-fitness: #237a36;
+  --tint-nutrition: #0b7a75;
+  --tint-books: #a95109;
+  --tint-charts: #0a6ea8;
+  --tint-log: #bf2e6b;
+  --tint-config: #5b5b63;
 
   --sec-recurring: var(--sec-tasks);
   --sec-todos: var(--sec-tasks);
   --sec-weight: var(--sec-fitness);
   --sec-calories: var(--sec-nutrition);
 
-  /* Ink follows the accent's own lightness. Purple 60 and 80 and Blue 60 are
-     dark enough for white; the 20s and 40s take Cool Gray 100. */
-  --ink-goals: var(--ibm-white);
-  --ink-tasks: var(--ibm-white);
-  --ink-charts: var(--ibm-white);
-  --ink-fitness: var(--ibm-cool-gray-100);
-  --ink-nutrition: var(--ibm-cool-gray-100);
-  --ink-log: var(--ibm-cool-gray-100);
-  --ink-config: var(--ibm-cool-gray-100);
+  /* Ink on a tint fill is always white: every fill above clears 4.5:1. */
+  --ink-goals: #ffffff;
+  --ink-tasks: #ffffff;
+  --ink-fitness: #ffffff;
+  --ink-nutrition: #ffffff;
+  --ink-books: #ffffff;
+  --ink-charts: #ffffff;
+  --ink-log: #ffffff;
+  --ink-config: #ffffff;
 
   /* Heatmap ramp, ascending in lightness through the palette. */
   --scale-1: var(--ibm-cool-gray-80);
@@ -210,118 +220,191 @@
 
   /* Second series where one chart carries two. */
   --signal: var(--c-green-50);
+
+  /* Shape. Continuous-feeling corners, sized by what the shape holds:
+     cards are the largest, controls smaller, chips fully round. */
+  --r-card: 14px;
+  --r-control: 10px;
+  --r-small: 6px;
+  --r-pill: 999px;
+
+  /* Type. The system face everywhere — SF Pro on Apple devices, Segoe UI
+     and Roboto elsewhere. Figures use the rounded variant where the
+     platform has one (SF Pro Rounded), with tabular digits so columns
+     line up. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-figure: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Floating bars: the tab bar and the sidebar. */
+  --tabbar-h: 3.5rem;
+  --sidebar-w: 15.5rem;
 }
 
 :root,
 .light,
 [data-theme="light"] {
   color-scheme: light;
-  --background: var(--ibm-cool-gray-10);
-  --foreground: var(--ibm-cool-gray-100);
+  /* Grouped ground and the cards on it. */
+  --background: #f2f2f7;
+  --foreground: #000000;
 
-  --surface: var(--ibm-white);
-  --surface-secondary: var(--ibm-cool-gray-10);
-  --surface-tertiary: var(--ibm-cool-gray-20);
+  --surface: #ffffff;
+  --surface-secondary: #f2f2f7;
+  --surface-tertiary: #e5e5ea;
 
-  --overlay: var(--ibm-white);
+  --overlay: #ffffff;
+  --overlay-foreground: #000000;
 
-  /* Cool Gray 40 is too light for text on white (2.4:1), so secondary and
-     helper text share Cool Gray 80. The palette costs one level of hierarchy
-     here; weight and size carry the difference instead. */
-  --muted: var(--ibm-cool-gray-80);
+  /* Secondary text: 5.2:1 on white, 4.7:1 on the ground. */
+  --muted: #6c6c70;
 
-  --border: var(--ibm-cool-gray-20);
-  --border-strong: var(--ibm-cool-gray-40);
-  --separator: var(--ibm-cool-gray-20);
+  --border: #d1d1d6;
+  --border-strong: #8a8a8e;   /* 3.4:1 on white: enough for a control edge */
+  --separator: #d8d8dc;
 
-  --accent: var(--c-blue-60);
-  --accent-foreground: var(--ibm-white);
+  --accent: var(--tint-tasks);
+  --accent-foreground: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
 
-  --success: var(--c-green-50);
-  --danger: var(--c-red-60);
-  --danger-hover: var(--c-red-60);
-  --danger-foreground: var(--ibm-cool-gray-100);
-  --danger-soft: var(--ibm-cool-gray-20);
-  --danger-soft-hover: var(--ibm-cool-gray-40);
-  --danger-soft-foreground: var(--ibm-cool-gray-100);
+  --success: #237a36;
+  --danger: #d70015;
+  --danger-hover: #b50012;
+  --danger-foreground: #ffffff;
+  --danger-soft: color-mix(in srgb, #d70015 10%, transparent);
+  --danger-soft-hover: color-mix(in srgb, #d70015 16%, transparent);
+  --danger-soft-foreground: #d70015;
 
-  --selected-bg: var(--ibm-cool-gray-100);
-  --selected-fg: var(--ibm-white);
+  --selected-bg: var(--accent);
+  --selected-fg: #ffffff;
 
-  --radius: 0;
+  --radius: var(--r-control);
 
-  /* Solid, not translucent — a tint would land off-palette. */
-  --default: var(--ibm-cool-gray-20);
-  --book-unread: var(--ibm-cool-gray-40);
-  --book-fill: var(--c-blue-60);
+  /* A neutral fill for controls that aren't primary. */
+  --default: rgba(120, 120, 128, 0.12);
+  --fill-hover: rgba(120, 120, 128, 0.2);
+  --book-unread: #c7c7cc;
+  --book-fill: var(--tint-books);
   --book-shelf: #8d6a4b;
-  --book-ink: var(--ibm-white);
-  --book-ink-done: var(--ibm-white);
-  --pill-fg: var(--ibm-white);
-  --blanket: var(--ibm-cool-gray-80);
+  --book-ink: #ffffff;
+  --book-ink-done: #ffffff;
+  --pill-fg: #ffffff;
+  --blanket: rgba(0, 0, 0, 0.32);
 
-  --field-bg: var(--ibm-white);
-  --field-border: var(--ibm-cool-gray-40);
-  --field-placeholder: var(--ibm-cool-gray-80);
+  --field-bg: #ffffff;
+  --field-border: #c7c7cc;
+  --field-placeholder: #6c6c70;
 
-  --pane-bg: var(--ibm-white);
-  --pane-bg-strong: var(--ibm-white);
-  --pane-border: var(--ibm-cool-gray-20);
-  --pane-hairline: var(--ibm-cool-gray-20);
+  --pane-bg: #ffffff;
+  --pane-bg-strong: #ffffff;
+  --pane-border: transparent;
+  --pane-hairline: #d8d8dc;
+
+  --bar-bg: rgba(249, 249, 251, 0.82);
+  --bar-border: rgba(60, 60, 67, 0.18);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  --sec-goals: #6e3fd6;
+  --sec-tasks: #1f5fd9;
+  --sec-fitness: #237a36;
+  --sec-nutrition: #0b7a75;
+  --sec-books: #a95109;
+  --sec-charts: #0a6ea8;
+  --sec-log: #bf2e6b;
+  --sec-config: #5b5b63;
 }
 
 .dark,
 [data-theme="dark"] {
   color-scheme: dark;
-  --background: var(--ibm-black);
-  --foreground: var(--ibm-white);
+  --background: #000000;
+  --foreground: #ffffff;
 
-  --surface: var(--ibm-cool-gray-100);
-  --surface-secondary: var(--ibm-cool-gray-80);
-  --surface-tertiary: var(--ibm-cool-gray-80);
+  --surface: #1c1c1e;
+  --surface-secondary: #2c2c2e;
+  --surface-tertiary: #3a3a3c;
 
-  --overlay: var(--ibm-cool-gray-100);
+  --overlay: #1c1c1e;
+  --overlay-foreground: #ffffff;
 
-  --muted: var(--ibm-cool-gray-40);
+  /* 6.4:1 on a card, 7.9:1 on the ground. */
+  --muted: #9e9ea6;
 
-  --border: var(--ibm-cool-gray-80);
-  --border-strong: var(--ibm-cool-gray-40);
-  --separator: var(--ibm-cool-gray-80);
+  --border: #38383a;
+  --border-strong: #6e6e73;   /* 3.4:1 on a card */
+  --separator: #38383a;
 
-  --accent: var(--c-blue-60);
-  --accent-foreground: var(--ibm-white);
+  --accent: var(--tint-tasks);
+  --accent-foreground: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 24%, transparent);
 
-  --success: var(--c-green-50);
-  --danger: var(--c-red-60);
-  --danger-hover: var(--c-red-60);
-  --danger-foreground: var(--ibm-cool-gray-100);
-  --danger-soft: var(--ibm-cool-gray-80);
-  --danger-soft-hover: var(--ibm-cool-gray-40);
-  --danger-soft-foreground: var(--c-red-60);
+  --success: #5fd27a;
+  --danger: #ff6961;
+  --danger-hover: #ff453a;
+  --danger-foreground: #ffffff;
+  --danger-soft: color-mix(in srgb, #ff453a 16%, transparent);
+  --danger-soft-hover: color-mix(in srgb, #ff453a 24%, transparent);
+  --danger-soft-foreground: #ff6961;
 
-  --selected-bg: var(--ibm-white);
-  --selected-fg: var(--ibm-cool-gray-100);
+  --selected-bg: var(--accent);
+  --selected-fg: #ffffff;
 
-  --radius: 0;
+  --radius: var(--r-control);
 
-  --default: var(--ibm-cool-gray-80);
-  --book-unread: var(--ibm-cool-gray-80);
-  --book-fill: var(--c-blue-60);
+  --default: rgba(118, 118, 128, 0.24);
+  --fill-hover: rgba(118, 118, 128, 0.34);
+  --book-unread: #48484a;
+  --book-fill: var(--tint-books);
   --book-shelf: #6b4f38;
-  --book-ink: var(--ibm-white);
-  --book-ink-done: var(--ibm-white);
-  --pill-fg: var(--ibm-cool-gray-100);
-  --blanket: var(--ibm-cool-gray-100);
+  --book-ink: #ffffff;
+  --book-ink-done: #ffffff;
+  --pill-fg: #ffffff;
+  --blanket: rgba(0, 0, 0, 0.56);
 
-  --field-bg: var(--ibm-cool-gray-80);
-  --field-border: var(--ibm-cool-gray-40);
-  --field-placeholder: var(--ibm-cool-gray-40);
+  --field-bg: #2c2c2e;
+  --field-border: #48484a;
+  --field-placeholder: #9e9ea6;
 
-  --pane-bg: var(--ibm-cool-gray-100);
-  --pane-bg-strong: var(--ibm-cool-gray-80);
-  --pane-border: var(--ibm-cool-gray-80);
-  --pane-hairline: var(--ibm-cool-gray-80);
+  --pane-bg: #1c1c1e;
+  --pane-bg-strong: #2c2c2e;
+  --pane-border: transparent;
+  --pane-hairline: #38383a;
+
+  --bar-bg: rgba(22, 22, 24, 0.8);
+  --bar-border: rgba(84, 84, 88, 0.6);
+  --card-shadow: none;
+
+  --sec-goals: #b99bff;
+  --sec-tasks: #7aaeff;
+  --sec-fitness: #5fd27a;
+  --sec-nutrition: #4fd1c8;
+  --sec-books: #ffa35c;
+  --sec-charts: #5cc2f5;
+  --sec-log: #ff86b5;
+  --sec-config: #b4b4bc;
 }
+
+/* The page's section sets the accent. AppShell writes data-section on
+   <html>, so dialogs portalled into <body> pick it up too. */
+html[data-section="goals"] { --accent: var(--tint-goals); }
+html[data-section="tasks"] { --accent: var(--tint-tasks); }
+html[data-section="fitness"] { --accent: var(--tint-fitness); }
+html[data-section="nutrition"] { --accent: var(--tint-nutrition); }
+html[data-section="books"] { --accent: var(--tint-books); }
+html[data-section="charts"] { --accent: var(--tint-charts); }
+html[data-section="log"] { --accent: var(--tint-log); }
+html[data-section="config"] { --accent: var(--tint-config); }
+
+/* Accent as text: the section's readable variant rather than its fill. */
+html[data-section] { --accent-text: var(--sec-tasks); }
+html[data-section="goals"] { --accent-text: var(--sec-goals); }
+html[data-section="fitness"] { --accent-text: var(--sec-fitness); }
+html[data-section="nutrition"] { --accent-text: var(--sec-nutrition); }
+html[data-section="books"] { --accent-text: var(--sec-books); }
+html[data-section="charts"] { --accent-text: var(--sec-charts); }
+html[data-section="log"] { --accent-text: var(--sec-log); }
+html[data-section="config"] { --accent-text: var(--sec-config); }
 
 /* ============================================================
    Carbon system scales.
@@ -381,35 +464,46 @@
 
 
 body {
-  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
   background: var(--background);
+  color: var(--foreground);
 }
 
 /* No ambient backdrop. The ground is one flat colour; every bit of colour in
    the app belongs to a shape that means something. */
 
-/* Display type: Plex, tight and confident like the specimen */
 .font-display {
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: var(--font-ui);
   letter-spacing: -0.01em;
 }
 
+/* Figures: rounded, tabular. Counts, weights, calories and percentages all
+   read in this face, so a number looks like a number wherever it appears. */
 .font-mono-n {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-figure);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+  letter-spacing: 0;
 }
 
-/* Carbon tiles as flat opaque planes. A card is separated from the ground by
-   a background step and a 1px hairline — never by blur or shadow. */
+/* Keyboard focus, everywhere. A tap focuses too, so :focus-visible keeps the
+   ring for keyboard use, which is who it is for. */
+:where(a, button, [role="button"], [role="tab"], input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Cards: a white plane on the grouped ground (a raised grey one in dark),
+   with rounded corners and no border. */
 .card {
   position: relative;
   background: var(--pane-bg);
   border: 1px solid var(--pane-border);
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
   backdrop-filter: none;
 }
 
@@ -424,38 +518,67 @@ body {
   box-shadow: none;
 }
 
-/* Overlay surfaces (modal, drawer): one step up from a card, still opaque.
-   The border does the lifting that a shadow used to. */
+/* Overlay surfaces (dialog, sheet): the elevated plane. */
 .overlay-surface {
-  background: var(--pane-bg-strong);
-  border: 1px solid var(--border-strong);
-  box-shadow: none;
+  background: var(--overlay);
+  border: 0;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18), 0 0 0 0.5px var(--bar-border);
   backdrop-filter: none;
 }
 
-/* Scrim behind overlays: flat dim, no blur */
+/* Scrim behind overlays: a dim, no blur. */
 .scrim {
   background: var(--blanket);
   backdrop-filter: none;
 }
 
-/* Frosted app bar */
-/* App bar sits directly on the ground, separated by a hairline only. */
-.app-bar {
-  background: var(--background);
-  border-bottom: 1px solid var(--pane-hairline);
-  backdrop-filter: none;
+/* Floating bars (tab bar, phone header, sidebar) are the one place with a
+   translucent material: they sit above content that scrolls under them.
+   With Reduce Transparency they go solid. */
+.app-bar,
+.bar-material {
+  background: var(--bar-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-bar,
+  .bar-material {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
-/* No backdrop-filter fallback needed — nothing blurs anymore. */
-
-/* Controls: Carbon's square buttons */
+/* ------------------------------------------------------------------
+   Buttons.
+   Primary is a filled button in the section's tint. Everything else is a
+   quiet grey fill with ordinary text, so a screen has at most one or two
+   coloured buttons and they are the ones that matter.
+   ------------------------------------------------------------------ */
 .button {
-  border-radius: 0;
+  border-radius: var(--r-control);
   font-weight: 500;
 }
 
-/* Selected option: inverted tile — black on cream, cream on black */
+.cds--btn {
+  border-radius: var(--r-control);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+  transition:
+    background-color var(--duration-fast-02) var(--easing-standard-productive),
+    opacity var(--duration-fast-02) var(--easing-standard-productive),
+    transform var(--duration-fast-02) var(--easing-standard-productive);
+}
+.cds--btn:active:not(:disabled) { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .cds--btn:active:not(:disabled) { transform: none; }
+}
+
+/* Selected option in a group of choices. */
 .pill-selected.cds--btn,
 .pill-selected {
   background: var(--selected-bg) !important;
@@ -465,105 +588,110 @@ body {
   font-weight: 600;
 }
 
-/* Positive action ("mark as done"): the green sampled from the artwork.
-   White on it measures 2.36:1, below the 4.5:1 AA threshold — this is a
-   deliberate brand choice over a contrast one. */
+/* Positive action ("mark as done"). White on it: 5.0:1. */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: var(--c-green-60);
+  background-color: var(--tint-fitness);
   background-image: none;
-  color: var(--ibm-white);
+  color: #ffffff;
   border-color: transparent;
 }
 @media (hover: hover) {
-  .btn-success.cds--btn:hover { filter: brightness(1.12); }
+  .btn-success.cds--btn:hover { filter: brightness(1.1); }
 }
-.btn-success.cds--btn:active { filter: brightness(0.9); }
 
-/* Primary action: IBM Blue 60. The action colour is its own thing, not
-   borrowed from a section accent. */
+/* Primary action: the section's tint. */
 .cds--btn--primary,
 .btn-invert.cds--btn,
 .btn-invert {
   background-image: none;
-  background-color: var(--c-blue-60);
-  color: var(--ibm-white);
-  border-color: transparent;
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border: 0;
 }
 @media (hover: hover) {
   .cds--btn--primary:hover,
-  .btn-invert.cds--btn:hover { filter: brightness(1.12); }
+  .btn-invert.cds--btn:hover {
+    background-color: color-mix(in srgb, var(--accent) 88%, #000);
+    color: var(--accent-foreground);
+  }
 }
-.cds--btn--primary:active,
-.btn-invert.cds--btn:active { filter: brightness(0.9); }
 
-/* Secondary: one surface step, bordered — not a second saturated fill */
+/* Secondary: the tint as a soft fill, with the tint as text. */
 .cds--btn--secondary {
   background-image: none;
-  background-color: var(--surface-tertiary);
-  color: var(--ibm-white);
-  border: 1px solid var(--border-strong, var(--border));
+  background-color: var(--accent-soft);
+  color: var(--accent-text, var(--accent));
+  border: 0;
 }
 @media (hover: hover) {
-  .cds--btn--secondary:hover { background-color: var(--surface-secondary); }
+  .cds--btn--secondary:hover {
+    background-color: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent-text, var(--accent));
+  }
 }
 
+/* Tertiary and ghost: neutral grey fill, ordinary text. */
 .cds--btn--tertiary,
 .cds--btn--ghost {
   background-color: var(--default);
   color: var(--foreground);
-  border: 1px solid var(--border);
+  border: 0;
 }
 @media (hover: hover) {
   .cds--btn--tertiary:hover,
   .cds--btn--ghost:hover {
-    background-color: var(--surface-secondary);
+    background-color: var(--fill-hover);
     color: var(--foreground);
   }
 }
 
-/* Delete: the red sampled from the artwork. White on it measures 3.47:1,
-   which clears AA for large text only. */
+/* Destructive: red text on a red wash, never a solid red slab. The solid
+   fill is kept for the confirming step of a delete. */
 .cds--btn--danger {
-  background-color: var(--c-red-60);
+  background-color: var(--danger-soft);
   background-image: none;
-  color: var(--ibm-white);
-  border-color: transparent;
+  color: var(--danger-soft-foreground);
+  border: 0;
 }
 @media (hover: hover) {
-  .cds--btn--danger:hover { filter: brightness(1.12); }
+  .cds--btn--danger:hover {
+    background-color: var(--danger-soft-hover);
+    color: var(--danger-soft-foreground);
+  }
 }
-.cds--btn--danger:active { filter: brightness(0.9); }
 
-/* Carbon rings a focused button. A tap focuses it too, so on a phone the ring
-   stayed on afterwards; :focus-visible keeps it for keyboard use only, which
-   is who it is for. */
-.cds--btn:focus:not(:focus-visible) {
+.cds--btn:disabled,
+.cds--btn.cds--btn--disabled {
+  background-color: var(--default);
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Carbon rings a focused button with an inset box-shadow; the global
+   :focus-visible outline replaces it. */
+.cds--btn:focus {
   box-shadow: none;
-  outline: none;
+  border-color: transparent;
 }
+.cds--btn:focus:not(:focus-visible) { outline: none; }
 
-/* Edit and other icon-only outline buttons: frosted square that lights up
-   in accent blue on hover.
-
-   Every :hover rule for buttons above is gated behind (hover: hover). A touch
-   screen has no pointer to hover with, so it applies :hover on tap and leaves
-   it applied until something else is tapped — the button sat there lit up in
-   blue as though still pressed. Gated, a tap on a phone changes nothing and
-   the press is over when the finger lifts. */
+/* Icon-only buttons are quiet by default. On hover (pointer devices only —
+   a touch screen would keep the hover stuck on after a tap) they take a
+   slightly stronger grey rather than lighting up in colour. */
 .cds--btn--tertiary.btn-icon-only,
 .cds--btn--ghost.btn-icon-only {
   background-color: var(--default);
   background-image: none;
-  border: 1px solid var(--border);
+  border: 0;
   color: var(--foreground);
 }
 @media (hover: hover) {
   .cds--btn--tertiary.btn-icon-only:hover,
   .cds--btn--ghost.btn-icon-only:hover {
-    background-color: var(--accent);
-    border-color: var(--accent);
-    color: var(--ibm-white);
+    background-color: var(--fill-hover);
+    color: var(--foreground);
   }
 }
 
@@ -573,6 +701,9 @@ body {
    carry a 176px min-width, a 320px max-width, a 48px fixed height and
    space-between alignment (label left, icon right). This app is dense
    and icon-heavy, so those defaults have to be relaxed.
+
+   Sizes: 40px by default and 32px small with a pointer; on touch screens
+   both grow to 44px, the comfortable size for a fingertip.
    ------------------------------------------------------------------ */
 .cds--btn {
   min-inline-size: 0;
@@ -580,15 +711,20 @@ body {
   block-size: auto;
   min-block-size: 2.5rem;
   padding-block: 0.5rem;
-  padding-inline: 0.875rem;
+  padding-inline: 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 .cds--btn--sm {
   min-block-size: 2rem;
-  padding-inline: 0.625rem;
+  padding-inline: 0.75rem;
+  font-size: 0.875rem;
+}
+@media (pointer: coarse) {
+  .cds--btn,
+  .cds--btn--sm { min-block-size: 2.75rem; }
 }
 .cds--btn.justify-start { justify-content: flex-start; }
 .cds--btn.w-full { inline-size: 100%; }
@@ -604,14 +740,18 @@ body {
   inline-size: 2rem;
   min-inline-size: 2rem;
 }
+@media (pointer: coarse) {
+  .btn-icon-only.cds--btn,
+  .btn-icon-only.cds--btn--sm {
+    inline-size: 2.75rem;
+    min-inline-size: 2.75rem;
+  }
+}
 .cds--btn svg { flex: none; }
 
 /* Icons follow the button's own colour.
    Carbon fills its button icons through a selector of its own, which beat the
-   `fill: currentColor` these icons carry. It went unnoticed while the button
-   colour and Carbon's fill happened to agree, and showed the moment they did
-   not: a selected pill flips to a white background with dark text, and the
-   icon stayed near-white on it. */
+   `fill: currentColor` these icons carry. */
 .cds--btn svg,
 .cds--btn .cds--btn__icon {
   fill: currentColor;
@@ -623,10 +763,11 @@ body {
   min-block-size: 0;
 }
 
-/* Inputs sit in flex rows beside their add button.
-   Carbon fields are bottom-border-only and use the same fill as the layer
-   they sit on, which makes them disappear inside our cards — so they get a
-   real background and a full border here. */
+/* ------------------------------------------------------------------
+   Fields.
+   A rounded field with a light edge, sitting on the card. Carbon's own
+   fields are bottom-border-only and disappear inside a card.
+   ------------------------------------------------------------------ */
 .cds--form-item { flex: 1 1 auto; }
 
 .cds--text-input,
@@ -638,6 +779,8 @@ input[type="number"],
 input[type="email"],
 input[type="password"],
 input[type="date"],
+input[type="search"],
+input[type="url"],
 select,
 textarea {
   block-size: 2.5rem;
@@ -645,20 +788,36 @@ textarea {
   padding-block: 0;
   background: var(--field-bg);
   border: 1px solid var(--field-border);
+  border-radius: var(--r-control);
   color: var(--foreground);
+  font-family: var(--font-ui);
+}
+@media (pointer: coarse) {
+  .cds--text-input,
+  .cds--select-input,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="search"],
+  input[type="url"],
+  select { block-size: 2.75rem; }
 }
 textarea.cds--text-area,
 textarea {
   block-size: auto;
   padding-block: 0.5rem;
 }
-.cds--text-input:hover,
-.cds--text-area:hover,
-.cds--select-input:hover,
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: var(--foreground);
+@media (hover: hover) {
+  .cds--text-input:hover,
+  .cds--text-area:hover,
+  .cds--select-input:hover,
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--border-strong);
+  }
 }
 .cds--text-input:focus,
 .cds--text-area:focus,
@@ -667,7 +826,7 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: -1px;
   border-color: transparent;
 }
 .cds--text-input::placeholder,
@@ -681,90 +840,72 @@ textarea::placeholder {
 /* Tags carry no outer margin in dense lists */
 .cds--tag { margin: 0; max-inline-size: none; }
 
-/* Section marker: flat palette chip */
+/* Section marker: a small round dot in the section's colour. */
 .sec-dot {
   display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--r-pill);
   flex: none;
 }
 
 /* ============================================================
-   Section heading.
-   Type on the page ground: a mono index in the section's accent colour, and
-   the title in the reading colour. No plate, no imagery.
+   Page title.
+   The section's name as a large title, in the section's own colour —
+   the one place on a page where that colour is spent on type.
    ============================================================ */
 .sec-band {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 0.75rem;
   inline-size: 100%;
-  min-block-size: auto;
+  margin: 0;
   background: transparent;
   color: var(--foreground);
   border: 0;
   text-align: start;
-  cursor: default;
-  transition: filter var(--duration-moderate-02) var(--easing-standard-productive);
-}
-
-.sec-band__label {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.125rem;
-  padding: 0 0 var(--spacing-03) 0;
-}
-
-/* Eyebrow: the section's position in the page order, in mono. Order is real
-   information here — the sections always appear in this sequence. */
-.sec-band__index {
-  color: var(--band-color);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.75rem;      /* label-01 — Carbon has no 11px step */
-  letter-spacing: 0.32px;
-  opacity: 0.75;
 }
 
 .sec-band__title {
-  /* Each section is a page of its own now, so its title is the page's
-     heading and is sized like one (heading-05). */
-  font-size: 1.75rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.4;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--band-color);
+  font-size: 2.125rem;      /* large title, 34 */
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
-.sec-band--md .sec-band__title { font-size: 1rem; } /* heading-02 */
+.sec-band--md .sec-band__title {
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
 
-
-/* ---- Pending state: running border while a write is in flight ---- */
 /* Scrollable lists */
 .recurring-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--ibm-cool-gray-40) transparent;
+  scrollbar-color: var(--border-strong) transparent;
   overscroll-behavior: contain;
 }
 .recurring-scroll::-webkit-scrollbar { width: 6px; }
 .recurring-scroll::-webkit-scrollbar-thumb {
-  background: var(--ibm-cool-gray-40);
-  border-radius: 0;
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
 }
 .recurring-scroll::-webkit-scrollbar-track { background: transparent; }
 
-/* Category chip: tinted fill from the category colour, uniform text */
+/* Category chip: a capsule with the category's dot, uniform text. */
 .cat-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.1875rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--foreground);
   background-image: none;
-  background-color: var(--surface-secondary);
-  border-left: 2px solid var(--chip-color);
+  background-color: var(--default);
+  border-radius: var(--r-pill);
 }
 /* iOS Safari holds a tap for roughly 300ms on anything that could still be a
    double-tap-to-zoom, even with width=device-width set. manipulation opts out
@@ -776,19 +917,18 @@ button,
 [role="button"],
 a { touch-action: manipulation; }
 
-/* Feedback on touchdown rather than on click. The state change still waits
-   for React, but the press stops feeling unacknowledged in the meantime. */
-.cat-chip:active { background-color: var(--surface-tertiary); }
+/* Feedback on touchdown rather than on click. */
+.cat-chip:active { background-color: var(--fill-hover); }
 
 .cat-chip__dot {
   inline-size: 0.5rem;
   block-size: 0.5rem;
-  border-radius: 0;
+  border-radius: var(--r-pill);
   background: var(--chip-color);
   flex: none;
 }
 
-/* Typography: IBM Plex everywhere, including Carbon's own controls */
+/* One face everywhere, including Carbon's own controls. */
 body,
 .cds--btn,
 .cds--text-input,
@@ -799,13 +939,9 @@ input,
 select,
 textarea,
 button {
-  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-ui);
 }
 
-
-/* Each dashboard section sits on its own panel, open or closed. It is a
-   lighter treatment than .card so the cards nested inside still read as
-   distinct surfaces. */
 /* A section is not a surface of its own. It carries no border, background or
    padding — the cards inside it are the objects on the page, and the section
    only groups them. */
@@ -818,8 +954,72 @@ button {
 
 .section-panel > .sec-band { inline-size: 100%; margin: 0; }
 
-/* Body sits directly under the header with no enclosure around it. */
-.section-panel__body { padding: 0; padding-block-start: var(--spacing-05); }
+.section-panel__body { padding: 0; padding-block-start: var(--spacing-06); }
+
+@layer components {
+
+/* ============================================================
+   Round checkmark.
+   The tick for tasks and to-dos: a 24px circle inside a 44px target, empty
+   until done, then filled with the section's tint.
+   ============================================================ */
+.check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin: -0.625rem;
+  flex: none;
+  border-radius: var(--r-pill);
+  color: var(--accent-foreground);
+}
+.check__ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  transition:
+    background-color var(--duration-fast-02) var(--easing-standard-productive),
+    border-color var(--duration-fast-02) var(--easing-standard-productive),
+    transform var(--duration-moderate-01) var(--easing-entrance-expressive);
+}
+.check--on .check__ring {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.check:active .check__ring { transform: scale(0.88); }
+@media (hover: hover) {
+  .check:hover:not(.check--on) .check__ring { border-color: var(--accent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check__ring { transition: none; }
+  .check:active .check__ring { transform: none; }
+}
+
+/* A small label above a group of rows ("In progress", "Completed"):
+   sentence case, secondary colour, no tracking. */
+.group-label {
+  margin: 0 0 0.5rem;
+  padding-inline: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* A goal's ring fills to its new value rather than jumping, unless motion
+   is reduced. */
+.ring-progress { transition: stroke-dashoffset var(--duration-moderate-02) var(--easing-standard-expressive); }
+@media (prefers-reduced-motion: reduce) {
+  .ring-progress { transition: none; }
+}
+
+} /* @layer components */
 
 /* ============================================================
    Configuration
@@ -863,7 +1063,7 @@ button {
 .cfg-dot {
   inline-size: 0.625rem;
   block-size: 0.625rem;
-  border-radius: 2px;
+  border-radius: var(--r-pill);
   flex: none;
 }
 
@@ -913,7 +1113,7 @@ button {
   justify-content: center;
   inline-size: 1.75rem;
   block-size: 1.75rem;
-  border-radius: 2px;
+  border-radius: var(--r-pill);
   flex: none;
   box-shadow: inset 0 0 0 1px var(--ibm-cool-gray-100);
   transition: transform 0.12s ease;
@@ -1656,7 +1856,7 @@ html.dark {
 .exercise-tag {
   margin-left: 0.45rem;
   padding: 1px 5px;
-  font-size: 10px;
+  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
   color: var(--accent);
@@ -1794,14 +1994,14 @@ html.dark {
   background: transparent;
   /* A 1px outline would still read as a button sitting in the row. */
   border: none;
-  color: var(--c-red-50);
+  color: var(--danger);
 }
 .btn-delete-bare.cds--btn:hover,
 .btn-delete-bare.cds--btn:active,
 .btn-delete-bare.cds--btn:focus {
   background: transparent;
   border: none;
-  color: var(--c-red-40);
+  color: var(--danger-hover);
 }
 /* Carbon colours icons through its own selector, which would otherwise win. */
 .btn-delete-bare.cds--btn svg,
@@ -1831,14 +2031,14 @@ html.dark {
 #config .cds--btn.btn-icon-only {
   background: transparent;
   border: none;
-  color: var(--c-blue-50);
+  color: var(--accent-text);
 }
 #config .cds--btn.btn-icon-only:hover,
 #config .cds--btn.btn-icon-only:active,
 #config .cds--btn.btn-icon-only:focus {
   background: transparent;
   border: none;
-  color: var(--c-blue-40);
+  color: var(--foreground);
 }
 #config .cds--btn.btn-icon-only:disabled {
   background: transparent;
@@ -1856,12 +2056,12 @@ html.dark {
 /* Delete keeps its meaning in red. Same specificity as the rule above, so
    this has to stay after it. */
 #config .cds--btn--danger.btn-icon-only {
-  color: var(--c-red-50);
+  color: var(--danger);
 }
 #config .cds--btn--danger.btn-icon-only:hover,
 #config .cds--btn--danger.btn-icon-only:active,
 #config .cds--btn--danger.btn-icon-only:focus {
-  color: var(--c-red-40);
+  color: var(--danger-hover);
 }
 
 /* ============================================================
@@ -2074,7 +2274,7 @@ html.dark {
   flex: none;
   align-self: flex-start;
   padding: 1px 5px;
-  font-size: 10px;
+  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
   color: var(--accent);
@@ -2267,7 +2467,7 @@ html.dark {
   justify-content: center;
   width: 18px;
   height: 18px;
-  font-size: 10px;
+  font-size: 0.6875rem;
   font-weight: 700;
   color: var(--muted);
   border: 1px solid var(--default);
@@ -2293,7 +2493,7 @@ html.dark {
 }
 .cfg-block__mode {
   padding: 1px 5px;
-  font-size: 10px;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
@@ -2407,38 +2607,45 @@ html.dark {
    ============================================================ */
 
 /* Segmented control: the tabs, and any either/or. */
+/* Segmented control: the chosen view is a raised pill on a grey track. */
 .seg {
   display: inline-flex;
-  border: 1px solid var(--border-strong);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--default);
 }
 .seg__btn {
-  padding: 0.45rem 0.8rem;
-  font-size: 14px;
-  white-space: nowrap;
-  color: var(--muted);
-  background: transparent;
+  min-block-size: 2rem;
+  padding: 0.3125rem 0.875rem;
   border: 0;
+  border-radius: 7px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--foreground);
+  background: transparent;
   cursor: pointer;
 }
-.seg__btn + .seg__btn { border-left: 1px solid var(--border-strong); }
 .seg__btn[aria-pressed="true"] {
-  color: var(--foreground);
   font-weight: 600;
-  background: var(--surface-tertiary);
-  box-shadow: inset 0 -2px 0 var(--accent);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
 }
-@media (hover: hover) {
-  .seg__btn:hover { color: var(--foreground); }
+.dark .seg__btn[aria-pressed="true"] { background: #636366; }
+@media (pointer: coarse) {
+  .seg__btn { min-block-size: 2.25rem; }
 }
-.seg--sm .seg__btn { padding: 0.3rem 0.6rem; font-size: 13px; }
+.seg--sm .seg__btn { min-block-size: 1.75rem; padding: 0.25rem 0.625rem; font-size: 0.8125rem; }
 
 /* Status: a label first, the tint only backs it up. */
 .rd-status {
   display: inline-block;
-  padding: 1px 6px;
-  font-size: 11px;
+  padding: 1px 8px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
+  border-radius: var(--r-pill);
   color: var(--foreground);
   background: color-mix(in srgb, var(--rd-s, var(--muted)) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--rd-s, var(--muted)) 50%, transparent);
@@ -2460,10 +2667,10 @@ html.dark {
 }
 
 .rd-track {
-  padding: 0.75rem;
+  padding: 0.875rem 1rem 1rem;
   background: var(--pane-bg);
-  border: 1px solid var(--pane-border);
-  border-top: 3px solid var(--track);
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow), inset 0 3px 0 var(--track);
 }
 .rd-track__head {
   display: flex;
@@ -2474,6 +2681,8 @@ html.dark {
 .rd-track__bar {
   height: 4px;
   margin-top: 0.5rem;
+  border-radius: var(--r-pill);
+  overflow: hidden;
   background: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 .rd-track__bar > span {
@@ -2493,10 +2702,11 @@ html.dark {
   flex: none;
   align-items: center;
   gap: 0.3rem;
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-size: 13px;
   white-space: nowrap;
-  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--default);
 }
 .rd-target--done {
   background: color-mix(in srgb, var(--c-green-50) 18%, transparent);
@@ -2766,17 +2976,6 @@ html.dark {
   border-bottom: 1px solid var(--border-strong);
 }
 
-/* The top bar's stats scroll sideways when they don't fit. The fade at the
-   right edge says there is more, where a chip cut off mid-word looked broken. */
-.top-stats { scrollbar-width: none; }
-.top-stats::-webkit-scrollbar { display: none; }
-@media (max-width: 899px) {
-  .top-stats {
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    padding-right: 20px;
-  }
-}
-
 /* What an import will do, shown before it is done. */
 .rd-import {
   padding: 0.75rem;
@@ -2786,3 +2985,420 @@ html.dark {
 }
 .rd-import code,
 .rd-import + * code { font-size: 12px; }
+
+/* New components live in the components layer, so Tailwind utilities on
+   the same element (mt-5, lg:hidden) still win over them. */
+@layer components {
+
+/* ============================================================
+   App shell.
+   Phones and tablets: content, then a tab bar floating along the bottom.
+   Desktop (1056px up): a sidebar on the left that is always there.
+   ============================================================ */
+.app-main {
+  /* Clear the tab bar and the home indicator beneath it. */
+  padding-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.5rem);
+}
+.app-content {
+  margin-inline: auto;
+  max-inline-size: 80rem;
+  padding-block-start: max(1rem, env(safe-area-inset-top));
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+.app-content > * + * { margin-block-start: 2rem; }
+@media (min-width: 42rem) {
+  .app-content { padding-inline: 1.5rem; padding-block-start: 1.5rem; }
+}
+@media (min-width: 66rem) {
+  .app-main {
+    padding-inline-start: var(--sidebar-w);
+    padding-block-end: 3rem;
+  }
+  .app-content { padding-inline: 2.5rem; padding-block-start: 2.25rem; }
+}
+.is-gated .app-main { padding: 0; }
+
+.sync-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--r-control);
+  font-size: 0.875rem;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  display: none;
+}
+@media (min-width: 66rem) {
+  .sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    inline-size: var(--sidebar-w);
+    padding: 1.25rem 0.75rem 1rem;
+    overflow-y: auto;
+    border-inline-end: 0.5px solid var(--bar-border);
+  }
+}
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.sidebar__gap { block-size: 0.75rem; }
+.sidebar__today {
+  padding: 0.75rem 0.625rem 0;
+  border-block-start: 0.5px solid var(--bar-border);
+}
+.sidebar__foot {
+  margin-block-start: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-block-size: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--r-control);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--foreground);
+  text-align: start;
+}
+.side-link__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.625rem;
+  block-size: 1.625rem;
+  border-radius: 7px;
+  background: var(--link-tint, var(--tint-config));
+  color: #ffffff;
+  flex: none;
+}
+.side-link__icon svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+@media (hover: hover) {
+  .side-link:hover { background: var(--default); }
+}
+.side-link.is-active {
+  background: var(--default);
+  font-weight: 600;
+}
+
+/* Today's figures in the sidebar: label left, figure right. */
+.today-list { margin: 0; display: flex; flex-direction: column; gap: 0.375rem; }
+.today-list__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+.today-list dt { color: var(--muted); }
+.today-list dd { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--foreground); }
+.today-list dd.is-negative,
+.today-strip dd.is-negative { color: var(--danger); }
+
+/* ---- Today strip (phones and tablets) ---- */
+.today-strip {
+  display: flex;
+  gap: 0.5rem;
+  margin-block-end: 0;
+  margin-inline: calc(-1 * max(1rem, env(safe-area-inset-left)));
+  padding-inline: max(1rem, env(safe-area-inset-left));
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: max(1rem, env(safe-area-inset-left));
+}
+.today-strip::-webkit-scrollbar { display: none; }
+@media (min-width: 42rem) {
+  .today-strip { margin-inline: -1.5rem; padding-inline: 1.5rem; scroll-padding-inline: 1.5rem; }
+}
+.today-strip__item {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  flex: none;
+  min-inline-size: 5.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r-control);
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+  scroll-snap-align: start;
+}
+.today-strip dt {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.today-strip dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+/* ---- Tab bar ---- */
+.tabbar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  border-block-start: 0.5px solid var(--bar-border);
+}
+@media (min-width: 66rem) {
+  .tabbar { display: none; }
+}
+.tabbar__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-block-size: var(--tabbar-h);
+  padding-block: 0.375rem 0.25rem;
+  font-size: 0.6875rem;          /* 11px, the smallest legible size */
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--muted);
+}
+.tabbar__tab svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
+.tabbar__tab.is-active { color: var(--link-tint); font-weight: 600; }
+@media (min-width: 42rem) {
+  /* Regular width: icon beside its label, as on a tablet. */
+  .tabbar__tab { flex-direction: row; gap: 0.375rem; font-size: 0.8125rem; }
+  .tabbar__tab svg { inline-size: 1.25rem; block-size: 1.25rem; }
+}
+
+/* ---- The More button beside a phone's page title ---- */
+.more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  flex: none;
+  border-radius: var(--r-pill);
+  color: var(--accent-text, var(--foreground));
+}
+.more-button svg {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0.1875rem;
+  border-radius: var(--r-pill);
+  background: var(--default);
+  fill: currentColor;
+}
+@media (hover: hover) {
+  .more-button:hover svg { background: var(--fill-hover); }
+}
+
+/* ---- Segmented control ---- */
+.segmented {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--default);
+}
+.segmented__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  min-block-size: 1.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 7px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+.segmented__item svg { fill: currentColor; }
+.segmented__item.is-on {
+  background: var(--surface);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+.dark .segmented__item.is-on { background: #636366; }
+@media (pointer: coarse) {
+  .segmented__item { min-block-size: 2.25rem; }
+}
+
+/* ---- Sheet (phone dialogs) ---- */
+.sheet {
+  position: relative;
+  z-index: 10;
+  inline-size: 100%;
+  max-inline-size: 32rem;
+  max-block-size: 92dvh;
+  overflow-y: auto;
+  padding: 0.5rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: var(--surface-secondary);
+}
+.light .sheet { background: var(--background); }
+.sheet__grabber {
+  inline-size: 2.25rem;
+  block-size: 0.3125rem;
+  margin: 0 auto 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+  opacity: 0.6;
+}
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 0.75rem;
+}
+.sheet__title { margin: 0; font-size: 1.25rem; font-weight: 700; }
+
+/* A round close button: 30px visible, 44px to the finger. */
+.icon-circle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  border-radius: var(--r-pill);
+  background: var(--default);
+  color: var(--muted);
+  flex: none;
+}
+.icon-circle::after { content: ""; position: absolute; inset: -0.4375rem; }
+.icon-circle svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+@media (hover: hover) {
+  .icon-circle:hover { background: var(--fill-hover); color: var(--foreground); }
+}
+
+/* Inset grouped list: rows on one rounded card, hairlines between. */
+.inset-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+.inset-list > li + li .inset-list__row { box-shadow: inset 0 0.5px 0 var(--separator); }
+.inset-list__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 1.0625rem;
+  color: var(--foreground);
+}
+.inset-list__row:active { background: var(--default); }
+.inset-list__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 7px;
+  color: #ffffff;
+  flex: none;
+}
+.inset-list__icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+.inset-list__chevron { inline-size: 1.25rem; block-size: 1.25rem; fill: var(--border-strong); }
+
+/* Dialog: a sheet from the bottom on a phone, a centred card from 672px. */
+.dialog {
+  position: relative;
+  z-index: 10;
+  inline-size: 100%;
+  max-block-size: 92dvh;
+  overflow-y: auto;
+  padding: 0.5rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+@media (min-width: 42rem) {
+  .dialog {
+    max-block-size: 88dvh;
+    padding: 1.25rem 1.5rem 1.5rem;
+    border-radius: var(--r-card);
+  }
+}
+
+/* ============================================================
+   Task row: checkmark first, then the title, then (for recurring tasks)
+   the category. Hairlines between rows start at the title, as in a list.
+   ============================================================ */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: 2.75rem;
+  padding-block: 0.375rem;
+  padding-inline: 0.625rem 0.25rem;
+}
+.task-row + .task-row { box-shadow: inset 2.875rem 0 0 var(--pane-bg), inset 0 0.5px 0 var(--separator); }
+.task-row__title {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.task-row__title.is-done { color: var(--muted); text-decoration: line-through; }
+.task-row__group {
+  display: inline-block;
+  margin-inline-start: 0.5rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--default);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  vertical-align: 0.0625rem;
+}
+.task-row__cat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: none;
+  max-inline-size: 7rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.cat-dot {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--r-pill);
+  flex: none;
+}
+
+} /* @layer components */

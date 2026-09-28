@@ -35,7 +35,7 @@ export function NotesView({ tracker }: { tracker: Tracker }) {
   return (
     <div className="flex flex-col gap-3">
       <label className="rd-search">
-        <Search className="h-4 w-4 text-foreground/50" />
+        <Search className="h-4 w-4 text-[var(--muted)]" />
         <input
           type="search"
           aria-label="Search notes"
@@ -46,12 +46,12 @@ export function NotesView({ tracker }: { tracker: Tracker }) {
         />
       </label>
       {all.length === 0 ? (
-        <p className="text-[15px] text-foreground/60">
+        <p className="text-[15px] text-[var(--muted)]">
           No notes yet. After logging a session you can write down its key idea, and quotes can be saved
           from a book&apos;s page.
         </p>
       ) : shown.length === 0 ? (
-        <p className="text-[15px] text-foreground/60">Nothing matches “{q}”.</p>
+        <p className="text-[15px] text-[var(--muted)]">Nothing matches “{q}”.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {shown.map((n) => {
@@ -63,7 +63,7 @@ export function NotesView({ tracker }: { tracker: Tracker }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">{n.text}</p>
-                  <p className="text-xs text-foreground/50">
+                  <p className="text-xs text-[var(--muted)]">
                     {b ? (
                       <button
                         type="button"

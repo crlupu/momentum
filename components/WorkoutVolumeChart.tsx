@@ -127,7 +127,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
       {sessions === 0 && s.cardio.length === 0 ? (
         <Card>
           <Card.Content className="p-4 md:p-5">
-            <p className="py-2 text-[15px] text-foreground/60">
+            <p className="py-2 text-[15px] text-[var(--muted)]">
               Nothing logged yet. Finish a workout and its volume lands here; add cardio
               minutes above and they join it.
             </p>
@@ -226,7 +226,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
             onChange={(e) => setMins(e.target.value)}
             autoFocus
           />
-          <p className="text-xs text-foreground/50">Logged against today.</p>
+          <p className="text-xs text-[var(--muted)]">Logged against today.</p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onPress={close}>
               Cancel
@@ -318,7 +318,7 @@ function DayChart({
           {days.map((d, i) => (
             <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]">
               <span
-                className="font-mono-n text-[10px] font-semibold"
+                className="font-mono-n text-[11px] font-semibold"
                 style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
               >
                 {values[i] ? values[i].toLocaleString() : ""}
@@ -333,7 +333,7 @@ function DayChart({
                   background: values[i] ? colour : TRACK,
                 }}
               />
-              <span className="text-[9px] leading-none tabular-nums" style={{ color: LABEL }}>
+              <span className="text-[11px] leading-none tabular-nums" style={{ color: LABEL }}>
                 {d.getDate()}
               </span>
             </div>
@@ -425,7 +425,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
       <div className="font-mono-n text-xl font-semibold" style={{ color: "var(--accent)" }}>
         {value}
       </div>
-      <div className="text-xs text-foreground/60">{label}</div>
+      <div className="text-xs text-[var(--muted)]">{label}</div>
     </div>
   );
 }

@@ -241,7 +241,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       <Card>
         <Card.Content className="p-4 md:p-5">
           {entries.length === 0 ? (
-            <p className="py-1 text-[15px] text-foreground/60">
+            <p className="py-1 text-[15px] text-[var(--muted)]">
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.
             </p>
           ) : (
@@ -250,13 +250,13 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                 <section key={day.date}>
                   <h3 className="log-day">
                     <span>{dayLabel(day.date)}</span>
-                    <span className="text-foreground/50">{day.items.length}</span>
+                    <span className="text-[var(--muted)]">{day.items.length}</span>
                   </h3>
                   <ul className="list-none divide-y divide-foreground/10 p-0">
                     {day.items.map((e) => (
                       <li key={e.key} className="flex items-center gap-2.5 py-2.5">
                         <span
-                          className="w-[4.75rem] shrink-0 px-2 py-[3px] text-center text-[10px] font-semibold leading-none"
+                          className="w-[4.75rem] shrink-0 px-2 py-[3px] text-center text-[11px] font-semibold leading-none"
                           style={{ background: e.color, color: readableText(e.color) }}
                         >
                           {e.kind}
@@ -264,11 +264,11 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                         <span className="min-w-0 flex-1 break-words text-[15px]">
                           {e.title}
                           {e.detail && (
-                            <span className="mt-0.5 block text-xs text-foreground/50">{e.detail}</span>
+                            <span className="mt-0.5 block text-xs text-[var(--muted)]">{e.detail}</span>
                           )}
                         </span>
                         {e.at != null && (
-                          <span className="font-mono-n shrink-0 text-xs text-foreground/50">{fmtTime(e.at)}</span>
+                          <span className="font-mono-n shrink-0 text-xs text-[var(--muted)]">{fmtTime(e.at)}</span>
                         )}
                         {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
                         <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />

@@ -158,7 +158,7 @@ export function CircuitPlayer({
 
   if (!step) {
     return (
-      <p className="py-2 text-[15px] text-foreground/60">
+      <p className="py-2 text-[15px] text-[var(--muted)]">
         No exercises in this block yet.
       </p>
     );
@@ -254,7 +254,7 @@ export function CircuitPlayer({
               {e.done ? <Check className="h-3 w-3" /> : i + 1}
             </span>
             <span className="min-w-0 flex-1 truncate">{e.name}</span>
-            <span className="font-mono-n text-xs text-foreground/50">
+            <span className="font-mono-n text-xs text-[var(--muted)]">
               {mmss(exerciseSeconds({ id: e.exerciseId, name: e.name, seconds: e.seconds }, block))}
             </span>
           </li>

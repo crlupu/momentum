@@ -32,7 +32,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-foreground/60">
+        <p className="text-xs text-[var(--muted)]">
           {phases.length === 0
             ? "No phases yet. A phase is a block of the plan, e.g. Q4 2026, holding books from every track."
             : unassigned > 0
@@ -60,7 +60,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
             <header className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h4 className="font-semibold">{p.name}</h4>
-                <p className="text-xs text-foreground/60">
+                <p className="text-xs text-[var(--muted)]">
                   {fmtDate(p.start, true)} – {fmtDate(p.end, true)}
                   {current ? " · now" : ""}
                 </p>
@@ -86,7 +86,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
               </div>
               <span className="font-mono-n text-sm font-bold">{pct}%</span>
             </div>
-            <p className="mt-1 text-xs text-foreground/60">
+            <p className="mt-1 text-xs text-[var(--muted)]">
               {st.finished} of {st.books.length} books finished
               {st.projected &&
                 ` · projected ${fmtDateAuto(st.projected)}${st.assumed ? " (at target pace)" : ""}`}

@@ -56,7 +56,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
             {phase && <span className="cat-chip">{phase.name}</span>}
           </div>
           {meta.length > 0 && (
-            <span className="text-xs text-foreground/50">{meta.join(" · ")}</span>
+            <span className="text-xs text-[var(--muted)]">{meta.join(" · ")}</span>
           )}
           <Meter book={book} colour={track?.color} />
           <ProgressText book={book} />
@@ -94,7 +94,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       </dl>
       {book.note && book.status !== "dropped" && (
         <p className="text-sm text-foreground/75">
-          <span className="text-foreground/50">Note: </span>
+          <span className="text-[var(--muted)]">Note: </span>
           {book.note}
         </p>
       )}
@@ -102,7 +102,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
         <p className="text-sm text-foreground/70">Dropped because: {book.dropReason}</p>
       )}
       {prereqs.length > 0 && book.status !== "finished" && (
-        <p className="text-xs text-foreground/60">
+        <p className="text-xs text-[var(--muted)]">
           Meant to be read after: {prereqs.map((b) => b.title).join(", ")}
         </p>
       )}
@@ -183,7 +183,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       {tab === "timeline" && (
         <ol className="flex flex-col gap-1 text-sm">
           {(book.statusLog ?? []).length === 0 && (
-            <li className="text-foreground/60">Nothing yet.</li>
+            <li className="text-[var(--muted)]">Nothing yet.</li>
           )}
           {[...(book.statusLog ?? [])].reverse().map((c, i) => (
             <li
@@ -191,7 +191,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
               className="flex justify-between gap-2 border-b border-[var(--separator)] py-1.5"
             >
               <span>{R.STATUS_LABEL[c.status]}</span>
-              <span className="text-foreground/60">{fmtDate(c.date, true)}</span>
+              <span className="text-[var(--muted)]">{fmtDate(c.date, true)}</span>
             </li>
           ))}
         </ol>
@@ -206,7 +206,7 @@ function Sessions({ tracker, sessions }: { tracker: Tracker; sessions: R.Reading
   // The latest ten; a book read over months has a long log behind it.
   const [all, setAll] = useState(false);
   if (sessions.length === 0)
-    return <p className="text-sm text-foreground/60">No sessions logged yet.</p>;
+    return <p className="text-sm text-[var(--muted)]">No sessions logged yet.</p>;
   const newest = [...sessions].reverse();
   const shown = all ? newest : newest.slice(0, 10);
   return (
@@ -225,7 +225,7 @@ function Sessions({ tracker, sessions }: { tracker: Tracker; sessions: R.Reading
               <div className="min-w-0 flex-1">
                 <div className="text-sm">
                   <span className="font-mono-n font-bold">{x.pages}</span> pages
-                  <span className="text-foreground/60">
+                  <span className="text-[var(--muted)]">
                     {" "}
                     · {fmtDateAuto(x.date)}
                     {x.minutes ? ` · ${x.minutes} min` : ""}
@@ -236,7 +236,7 @@ function Sessions({ tracker, sessions }: { tracker: Tracker; sessions: R.Reading
               <button
                 type="button"
                 aria-label="Edit session"
-                className="p-1.5 text-foreground/50 hover:text-foreground"
+                className="p-1.5 text-[var(--muted)] hover:text-foreground"
                 onClick={() => setEditing(x.id)}
               >
                 <Pencil className="h-4 w-4" />
@@ -380,7 +380,7 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
   return (
     <div className="flex flex-col gap-3">
       {items.length === 0 && (
-        <p className="text-sm text-foreground/60">
+        <p className="text-sm text-[var(--muted)]">
           No notes yet. Key ideas written after a session, and quotes saved here, collect in this
           list.
         </p>
@@ -397,7 +397,7 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm">{n.text}</p>
-              <p className="text-xs text-foreground/50">
+              <p className="text-xs text-[var(--muted)]">
                 {fmtDateAuto(n.date)}
                 {n.page ? ` · p. ${n.page}` : ""}
               </p>
@@ -413,7 +413,7 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
               <button
                 type="button"
                 aria-label="Remove key idea"
-                className="p-1 text-foreground/40 hover:text-foreground"
+                className="p-1 text-[var(--muted)] hover:text-foreground"
                 onClick={() => void tracker.updateReadingSession(n.id, { note: null })}
               >
                 <X className="h-4 w-4" />

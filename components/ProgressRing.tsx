@@ -13,8 +13,10 @@ export function ProgressRing({
   const r = size / 2 - stroke;
   const circ = 2 * Math.PI * r;
   const cx = size / 2;
+  // Four characters ("100%") need a step down to stay inside the ring.
+  const fontSize = size >= 48 ? (pct >= 100 ? 12 : 13) : 11;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`${pct}% complete`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${pct}% complete`}>
       <circle cx={cx} cy={cx} r={r} fill="none" stroke="currentColor" className="text-foreground/10" strokeWidth={stroke} />
       <circle
         cx={cx}
@@ -27,7 +29,7 @@ export function ProgressRing({
         strokeDasharray={circ}
         strokeDashoffset={circ * (1 - pct / 100)}
         transform={`rotate(-90 ${cx} ${cx})`}
-        style={{ transition: "stroke-dashoffset .3s ease" }}
+        className="ring-progress"
       />
       <text
         x={cx}
@@ -35,8 +37,9 @@ export function ProgressRing({
         dominantBaseline="central"
         textAnchor="middle"
         className="fill-foreground font-mono-n"
-        fontSize={size >= 48 ? 14 : 11}
-        fontWeight="600"
+        fontSize={fontSize}
+        fontWeight="700"
+        letterSpacing={pct >= 100 ? -0.4 : 0}
       >
         {pct}%
       </text>

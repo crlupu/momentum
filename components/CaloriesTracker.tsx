@@ -174,7 +174,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 {/* Only the highest day and today are labelled: a figure on
                     every bar crowded a phone and went unread. The rest are in
                     each bar's tooltip. */}
-                <span className="font-mono-n text-[10px] font-bold">
+                <span className="font-mono-n text-[11px] font-bold">
                   {counts[i] && (i === days.length - 1 || counts[i] === max) ? counts[i].toLocaleString() : ""}
                 </span>
                 {/* Stacked in reverse so the first entry of the day is lowest. */}
@@ -200,7 +200,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                   ))}
                 </div>
                 <span
-                  className="text-[9px] leading-none tabular-nums"
+                  className="text-[11px] leading-none tabular-nums"
                   style={{ color: LABEL }}
                 >
                   {d.getDate()}
@@ -214,7 +214,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
             {s.mealTags.map((m) => (
               <span key={m.id} className="flex items-center gap-1.5 text-[11px]" style={{ color: LABEL }}>
-                <span className="inline-block h-2 w-2" style={{ background: m.color }} aria-hidden />
+                <span className="inline-block h-2 w-2 rounded-full" style={{ background: m.color }} aria-hidden />
                 {m.name}
               </span>
             ))}

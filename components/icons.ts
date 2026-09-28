@@ -62,8 +62,10 @@ export {
   MdBarChart as BarChart3,
   MdReceiptLong as ScrollText,
   MdLogout as LogOut,
+  MdMoreHoriz as MoreHorizontal,
 
   // theme
   MdLightMode as Sun,
   MdDarkMode as Moon,
+  MdBrightnessAuto as Auto,
 } from "react-icons/md";

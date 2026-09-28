@@ -361,7 +361,7 @@ export function BookForm({
                       type="button"
                       aria-label={`Remove ${b.title}`}
                       onClick={() => setAfter(after.filter((x) => x !== id))}
-                      className="ml-1 text-foreground/50 hover:text-foreground"
+                      className="ml-1 text-[var(--muted)] hover:text-foreground"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>

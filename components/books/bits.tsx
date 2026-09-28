@@ -54,14 +54,14 @@ export function ProgressText({ book }: { book: Book }) {
   if (book.pages > 0) {
     const pct = book.status === "finished" ? 100 : Math.floor(bookProgress(book) * 100);
     return (
-      <span className="text-xs text-foreground/60">
+      <span className="text-xs text-[var(--muted)]">
         <span className="font-mono-n font-bold text-foreground">{book.read}</span> / {book.pages} ·{" "}
         {pct}%
       </span>
     );
   }
   return (
-    <span className="text-xs text-foreground/60">
+    <span className="text-xs text-[var(--muted)]">
       <span className="font-mono-n font-bold text-foreground">{book.read}</span> pages read
     </span>
   );
@@ -98,12 +98,12 @@ export function Segmented<T extends string>({
   );
 }
 
-/** Small caps heading used inside the reading views. */
+/** Small heading used inside the reading views. */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <h3
       className={
-        "text-[13px] font-semibold uppercase tracking-wide text-foreground/50 " + (className ?? "")
+        "group-label " + (className ?? "")
       }
     >
       {children}
@@ -123,9 +123,9 @@ export function Field({
 }) {
   return (
     <label className="flex min-w-0 flex-col gap-1">
-      <span className="text-xs text-foreground/60">{label}</span>
+      <span className="text-xs text-[var(--muted)]">{label}</span>
       {children}
-      {hint && <span className="text-xs text-foreground/45">{hint}</span>}
+      {hint && <span className="text-xs text-[var(--muted)]">{hint}</span>}
     </label>
   );
 }

@@ -51,7 +51,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
       </div>
       {archived.length > 0 && (
         <div>
-          <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground/50">
+          <h4 className="group-label mb-1">
             Archived tracks
           </h4>
           <ul className="flex flex-col">
@@ -59,7 +59,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
               <li key={t.id} className="flex items-center justify-between gap-2 border-b border-[var(--separator)] py-1.5">
                 <span className="flex items-center gap-2 text-sm">
                   <TrackDot color={t.color} /> {t.name}
-                  <span className="text-foreground/50">
+                  <span className="text-[var(--muted)]">
                     · {s.books.filter((b) => b.trackId === t.id).length} books
                   </span>
                 </span>
@@ -114,7 +114,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
             <TrackDot color={track.color} />
             {track.name}
           </span>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-[var(--muted)]">
             {open.length} of {track.wipLimit} open
             {track.dailyTarget > 0 ? ` · ${track.dailyTarget} pages a day` : ""}
             {track.slot ? ` · ${track.slot}` : ""}
@@ -144,7 +144,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
 
       <h4 className="rd-sub">Reading</h4>
       {open.length === 0 ? (
-        <p className="py-1 text-sm text-foreground/50">Nothing open.</p>
+        <p className="py-1 text-sm text-[var(--muted)]">Nothing open.</p>
       ) : (
         <ul className="flex flex-col">
           {open.map((b) => (
@@ -164,7 +164,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
 
       <h4 className="rd-sub">Up next</h4>
       {queue.length === 0 ? (
-        <p className="py-1 text-sm text-foreground/50">The queue is empty.</p>
+        <p className="py-1 text-sm text-[var(--muted)]">The queue is empty.</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={shown.map((b) => b.id)} strategy={verticalListSortingStrategy}>
@@ -220,7 +220,7 @@ function QueueRow({ book, first, divider }: { book: Book; first: boolean; divide
       </button>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <RowTitle book={book} />
-        <span className="flex flex-wrap items-center gap-1.5 text-xs text-foreground/60">
+        <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
           {book.status === "paused" && <StatusBadge status="paused" />}
           {book.status === "paused" && book.read > 0 && <span>page {book.read}</span>}
           {book.pages > 0 && <span>{book.pages} pages</span>}

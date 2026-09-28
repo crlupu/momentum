@@ -2,220 +2,214 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { useState } from "react";
-import { Button } from "./ui";
+import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
-  Menu, X, Target, Repeat, BarChart3, ScrollText, Settings, Plus, LogOut, Dumbbell, Apple,
-  BookOpen,
+  X, Target, Repeat, BarChart3, ScrollText, Settings, LogOut, Dumbbell, Apple, BookOpen,
+  ChevronRight,
 } from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
-import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
-import { readingUnits } from "@/lib/reading";
-import { sectionPath, sectionTitle, type SectionId } from "./sections";
+import { TodayStats } from "./TodayStats";
+import { Tracker } from "@/lib/tracker";
+import { sectionPath, sectionTitle, trimPath, type SectionId } from "./sections";
 
-/** The menu, in the order of the sections registry. Titles and pages come from there. */
-const NAV: { id: SectionId; icon: typeof Target }[] = [
-  { id: "goals", icon: Target },
-  { id: "tasks", icon: Repeat },
-  { id: "fitness", icon: Dumbbell },
-  { id: "nutrition", icon: Apple },
-  { id: "books", icon: BookOpen },
-  { id: "charts", icon: BarChart3 },
-  { id: "log", icon: ScrollText },
-  { id: "config", icon: Settings },
-];
+const ICON: Record<SectionId, typeof Target> = {
+  goals: Target,
+  tasks: Repeat,
+  fitness: Dumbbell,
+  nutrition: Apple,
+  books: BookOpen,
+  charts: BarChart3,
+  log: ScrollText,
+  config: Settings,
+};
 
-/** Trailing slashes are emitted for static hosting; compare without them. */
-const trim = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p);
+/**
+ * The sections, split by what they are for. The first five are where things
+ * get recorded, and are the phone's tabs. Progress and Log look back over
+ * what was recorded; Settings shapes the rest. On a phone those three live
+ * behind More.
+ */
+const TRACK: SectionId[] = ["goals", "tasks", "fitness", "nutrition", "books"];
+const REVIEW: SectionId[] = ["charts", "log"];
 
-/** One top-bar stat: the figure, then a filled colour-coded label beside it. */
-function TopStat({
-  value,
-  label,
-  bg,
-}: {
-  value: string | number;
-  label: string;
-  bg: string;
-}) {
-  // Every stat carries the same text colour; the category reads from the
-  // tinted background and its dot, not from the type.
+function useCurrentPath() {
+  return trimPath(usePathname() ?? "/");
+}
+
+function NavLink({ id, current, onNavigate }: { id: SectionId; current: string; onNavigate?: () => void }) {
+  const href = sectionPath(id);
+  const active = trimPath(href) === current;
+  const Icon = ICON[id];
   return (
-    <span
-      className="flex shrink-0 items-center gap-1.5 px-2.5 py-1 whitespace-nowrap text-foreground"
-      style={{
-        backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${bg} 32%, transparent), color-mix(in srgb, ${bg} 12%, transparent))`,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bg} 45%, transparent)`,
-      }}
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={"side-link" + (active ? " is-active" : "")}
+      style={{ ["--link-tint" as string]: `var(--tint-${id})` }}
     >
-      <span
-        className="inline-block h-1.5 w-1.5 shrink-0"
-        style={{ background: bg }}
-        aria-hidden
-      />
-      <span className="font-mono-n text-sm font-bold leading-none">{value}</span>
-      <span className="text-[10px] font-semibold leading-none opacity-70">{label}</span>
-    </span>
+      <span className="side-link__icon" aria-hidden>
+        <Icon />
+      </span>
+      {sectionTitle(id)}
+    </Link>
   );
 }
 
-function TopStats({ tracker }: { tracker: Tracker }) {
-  const st = tracker.state;
-  if (!st) return null;
-
-  const today = dateKey();
-  // Reading tracks count alongside recurring tasks: a track is done for the
-  // day once its page target is met.
-  const units = [...recurringUnits(st.recurring, today), ...readingUnits(st, today)];
-  const done = units.filter((u) => u.done).length;
-  const notDone = units.length - done;
-
-  const openTodos = st.todos.filter((t) => !t.done).length;
-  const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
-  const kcalToday = st.calories
-    .filter((e) => e.date === today)
-    .reduce((a, e) => a + e.kcal, 0);
-  const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
-
+/**
+ * Desktop navigation: a sidebar that is always there, from 1056px up.
+ *
+ * Holds navigation and today's figures — nothing that acts. New goals and
+ * new tasks are made on their own pages, next to the lists they join.
+ */
+export function Sidebar({ tracker }: { tracker: Tracker }) {
+  const current = useCurrentPath();
   return (
-    <div className="top-stats ml-auto flex items-center gap-3 overflow-x-auto pl-3">
-      <TopStat value={done} label="done today" bg="#a7f0ba" />
-      <TopStat value={notDone} label="not done" bg="#8a3ffc" />
-      <TopStat value={openTodos} label="to do" bg="#33b1ff" />
-      <TopStat value={latestWeight != null ? `${latestWeight}` : "—"} label="kg" bg="#0f62fe" />
-      <TopStat value={kcalToday} label="kcal today" bg="#ff8389" />
-      {kcalLeft != null && (
-        <TopStat
-          value={kcalLeft}
-          label="kcal left / week"
-          bg={kcalLeft >= 0 ? "#a7f0ba" : "#ff8389"}
-        />
-      )}
-    </div>
-  );
-}
+    <aside className="sidebar bar-material" aria-label="Sections">
+      <Link href="/" className="sidebar__brand" aria-label="Momentum, go to Goals">
+        <Logo className="h-5 w-auto text-[var(--tint-tasks)]" />
+        <span>Momentum</span>
+      </Link>
 
-function SidebarInner({
-  tracker,
-  onAddGoal,
-  onAddRecurring,
-  onNavigate,
-  onClose,
-}: {
-  tracker: Tracker;
-  onAddGoal: () => void;
-  onAddRecurring: () => void;
-  onNavigate: () => void;
-  onClose?: () => void;
-}) {
-  const current = trim(usePathname() ?? "/");
-  return (
-    <div className="flex h-full flex-col gap-1 p-4">
-      <div className="mb-4 flex items-center justify-between px-1">
-        <span className="flex items-center gap-2">
-          <Logo className="h-5 w-auto text-[var(--c-blue-60)]" />
-          <span className="font-display text-xl font-bold tracking-tight">Momentum</span>
-        </span>
-        {onClose && (
-          <button aria-label="Close menu" onClick={onClose} className="text-foreground/50 hover:text-foreground">
-            <X className="h-5 w-5" />
+      <nav className="sidebar__nav">
+        {TRACK.map((id) => <NavLink key={id} id={id} current={current} />)}
+        <div className="sidebar__gap" />
+        {REVIEW.map((id) => <NavLink key={id} id={id} current={current} />)}
+        <NavLink id="config" current={current} />
+      </nav>
+
+      <section className="sidebar__today" aria-labelledby="sidebar-today">
+        <h2 id="sidebar-today" className="group-label">Today</h2>
+        <TodayStats tracker={tracker} layout="list" />
+      </section>
+
+      <div className="sidebar__foot">
+        <ThemeSwitch className="w-full" />
+        {tracker.user && (
+          <button type="button" className="side-link" onClick={() => tracker.signOutUser()}>
+            <span className="side-link__icon" aria-hidden><LogOut /></span>
+            Sign out
           </button>
         )}
       </div>
-
-      <div className="mb-2 flex flex-col gap-2">
-        <Button variant="primary" onPress={onAddGoal} className="w-full justify-start">
-          <Plus className="h-4 w-4" /> New goal
-        </Button>
-        <Button variant="outline" onPress={onAddRecurring} className="w-full justify-start">
-          <Plus className="h-4 w-4" /> New recurring task
-        </Button>
-      </div>
-
-      <div className="my-2 h-px bg-foreground/10" />
-
-      <nav className="flex flex-col gap-1">
-        {NAV.map((n) => {
-          const href = sectionPath(n.id);
-          const active = trim(href) === current;
-          return (
-            <Link
-              key={n.id}
-              href={href}
-              onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={
-                "flex items-center gap-3 px-3 py-2.5 text-left text-[15px] hover:bg-foreground/[0.06] hover:text-foreground " +
-                (active ? "bg-foreground/[0.08] font-semibold text-foreground" : "text-foreground/70")
-              }
-            >
-              <n.icon className="h-4 w-4" style={{ color: `var(--sec-${n.id})` }} />
-              {sectionTitle(n.id)}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto flex items-center justify-between pt-4">
-        <ThemeSwitch />
-        {tracker.user && (
-          <Button size="sm" variant="ghost" isIconOnly aria-label="Sign out" onPress={() => tracker.signOutUser()}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-    </div>
+    </aside>
   );
 }
 
-export function Sidebar({
-  tracker,
-  onAddGoal,
-  onAddRecurring,
-}: {
-  tracker: Tracker;
-  onAddGoal: () => void;
-  onAddRecurring: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-
+/**
+ * Phone and tablet navigation: a tab bar along the bottom, below 1056px.
+ * Five tabs, one per section where things get recorded. Always visible.
+ */
+export function TabBar() {
+  const current = useCurrentPath();
   return (
-    <>
-      {/* Top bar: menu button, logo, stats. The menu is always an overlay. */}
-      <div className="app-bar sticky top-0 z-30 flex items-center gap-3 px-4 py-3">
-        <button
-          aria-label="Open menu"
-          onClick={() => setOpen(true)}
-          className="text-foreground/80 hover:text-foreground"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
-        <Link href="/" className="flex shrink-0 items-center" aria-label="Momentum home">
-          <Logo className="h-6 w-auto text-[var(--c-blue-60)]" />
-        </Link>
-        <TopStats tracker={tracker} />
-      </div>
-
-      {/* Overlay drawer */}
-      {open && (
-        <div className="fixed inset-0 z-40">
-          <div className="scrim absolute inset-0" onClick={() => setOpen(false)} aria-hidden />
-          <aside
-            className="overlay-surface absolute inset-y-0 left-0 w-64 max-w-[85vw]"
-            style={{ color: "var(--overlay-foreground)" }}
+    <nav className="tabbar bar-material" aria-label="Sections">
+      {TRACK.map((id) => {
+        const href = sectionPath(id);
+        const active = trimPath(href) === current;
+        const Icon = ICON[id];
+        return (
+          <Link
+            key={id}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={"tabbar__tab" + (active ? " is-active" : "")}
+            style={{ ["--link-tint" as string]: `var(--sec-${id})` }}
           >
-            <SidebarInner
-              tracker={tracker}
-              onAddGoal={() => { onAddGoal(); setOpen(false); }}
-              onAddRecurring={() => { onAddRecurring(); setOpen(false); }}
-              onNavigate={() => setOpen(false)}
-              onClose={() => setOpen(false)}
-            />
-          </aside>
+            <Icon aria-hidden />
+            <span>{sectionTitle(id)}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * More, on a phone: the sections that aren't tabs, appearance, and sign-out.
+ * A sheet from the bottom, dismissed by the close button, the scrim or Escape.
+ */
+export function MoreSheet({
+  open,
+  onClose,
+  tracker,
+}: {
+  open: boolean;
+  onClose: () => void;
+  tracker: Tracker;
+}) {
+  const current = useCurrentPath();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal="true" aria-labelledby="more-title">
+      <div className="scrim absolute inset-0" onClick={onClose} aria-hidden />
+      <div className="sheet overlay-surface">
+        <div className="sheet__grabber" aria-hidden />
+        <div className="sheet__head">
+          <h2 id="more-title" className="sheet__title">More</h2>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="icon-circle">
+            <X aria-hidden />
+          </button>
         </div>
-      )}
-    </>
+
+        <ul className="inset-list">
+          {[...REVIEW, "config" as SectionId].map((id) => {
+            const href = sectionPath(id);
+            const active = trimPath(href) === current;
+            const Icon = ICON[id];
+            return (
+              <li key={id}>
+                <Link
+                  href={href}
+                  onClick={onClose}
+                  aria-current={active ? "page" : undefined}
+                  className="inset-list__row"
+                >
+                  <span className="inset-list__icon" style={{ background: `var(--tint-${id})` }} aria-hidden>
+                    <Icon />
+                  </span>
+                  <span className="flex-1">{sectionTitle(id)}</span>
+                  <ChevronRight className="inset-list__chevron" aria-hidden />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        <h3 className="group-label mt-5">Appearance</h3>
+        <ThemeSwitch className="w-full" />
+
+        {tracker.user && (
+          <ul className="inset-list mt-5">
+            <li>
+              <button
+                type="button"
+                className="inset-list__row text-[var(--danger)]"
+                onClick={() => { onClose(); void tracker.signOutUser(); }}
+              >
+                <span className="flex-1 text-left">Sign out</span>
+                <LogOut className="h-5 w-5" aria-hidden />
+              </button>
+            </li>
+          </ul>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }

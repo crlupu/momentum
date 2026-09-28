@@ -5,22 +5,20 @@ import { usePending } from "./ActionButton";
 import { Check, Plus } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
 
-function RecurringCheckbox({ tracker, id, done }: { tracker: Tracker; id: string; done: boolean }) {
+function RecurringCheckbox({ tracker, id, done, label }: { tracker: Tracker; id: string; done: boolean; label: string }) {
   const { pending, run } = usePending();
   return (
     <button
-      aria-label={done ? "Mark not done" : "Mark done"}
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      aria-label={label}
       disabled={pending}
       onClick={() => void run(() => tracker.toggleRecurring(id))}
-      className="-m-2 flex shrink-0 items-center justify-center p-2"
+      className={"check" + (done ? " check--on" : "")}
     >
-      <span
-        className={
-          "flex h-[17px] w-[17px] items-center justify-center border-2 transition-colors " +
-          (done ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-transparent")
-        }
-      >
-        {done && <Check className="h-2.5 w-2.5" />}
+      <span className="check__ring">
+        {done && <Check className="h-4 w-4" aria-hidden />}
       </span>
     </button>
   );
@@ -51,36 +49,28 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
         <Card.Content className="px-3 py-3 md:px-4">
 
           {recurring.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">None yet — add one with the button above.</p>
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">No recurring tasks yet. Add one with New.</p>
           ) : (
             <ul
               className={
                 "list-none p-0 " +
-                (recurring.length > 5 ? "max-h-[228px] overflow-y-auto pr-1 recurring-scroll" : "")
+                (recurring.length > 5 ? "max-h-[17rem] overflow-y-auto pr-1 recurring-scroll" : "")
               }
             >
               {recurring.map((r) => {
                 const c = tracker.cat(r.catId);
                 const done = isRecurringDone(r, today);
                 return (
-                  <li key={r.id} className="flex items-center gap-1.5 border-b border-foreground/10 px-1 py-3 last:border-b-0">
-                    <span className={"flex-1 min-w-0 text-[15px] " + (done ? "text-foreground/45 line-through" : "")}>
-                      <span className="truncate">{r.title}</span>
-                      {r.groupId && (
-                        <span className="ml-1.5 bg-foreground/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
-                          {groupName(r.groupId)}
-                        </span>
-                      )}
+                  <li key={r.id} className="task-row">
+                    <RecurringCheckbox tracker={tracker} id={r.id} done={done} label={r.title} />
+                    <span className={"task-row__title " + (done ? "is-done" : "")}>
+                      {r.title}
+                      {r.groupId && <span className="task-row__group">{groupName(r.groupId)}</span>}
                     </span>
-                    <span className="flex w-16 shrink-0 items-center gap-1.5 text-[11px] text-foreground/60">
-                      <span
-                        className="inline-block h-2 w-2 shrink-0"
-                        style={{ background: c.color }}
-                        aria-hidden
-                      />
+                    <span className="task-row__cat">
+                      <span className="cat-dot" style={{ background: c.color }} aria-hidden />
                       <span className="truncate">{c.name}</span>
                     </span>
-                    <RecurringCheckbox tracker={tracker} id={r.id} done={done} />
                   </li>
                 );
               })}

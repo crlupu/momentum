@@ -28,7 +28,7 @@ function Legend({ color, name }: { color: string; name: string }) {
   return (
     <span className="flex items-center gap-1.5">
       <span
-        className="inline-block h-2 w-2 shrink-0"
+        className="inline-block h-2 w-2 shrink-0 rounded-full"
         style={{ background: color }}
         aria-hidden
       />
@@ -70,7 +70,7 @@ function TargetMeter({
         {target ? `${value} / ${target} g` : `${value} g logged`}
       </span>
       <div
-        className="mt-2 h-1.5 w-full overflow-hidden"
+        className="mt-2 h-1.5 w-full overflow-hidden rounded-full"
         style={{ background: TRACK }}
       >
         {target ? (
@@ -195,8 +195,8 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
         ) : (
           <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
             {someTarget
-              ? "Showing grams. Set both targets in Configuration to compare them as % of target."
-              : "Showing grams. Set daily targets in Configuration to see % of target."}
+              ? "Showing grams. Set both targets in Settings to compare them as % of target."
+              : "Showing grams. Set daily targets in Settings to see % of target."}
           </p>
         )}
 
@@ -214,7 +214,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                 aria-hidden
               >
                 <span className="h-px flex-1" style={{ background: "var(--border)" }} />
-                <span className="text-[9px]" style={{ color: LABEL }}>
+                <span className="text-[11px]" style={{ color: LABEL }}>
                   100%
                 </span>
               </div>
@@ -251,7 +251,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                   />
                 </div>
                 <span
-                  className="text-[9px] leading-none tabular-nums"
+                  className="text-[11px] leading-none tabular-nums"
                   style={{ color: LABEL }}
                 >
                   {d.getDate()}

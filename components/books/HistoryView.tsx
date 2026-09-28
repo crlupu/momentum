@@ -65,7 +65,7 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
         </PanelHeader>
         <div className="card p-4 md:p-5">
           {list.length === 0 ? (
-            <p className="text-[15px] text-foreground/60">
+            <p className="text-[15px] text-[var(--muted)]">
               Nothing finished{year ? ` in ${year}` : ""} yet.
             </p>
           ) : (
@@ -97,7 +97,7 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
                             <span className="font-semibold">{b.title}</span>
                           </button>
                           {b.status === "dropped" && (
-                            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-foreground/60">
+                            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--muted)]">
                               <StatusBadge status="dropped" />
                               {b.dropReason}
                             </span>
@@ -271,7 +271,7 @@ function ColumnChart({
           </div>
         )}
       </div>
-      <details className="mt-1 text-xs text-foreground/60">
+      <details className="mt-1 text-xs text-[var(--muted)]">
         <summary className="cursor-pointer">Show as table</summary>
         <table className="rd-table mt-1">
           <thead>
@@ -354,7 +354,7 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
             unit="pages"
           />
         ) : (
-          <p className="text-sm text-foreground/60">
+          <p className="text-sm text-[var(--muted)]">
             Log some reading and it shows up here, week by week.
           </p>
         )}
@@ -397,7 +397,7 @@ function FinishedPerMonth({ tracker }: { tracker: Tracker }) {
             unit="books"
           />
         ) : (
-          <p className="text-sm text-foreground/60">No books finished in the last year yet.</p>
+          <p className="text-sm text-[var(--muted)]">No books finished in the last year yet.</p>
         )}
       </div>
     </section>
@@ -493,7 +493,7 @@ function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) 
             "none yet"
           )}
         </p>
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-[var(--muted)]">
           Pages count logged sessions; progress entered before sessions existed isn&apos;t dated.
         </p>
       </div>

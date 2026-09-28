@@ -110,7 +110,7 @@ function ChooseGoalsDialog({
   return (
     <div className="flex flex-col gap-3">
       {s.goals.length === 0 ? (
-        <p className="text-[15px] text-foreground/60">
+        <p className="text-[15px] text-[var(--muted)]">
           No goals yet. Add one in the section below, then put it on this path.
         </p>
       ) : (
@@ -126,7 +126,7 @@ function ChooseGoalsDialog({
                     onChange={(e) => toggle(g.id, e.target.checked)}
                   />
                   <span className="min-w-0 flex-1 truncate text-[15px]">{g.title}</span>
-                  <span className="font-mono-n shrink-0 text-xs text-foreground/50">
+                  <span className="font-mono-n shrink-0 text-xs text-[var(--muted)]">
                     {g.done ? "done" : `${goalPct(g)}%`}
                   </span>
                 </label>
@@ -168,7 +168,7 @@ function StepRow({
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className={"block truncate text-[15px]" + (goal.done ? " text-foreground/45" : "")}>
+        <span className={"block truncate text-[15px]" + (goal.done ? " text-[var(--muted)]" : "")}>
           {goal.title}
         </span>
         <span className="path-step__meter" aria-hidden>
@@ -176,7 +176,7 @@ function StepRow({
         </span>
       </span>
 
-      <span className="font-mono-n shrink-0 text-xs text-foreground/50">{pct}%</span>
+      <span className="font-mono-n shrink-0 text-xs text-[var(--muted)]">{pct}%</span>
 
       <span className="cfg-actions">
         <Button
@@ -243,9 +243,9 @@ function PathCard({ tracker, path }: { tracker: Tracker; path: Path }) {
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold leading-tight">{path.title}</span>
               {path.note && (
-                <span className="mt-0.5 block text-xs text-foreground/50">{path.note}</span>
+                <span className="mt-0.5 block text-xs text-[var(--muted)]">{path.note}</span>
               )}
-              <span className="mt-1 block text-xs text-foreground/50">
+              <span className="mt-1 block text-xs text-[var(--muted)]">
                 {goals.length === 0
                   ? "No goals yet"
                   : `${doneCount} of ${goals.length} goals complete`}
@@ -329,7 +329,7 @@ export function PathsView({ tracker }: { tracker: Tracker }) {
       </PanelHeader>
 
       {s.paths.length === 0 ? (
-        <p className="py-1 text-[15px] text-foreground/60">
+        <p className="py-1 text-[15px] text-[var(--muted)]">
           No paths yet. A path is a long undertaking made of goals — becoming a software architect,
           say — and shows how far through it you are.
         </p>

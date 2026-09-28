@@ -49,7 +49,7 @@ export function StartWorkoutButton({ tracker }: { tracker: Tracker }) {
             >
               <Play className="h-3.5 w-3.5" />
               {w.name}
-              <span className="ml-auto text-xs text-foreground/50">
+              <span className="ml-auto text-xs text-[var(--muted)]">
                 {w.exercises.length} {w.exercises.length === 1 ? "exercise" : "exercises"}
               </span>
             </Button>

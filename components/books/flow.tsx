@@ -144,7 +144,7 @@ function DialogFor({
           <ul className="mb-4 list-disc pl-5 text-[15px]">
             {first.map((b) => (
               <li key={b.id}>
-                {b.title} <span className="text-foreground/50">({R.STATUS_LABEL[b.status].toLowerCase()})</span>
+                {b.title} <span className="text-[var(--muted)]">({R.STATUS_LABEL[b.status].toLowerCase()})</span>
               </li>
             ))}
           </ul>
@@ -277,7 +277,7 @@ function DialogFor({
 
 /** Shown if a dialog outlives its book — deleted on another device, say. */
 function Gone() {
-  return <p className="text-[15px] text-foreground/60">This book is no longer on the shelf.</p>;
+  return <p className="text-[15px] text-[var(--muted)]">This book is no longer on the shelf.</p>;
 }
 
 function Actions({ children }: { children: ReactNode }) {
@@ -363,7 +363,7 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
         autoFocus
         className="w-full"
       />
-      <p className="min-h-4 text-xs text-foreground/60">
+      <p className="min-h-4 text-xs text-[var(--muted)]">
         {error ? <span style={{ color: "var(--danger)" }}>{error}</span> : derived}
         {!error && book.pages > 0 && `${derived ? " · " : ""}${book.pages} pages in all`}
       </p>
@@ -578,7 +578,7 @@ function PageForm({ tracker, book, skim }: { tracker: Tracker; book: Book; skim?
   };
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-sm text-foreground/60">
+      <p className="text-sm text-[var(--muted)]">
         {skim
           ? "Jump to the next chapter worth reading. Skimmed pages don't count toward today's target."
           : "Moves the book to this page without logging a session."}
@@ -595,7 +595,7 @@ function PageForm({ tracker, book, skim }: { tracker: Tracker; book: Book; skim?
         autoFocus
         className="w-full"
       />
-      <p className="text-xs text-foreground/50">
+      <p className="text-xs text-[var(--muted)]">
         Now on page {book.read}
         {book.pages > 0 ? ` of ${book.pages}` : ""}.
       </p>

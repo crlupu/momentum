@@ -58,7 +58,7 @@ function Heatmap({
       <div className="w-max">
         <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
           {WD.map((d, i) => (
-            <div key={i} className="text-center text-[10px] font-medium text-foreground/40">
+            <div key={i} className="text-center text-[11px] font-medium text-[var(--muted)]">
               {d}
             </div>
           ))}
@@ -71,7 +71,7 @@ function Heatmap({
               <div
                 key={k}
                 title={`${k} — ${n} done`}
-                className="-[6px]"
+                className="rounded-[6px]"
                 style={{ width: CELL, height: CELL, background: shade(n) }}
               />
             );
@@ -82,24 +82,15 @@ function Heatmap({
   );
 }
 
-function Stat({
-  value,
-  label,
-  color,
-}: {
-  value: string | number;
-  label: string;
-  color: string;
-}) {
+/** One figure and its label. Neutral: the three figures are peers, and
+ *  giving each its own colour would suggest they meant different things. */
+function Stat({ value, label }: { value: string | number; label: string }) {
   return (
-    <div
-      className="px-3 py-2.5"
-      style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
-    >
-      <div className="font-mono-n text-2xl font-semibold" style={{ color }}>
+    <div className="rounded-[var(--r-control)] bg-[var(--default)] px-3 py-2.5">
+      <div className="font-mono-n text-2xl font-bold">
         {value}
       </div>
-      <div className="text-xs text-foreground/60">{label}</div>
+      <div className="text-xs text-[var(--muted)]">{label}</div>
     </div>
   );
 }
@@ -152,25 +143,24 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
     <div className="space-y-4">
       <Card>
         <Card.Content className="p-4 md:p-5">
-          <h2 className="font-display mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/60">
+          <h2 className="mb-3 text-lg font-semibold">
             {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
           <div
             className="grid gap-2.5"
             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
           >
-            <Stat value={mTotal} label="completions" color="var(--sec-goals)" />
+            <Stat value={mTotal} label="Completions" />
             <Stat
               value={best ? best[1] : "–"}
-              label={best ? `best day · ${fmtDate(best[0])}` : "best day"}
-              color="var(--sec-charts)"
+              label={best ? `Best day, ${fmtDate(best[0])}` : "Best day"}
             />
-            <Stat value={avg} label="avg / active day" color="var(--sec-log)" />
+            <Stat value={avg} label="Average per active day" />
           </div>
 
-          <div className="mt-4 border-t border-foreground/10 pt-3 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-            Daily — last 14 days
-          </div>
+          <h3 className="group-label mt-4 border-t border-[var(--separator)] pt-3">
+            Each day, last 14 days
+          </h3>
           <div className="flex h-[150px] items-end gap-1.5 pt-2">
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
@@ -187,7 +177,7 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
                     background: barFill(counts[i]),
                   }}
                 />
-                <span className="text-[10px] leading-none whitespace-nowrap tabular-nums text-foreground/50">
+                <span className="text-[11px] leading-none whitespace-nowrap tabular-nums text-[var(--muted)]">
                   <span className="md:hidden">{d.getDate()}</span>
                   <span className="hidden md:inline">
                     {d.getDate()}/{d.getMonth() + 1}
@@ -201,12 +191,12 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
 
       <Card>
         <Card.Content className="p-4 md:p-5">
-          <h2 className="font-display mb-1 text-sm font-semibold uppercase tracking-wide text-foreground/60">
+          <h2 className="mb-1 text-lg font-semibold">
             Completions by category
           </h2>
-          <p className="mb-4 text-xs text-foreground/50">This month · each category tracked separately</p>
+          <p className="mb-4 text-[13px] text-[var(--muted)]">This month, one calendar per category</p>
           {perCat.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-foreground/60">
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
               Check off some recurring tasks to see activity.
             </p>
           ) : (
@@ -214,9 +204,9 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
               {perCat.map(({ c, map, total }) => (
                 <div key={c.id}>
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5" style={{ background: c.color }} aria-hidden />
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
                     <span className="text-sm font-medium">{c.name}</span>
-                    <span className="font-mono-n text-xs text-foreground/50">{total}</span>
+                    <span className="font-mono-n text-xs text-[var(--muted)]">{total}</span>
                   </div>
                   <Heatmap cells={cells} map={map} color={c.color} />
                 </div>
