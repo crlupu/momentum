@@ -75,6 +75,7 @@ export function DeleteButton({
           </Button>
           <Button
             variant="danger"
+            className="btn-danger-solid"
             onPress={() => void confirm()}
             isDisabled={pending}
           >

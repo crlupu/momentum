@@ -1332,18 +1332,22 @@ html.dark {
    so the row underneath stays the thing being looked at.
    ============================================================ */
 .btn-delete-bare.cds--btn {
-  background: transparent;
-  /* A 1px outline would still read as a button sitting in the row. */
+  /* A soft red tint with a red bin: every button has a surface, and a
+     delete says so by colour without a solid red slab on every row. The
+     solid red is kept for the confirming step (.btn-danger-solid). */
+  background: var(--danger-soft);
   border: none;
-  /* Grey at rest: a column of red bins down a list shouts over the list.
-     The red arrives when the pointer or focus does, and the confirming
-     step is red regardless. */
-  color: var(--muted);
+  color: var(--danger);
 }
-.btn-delete-bare.cds--btn:hover,
+@media (hover: hover) {
+  .btn-delete-bare.cds--btn:hover {
+    background: var(--danger-soft-hover);
+    color: var(--danger);
+  }
+}
 .btn-delete-bare.cds--btn:active,
 .btn-delete-bare.cds--btn:focus-visible {
-  background: var(--danger-soft);
+  background: var(--danger-soft-hover);
   border: none;
   color: var(--danger);
 }
@@ -1373,20 +1377,20 @@ html.dark {
    since those are deliberate actions rather than row furniture.
    ============================================================ */
 #config .cds--btn.btn-icon-only:not(.btn-add) {
-  background: transparent;
-  border: none;
-  color: var(--accent-text);
-}
-#config .cds--btn.btn-icon-only:not(.btn-add):hover,
-#config .cds--btn.btn-icon-only:not(.btn-add):active,
-#config .cds--btn.btn-icon-only:not(.btn-add):focus {
-  background: transparent;
+  background: var(--default);
   border: none;
   color: var(--foreground);
 }
+@media (hover: hover) {
+  #config .cds--btn.btn-icon-only:not(.btn-add):hover {
+    background: var(--fill-hover);
+    color: var(--foreground);
+  }
+}
 #config .cds--btn.btn-icon-only:not(.btn-add):disabled {
-  background: transparent;
+  background: var(--default);
   border: none;
+  opacity: 0.45;
 }
 /* Carbon paints icons through its own selector, which would otherwise win. */
 #config .cds--btn.btn-icon-only:not(.btn-add) svg,
@@ -1399,13 +1403,20 @@ html.dark {
 }
 /* Delete keeps its meaning in red. Same specificity as the rule above, so
    this has to stay after it. */
-#config .cds--btn--danger.btn-icon-only {
+/* Same specificity as the grey rule above, and later, so deletes win. */
+#config .cds--btn--danger.btn-icon-only:not(.btn-add),
+#config .btn-delete-bare.btn-icon-only:not(.btn-add),
+#config .btn-delete-bare.cds--btn {
+  background: var(--danger-soft);
   color: var(--danger);
 }
-#config .cds--btn--danger.btn-icon-only:hover,
-#config .cds--btn--danger.btn-icon-only:active,
-#config .cds--btn--danger.btn-icon-only:focus {
-  color: var(--danger-hover);
+@media (hover: hover) {
+  #config .cds--btn--danger.btn-icon-only:not(.btn-add):hover,
+  #config .btn-delete-bare.btn-icon-only:not(.btn-add):hover,
+  #config .btn-delete-bare.cds--btn:hover {
+    background: var(--danger-soft-hover);
+    color: var(--danger);
+  }
 }
 
 /* ============================================================
@@ -1916,6 +1927,7 @@ html.dark {
 .cfg-swatch-btn {
   inline-size: 2.25rem;
   block-size: 2.25rem;
+  border-radius: var(--r-control);
 }
 
 /* A finished circuit block: its name, a tick, and nothing else to read. */
@@ -2145,11 +2157,15 @@ html.dark {
   padding: 0.35rem 0;
   font-size: 13px;
   color: var(--muted);
-  background: none;
+  background: var(--default);
+  border-radius: var(--r-pill);
+  padding: 0.25rem 0.75rem;
   border: 0;
   cursor: pointer;
 }
-.rd-later:hover { color: var(--foreground); }
+@media (hover: hover) {
+  .rd-later:hover { color: var(--foreground); background: var(--fill-hover); }
+}
 
 .book-cover--sm {
   width: 40px;
@@ -2853,19 +2869,28 @@ html.dark {
   align-items: center;
   gap: 0.25rem;
   min-block-size: 2.25rem;
-  padding: 0.25rem 0.5rem;
-  margin-inline-end: -0.5rem;
+  padding: 0.25rem 0.875rem;
   border-radius: var(--r-control);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--foreground);
+  background: var(--default);
 }
 .text-action svg { fill: var(--accent); }
 .text-action[aria-pressed="true"] { color: var(--accent-foreground); background: var(--accent); }
 @media (hover: hover) {
-  .text-action:hover { background: var(--accent-soft); }
+  .text-action:not([aria-pressed="true"]):hover { background: var(--fill-hover); }
 }
 @media (pointer: coarse) {
   .text-action { min-block-size: 2.75rem; }
 }
 } /* @layer components */
+
+/* The confirming step of a delete: the one solid red button in the app. */
+.btn-danger-solid.cds--btn {
+  background: var(--danger);
+  color: #ffffff;
+}
+@media (hover: hover) {
+  .btn-danger-solid.cds--btn:hover { background: var(--danger-hover); color: #ffffff; }
+}

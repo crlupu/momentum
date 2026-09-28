@@ -233,14 +233,15 @@ function Sessions({ tracker, sessions }: { tracker: Tracker; sessions: R.Reading
                 </div>
                 {x.note && <p className="mt-0.5 text-sm text-foreground/75">{x.note}</p>}
               </div>
-              <button
-                type="button"
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
                 aria-label="Edit session"
-                className="p-1.5 text-[var(--muted)] hover:text-foreground"
-                onClick={() => setEditing(x.id)}
+                onPress={() => setEditing(x.id)}
               >
                 <Pencil className="h-4 w-4" />
-              </button>
+              </Button>
               <DeleteButton
                 what={`the ${x.pages}-page session on ${fmtDate(x.date)}`}
                 bare
@@ -410,14 +411,15 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
                 onDelete={() => tracker.removeQuote(n.id)}
               />
             ) : (
-              <button
-                type="button"
+              <Button
+                size="sm"
+                variant="ghost"
+                isIconOnly
                 aria-label="Remove key idea"
-                className="p-1 text-[var(--muted)] hover:text-foreground"
-                onClick={() => void tracker.updateReadingSession(n.id, { note: null })}
+                onPress={() => void tracker.updateReadingSession(n.id, { note: null })}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </li>
         ))}
