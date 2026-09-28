@@ -216,3 +216,34 @@ function SwitchRoot({
 }
 const Noop = ({ children }: { children?: ReactNode }) => <>{children}</>;
 export const Switch = Object.assign(SwitchRoot, { Control: Noop, Thumb: () => null });
+
+/* ----------------------------- Panel header ----------------------------- */
+
+/**
+ * The heading above a card: a square in the section's colour, the title, and
+ * whatever belongs beside it — a figure, a legend, a button — on the right.
+ *
+ * One component so every card on every page is introduced the same way, at
+ * the same height, whether or not it has a button: two cards side by side
+ * then start level.
+ */
+export function PanelHeader({
+  title,
+  color,
+  children,
+}: {
+  title: ReactNode;
+  /** A colour or a var(); omitted for no square. */
+  color?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="panel-head">
+      <h2 className="panel-head__title">
+        {color && <span className="sec-dot" style={{ background: color }} aria-hidden />}
+        {title}
+      </h2>
+      {children && <div className="panel-head__side">{children}</div>}
+    </div>
+  );
+}

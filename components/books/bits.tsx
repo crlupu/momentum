@@ -5,25 +5,7 @@ import type { Book } from "@/lib/tracker";
 import { bookColor, bookProgress } from "@/lib/tracker";
 import { STATUS_LABEL, type BookStatus, type ReadingTrack } from "@/lib/reading";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** "28 Sep", or "28 Sep 2026" when the year matters. */
-export function fmtDate(key: string | undefined | null, withYear = false): string {
-  if (!key) return "—";
-  const [y, m, d] = key.split("-").map(Number);
-  return `${d} ${MONTHS[m - 1]}${withYear ? ` ${y}` : ""}`;
-}
-
-/** Year shown only when it isn't this one. */
-export function fmtDateAuto(key: string | undefined | null): string {
-  if (!key) return "—";
-  return fmtDate(key, key.slice(0, 4) !== String(new Date().getFullYear()));
-}
-
-export function monthLabel(key: string): string {
-  const [, m] = key.split("-").map(Number);
-  return MONTHS[m - 1];
-}
+export { fmtDate, fmtDateAuto, monthLabel } from "@/lib/dates";
 
 /** Whole pages, or a tenth when the number is small enough for it to matter. */
 export function fmtPace(perDay: number): string {

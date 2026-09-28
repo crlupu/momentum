@@ -38,7 +38,11 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       ? R.daysBetween(book.startedDate, book.doneDate) + 1
       : null;
 
-  const meta = [book.edition && `${book.edition} edition`, book.language, ...(book.tags ?? [])].filter(Boolean);
+  const meta = [
+    book.edition && `${book.edition} edition`,
+    book.language,
+    ...(book.tags ?? []),
+  ].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,7 +55,9 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
             <TrackChip track={track} />
             {phase && <span className="cat-chip">{phase.name}</span>}
           </div>
-          {meta.length > 0 && <span className="text-xs text-foreground/50">{meta.join(" · ")}</span>}
+          {meta.length > 0 && (
+            <span className="text-xs text-foreground/50">{meta.join(" · ")}</span>
+          )}
           <Meter book={book} colour={track?.color} />
           <ProgressText book={book} />
         </div>
@@ -98,7 +104,11 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       <div className="flex flex-wrap gap-2">
         {book.status === "active" && (
           <>
-            <Button size="sm" variant="primary" onPress={() => flow.open({ kind: "log", bookId: book.id })}>
+            <Button
+              size="sm"
+              variant="primary"
+              onPress={() => flow.open({ kind: "log", bookId: book.id })}
+            >
               Log reading
             </Button>
             <Button size="sm" variant="outline" onPress={() => void flow.finish(book.id)}>
@@ -133,11 +143,19 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
           </Button>
         )}
         {book.status !== "finished" && book.status !== "dropped" && (
-          <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "drop", bookId: book.id })}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={() => flow.open({ kind: "drop", bookId: book.id })}
+          >
             Drop
           </Button>
         )}
-        <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "edit", bookId: book.id })}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onPress={() => flow.open({ kind: "edit", bookId: book.id })}
+        >
           <Pencil className="h-3.5 w-3.5" /> Edit
         </Button>
       </div>
@@ -158,9 +176,14 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       {tab === "notes" && <Notes tracker={tracker} book={book} />}
       {tab === "timeline" && (
         <ol className="flex flex-col gap-1 text-sm">
-          {(book.statusLog ?? []).length === 0 && <li className="text-foreground/60">Nothing yet.</li>}
+          {(book.statusLog ?? []).length === 0 && (
+            <li className="text-foreground/60">Nothing yet.</li>
+          )}
           {[...(book.statusLog ?? [])].reverse().map((c, i) => (
-            <li key={i} className="flex justify-between gap-2 border-b border-[var(--separator)] py-1.5">
+            <li
+              key={i}
+              className="flex justify-between gap-2 border-b border-[var(--separator)] py-1.5"
+            >
               <span>{R.STATUS_LABEL[c.status]}</span>
               <span className="text-foreground/60">{fmtDate(c.date, true)}</span>
             </li>
@@ -174,41 +197,60 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
 /** Every sitting, newest first, each editable. Editing one moves the book's page. */
 function Sessions({ tracker, sessions }: { tracker: Tracker; sessions: R.ReadingSession[] }) {
   const [editing, setEditing] = useState<string | null>(null);
+  // The latest ten; a book read over months has a long log behind it.
+  const [all, setAll] = useState(false);
   if (sessions.length === 0)
     return <p className="text-sm text-foreground/60">No sessions logged yet.</p>;
+  const newest = [...sessions].reverse();
+  const shown = all ? newest : newest.slice(0, 10);
   return (
-    <ul className="flex flex-col">
-      {[...sessions].reverse().map((x) =>
-        editing === x.id ? (
-          <li key={x.id} className="border-b border-[var(--separator)] py-2">
-            <SessionEdit tracker={tracker} session={x} onDone={() => setEditing(null)} />
-          </li>
-        ) : (
-          <li key={x.id} className="flex items-start gap-2 border-b border-[var(--separator)] py-2">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm">
-                <span className="font-mono-n font-bold">{x.pages}</span> pages
-                <span className="text-foreground/60">
-                  {" "}
-                  · {fmtDateAuto(x.date)}
-                  {x.minutes ? ` · ${x.minutes} min` : ""}
-                </span>
+    <>
+      <ul className="flex flex-col">
+        {shown.map((x) =>
+          editing === x.id ? (
+            <li key={x.id} className="border-b border-[var(--separator)] py-2">
+              <SessionEdit tracker={tracker} session={x} onDone={() => setEditing(null)} />
+            </li>
+          ) : (
+            <li
+              key={x.id}
+              className="flex items-start gap-2 border-b border-[var(--separator)] py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm">
+                  <span className="font-mono-n font-bold">{x.pages}</span> pages
+                  <span className="text-foreground/60">
+                    {" "}
+                    · {fmtDateAuto(x.date)}
+                    {x.minutes ? ` · ${x.minutes} min` : ""}
+                  </span>
+                </div>
+                {x.note && <p className="mt-0.5 text-sm text-foreground/75">{x.note}</p>}
               </div>
-              {x.note && <p className="mt-0.5 text-sm text-foreground/75">{x.note}</p>}
-            </div>
-            <Button size="sm" variant="ghost" isIconOnly aria-label="Edit session" onPress={() => setEditing(x.id)}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <DeleteButton
-              what={`the ${x.pages}-page session on ${fmtDate(x.date)}`}
-              bare
-              iconOnly
-              onDelete={() => tracker.removeReadingSession(x.id)}
-            />
-          </li>
-        )
+              <button
+                type="button"
+                aria-label="Edit session"
+                className="p-1.5 text-foreground/50 hover:text-foreground"
+                onClick={() => setEditing(x.id)}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <DeleteButton
+                what={`the ${x.pages}-page session on ${fmtDate(x.date)}`}
+                bare
+                iconOnly
+                onDelete={() => tracker.removeReadingSession(x.id)}
+              />
+            </li>
+          ),
+        )}
+      </ul>
+      {newest.length > shown.length && (
+        <Button size="sm" variant="ghost" className="mt-1 self-start" onPress={() => setAll(true)}>
+          Show all {newest.length}
+        </Button>
       )}
-    </ul>
+    </>
   );
 }
 
@@ -237,23 +279,46 @@ function SessionEdit({
         pages: p,
         minutes: Number(minutes) || null,
         note: note || null,
-      })
+      }),
     );
   };
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <div className="grid grid-cols-3 gap-2">
         <Field label="Date">
-          <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value)} />
+          <input
+            type="date"
+            value={date}
+            max={dateKey()}
+            onChange={(e) => setDate(e.target.value)}
+          />
         </Field>
         <Field label="Pages">
-          <input type="number" inputMode="numeric" min={1} value={pages} onChange={(e) => setPages(e.target.value)} />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={pages}
+            onChange={(e) => setPages(e.target.value)}
+          />
         </Field>
         <Field label="Minutes">
-          <input type="number" inputMode="numeric" min={0} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+          />
         </Field>
       </div>
-      <input aria-label="Key idea" placeholder="Key idea" value={note} onChange={(e) => setNote(e.target.value)} className="w-full" />
+      <input
+        aria-label="Key idea"
+        placeholder="Key idea"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full"
+      />
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="outline" onPress={onDone}>
           Cancel
@@ -276,10 +341,24 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
   const items = [
     ...s.readingSessions
       .filter((x) => x.bookId === book.id && x.note)
-      .map((x) => ({ kind: "idea" as const, id: x.id, date: x.date, at: x.at, text: x.note!, page: undefined })),
+      .map((x) => ({
+        kind: "idea" as const,
+        id: x.id,
+        date: x.date,
+        at: x.at,
+        text: x.note!,
+        page: undefined,
+      })),
     ...s.bookQuotes
       .filter((q) => q.bookId === book.id)
-      .map((q) => ({ kind: "quote" as const, id: q.id, date: q.date, at: q.at, text: q.text, page: q.page })),
+      .map((q) => ({
+        kind: "quote" as const,
+        id: q.id,
+        date: q.date,
+        at: q.at,
+        text: q.text,
+        page: q.page,
+      })),
   ].sort((a, b) => (a.date === b.date ? a.at - b.at : a.date < b.date ? -1 : 1));
 
   const submit = async (e: FormEvent) => {
@@ -296,14 +375,19 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
     <div className="flex flex-col gap-3">
       {items.length === 0 && (
         <p className="text-sm text-foreground/60">
-          No notes yet. Key ideas written after a session, and quotes saved here, collect in this list.
+          No notes yet. Key ideas written after a session, and quotes saved here, collect in this
+          list.
         </p>
       )}
       <ul className="flex flex-col gap-2">
         {items.map((n) => (
           <li key={n.id} className={"rd-note" + (n.kind === "quote" ? " rd-note--quote" : "")}>
             <span className="rd-note__icon" aria-hidden>
-              {n.kind === "quote" ? <Quote className="h-4 w-4" /> : <Lightbulb className="h-4 w-4" />}
+              {n.kind === "quote" ? (
+                <Quote className="h-4 w-4" />
+              ) : (
+                <Lightbulb className="h-4 w-4" />
+              )}
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm">{n.text}</p>
@@ -313,7 +397,12 @@ function Notes({ tracker, book }: { tracker: Tracker; book: Book }) {
               </p>
             </div>
             {n.kind === "quote" ? (
-              <DeleteButton what="this quote" bare iconOnly onDelete={() => tracker.removeQuote(n.id)} />
+              <DeleteButton
+                what="this quote"
+                bare
+                iconOnly
+                onDelete={() => tracker.removeQuote(n.id)}
+              />
             ) : (
               <button
                 type="button"

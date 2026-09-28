@@ -80,7 +80,7 @@ function TopStats({ tracker }: { tracker: Tracker }) {
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
   return (
-    <div className="ml-auto flex items-center gap-3 overflow-x-auto pl-3">
+    <div className="top-stats ml-auto flex items-center gap-3 overflow-x-auto pl-3">
       <TopStat value={done} label="done today" bg="#a7f0ba" />
       <TopStat value={notDone} label="not done" bg="#8a3ffc" />
       <TopStat value={openTodos} label="to do" bg="#33b1ff" />

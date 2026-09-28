@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input } from "./ui";
+import { Button, Card, Input, PanelHeader } from "./ui";
 import { Check, Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";
@@ -47,10 +47,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <span className="sec-dot" style={{ background: "var(--sec-todos)" }} aria-hidden />
-        To do
-      </h2>
+      <PanelHeader title="To do" color="var(--sec-todos)" />
 
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">

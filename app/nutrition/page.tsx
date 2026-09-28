@@ -9,7 +9,7 @@ export default function NutritionPage() {
   const tracker = usePageTracker();
   return (
     <SectionPage id="nutrition">
-      <div className="grid items-start gap-5 md:grid-cols-2">
+      <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
         <CaloriesTracker tracker={tracker} />
         <MacroTracker tracker={tracker} />
       </div>

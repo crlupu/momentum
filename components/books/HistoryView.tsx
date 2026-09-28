@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useWidth } from "../useWidth";
 import { Tracker, dateKey } from "@/lib/tracker";
+import { PanelHeader } from "../ui";
 import * as R from "@/lib/reading";
 import { Segmented, StatusBadge, TrackDot, fmtDateAuto, monthLabel } from "./bits";
 import { useFlow } from "./flowContext";
@@ -15,9 +17,10 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
   const [showDropped, setShowDropped] = useState(false);
 
   const done = s.books.filter(
-    (b) => b.status === "finished" || (showDropped && b.status === "dropped")
+    (b) => b.status === "finished" || (showDropped && b.status === "dropped"),
   );
-  const endOf = (b: (typeof done)[number]) => (b.status === "finished" ? b.doneDate : b.droppedDate) ?? "";
+  const endOf = (b: (typeof done)[number]) =>
+    (b.status === "finished" ? b.doneDate : b.droppedDate) ?? "";
   const years = [
     ...new Set([
       ...s.books.map((b) => b.doneDate?.slice(0, 4)).filter(Boolean),
@@ -31,9 +34,9 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
     .sort((a, b) => (endOf(a) < endOf(b) ? 1 : -1));
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-8">
+      <section>
+        <PanelHeader title="Finished" color="var(--sec-books)">
           <select aria-label="Track" value={track} onChange={(e) => setTrack(e.target.value)}>
             <option value="">All tracks</option>
             {s.readingTracks.map((t) => (
@@ -59,54 +62,58 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
             />
             Include dropped
           </label>
+        </PanelHeader>
+        <div className="card p-4 md:p-5">
+          {list.length === 0 ? (
+            <p className="text-[15px] text-foreground/60">
+              Nothing finished{year ? ` in ${year}` : ""} yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="rd-table">
+                <thead>
+                  <tr>
+                    <th>Book</th>
+                    <th>Started</th>
+                    <th>Ended</th>
+                    <th className="text-right">Days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((b) => {
+                    const t = R.trackOf(s, b.trackId);
+                    const end = endOf(b);
+                    const days =
+                      b.startedDate && end ? R.daysBetween(b.startedDate, end) + 1 : null;
+                    return (
+                      <tr key={b.id}>
+                        <td>
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 text-left hover:underline"
+                            onClick={() => flow.open({ kind: "detail", bookId: b.id })}
+                          >
+                            {t && <TrackDot color={t.color} />}
+                            <span className="font-semibold">{b.title}</span>
+                          </button>
+                          {b.status === "dropped" && (
+                            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-foreground/60">
+                              <StatusBadge status="dropped" />
+                              {b.dropReason}
+                            </span>
+                          )}
+                        </td>
+                        <td>{fmtDateAuto(b.startedDate)}</td>
+                        <td>{fmtDateAuto(end)}</td>
+                        <td className="text-right font-mono-n">{days ?? "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-
-        {list.length === 0 ? (
-          <p className="text-[15px] text-foreground/60">Nothing finished{year ? ` in ${year}` : ""} yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="rd-table">
-              <thead>
-                <tr>
-                  <th>Book</th>
-                  <th>Started</th>
-                  <th>Ended</th>
-                  <th className="text-right">Days</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((b) => {
-                  const t = R.trackOf(s, b.trackId);
-                  const end = endOf(b);
-                  const days = b.startedDate && end ? R.daysBetween(b.startedDate, end) + 1 : null;
-                  return (
-                    <tr key={b.id}>
-                      <td>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1.5 text-left hover:underline"
-                          onClick={() => flow.open({ kind: "detail", bookId: b.id })}
-                        >
-                          {t && <TrackDot color={t.color} />}
-                          <span className="font-semibold">{b.title}</span>
-                        </button>
-                        {b.status === "dropped" && (
-                          <span className="mt-0.5 flex items-center gap-1.5 text-xs text-foreground/60">
-                            <StatusBadge status="dropped" />
-                            {b.dropReason}
-                          </span>
-                        )}
-                      </td>
-                      <td>{fmtDateAuto(b.startedDate)}</td>
-                      <td>{fmtDateAuto(end)}</td>
-                      <td className="text-right font-mono-n">{days ?? "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
 
       <PagesPerWeek tracker={tracker} />
@@ -120,24 +127,6 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
 
 type Segment = { id: string; name: string; value: number; color: string };
 type Column = { key: string; label: string; title: string; segments: Segment[] };
-
-/**
- * The width a chart actually has, so it is drawn at that size. Scaling one
- * drawing to fit would scale its text with it: tiny on a phone, huge on a
- * desktop.
- */
-function useWidth(): [React.RefObject<HTMLDivElement | null>, number] {
-  const ref = useRef<HTMLDivElement>(null);
-  const [w, setW] = useState(0);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width)));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, w];
-}
 
 /** Clean axis steps: a top that is 1, 2 or 5 times a power of ten, in three or four ticks. */
 function niceTicks(max: number): number[] {
@@ -195,7 +184,14 @@ function ColumnChart({
         </div>
       )}
       <div ref={box} className="relative" onMouseLeave={() => setHover(null)}>
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block" role="img" aria-label={label}>
+        <svg
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          className="block"
+          role="img"
+          aria-label={label}
+        >
           {ticks.map((t) => (
             <g key={t}>
               <line x1={left} x2={W} y1={y(t)} y2={y(t)} className="rd-chart__grid" />
@@ -224,7 +220,14 @@ function ColumnChart({
                   const d = r
                     ? `M${x0},${yt + h} V${yt + r} Q${x0},${yt} ${x0 + r},${yt} H${x0 + barW - r} Q${x0 + barW},${yt} ${x0 + barW},${yt + r} V${yt + h} Z`
                     : `M${x0},${yt + h} V${yt} H${x0 + barW} V${yt + h} Z`;
-                  return <path key={x.id} d={d} fill={x.color} opacity={hover == null || hover === i ? 1 : 0.45} />;
+                  return (
+                    <path
+                      key={x.id}
+                      d={d}
+                      fill={x.color}
+                      opacity={hover == null || hover === i ? 1 : 0.45}
+                    />
+                  );
                 })}
                 {/* Too tight for every label on a phone: every other one, kept
                     in step with the latest so it is always named. */}
@@ -248,7 +251,7 @@ function ColumnChart({
         </svg>
         {hover != null && (
           <div
-            className="rd-tip"
+            className="chart-tip"
             style={{
               left: `${((left + band * hover + band / 2) / W) * 100}%`,
               transform: hover > columns.length / 2 ? "translateX(-100%)" : undefined,
@@ -274,7 +277,12 @@ function ColumnChart({
           <thead>
             <tr>
               <th />
-              {columns[0]?.segments.length > 1 && columns[0].segments.map((x) => <th key={x.id} className="text-right">{x.name}</th>)}
+              {columns[0]?.segments.length > 1 &&
+                columns[0].segments.map((x) => (
+                  <th key={x.id} className="text-right">
+                    {x.name}
+                  </th>
+                ))}
               <th className="text-right">Total</th>
             </tr>
           </thead>
@@ -282,7 +290,12 @@ function ColumnChart({
             {columns.map((c, i) => (
               <tr key={c.key}>
                 <td>{c.title}</td>
-                {c.segments.length > 1 && c.segments.map((x) => <td key={x.id} className="text-right font-mono-n">{x.value}</td>)}
+                {c.segments.length > 1 &&
+                  c.segments.map((x) => (
+                    <td key={x.id} className="text-right font-mono-n">
+                      {x.value}
+                    </td>
+                  ))}
                 <td className="text-right font-mono-n">{totals[i]}</td>
               </tr>
             ))}
@@ -298,7 +311,7 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const today = dateKey();
   const tracks = s.readingTracks.filter(
-    (t) => !t.archived || s.books.some((b) => b.trackId === t.id)
+    (t) => !t.archived || s.books.some((b) => b.trackId === t.id),
   );
   const trackOfBook = new Map(s.books.map((b) => [b.id, b.trackId]));
   // Monday of this week, then eleven before it.
@@ -319,7 +332,9 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
         id: t.id,
         name: t.name,
         color: t.color,
-        value: inWeek.filter((x) => trackOfBook.get(x.bookId) === t.id).reduce((a, x) => a + x.pages, 0),
+        value: inWeek
+          .filter((x) => trackOfBook.get(x.bookId) === t.id)
+          .reduce((a, x) => a + x.pages, 0),
       })),
     };
   });
@@ -327,17 +342,23 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
 
   return (
     <section>
-      <h4 className="rd-sub">Pages per week</h4>
-      {any ? (
-        <ColumnChart
-          label="Pages read per week, by track, last 12 weeks"
-          columns={columns}
-          legend={tracks.length > 1 ? tracks.map((t) => ({ name: t.name, color: t.color })) : null}
-          unit="pages"
-        />
-      ) : (
-        <p className="text-sm text-foreground/60">Log some reading and it shows up here, week by week.</p>
-      )}
+      <PanelHeader title="Pages per week" color="var(--sec-books)" />
+      <div className="card p-4 md:p-5">
+        {any ? (
+          <ColumnChart
+            label="Pages read per week, by track, last 12 weeks"
+            columns={columns}
+            legend={
+              tracks.length > 1 ? tracks.map((t) => ({ name: t.name, color: t.color })) : null
+            }
+            unit="pages"
+          />
+        ) : (
+          <p className="text-sm text-foreground/60">
+            Log some reading and it shows up here, week by week.
+          </p>
+        )}
+      </div>
     </section>
   );
 }
@@ -366,12 +387,19 @@ function FinishedPerMonth({ tracker }: { tracker: Tracker }) {
   const any = columns.some((c) => c.segments[0].value > 0);
   return (
     <section>
-      <h4 className="rd-sub">Books finished per month</h4>
-      {any ? (
-        <ColumnChart label="Books finished per month, last 12 months" columns={columns} legend={null} unit="books" />
-      ) : (
-        <p className="text-sm text-foreground/60">No books finished in the last year yet.</p>
-      )}
+      <PanelHeader title="Books finished per month" color="var(--sec-books)" />
+      <div className="card p-4 md:p-5">
+        {any ? (
+          <ColumnChart
+            label="Books finished per month, last 12 months"
+            columns={columns}
+            legend={null}
+            unit="books"
+          />
+        ) : (
+          <p className="text-sm text-foreground/60">No books finished in the last year yet.</p>
+        )}
+      </div>
     </section>
   );
 }
@@ -389,22 +417,26 @@ function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) 
   const rows = s.readingTracks
     .map((t) => ({
       t,
-      books: s.books.filter((b) => b.trackId === t.id && b.status === "finished" && b.doneDate?.startsWith(year)).length,
-      pages: sessions.filter((x) => trackOfBook.get(x.bookId) === t.id).reduce((a, x) => a + x.pages, 0),
+      books: s.books.filter(
+        (b) => b.trackId === t.id && b.status === "finished" && b.doneDate?.startsWith(year),
+      ).length,
+      pages: sessions
+        .filter((x) => trackOfBook.get(x.bookId) === t.id)
+        .reduce((a, x) => a + x.pages, 0),
       streak: R.longestStreak(s, t, from, to),
     }))
     .filter((r) => r.books || r.pages || !r.t.archived);
 
   const noted = new Map<string, number>();
   for (const x of sessions) if (x.note) noted.set(x.bookId, (noted.get(x.bookId) ?? 0) + 1);
-  for (const q of s.bookQuotes) if (q.date.startsWith(year)) noted.set(q.bookId, (noted.get(q.bookId) ?? 0) + 1);
+  for (const q of s.bookQuotes)
+    if (q.date.startsWith(year)) noted.set(q.bookId, (noted.get(q.bookId) ?? 0) + 1);
   const top = [...noted.entries()].sort((a, b) => b[1] - a[1])[0];
   const topBook = top ? s.books.find((b) => b.id === top[0]) : undefined;
 
   return (
     <section>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="rd-sub !m-0">Year in review</h4>
+      <PanelHeader title="Year in review" color="var(--sec-books)">
         {years.length > 1 && (
           <Segmented
             label="Year"
@@ -414,50 +446,57 @@ function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) 
             options={years.slice(0, 4).map((y) => ({ value: y, label: y }))}
           />
         )}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="rd-table">
-          <thead>
-            <tr>
-              <th>Track</th>
-              <th className="text-right">Books</th>
-              <th className="text-right">Pages</th>
-              <th className="text-right">Longest streak</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.t.id}>
-                <td>
-                  <span className="flex items-center gap-1.5">
-                    <TrackDot color={r.t.color} /> {r.t.name}
-                  </span>
-                </td>
-                <td className="text-right font-mono-n">{r.books}</td>
-                <td className="text-right font-mono-n">{r.pages.toLocaleString()}</td>
-                <td className="text-right font-mono-n">{r.streak ? `${r.streak} d` : "—"}</td>
+      </PanelHeader>
+      <div className="card p-4 md:p-5">
+        <div className="overflow-x-auto">
+          <table className="rd-table">
+            <thead>
+              <tr>
+                <th>Track</th>
+                <th className="text-right">Books</th>
+                <th className="text-right">Pages</th>
+                <th className="text-right">Longest streak</th>
               </tr>
-            ))}
-            <tr className="font-semibold">
-              <td>All</td>
-              <td className="text-right font-mono-n">{rows.reduce((a, r) => a + r.books, 0)}</td>
-              <td className="text-right font-mono-n">{rows.reduce((a, r) => a + r.pages, 0).toLocaleString()}</td>
-              <td />
-            </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.t.id}>
+                  <td>
+                    <span className="flex items-center gap-1.5">
+                      <TrackDot color={r.t.color} /> {r.t.name}
+                    </span>
+                  </td>
+                  <td className="text-right font-mono-n">{r.books}</td>
+                  <td className="text-right font-mono-n">{r.pages.toLocaleString()}</td>
+                  <td className="text-right font-mono-n">{r.streak ? `${r.streak} d` : "—"}</td>
+                </tr>
+              ))}
+              <tr className="font-semibold">
+                <td>All</td>
+                <td className="text-right font-mono-n">{rows.reduce((a, r) => a + r.books, 0)}</td>
+                <td className="text-right font-mono-n">
+                  {rows.reduce((a, r) => a + r.pages, 0).toLocaleString()}
+                </td>
+                <td />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-sm text-foreground/70">
+          Most-noted book:{" "}
+          {topBook ? (
+            <>
+              <span className="font-semibold">{topBook.title}</span> ({top![1]} note
+              {top![1] === 1 ? "" : "s"})
+            </>
+          ) : (
+            "none yet"
+          )}
+        </p>
+        <p className="mt-1 text-xs text-foreground/50">
+          Pages count logged sessions; progress entered before sessions existed isn&apos;t dated.
+        </p>
       </div>
-      <p className="mt-2 text-sm text-foreground/70">
-        Most-noted book:{" "}
-        {topBook ? (
-          <>
-            <span className="font-semibold">{topBook.title}</span> ({top![1]} note{top![1] === 1 ? "" : "s"})
-          </>
-        ) : (
-          "none yet"
-        )}
-      </p>
-      <p className="mt-1 text-xs text-foreground/50">Pages count logged sessions; progress entered before sessions existed isn&apos;t dated.</p>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button } from "./ui";
+import { Card, Input, Button, PanelHeader } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -112,17 +112,12 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-          Training
-        </h3>
-        {/* Both controls sit with the chart they feed rather than in a section
-            of their own. */}
-        <div className="flex items-center gap-2">
-          <CardioButton tracker={tracker} />
-          <StartWorkoutButton tracker={tracker} />
-        </div>
-      </div>
+      {/* Both controls sit with the chart they feed rather than in a section
+          of their own. */}
+      <PanelHeader title="Training" color="var(--sec-fitness)">
+        <CardioButton tracker={tracker} />
+        <StartWorkoutButton tracker={tracker} />
+      </PanelHeader>
 
       {s.activeWorkout && (
         <div className="mb-5">
@@ -328,8 +323,10 @@ function DayChart({
               >
                 {values[i] ? values[i].toLocaleString() : ""}
               </span>
+              {/* Capped in width, so a desktop-wide chart still reads as
+                  bars rather than a row of blocks. */}
               <div
-                className="w-full"
+                className={"w-full max-w-[28px]" + (values[i] ? " rounded-t-[3px]" : "")}
                 title={values[i] ? tooltip(i) : undefined}
                 style={{
                   height: Math.max(2, (values[i] / max) * 68),

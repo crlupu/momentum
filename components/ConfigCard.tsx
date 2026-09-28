@@ -2,7 +2,7 @@
 
 import { ReactNode, createContext, useCallback, useContext, useState } from "react";
 import { Settings, Check } from "./icons";
-import { Button, Card } from "./ui";
+import { Button, Card, PanelHeader } from "./ui";
 
 /**
  * Whether the surrounding configuration card is in edit mode. Cards read this
@@ -35,10 +35,7 @@ export function ConfigCard({ title, children }: { title: string; children: React
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-          {title}
-        </h3>
+      <PanelHeader title={title} color="var(--sec-config)">
         <Button
           size="sm"
           variant={editing ? "primary" : "outline"}
@@ -49,7 +46,7 @@ export function ConfigCard({ title, children }: { title: string; children: React
         >
           {editing ? <Check className="h-3.5 w-3.5" /> : <Settings className="h-3.5 w-3.5" />}
         </Button>
-      </div>
+      </PanelHeader>
       <Card className={editing ? "config-card--editing" : undefined}>
         <Card.Content className="p-4 md:p-5">
           <EditingContext.Provider value={editing}>

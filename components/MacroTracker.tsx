@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "./ui";
+import { Button, Input, PanelHeader } from "./ui";
 import { Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, macroTotalsByDate } from "@/lib/tracker";
@@ -12,8 +12,11 @@ const TRACK = "var(--default)";
 /** Protein reads teal→blue, fibre green→teal, so the two series stay apart. */
 const PROTEIN = "var(--sec-nutrition)";
 const FIBER = "var(--signal)";
-const PROTEIN_SOLID = "#33b1ff";
-const FIBER_SOLID = "#a7f0ba";
+// The same colour for a series everywhere it appears — legend, figure, meter
+// and bars — so the legend actually keys the chart. Both are mid-tones that
+// read on either theme's surface.
+const PROTEIN_SOLID = PROTEIN;
+const FIBER_SOLID = FIBER;
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -132,23 +135,17 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: PROTEIN }} aria-hidden />
-          Protein &amp; fibre
-        </h2>
-        <span className="flex shrink-0 items-center gap-3">
-          <Legend color={PROTEIN_SOLID} name="protein" />
-          <Legend color={FIBER_SOLID} name="fibre" />
-        </span>
-      </div>
+      <PanelHeader title="Protein & fibre" color="var(--sec-nutrition)">
+        <Legend color={PROTEIN_SOLID} name="Protein" />
+        <Legend color={FIBER_SOLID} name="Fibre" />
+      </PanelHeader>
 
       <div className="card p-4 md:p-5">
         <form onSubmit={submit} className="mb-4 flex gap-2">
           <Input
             type="number"
             aria-label="Protein in grams"
-            placeholder="protein g…"
+            placeholder="Protein (g)…"
             value={protein}
             onChange={(e) => setProtein(e.target.value)}
             className="flex-1"
@@ -156,7 +153,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           <Input
             type="number"
             aria-label="Fibre in grams"
-            placeholder="fibre g…"
+            placeholder="Fibre (g)…"
             value={fiber}
             onChange={(e) => setFiber(e.target.value)}
             className="flex-1"

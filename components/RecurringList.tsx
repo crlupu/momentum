@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card } from "./ui";
+import { Button, Card, PanelHeader } from "./ui";
 import { usePending } from "./ActionButton";
 import { Check, Plus } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
@@ -41,15 +41,11 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
 
   return (
     <div>
-      <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-recurring)" }} aria-hidden />
-          Recurring
-        </h2>
-        <Button variant="primary" isIconOnly aria-label="New recurring task" onPress={onAdd}>
-          <Plus className="h-4 w-4" />
+      <PanelHeader title="Recurring" color="var(--sec-recurring)">
+        <Button size="sm" variant="outline" onPress={onAdd}>
+          <Plus className="h-3.5 w-3.5" /> New
         </Button>
-      </div>
+      </PanelHeader>
 
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">

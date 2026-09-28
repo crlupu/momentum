@@ -5,9 +5,10 @@ import { RotateCcw } from "./icons";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
-import { memo, useLayoutEffect, useRef, useState } from "react";
-import { Tracker, SetRecord } from "@/lib/tracker";
+import { memo, useState } from "react";
+import { Tracker, SetRecord, dateKey } from "@/lib/tracker";
 import { readableText } from "@/lib/color";
+import { fmtDateAuto, fmtTime } from "@/lib/dates";
 
 /** "60×10" — compact, because a session's breakdown lists many of them. */
 function formatSet(set: SetRecord): string {
@@ -59,7 +60,7 @@ function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
   return (
     <Button
       size="sm"
-      variant="outline"
+      variant="ghost"
       isIconOnly
       aria-label="Move back to the to-do list"
       isDisabled={pending}
@@ -70,49 +71,6 @@ function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
   );
 }
 
-/** How many entries are visible before the list starts scrolling. */
-const ROWS_BEFORE_SCROLL = 10;
-
-/**
- * Caps a list at the height of its first n rows. Measured rather than assumed:
- * entries wrap onto a second line at narrow widths, so a fixed row height would
- * show the wrong number of them. The list also starts hidden inside a collapsed
- * section on phones, where everything measures zero — hence the visibility
- * guard and the observer that re-measures once it is shown.
- */
-function useRowCap(count: number) {
-  const ref = useRef<HTMLUListElement | null>(null);
-  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
-
-  useLayoutEffect(() => {
-    const ul = ref.current;
-    if (!ul) return;
-
-    const measure = () => {
-      // Hidden elements report zero, which would cap the list shut.
-      if (ul.offsetParent === null) return;
-      const rows = Array.from(ul.children) as HTMLElement[];
-      if (rows.length <= ROWS_BEFORE_SCROLL) {
-        setMaxHeight(undefined);
-        return;
-      }
-      const last = rows[ROWS_BEFORE_SCROLL - 1];
-      const height = last.offsetTop + last.offsetHeight - rows[0].offsetTop;
-      if (height > 0) setMaxHeight(height);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(ul);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [count]);
-
-  return { ref, maxHeight };
-}
 
 /* Memoised: its only prop is the tracker, which is now a stable object, so
    this re-renders when the data changes rather than whenever the page does. */
@@ -252,29 +210,31 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       a.title.localeCompare(b.title)
   );
 
-  const { ref: listRef, maxHeight } = useRowCap(entries.length);
+  // A week of days at a time: the log is its own page now, so it
+  // scrolls with the page rather than in a box of its own, and "Show
+  // earlier" brings in more.
+  const [daysShown, setDaysShown] = useState(7);
+  const byDay: { date: string; items: Entry[] }[] = [];
+  for (const e of entries) {
+    const last = byDay[byDay.length - 1];
+    if (last && last.date === e.date) last.items.push(e);
+    else byDay.push({ date: e.date, items: [e] });
+  }
+  const visible = byDay.slice(0, daysShown);
 
-  const fmt = (d: string) => {
-    const [y, m, day] = d.split("-").map(Number);
-    return new Date(y, m - 1, day).toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+  const today = dateKey();
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return dateKey(d);
+  })();
+  const dayLabel = (k: string) => {
+    if (k === today) return "Today";
+    if (k === yesterday) return "Yesterday";
+    const [y, m, d] = k.split("-").map(Number);
+    const wd = new Date(y, m - 1, d).toLocaleDateString("en-GB", { weekday: "short" });
+    return `${wd} ${fmtDateAuto(k)}`;
   };
-
-  /**
-   * The time an entry was recorded, where it is known.
-   *
-   * The list has been ordered by this since timestamps were added, but every
-   * row said only the date, so a day's entries looked identically labelled and
-   * their order read as arbitrary. Anything logged before timestamps existed
-   * still has only a date to show, and shows only that.
-   */
-  const fmtTime = (at?: number) =>
-    at == null
-      ? null
-      : new Date(at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div>
@@ -285,36 +245,44 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.
             </p>
           ) : (
-            <ul
-              ref={listRef}
-              className="recurring-scroll list-none divide-y divide-foreground/10 overflow-y-auto p-0 pr-1"
-              style={{ maxHeight }}
-            >
-              {entries.map((e) => (
-                <li key={e.key} className="flex items-center gap-2.5 py-2.5">
-                  <span
-                    className="shrink-0 px-2 py-[3px] text-[10px] font-semibold leading-none"
-                    style={{ background: e.color, color: readableText(e.color) }}
-                  >
-                    {e.kind}
-                  </span>
-                  <span className="min-w-0 flex-1 break-words text-[15px]">
-                    {e.title}
-                    {e.detail && (
-                      <span className="mt-0.5 block text-xs text-foreground/50">{e.detail}</span>
-                    )}
-                  </span>
-                  <span className="font-mono-n shrink-0 text-right text-xs leading-tight text-foreground/50">
-                    {fmt(e.date)}
-                    {fmtTime(e.at) && (
-                      <span className="block text-foreground/40">{fmtTime(e.at)}</span>
-                    )}
-                  </span>
-                  {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
-                  <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />
-                </li>
+            <div className="flex flex-col gap-4">
+              {visible.map((day) => (
+                <section key={day.date}>
+                  <h3 className="log-day">
+                    <span>{dayLabel(day.date)}</span>
+                    <span className="text-foreground/50">{day.items.length}</span>
+                  </h3>
+                  <ul className="list-none divide-y divide-foreground/10 p-0">
+                    {day.items.map((e) => (
+                      <li key={e.key} className="flex items-center gap-2.5 py-2.5">
+                        <span
+                          className="w-[4.75rem] shrink-0 px-2 py-[3px] text-center text-[10px] font-semibold leading-none"
+                          style={{ background: e.color, color: readableText(e.color) }}
+                        >
+                          {e.kind}
+                        </span>
+                        <span className="min-w-0 flex-1 break-words text-[15px]">
+                          {e.title}
+                          {e.detail && (
+                            <span className="mt-0.5 block text-xs text-foreground/50">{e.detail}</span>
+                          )}
+                        </span>
+                        {e.at != null && (
+                          <span className="font-mono-n shrink-0 text-xs text-foreground/50">{fmtTime(e.at)}</span>
+                        )}
+                        {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
+                        <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+              {byDay.length > daysShown && (
+                <Button variant="outline" size="sm" className="self-start" onPress={() => setDaysShown(daysShown + 7)}>
+                  Show earlier
+                </Button>
+              )}
+            </div>
           )}
         </Card.Content>
       </Card>

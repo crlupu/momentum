@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button } from "../ui";
-import { Check, Clock, Flame, Play, Warning } from "../icons";
+import { Check, Clock, Flame, Play, Tune, Warning } from "../icons";
 import { usePending } from "../ActionButton";
 import { Tracker, Book, dateKey, uid } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -235,7 +235,7 @@ function OpenBook({
           aria-label="Log with details"
           onPress={() => flow.open({ kind: "log", bookId: book.id })}
         >
-          …
+          <Tune className="h-5 w-5" />
         </Button>
       </form>
       {error && (

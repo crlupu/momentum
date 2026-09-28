@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "./ui";
+import { Button, Input, PanelHeader } from "./ui";
+import { fmtDateAuto } from "@/lib/dates";
 import { Plus, CalendarDays } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
@@ -73,13 +74,12 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-nutrition)" }} aria-hidden />
-          Calories
-        </h2>
-        <span className="font-mono-n text-sm text-foreground/60">{todayTotal} kcal today</span>
-      </div>
+      <PanelHeader title="Calories" color="var(--sec-nutrition)">
+        <span>
+          <span className="font-mono-n font-bold text-foreground">{todayTotal.toLocaleString()}</span> kcal
+          today
+        </span>
+      </PanelHeader>
 
       <div className="card p-4 md:p-5">
         <form onSubmit={submit} className="mb-3 space-y-2">
@@ -88,7 +88,7 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
               type="number"
               inputMode="numeric"
               aria-label="Calories to add"
-              placeholder="add kcal…"
+              placeholder="Add kcal…"
               value={kcal}
               onChange={(e) => setKcal(e.target.value)}
               className="min-w-0 flex-1"
@@ -171,22 +171,30 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           <div className="flex h-[120px] items-end gap-1 pt-1">
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                <span className="font-mono-n text-[9px] font-bold">{counts[i] || ""}</span>
+                {/* Only the highest day and today are labelled: a figure on
+                    every bar crowded a phone and went unread. The rest are in
+                    each bar's tooltip. */}
+                <span className="font-mono-n text-[10px] font-bold">
+                  {counts[i] && (i === days.length - 1 || counts[i] === max) ? counts[i].toLocaleString() : ""}
+                </span>
                 {/* Stacked in reverse so the first entry of the day is lowest. */}
                 <div
-                  className="flex w-full max-w-[22px] flex-col-reverse overflow-hidden"
+                  className="flex w-full max-w-[22px] flex-col-reverse overflow-hidden rounded-t-[3px]"
                   style={{
                     height: Math.max(2, (counts[i] / max) * 84),
                     background: counts[i] ? undefined : TRACK,
                   }}
                 >
-                  {(entriesByDate[dateKey(d)] ?? []).map((e) => (
+                  {(entriesByDate[dateKey(d)] ?? []).map((e, j, all) => (
                     <div
                       key={e.id}
-                      title={`${tagOf(e.tagId)?.name ?? "Untagged"} · ${e.kcal} kcal`}
+                      title={`${fmtDateAuto(dateKey(d))} · ${tagOf(e.tagId)?.name ?? "Untagged"} · ${e.kcal} kcal (${counts[i]} that day)`}
                       style={{
                         height: `${(e.kcal / (counts[i] || 1)) * 100}%`,
                         background: colorOf(e.tagId),
+                        // A 2px gap of the card's own colour between meals,
+                        // drawn over the segment so the stack keeps its height.
+                        boxShadow: j < all.length - 1 ? "inset 0 2px 0 var(--pane-bg)" : undefined,
                       }}
                     />
                   ))}

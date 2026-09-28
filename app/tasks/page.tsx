@@ -9,7 +9,7 @@ export default function TasksPage() {
   const { tracker, openRecurring } = useShell();
   return (
     <SectionPage id="tasks">
-      <div className="grid items-start gap-5 md:grid-cols-2">
+      <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
         <RecurringList tracker={tracker} onAdd={openRecurring} />
         <TodoList tracker={tracker} />
       </div>

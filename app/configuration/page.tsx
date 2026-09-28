@@ -16,7 +16,7 @@ import WorkoutsView from "@/components/WorkoutsView";
 export default function ConfigurationPage() {
   const tracker = usePageTracker();
   return (
-    <SectionPage id="config" size="md">
+    <SectionPage id="config">
       {/* Two explicit columns: each card sits straight under the one above it,
           without CSS multi-column (which breaks scrollable lists in Safari). */}
       <div className="grid items-start gap-5 md:grid-cols-2">

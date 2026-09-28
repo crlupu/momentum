@@ -124,6 +124,11 @@ of truth.
 - Colours come only from the palette (`CAT_COLORS`, the Carbon values).
   `BOOK_COLORS` is the subset that white text is legible on.
 - Dates are local `YYYY-MM-DD` keys (`dateKey()`), and weeks start on Monday.
+  They are shown with `lib/dates.ts` ("28 Sep", with the year only when it isn't this one,
+  and times on a 24-hour clock), so every page writes them the same way.
+- Every card is introduced by `PanelHeader` (`components/ui.tsx`). Charts are drawn at their
+  measured width (`components/useWidth.ts`) and a fixed height, so their text stays the same
+  size on a phone and a desktop.
 - Comments explain *why* something is done, in plain prose. Keep that style
   when editing.
 - There is no test suite or linter. Check changes with `npx tsc --noEmit` and

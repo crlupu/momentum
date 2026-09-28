@@ -588,7 +588,7 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
 
       {done.length > 0 && (
         <>
-          <div className="mb-3 mt-6 text-[13px] uppercase tracking-wide text-foreground/40">Completed</div>
+          <div className="mb-2 mt-6 text-[13px] font-semibold uppercase tracking-wide text-foreground/50">Completed</div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {done.map((g) => (
               <Card key={g.id}>
@@ -597,14 +597,14 @@ export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd:
                     <span className="flex-1 break-words text-[15px] text-foreground/45 line-through">{g.title}</span>
                     <ActionButton
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                       isIconOnly
                       aria-label="Reopen goal"
                       onAction={() => tracker.toggleGoalDone(g.id)}
                     >
                       <RotateCcw className="h-4 w-4" />
                     </ActionButton>
-                    <DeleteButton what={`the goal "${g.title}"`} iconOnly onDelete={() => tracker.deleteGoal(g.id)} />
+                    <DeleteButton what={`the goal "${g.title}"`} iconOnly bare onDelete={() => tracker.deleteGoal(g.id)} />
                   </div>
                 </Card.Content>
               </Card>

@@ -43,6 +43,7 @@ export {
   MdSchedule as Clock,
   MdWarning as Warning,
   MdDragIndicator as GripVertical,
+  MdTune as Tune,
 
   // direction
   MdArrowUpward as ArrowUp,

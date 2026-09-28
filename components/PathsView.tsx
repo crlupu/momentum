@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
-import { Button, Card, Input } from "./ui";
+import { Button, Card, Input, PanelHeader } from "./ui";
 import { Modal } from "./Modal";
 import { DeleteButton } from "./DeleteButton";
 import { usePending } from "./ActionButton";
@@ -322,14 +322,11 @@ export function PathsView({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-          Paths
-        </h3>
+      <PanelHeader title="Paths" color="var(--sec-goals)">
         <Button size="sm" variant="outline" onPress={() => setAdding(true)}>
           <Plus className="h-3.5 w-3.5" /> New path
         </Button>
-      </div>
+      </PanelHeader>
 
       {s.paths.length === 0 ? (
         <p className="py-1 text-[15px] text-foreground/60">

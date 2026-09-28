@@ -1,5 +1,7 @@
 "use client";
 
+import { fmtDate } from "@/lib/dates";
+
 import { memo } from "react";
 
 import { Card } from "./ui";
@@ -159,8 +161,8 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
           >
             <Stat value={mTotal} label="completions" color="var(--sec-goals)" />
             <Stat
-              value={best ? `${best[1]} (${best[0].slice(8)})` : "–"}
-              label="best day"
+              value={best ? best[1] : "–"}
+              label={best ? `best day · ${fmtDate(best[0])}` : "best day"}
               color="var(--sec-charts)"
             />
             <Stat value={avg} label="avg / active day" color="var(--sec-log)" />

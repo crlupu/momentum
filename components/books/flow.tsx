@@ -358,7 +358,7 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
       />
       <p className="min-h-4 text-xs text-foreground/60">
         {error ? <span style={{ color: "var(--danger)" }}>{error}</span> : derived}
-        {!error && book.pages > 0 && ` · ${book.pages} pages in all`}
+        {!error && book.pages > 0 && `${derived ? " · " : ""}${book.pages} pages in all`}
       </p>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Date">

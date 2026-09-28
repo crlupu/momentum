@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input } from "./ui";
+import { useWidth } from "./useWidth";
+import { Button, Input, PanelHeader } from "./ui";
+import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
@@ -11,6 +13,9 @@ const ACCENT = "var(--sec-weight)";
 const GRID = "var(--border)";
 const LABEL = "var(--muted)";
 
+/** The window the chart shows. */
+const DAYS = 30;
+
 function lastNDays(n: number): Date[] {
   return Array.from({ length: n }, (_, i) => {
     const d = new Date();
@@ -19,18 +24,24 @@ function lastNDays(n: number): Date[] {
   });
 }
 
-/** Always-visible 7-day chart. Days without an entry are simply gaps. */
+/**
+ * The last month's weigh-ins. Drawn at the width it is given and a fixed
+ * height, so the text stays the same size on a phone and a desktop. Days
+ * without an entry are gaps the line passes over.
+ */
 function WeightChart({ weights }: { weights: WeightEntry[] }) {
-  const W = 300;
-  const H = 140;
-  const pad = { l: 32, r: 12, t: 14, b: 22 };
+  const [box, measured] = useWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const W = measured || 320;
+  const H = 170;
+  const pad = { l: 40, r: 12, t: 12, b: 24 };
 
-  const days = lastNDays(7);
+  const days = lastNDays(DAYS);
   const byDate = new Map(weights.map((w) => [w.date, w.kg]));
   const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
   const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
 
-  // Y range: fit the visible week, or a neutral placeholder when empty.
+  // Y range: fit the window, or a neutral placeholder when empty.
   let lo = 0;
   let hi = 1;
   if (present.length) {
@@ -38,62 +49,99 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
     const min = Math.min(...kgs);
     const max = Math.max(...kgs);
     const span = max - min || 2;
-    lo = min - span * 0.25;
-    hi = max + span * 0.25;
+    lo = min - span * 0.2;
+    hi = max + span * 0.2;
   }
 
-  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / 6;
+  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / (DAYS - 1);
   const y = (kg: number) => H - pad.b - ((kg - lo) / (hi - lo)) * (H - pad.t - pad.b);
-
-  const gridYs = [pad.t, (pad.t + (H - pad.b)) / 2, H - pad.b];
+  const gridYs = [0, 0.5, 1].map((f) => pad.t + f * (H - pad.t - pad.b));
   const pts = present.map((p) => `${x(p.i)},${y(p.kg)}`).join(" ");
+  // A date label every few days, as many as fit, always ending on today.
+  const every = Math.max(1, Math.ceil(DAYS / Math.max(2, Math.floor((W - pad.l) / 44))));
+  const shown = hover != null ? present.find((p) => p.i === hover) : undefined;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Weight over the last 7 days">
-      {/* grid + y labels (labels only when there's data to scale to) */}
-      {gridYs.map((yy, idx) => (
-        <g key={idx}>
-          <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke={GRID} strokeWidth="1" />
-          {present.length > 0 && (
-            <text x={pad.l - 6} y={yy + 3} textAnchor="end" fill={LABEL} className="font-mono-n" fontSize="9">
-              {(idx === 0 ? hi : idx === 1 ? (hi + lo) / 2 : lo).toFixed(1)}
+    <div ref={box} className="relative" onMouseLeave={() => setHover(null)}>
+      <svg width={W} height={H} className="block" role="img" aria-label={`Weight over the last ${DAYS} days`}>
+        {gridYs.map((yy, idx) => (
+          <g key={idx}>
+            <line x1={pad.l} y1={yy} x2={W - pad.r} y2={yy} stroke={GRID} strokeWidth="1" />
+            {present.length > 0 && (
+              <text x={pad.l - 8} y={yy} dy="0.32em" textAnchor="end" fill={LABEL} fontSize="11">
+                {(hi - ((yy - pad.t) / (H - pad.t - pad.b)) * (hi - lo)).toFixed(1)}
+              </text>
+            )}
+          </g>
+        ))}
+
+        {present.length > 1 && (
+          <polyline
+            points={pts}
+            fill="none"
+            stroke={ACCENT}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+        {present.map((p) => (
+          <circle
+            key={p.date}
+            cx={x(p.i)}
+            cy={y(p.kg)}
+            r={hover === p.i ? 5 : 4}
+            fill={ACCENT}
+            stroke="var(--pane-bg)"
+            strokeWidth="2"
+          />
+        ))}
+
+        {series.map((p, i) =>
+          (DAYS - 1 - i) % every === 0 ? (
+            <text
+              key={p.date}
+              x={x(i)}
+              y={H - 6}
+              // The last label ends at the edge rather than running past it.
+              textAnchor={i === DAYS - 1 ? "end" : "middle"}
+              fill={LABEL}
+              fontSize="11"
+            >
+              {fmtDate(p.date)}
             </text>
-          )}
-        </g>
-      ))}
+          ) : null
+        )}
 
-      <defs>
-        <linearGradient id="weight-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#0f62fe" />
-          <stop offset="0.55" stopColor="#0f62fe" />
-          <stop offset="1" stopColor="#0f62fe" />
-        </linearGradient>
-      </defs>
-
-      {/* line through logged days */}
-      {present.length > 1 && (
-        <polyline
-          points={pts}
-          fill="none"
-          stroke="url(#weight-grad)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {/* Hover targets: a column per day with an entry, far wider than
+            the dot, so it can be found with a finger. */}
+        {present.map((p) => (
+          <rect
+            key={`hit-${p.date}`}
+            x={x(p.i) - (W - pad.l - pad.r) / (DAYS - 1) / 2}
+            y={pad.t}
+            width={(W - pad.l - pad.r) / (DAYS - 1)}
+            height={H - pad.t - pad.b}
+            fill="transparent"
+            onMouseEnter={() => setHover(p.i)}
+            onClick={() => setHover(hover === p.i ? null : p.i)}
+          />
+        ))}
+      </svg>
+      {shown && (
+        <div
+          className="chart-tip"
+          style={{
+            left: x(shown.i),
+            top: Math.max(0, y(shown.kg) - 52),
+            transform: shown.i > DAYS / 2 ? "translateX(-100%)" : undefined,
+          }}
+        >
+          <div className="font-semibold">{shown.kg} kg</div>
+          <div>{fmtDateAuto(shown.date)}</div>
+        </div>
       )}
-      {present.map((p) => (
-        <circle key={p.date} cx={x(p.i)} cy={y(p.kg)} r="3.5" fill="url(#weight-grad)">
-          <title>{`${p.date}: ${p.kg} kg`}</title>
-        </circle>
-      ))}
-
-      {/* x labels: every day of the window */}
-      {series.map((p, i) => (
-        <text key={p.date} x={x(i)} y={H - 7} textAnchor="middle" fill={LABEL} className="font-mono-n" fontSize="9">
-          {Number(p.date.slice(8))}
-        </text>
-      ))}
-    </svg>
+    </div>
   );
 }
 
@@ -114,17 +162,14 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-end justify-between">
-        <h2 className="font-display flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="sec-dot" style={{ background: "var(--sec-fitness)" }} aria-hidden />
-          Weight
-        </h2>
+      <PanelHeader title="Weight" color="var(--sec-fitness)">
         {latest && (
-          <span className="font-mono-n text-sm text-foreground/60">
-            {latest.kg} kg · {latest.date.slice(5)}
+          <span>
+            <span className="font-mono-n font-bold text-foreground">{latest.kg}</span> kg ·{" "}
+            {fmtDateAuto(latest.date)}
           </span>
         )}
-      </div>
+      </PanelHeader>
 
       <div className="card p-4 md:p-5">
         <form onSubmit={submit} className="mb-3 flex gap-2">
@@ -132,7 +177,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
             type="number"
             step="0.1"
             aria-label="Weight in kg"
-            placeholder="kg today…"
+            placeholder="Weight today (kg)…"
             value={kg}
             onChange={(e) => setKg(e.target.value)}
             className="flex-1"
@@ -148,8 +193,8 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
 
-        <div className="mb-1 text-[11px] font-semibold" style={{ color: LABEL }}>
-          Last 7 days
+        <div className="mb-1 text-xs" style={{ color: LABEL }}>
+          Last {DAYS} days
         </div>
         <WeightChart weights={data} />
       </div>
