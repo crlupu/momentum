@@ -12,6 +12,7 @@ import {
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
+import { readingUnits } from "@/lib/reading";
 import { sectionPath, sectionTitle, type SectionId } from "./sections";
 
 /** The menu, in the order of the sections registry. Titles and pages come from there. */
@@ -65,7 +66,9 @@ function TopStats({ tracker }: { tracker: Tracker }) {
   if (!st) return null;
 
   const today = dateKey();
-  const units = recurringUnits(st.recurring, today);
+  // Reading tracks count alongside recurring tasks: a track is done for the
+  // day once its page target is met.
+  const units = [...recurringUnits(st.recurring, today), ...readingUnits(st, today)];
   const done = units.filter((u) => u.done).length;
   const notDone = units.length - done;
 

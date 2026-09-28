@@ -9,11 +9,14 @@ export function Modal({
   onClose,
   title,
   children,
+  wide,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  /** For dialogs that hold a whole view rather than a short form. */
+  wide?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -41,7 +44,7 @@ export function Modal({
     >
       <div className="scrim absolute inset-0" onClick={onClose} aria-hidden />
       <div
-        className="overlay-surface relative z-10 max-h-[92vh] w-full overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-h-[88vh] md:max-w-md md:pb-5"
+        className={"overlay-surface relative z-10 max-h-[92vh] w-full overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-h-[88vh] md:pb-5 " + (wide ? "md:max-w-2xl" : "md:max-w-md")}
         style={{ color: "var(--overlay-foreground)" }}
       >
         <div className="mb-4 flex items-center justify-between">

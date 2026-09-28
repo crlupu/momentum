@@ -15,6 +15,15 @@ import {
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getFirebase, isFirebaseConfigured } from "./firebase";
 import { contrast } from "./color";
+import * as R from "./reading";
+import type {
+  BookStatus,
+  BookQuote,
+  ReadingPhase,
+  ReadingSession,
+  ReadingTrack,
+  StatusChange,
+} from "./reading";
 
 export type Category = { id: string; name: string; color: string };
 
@@ -152,8 +161,40 @@ export type Book = {
    * every book that hasn't got one.
    */
   coverId?: string | null;
-  /** The day it was finished, set when `read` first reaches `pages`. */
+  /** A cover image of the reader's own, by address. Wins over coverId. */
+  coverImage?: string;
+  /** The day it was finished. */
   doneDate?: string;
+
+  // ---- reading plan (see lib/reading.ts) ----
+  /** The track it is read in. */
+  trackId: string;
+  status: BookStatus;
+  /** Position in its track's queue; lower is sooner. */
+  queueOrder: number;
+  /**
+   * Progress no session accounts for: what was read before sessions were
+   * logged, and any correction or skim since. `read` is this plus every
+   * session, which is why editing a session can move it.
+   */
+  base: number;
+  phaseId?: string;
+  edition?: string;
+  language?: string;
+  tags?: string[];
+  /** Every change of status, oldest first. */
+  statusLog?: StatusChange[];
+  /** The day it was first opened. Kept through pauses. */
+  startedDate?: string;
+  pausedDate?: string;
+  droppedDate?: string;
+  dropReason?: string;
+  /** Books meant to be read before this one. */
+  after?: string[];
+  /** The last day it moved other than by a session: a correction or a skim. */
+  touched?: string;
+  /** The day a "no progress lately" nudge was waved off. */
+  stallDismissed?: string;
 };
 
 
@@ -447,6 +488,10 @@ export type TrackerState = {
   weights: WeightEntry[];
   cardio: CardioEntry[];
   books: Book[];
+  readingTracks: ReadingTrack[];
+  readingPhases: ReadingPhase[];
+  readingSessions: ReadingSession[];
+  bookQuotes: BookQuote[];
   calories: CalorieEntry[];
   mealTags: MealTag[];
   /** Daily calorie budget, used to work out what's left for the week. */
@@ -549,6 +594,10 @@ const DEFAULT_STATE: TrackerState = {
   weights: [],
   cardio: [],
   books: [],
+  readingTracks: R.DEFAULT_TRACKS,
+  readingPhases: [],
+  readingSessions: [],
+  bookQuotes: [],
   calories: [],
   mealTags: DEFAULT_MEAL_TAGS,
   macros: [],
@@ -784,7 +833,7 @@ function migrate(raw: unknown): TrackerState {
     : [];
 
   // Added after the rest, so older saved state has no key at all.
-  const books: Book[] = Array.isArray(s.books) ? (s.books as Book[]) : [];
+  const reading = R.migrateReading(s, Array.isArray(s.books) ? (s.books as Book[]) : []);
 
   const calories: CalorieEntry[] = Array.isArray(s.calories)
     ? (s.calories as CalorieEntry[])
@@ -835,7 +884,7 @@ function migrate(raw: unknown): TrackerState {
     paths,
     weights,
     cardio,
-    books,
+    ...reading,
     calories,
     mealTags,
     calorieBudget:
@@ -1593,88 +1642,51 @@ export function useTracker() {
       commit((s) => ({ ...s, cardio: s.cardio.filter((c) => c.id !== id) })),
 
     // ---- books ----
-    addBook: (title: string, pages: number, author?: string, coverId?: string | null) =>
-      commit((s) => {
-        const t = title.trim();
-        if (!t) return s;
-        const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
-        const a = author?.trim();
-        // Random, but never the same as the book it will stand next to —
-        // two identical spines side by side look like one wide book.
-        const last = s.books[s.books.length - 1];
-        const lastColor = last ? bookColor(last) : null;
-        const choices = BOOK_COLORS.filter((c) => c !== lastColor);
-        const color = choices[Math.floor(Math.random() * choices.length)];
-        return {
-          ...s,
-          books: [
-            ...s.books,
-            {
-              id: uid(),
-              title: t,
-              pages: n,
-              read: 0,
-              color,
-              ...(a ? { author: a } : {}),
-              // Only when it came from a chosen suggestion. Left absent
-              // otherwise, which is what marks it for a lookup.
-              ...(coverId !== undefined ? { coverId } : {}),
-            },
-          ],
-        };
-      }),
-
+    // The reading plan's rules live in lib/reading.ts; these only wrap each
+    // change in the confirmed write.
+    addBook: (input: R.BookInput) => commit((s) => R.addBook(s, input)),
+    updateBook: (id: string, input: R.BookInput) => commit((s) => R.updateBook(s, id, input)),
+    addBooks: (
+      list: { title: string; author?: string; pages?: number }[],
+      trackId: string,
+      phaseId?: string
+    ) => commit((s) => R.addBooks(s, list, trackId, phaseId)),
+    setBookStatus: (
+      id: string,
+      status: BookStatus,
+      opts?: { reason?: string; place?: "top" | "end" }
+    ) => commit((s) => R.setStatus(s, id, status, opts)),
     /**
-     * Sets how far through a book we are. Clamped to the book's length, so a
-     * mistyped page can't fill a spine past full or drive it negative.
-     *
-     * The finish date is stamped when it first reaches the end and cleared if
-     * it moves back off it, so correcting an overshoot doesn't leave a book
-     * recorded as finished on a day it wasn't.
+     * Several status changes as one write, so a swap — pause one book, start
+     * another — can't be half applied.
      */
-    setBookProgress: (id: string, read: number) =>
-      commit((s) => ({
-        ...s,
-        books: s.books.map((b) => {
-          if (b.id !== id) return b;
-          const n = Number.isFinite(read) ? Math.max(0, Math.round(read)) : 0;
-          const capped = b.pages > 0 ? Math.min(n, b.pages) : n;
-          const finished = b.pages > 0 && capped >= b.pages;
-          return {
-            ...b,
-            read: capped,
-            ...(finished ? { doneDate: b.doneDate ?? dateKey() } : { doneDate: undefined }),
-          };
-        }),
-      })),
-
-    updateBook: (id: string, title: string, pages: number, author?: string) =>
-      commit((s) => {
-        const t = title.trim();
-        if (!t) return s;
-        const n = Number.isFinite(pages) && pages > 0 ? Math.round(pages) : 0;
-        const a = author?.trim();
-        return {
-          ...s,
-          // Shortening a book below where we had read to would otherwise leave
-          // it more than full, so the progress follows the new length down.
-          books: s.books.map((b) => {
-            if (b.id !== id) return b;
-            // A change of title or author is a change of book as far as the
-            // cover is concerned, so it goes back to unresolved and is looked
-            // up again rather than keeping the old book's picture.
-            const renamed = b.title !== t || (b.author ?? "") !== (a ?? "");
-            return {
-              ...b,
-              title: t,
-              pages: n,
-              author: a || undefined,
-              read: n > 0 ? Math.min(b.read, n) : b.read,
-              ...(renamed ? { coverId: undefined } : {}),
-            };
-          }),
-        };
-      }),
+    setBookStatuses: (
+      changes: { id: string; status: BookStatus; place?: "top" | "end" }[]
+    ) =>
+      commit((s) =>
+        changes.reduce((acc, c) => R.setStatus(acc, c.id, c.status, { place: c.place }), s)
+      ),
+    setCurrentPage: (id: string, page: number) => commit((s) => R.setCurrentPage(s, id, page)),
+    logReading: (bookId: string, input: R.LogInput) =>
+      commit((s) => R.logSession(s, bookId, input)),
+    updateReadingSession: (
+      id: string,
+      patch: { date?: string; pages?: number; minutes?: number | null; note?: string | null }
+    ) => commit((s) => R.updateSession(s, id, patch)),
+    removeReadingSession: (id: string) => commit((s) => R.removeSession(s, id)),
+    reorderQueue: (trackId: string, ids: string[]) =>
+      commit((s) => R.reorderQueue(s, trackId, ids)),
+    placeInQueue: (id: string, place: "top" | "end") =>
+      commit((s) => R.placeInQueue(s, id, place)),
+    dismissStall: (id: string) => commit((s) => R.dismissStall(s, id)),
+    addQuote: (bookId: string, text: string, page?: number) =>
+      commit((s) => R.addQuote(s, bookId, text, page)),
+    removeQuote: (id: string) => commit((s) => R.removeQuote(s, id)),
+    addTrack: (t: R.TrackInput) => commit((s) => R.addTrack(s, t)),
+    updateTrack: (id: string, t: R.TrackInput) => commit((s) => R.updateTrack(s, id, t)),
+    addPhase: (p: R.PhaseInput) => commit((s) => R.addPhase(s, p)),
+    updatePhase: (id: string, p: R.PhaseInput) => commit((s) => R.updatePhase(s, id, p)),
+    removePhase: (id: string) => commit((s) => R.removePhase(s, id)),
 
     /**
      * Records the result of a cover lookup — an id, or null for "looked and
@@ -1705,8 +1717,7 @@ export function useTracker() {
         ),
       })),
 
-    removeBook: (id: string) =>
-      commit((s) => ({ ...s, books: s.books.filter((b) => b.id !== id) })),
+    removeBook: (id: string) => commit((s) => R.removeBook(s, id)),
 
     setCalorieBudget: (kcal: number | null) =>
       commit((s) => ({

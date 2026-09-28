@@ -21,25 +21,36 @@ section's id, title, path and numbered index.
 | Tasks | `/tasks` | Daily todos and recurring tasks (daily / weekly / biweekly / monthly) | `TodoList`, `RecurringList` |
 | Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
 | Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
-| Books | `/books` | A shelf of books with covers and progress; set the current page from the card | `Books` |
+| Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
 | Progress | `/progress` | Completion charts and a month calendar | `Charts` |
 | Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |
 | Configuration | `/configuration` | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
 
-### Books
-- Book covers and missing authors are looked up from Open Library
-  (`lib/covers.ts`) one book at a time, and only once per book. A lookup that
-  finds nothing stores `coverId: null`. When there is no cover, one is drawn
-  from the book's colour and initials.
-- Typing a title while adding a book suggests matches from your own shelf
-  straight away, and Open Library results after a debounce (700 ms, 6 s
-  timeout).
-- Progress is stored as `read` (the current page) against `pages` (the
-  length). The **Page** button on a card sets the current page directly
-  (`tracker.setBookProgress`). The value is clamped to the book's length, and
-  `doneDate` is set when the book reaches the end and cleared if it moves back.
-- The shelf is ordered in piles: in progress, then unstarted, then finished,
-  each sorted alphabetically.
+### Books (reading tracks)
+The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/books/`.
+
+- **Tracks** are lanes of reading (defaults: Technical, Non-technical, Slow lane). Each has
+  a limit on how many books can be open at once, a daily page target, a time slot and a
+  number of rest days per week. Starting a book in a full track asks you to pause the
+  current one, queue the new one next, or cancel.
+- **Statuses** are `queued → active → finished`, plus `paused` and `dropped`. Every change
+  is logged with its date. Each track has an ordered queue (queued and paused books) that
+  you reorder by dragging. When a book is finished, the next one in its queue is offered.
+- **Sessions** record the pages read on a day, with optional minutes and a key idea. You
+  can log by the page reached or by pages read. A book's `read` is `base` plus all of its
+  sessions, so editing or deleting a session recalculates it. `base` holds progress no
+  session accounts for: reading from before sessions existed, corrections, skims.
+- **Phases** group books across tracks into blocks of the plan. A phase shows its
+  completion and a projected end date based on the last 14 days' pace, and is flagged
+  on track, at risk or behind.
+- **Views:** Today (open books, targets, quick log, streaks, stall nudges), Tracks
+  (queues), Phases, Notes (searchable key ideas and quotes) and History (finished and
+  dropped books, charts, year in review). A book's own page has its sessions,
+  notes and quotes, and status timeline.
+- A track counts toward the top bar's *done today / not done* once it has an open book
+  and a target, and it is done when today's pages reach the target.
+- Covers and missing authors are still looked up from Open Library (`lib/covers.ts`),
+  and a cover image address can be set by hand.
 
 ## Run locally
 ```bash

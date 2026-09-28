@@ -1,674 +1,87 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
-import { BookOpen, Check, Plus, ImageOff } from "./icons";
+import { useEffect, useState } from "react";
+import { Button } from "./ui";
+import { ListPlus, Plus } from "./icons";
+import { Tracker } from "@/lib/tracker";
+import { ReadingFlow } from "./books/flow";
+import { useFlow } from "./books/flowContext";
+import { useCoverLookup } from "./books/Cover";
+import { Segmented } from "./books/bits";
+import { TodayView } from "./books/TodayView";
+import { TracksView } from "./books/TracksView";
+import { PhasesView } from "./books/PhasesView";
+import { NotesView } from "./books/NotesView";
+import { HistoryView } from "./books/HistoryView";
 
-import { Button, Input } from "./ui";
-import { Modal } from "./Modal";
-import { DeleteButton } from "./DeleteButton";
-import { usePending } from "./ActionButton";
-import { readableText } from "@/lib/color";
-import { Tracker, Book, bookProgress, bookColor } from "@/lib/tracker";
-import { BookSuggestion, coverUrl, lookupBook, searchBooks } from "@/lib/covers";
-
-/**
- * The cover.
- *
- * A real one if Open Library had it, otherwise one built from what is already
- * known: the book's colour, a darker band down the binding edge, and its
- * initials. The drawn cover is also what shows when the image fails — offline,
- * or a cover id that no longer resolves — so a book never appears as a broken
- * image.
- */
-function Cover({ book }: { book: Book }) {
-  const colour = bookColor(book);
-  const ink = readableText(colour);
-  const [broken, setBroken] = useState(false);
-
-  // A new id deserves a fresh attempt, whatever happened to the last one.
-  useEffect(() => setBroken(false), [book.coverId]);
-
-  const initials = book.title
-    .split(/\s+/)
-    .filter((w) => /[a-z0-9]/i.test(w[0] ?? ""))
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
-
-  if (book.coverId && !broken) {
-    return (
-      <img
-        className="book-cover book-cover--art"
-        src={coverUrl(book.coverId, "M")}
-        alt=""
-        loading="lazy"
-        onError={() => setBroken(true)}
-      />
-    );
-  }
-
-  return (
-    <span className="book-cover" style={{ background: colour, color: ink }} aria-hidden>
-      <span className="book-cover__spine" />
-      <span className="book-cover__initials">{initials}</span>
-    </span>
-  );
-}
+type Tab = "today" | "tracks" | "phases" | "notes" | "history";
+const TABS: Tab[] = ["today", "tracks", "phases", "notes", "history"];
+const TAB_KEY = "momentum:books-tab";
 
 /**
- * Looks up the cover — and the author, where one is missing — for books that
- * have never been looked up.
- *
- * One at a time and once per book: Open Library ask not to have their cover
- * API crawled, and a lookup that finds nothing records null so the question is
- * not asked again on every load. A lookup that fails outright — offline, a bad
- * response — records nothing, leaving the book to be tried again later rather
- * than marking a book as having no cover when it may well have one.
+ * The reading plan. Today shows only the books open now; the queues, phases,
+ * notes and history each have a tab of their own.
  */
-function useCoverLookup(tracker: Tracker, books: Book[]) {
-  // Tried this session. Without it a failed lookup would be retried in a loop,
-  // since nothing about the book changes to stop it.
-  const tried = useRef<Set<string>>(new Set());
-  const busy = useRef(false);
-  const alive = useRef(true);
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const next = books.find((b) => b.coverId === undefined && !tried.current.has(b.id));
-    if (!next || busy.current) return;
-
-    busy.current = true;
-    tried.current.add(next.id);
-
-    // Another copy of the same book already resolved is as good an answer as
-    // the API's, and costs nothing. Only a book that was actually looked up
-    // counts — one still waiting has nothing to give.
-    const known = books.find(
-      (b) =>
-        b.id !== next.id &&
-        b.coverId !== undefined &&
-        normalise(b.title) === normalise(next.title)
-    );
-    if (known) {
-      void tracker.resolveBook(next.id, known.coverId ?? null, known.author);
-      busy.current = false;
-      return;
-    }
-
-    // Deliberately not cancelled when this effect re-runs. The books array is
-    // a new reference on every state change, so the effect re-runs constantly
-    // — cancelling on cleanup threw away the answer to a lookup that had
-    // already been made, and the book was never resolved. Only unmounting
-    // stops it, and the write is harmless either way.
-    lookupBook(next.title, next.author)
-      .then(({ coverId, author }) => {
-        if (alive.current) void tracker.resolveBook(next.id, coverId, author);
-      })
-      .catch(() => {
-        // Left unresolved on purpose: a reload will try again.
-      })
-      .finally(() => {
-        busy.current = false;
-      });
-  }, [books, tracker]);
-}
-
-/**
- * Sets the page you are on. The number printed on the page in front of you is
- * easier to know than how many pages have gone by since last time.
- */
-function SetPageForm({
-  tracker,
-  book,
-  onClose,
-}: {
-  tracker: Tracker;
-  book: Book;
-  onClose: () => void;
-}) {
-  const [n, setN] = useState(book.read > 0 ? String(book.read) : "");
-  const { pending, run } = usePending();
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const v = Number(n);
-    if (!Number.isFinite(v) || v < 0 || pending) return;
-    onClose();
-    await run(() => tracker.setBookProgress(book.id, v));
-  };
-
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <Input
-        type="number"
-        inputMode="numeric"
-        min="0"
-        max={book.pages > 0 ? String(book.pages) : undefined}
-        aria-label="Current page"
-        placeholder="Current page"
-        value={n}
-        onChange={(e) => setN(e.target.value)}
-        // Selected, so typing the new page replaces the old one outright.
-        onFocus={(e) => e.target.select()}
-        autoFocus
-      />
-      <p className="text-xs text-foreground/50">
-        {book.pages > 0
-          ? `Currently on page ${book.read} of ${book.pages}.`
-          : `Currently on page ${book.read}.`}
-      </p>
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onPress={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || n.trim() === ""}>
-          Set
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-/** Loose comparison for matching titles typed by hand against stored ones. */
-function normalise(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-/**
- * Books already on the shelf whose titles contain what has been typed.
- *
- * Free and instant, because the whole shelf is already in memory — the
- * Firestore document is read once and kept there. So this can be shown while
- * the network search is still being waited on, and it is the answer to the
- * question the search often turns out to be asking: have I got this already.
- */
-function shelfMatches(books: Book[], query: string, limit = 4): Book[] {
-  const q = normalise(query);
-  if (!q) return [];
-  return books.filter((b) => normalise(b.title).includes(q)).slice(0, limit);
-}
-
-/** How much has to be typed before it is worth asking. */
-const MIN_QUERY = 3;
-/**
- * How long typing has to stop for before a request goes out.
- *
- * Long enough that a title typed at speed makes one request rather than
- * several. The wait is only felt when you stop, and Open Library is slow often
- * enough that a request fired mid-word is usually wasted anyway.
- */
-const DEBOUNCE_MS = 700;
-/**
- * How long a search is given before it is dropped.
- *
- * Open Library sometimes takes a very long time to answer. Without this the
- * list sat on "Searching…" for as long as it took, and an answer that finally
- * arrived half a minute later would drop a list over whatever had been typed
- * since. Better to give up and say so.
- */
-const TIMEOUT_MS = 6000;
-
-/**
- * Title suggestions while adding a book.
- *
- * Debounced and abortable, and never fired on a query shorter than a few
- * characters: this runs on keystrokes against an API whose owners ask not to
- * be crawled, so the point is to make one request per pause in typing rather
- * than one per letter. The abort matters as much as the debounce — without it
- * a slow answer to "har" could arrive after the answer to "harry" and replace
- * a good list with a stale one.
- */
-function useTitleSearch(query: string, enabled: boolean) {
-  const [results, setResults] = useState<BookSuggestion[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [timedOut, setTimedOut] = useState(false);
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!enabled || q.length < MIN_QUERY) {
-      setResults([]);
-      setSearching(false);
-      setTimedOut(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    // Distinguishes our own timeout from the abort that happens when the
-    // query changes: one is worth reporting, the other is routine.
-    let expired = false;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-
-    setSearching(true);
-    setTimedOut(false);
-
-    const debounce = setTimeout(() => {
-      timeout = setTimeout(() => {
-        expired = true;
-        controller.abort();
-      }, TIMEOUT_MS);
-
-      searchBooks(q, controller.signal)
-        .then((r) => {
-          setResults(r);
-          setSearching(false);
-        })
-        .catch((e) => {
-          if (expired) {
-            setResults([]);
-            setSearching(false);
-            setTimedOut(true);
-          } else if ((e as Error)?.name !== "AbortError") {
-            // A real failure. An abort is this effect being superseded.
-            setResults([]);
-            setSearching(false);
-          }
-        })
-        .finally(() => clearTimeout(timeout));
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(debounce);
-      clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [query, enabled]);
-
-  return { results, searching, timedOut };
-}
-
-/** Add a book, or edit one. The same fields either way. */
-function BookForm({
-  tracker,
-  book,
-  onClose,
-}: {
-  tracker: Tracker;
-  book: Book | null;
-  onClose: () => void;
-}) {
-  const shelf = tracker.state!.books;
-  const [title, setTitle] = useState(book?.title ?? "");
-  const [author, setAuthor] = useState(book?.author ?? "");
-  const [pages, setPages] = useState(book ? String(book.pages || "") : "");
-  const [read, setRead] = useState(book ? String(book.read || "") : "");
-  const { pending, run } = usePending();
-
-  // The cover from a chosen suggestion. Undefined means nothing was chosen, so
-  // the new book is left to be looked up in the usual way.
-  const [pickedCover, setPickedCover] = useState<string | null | undefined>(undefined);
-  // The title as it was when a suggestion was taken. Searching again for it
-  // would reopen the list underneath the answer just chosen.
-  const [chosen, setChosen] = useState<string | null>(null);
-  // Only when adding: an existing book's title is being corrected, not looked
-  // for, and a list dropping open under it would be in the way.
-  const suggesting = !book && chosen !== title.trim();
-  const { results, searching, timedOut } = useTitleSearch(title, suggesting);
-
-  // The shelf is searched first and shown straight away; the network search
-  // fills in underneath when it arrives. A book already here is dropped from
-  // the network results rather than listed twice.
-  const mine = suggesting && title.trim().length >= MIN_QUERY ? shelfMatches(shelf, title) : [];
-  const seen = new Set(mine.map((b) => normalise(b.title)));
-  const remote = results.filter((r) => !seen.has(normalise(r.title)));
-
-  /** Takes everything already known about a book on the shelf. */
-  const chooseMine = (b: Book) => {
-    setTitle(b.title);
-    setChosen(b.title);
-    if (b.author) setAuthor(b.author);
-    if (b.pages && !pages.trim()) setPages(String(b.pages));
-    // Undefined would send the new copy off to be looked up again for an
-    // answer this one already has.
-    setPickedCover(b.coverId ?? null);
-  };
-
-  const choose = (s: BookSuggestion) => {
-    setTitle(s.title);
-    setChosen(s.title);
-    if (s.author) setAuthor(s.author);
-    // Only fills an empty length: a figure already typed is about the copy in
-    // hand, which beats a median across editions.
-    if (s.pages && !pages.trim()) setPages(String(s.pages));
-    setPickedCover(s.coverId ?? null);
-  };
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const t = title.trim();
-    if (!t || pending) return;
-    const n = Number(pages) || 0;
-    onClose();
-    await run(async () => {
-      if (book) {
-        await tracker.updateBook(book.id, t, n, author);
-        return tracker.setBookProgress(book.id, Number(read) || 0);
-      }
-      return tracker.addBook(t, n, author, pickedCover);
-    });
-  };
-
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <div className="relative">
-        <Input
-          aria-label="Title"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            // Typing on past a chosen title means it wasn't the one.
-            setChosen(null);
-            setPickedCover(undefined);
-          }}
-          autoFocus={!book}
-        />
-
-        {suggesting &&
-          title.trim().length >= MIN_QUERY &&
-          (mine.length > 0 || remote.length > 0 || searching || timedOut) && (
-          <ul className="book-suggest">
-            {mine.map((b) => (
-              <li key={`mine-${b.id}`}>
-                <button type="button" className="book-suggest__row" onClick={() => chooseMine(b)}>
-                  {b.coverId ? (
-                    <img className="book-suggest__thumb" src={coverUrl(b.coverId, "S")} alt="" loading="lazy" />
-                  ) : (
-                    <span className="book-suggest__thumb book-suggest__thumb--none" aria-hidden />
-                  )}
-                  <span className="book-suggest__text">
-                    <span className="book-suggest__title">{b.title}</span>
-                    <span className="book-suggest__meta">
-                      {[b.author, b.pages ? `${b.pages} pages` : null].filter(Boolean).join(" · ")}
-                    </span>
-                  </span>
-                  <span className="book-suggest__tag">On your shelf</span>
-                </button>
-              </li>
-            ))}
-            {remote.map((s) => (
-              <li key={s.key}>
-                <button type="button" className="book-suggest__row" onClick={() => choose(s)}>
-                  {s.coverId ? (
-                    <img className="book-suggest__thumb" src={coverUrl(s.coverId, "S")} alt="" loading="lazy" />
-                  ) : (
-                    <span className="book-suggest__thumb book-suggest__thumb--none" aria-hidden />
-                  )}
-                  <span className="book-suggest__text">
-                    <span className="book-suggest__title">{s.title}</span>
-                    <span className="book-suggest__meta">
-                      {[s.author, s.year, s.pages ? `${s.pages} pages` : null]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-            {searching && results.length === 0 && (
-              <li className="book-suggest__note">Searching…</li>
-            )}
-            {timedOut && (
-              <li className="book-suggest__note">
-                Search timed out. Type a little more, or just fill it in yourself.
-              </li>
-            )}
-          </ul>
-        )}
-      </div>
-      <Input
-        aria-label="Author"
-        placeholder="Author"
-        value={author}
-        onChange={(e) => setAuthor(e.target.value)}
-      />
-      <div className="flex gap-2">
-        {book && (
-          <Input
-            type="number"
-            inputMode="numeric"
-            aria-label="Current page"
-            placeholder="Current page"
-            value={read}
-            onChange={(e) => setRead(e.target.value)}
-            className="min-w-0 flex-1"
-          />
-        )}
-        <Input
-          type="number"
-          inputMode="numeric"
-          aria-label="Total pages"
-          placeholder="Number of pages"
-          value={pages}
-          onChange={(e) => setPages(e.target.value)}
-          className="min-w-0 flex-1"
-        />
-      </div>
-
-      {book && (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => void tracker.setBookCover(book.id, undefined)}
-          >
-            Find cover
-          </Button>
-          {book.coverId && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onPress={() => void tracker.setBookCover(book.id, null)}
-            >
-              <ImageOff className="h-3.5 w-3.5" /> Use plain cover
-            </Button>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between gap-2">
-        {book ? (
-          <DeleteButton
-            what={`"${book.title}"`}
-            bare
-            iconOnly
-            onDelete={async () => {
-              onClose();
-              return tracker.removeBook(book.id);
-            }}
-          />
-        ) : (
-          <span />
-        )}
-        <span className="flex gap-2">
-          <Button variant="outline" onPress={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>
-            {book ? "Save" : "Add"}
-          </Button>
-        </span>
-      </div>
-    </form>
-  );
-}
-
-/**
- * Which pile a book belongs to. The order of these is the order they appear.
- *
- * Started first, because a book being read is the one you have come to the
- * page for. Unstarted next, since choosing what to pick up next is the other
- * reason to look. Finished last: they are kept for the record, and a shelf
- * that has been used for a while is mostly them.
- */
-function pile(b: Book): number {
-  const finished = b.pages > 0 && b.read >= b.pages;
-  if (finished) return 2;
-  return b.read > 0 ? 0 : 1;
-}
-
-/**
- * Piles first, then alphabetical within each.
- *
- * Sorted by title with a collator rather than by comparing strings directly,
- * so case is ignored and accented letters file next to their plain forms
- * instead of after every unaccented title.
- */
-const byTitle = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
-
-function shelfOrder(books: Book[]): Book[] {
-  return [...books].sort(
-    (a, b) => pile(a) - pile(b) || byTitle.compare(a.title, b.title)
-  );
-}
-
-/** One book: cover, title, author, how far through, and a way to set the page. */
-function BookCard({
-  book,
-  onEdit,
-  onSetPage,
-}: {
-  book: Book;
-  onEdit: () => void;
-  onSetPage: () => void;
-}) {
-  // Floored, not rounded: 299 of 300 pages rounds up to 100%, which read as
-  // finished on a card sitting in the unfinished pile with a page still to go.
-  // Only an actually finished book should show a hundred.
-  const pct = Math.floor(bookProgress(book) * 100);
-  const done = book.pages > 0 && book.read >= book.pages;
-  const colour = bookColor(book);
-
-  return (
-    <div className={"book-card" + (done ? " book-card--done" : "")}>
-      {/* A finished book is marked twice over: the tick says so outright, and
-          the tinted background says it at a glance down a long grid, where a
-          small corner mark is easy to miss. */}
-      {done && (
-        <span className="book-card__tick" aria-hidden>
-          <Check className="h-3.5 w-3.5" />
-        </span>
-      )}
-
-      <button type="button" className="book-card__open" onClick={onEdit} aria-label={`Edit ${book.title}`}>
-        <Cover book={book} />
-      </button>
-
-      <div className="book-card__body">
-        <button type="button" className="book-card__title-btn" onClick={onEdit}>
-          <span className="book-card__title">{book.title}</span>
-          {book.author && <span className="book-card__author">{book.author}</span>}
-        </button>
-
-        <div className="book-card__meter" aria-hidden>
-          <span style={{ width: `${pct}%`, background: colour }} />
-        </div>
-
-        <div className="book-card__foot">
-          <span className="book-card__count">
-            {book.pages > 0 ? (
-              <>
-                <span className="font-mono-n font-bold text-foreground">{book.read}</span>
-                {" / "}
-                {book.pages} pages · {pct}%
-              </>
-            ) : (
-              <>
-                <span className="font-mono-n font-bold text-foreground">{book.read}</span> pages read
-              </>
-            )}
-          </span>
-          {!done && (
-            <Button size="sm" variant="outline" onPress={onSetPage}>
-              <BookOpen className="h-3.5 w-3.5" /> Page
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Books({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<Book | null>(null);
-  const [logging, setLogging] = useState<Book | null>(null);
-  useCoverLookup(tracker, s.books);
+  useCoverLookup(tracker, tracker.state!.books);
+  return (
+    <ReadingFlow tracker={tracker}>
+      <BooksTabs tracker={tracker} />
+    </ReadingFlow>
+  );
+}
 
-  const finished = s.books.filter((b) => b.pages > 0 && b.read >= b.pages).length;
-  const pagesRead = s.books.reduce((n, b) => n + Math.min(b.read, b.pages || b.read), 0);
+function BooksTabs({ tracker }: { tracker: Tracker }) {
+  const flow = useFlow();
+  const [tab, setTab] = useState<Tab>("today");
 
-  // The dialogs are handed the book from state rather than the one captured
-  // when they opened, so an edit made in one is reflected in the other.
-  const live = (b: Book | null) => (b ? s.books.find((x) => x.id === b.id) ?? null : null);
-  const editingBook = live(editing);
-  const loggingBook = live(logging);
+  // The tab last looked at, per device. Only a convenience, so a browser
+  // that refuses storage just starts on Today.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TAB_KEY) as Tab | null;
+      if (saved && TABS.includes(saved)) setTab(saved);
+    } catch {}
+  }, []);
+  const choose = (t: Tab) => {
+    setTab(t);
+    try {
+      localStorage.setItem(TAB_KEY, t);
+    } catch {}
+  };
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-foreground/50">
-          Reading
-        </h3>
-        <Button size="sm" variant="outline" onPress={() => setAdding(true)}>
-          <Plus className="h-3.5 w-3.5" /> Add book
-        </Button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="max-w-full overflow-x-auto">
+          <Segmented
+            label="Reading view"
+            value={tab}
+            onChange={choose}
+            options={[
+              { value: "today", label: "Today" },
+              { value: "tracks", label: "Tracks" },
+              { value: "phases", label: "Phases" },
+              { value: "notes", label: "Notes" },
+              { value: "history", label: "History" },
+            ]}
+          />
+        </div>
+        <span className="flex gap-2">
+          <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "bulk" })}>
+            <ListPlus className="h-3.5 w-3.5" /> Add several
+          </Button>
+          <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "edit", bookId: null })}>
+            <Plus className="h-3.5 w-3.5" /> Add book
+          </Button>
+        </span>
       </div>
 
-      {s.books.length === 0 ? (
-        <p className="py-2 text-[15px] text-foreground/60">
-          No books yet. Add one and it appears here, filling up as you read.
-        </p>
-      ) : (
-        <>
-          <div className="mb-3 flex gap-3 text-xs text-foreground/60">
-            <span>
-              <span className="font-mono-n text-sm font-bold text-foreground">{finished}</span> of{" "}
-              {s.books.length} finished
-            </span>
-            <span>
-              <span className="font-mono-n text-sm font-bold text-foreground">
-                {pagesRead.toLocaleString()}
-              </span>{" "}
-              pages read
-            </span>
-          </div>
-
-          <div className="book-grid">
-            {shelfOrder(s.books).map((b) => (
-              <BookCard
-                key={b.id}
-                book={b}
-                onEdit={() => setEditing(b)}
-                onSetPage={() => setLogging(b)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      <Modal open={adding} onClose={() => setAdding(false)} title="Add book">
-        <BookForm tracker={tracker} book={null} onClose={() => setAdding(false)} />
-      </Modal>
-      <Modal
-        open={!!editingBook}
-        onClose={() => setEditing(null)}
-        title={editingBook?.title ?? "Book"}
-      >
-        {editingBook && (
-          <BookForm tracker={tracker} book={editingBook} onClose={() => setEditing(null)} />
-        )}
-      </Modal>
-      <Modal open={!!loggingBook} onClose={() => setLogging(null)} title="Current page">
-        {loggingBook && (
-          <SetPageForm tracker={tracker} book={loggingBook} onClose={() => setLogging(null)} />
-        )}
-      </Modal>
+      {tab === "today" && <TodayView tracker={tracker} />}
+      {tab === "tracks" && <TracksView tracker={tracker} />}
+      {tab === "phases" && <PhasesView tracker={tracker} />}
+      {tab === "notes" && <NotesView tracker={tracker} />}
+      {tab === "history" && <HistoryView tracker={tracker} />}
     </div>
   );
 }

@@ -33,6 +33,16 @@ export {
   MdOutlinePushPin as PinOff,
   MdImageNotSupported as ImageOff,
   MdCalendarToday as CalendarDays,
+  MdPause as Pause,
+  MdSearch as Search,
+  MdArchive as Archive,
+  MdUnarchive as Unarchive,
+  MdFormatQuote as Quote,
+  MdLightbulb as Lightbulb,
+  MdLocalFireDepartment as Flame,
+  MdSchedule as Clock,
+  MdWarning as Warning,
+  MdDragIndicator as GripVertical,
 
   // direction
   MdArrowUpward as ArrowUp,
