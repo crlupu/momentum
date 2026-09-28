@@ -67,7 +67,9 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
             ]}
           />
         </div>
-        <span className="flex flex-wrap gap-2">
+        {/* On a phone the buttons wrap and each stretches to fill its row, so
+            none is cut off; from 672px they sit at their own widths. */}
+        <span className="flex w-full flex-wrap gap-2 md:w-auto [&>*]:flex-auto md:[&>*]:flex-none">
           <Button variant="ghost" onPress={() => flow.open({ kind: "import" })}>
             <Upload className="h-4 w-4" /> Import plan
           </Button>

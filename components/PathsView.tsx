@@ -256,7 +256,7 @@ function PathCard({ tracker, path }: { tracker: Tracker; path: Path }) {
 
         <div className="path-meter" aria-hidden>
           <span
-            style={{ width: `${pct}%`, background: cat?.color || "var(--accent)" }}
+            style={{ width: `${pct}%`, background: "var(--accent)" }}
           />
         </div>
 

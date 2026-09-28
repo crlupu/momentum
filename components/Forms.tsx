@@ -819,11 +819,11 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
             {budget ? (
               <>
                 <div className="font-mono-n text-2xl font-bold leading-none">
-                  {budget}
+                  {budget.toLocaleString()}
                   <span className="ml-1 text-sm font-medium text-[var(--muted)]">kcal / day</span>
                 </div>
                 <div className="mt-1.5 text-[13px] text-[var(--muted)]">
-                  {budget * 7} kcal per week
+                  {(budget * 7).toLocaleString()} kcal per week
                 </div>
               </>
             ) : (
@@ -835,7 +835,7 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
 
         {left != null && (
           <div className="mt-3 border-t border-foreground/10 pt-3 text-[13px] text-[var(--muted)]">
-            <span className="font-mono-n font-semibold text-foreground">{left}</span> kcal left this
+            <span className="font-mono-n font-semibold text-foreground">{left.toLocaleString()}</span> kcal left this
             week
           </div>
         )}

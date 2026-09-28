@@ -410,11 +410,8 @@ function TimeLine({
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (
-    <div
-      className="px-3 py-2.5"
-      style={{ background: "var(--surface-secondary)" }}
-    >
-      <div className="font-mono-n text-xl font-semibold" style={{ color: "var(--accent)" }}>
+    <div className="rounded-[var(--r-control)] bg-[var(--default)] px-3 py-2.5">
+      <div className="font-mono-n text-xl font-bold">
         {value}
       </div>
       <div className="text-xs text-[var(--muted)]">{label}</div>

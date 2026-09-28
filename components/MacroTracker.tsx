@@ -59,10 +59,7 @@ function TargetMeter({
   const pct = target ? Math.round((value / target) * 100) : 0;
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      <span
-        className="font-mono-n text-2xl font-bold leading-none"
-        style={{ color: solid }}
-      >
+      <span className="font-mono-n text-2xl font-bold leading-none">
         {target ? `${pct}%` : value}
       </span>
       <span className="mt-1 truncate text-xs tabular-nums" style={{ color: LABEL }}>
@@ -77,7 +74,7 @@ function TargetMeter({
             className="h-full"
             style={{
               width: `${Math.min(100, pct)}%`,
-              backgroundImage: fill,
+              background: fill,
               transition: "width .3s ease" }}
           />
         ) : null}

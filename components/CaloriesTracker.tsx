@@ -146,8 +146,8 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
         </form>
 
         <div className="mb-1 flex items-baseline gap-2">
-          <span className="font-mono-n text-xl font-bold" style={{ color: ACCENT }}>
-            {weekAvg}
+          <span className="font-mono-n text-xl font-bold">
+            {weekAvg.toLocaleString()}
           </span>
           <span className="text-xs" style={{ color: LABEL }}>avg kcal/day · this week</span>
         </div>
