@@ -81,8 +81,10 @@
 
    It is the same colour in light and dark: the brightest blue that still
    reads as a shape on the light ground (3.0:1), and on a dark card it
-   reaches 5.1:1. Black carries on it at 6.2:1 (white would only manage
-   3.4:1), so buttons and checkmarks on it are black in both themes. No
+   reaches 5.1:1. Text and checkmarks on it are white in both themes: a
+   deliberate choice of look over the numbers, since white on it measures
+   3.4:1 — enough for the ticks and for bold text 19px and up, short of
+   the 4.5:1 AA asks of smaller button labels. No
    colour can also be small *text* on both grounds (that would need it to
    be darker and lighter at once), so the accent never carries text: text
    is ink, and the accent goes to the shape, the fill or the icon beside it.
@@ -162,7 +164,7 @@
   /* Electric blue */
   --accent: var(--electric);
   --accent-text: var(--foreground);  /* the accent never carries text */
-  --accent-foreground: #000000;      /* 6.2:1 */
+  --accent-foreground: #ffffff;      /* 3.4:1, see above */
   --accent-soft: rgba(26, 140, 255, 0.12);
   --accent-soft-strong: rgba(26, 140, 255, 0.2);
   --accent-track: rgba(26, 140, 255, 0.16);
@@ -239,7 +241,7 @@
 
   --accent: var(--electric);
   --accent-text: var(--foreground);
-  --accent-foreground: #000000;
+  --accent-foreground: #ffffff;
   --accent-soft: rgba(26, 140, 255, 0.2);
   --accent-soft-strong: rgba(26, 140, 255, 0.3);
   --accent-track: rgba(26, 140, 255, 0.24);
