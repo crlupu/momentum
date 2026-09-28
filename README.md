@@ -130,19 +130,20 @@ of truth.
 
 - Colour has two layers, both in `globals.css`:
   - **Interface:** ink on paper (`--foreground`, `--muted`, `--surface`,
-    `--background`) with one accent, ultraviolet `#7D55FF` (`--accent`), which
-    is the same in light and dark and only ever means progress: checkmarks,
-    rings, progress bars, the primary button, the current tab. It is used for
-    shapes, fills and icons, never for text (no single colour can be readable
-    text on both a white and a dark card), so `--accent-text` is plain ink.
-    In dark mode the Today ring glows (`--accent-glow`). Amber (`--warning`)
-    means behind or over; red (`--danger`) means destructive. Sections have
-    no colours of their own.
+    `--background`) with one accent, electric blue `#1A8CFF` (`--accent`).
+    It is the same in light and dark and only ever means progress:
+    checkmarks, rings, progress bars, the primary button, the current tab.
+    It is used for shapes, fills and icons, never for text, because no
+    single colour can be readable text on both a white and a dark card.
+    `--accent-text` is plain ink, and text on the accent is black
+    (6.2:1). In dark mode the Today ring glows (`--accent-glow`). Amber
+    (`--warning`) means behind or over; red (`--danger`) means destructive.
+    Sections have no colours of their own.
   - **Data:** people's own colours (categories, meal tags, tracks, books) come
     from `CAT_COLORS` / `--data-*`: eleven hues at one luminance, each 5.0:1
-    with white text and 3.4:1 on the dark card. There's no violet or indigo,
+    with white text and 3.4:1 on the dark card. There's no blue or cyan,
     so nothing can be mistaken for the accent. Charts use `--chart-1`
-    (ultraviolet) and `--chart-2` (teal).
+    (electric blue) and `--chart-2` (teal).
 - Dates are local `YYYY-MM-DD` keys (`dateKey()`), and weeks start on Monday.
   They are shown with `lib/dates.ts` ("28 Sep", with the year only when it isn't this one,
   and times on a 24-hour clock), so every page writes them the same way.

@@ -32,7 +32,7 @@ const BARS = [
 const RADIUS = 2;
 
 /**
- * The mark in the app's colours: the two fallen dominoes in ultraviolet — done,
+ * The mark in the app's colours: the two fallen dominoes in electric blue — done,
  * momentum gathered — and the one still standing in ink, the next thing to
  * do. Pass `mono` for a single colour (currentColor) where the accent would clash.
  */

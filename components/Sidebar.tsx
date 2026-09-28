@@ -61,7 +61,7 @@ function NavLink({ id, current, onNavigate }: { id: SectionId; current: string; 
  *
  * Navigation only — nothing that acts. New goals and new tasks are made on
  * their own pages, next to the lists they join, and today's figures live on
- * Today. Icons are monochrome; the current page is marked in ultraviolet.
+ * Today. Icons are monochrome; the current page is marked in electric blue.
  */
 export function Sidebar({ tracker }: { tracker: Tracker }) {
   const current = useCurrentPath();

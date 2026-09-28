@@ -100,7 +100,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-technical",
     name: "Technical",
-    color: "#2168e4",
+    color: "#635fd9",
     wipLimit: 1,
     dailyTarget: 20,
     slot: "12:15 iPad block",
@@ -118,7 +118,7 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
   {
     id: "track-slow",
     name: "Slow lane",
-    color: "#b23bb2",
+    color: "#8c4ed3",
     wipLimit: 1,
     dailyTarget: 10,
     slot: "Morning coffee",

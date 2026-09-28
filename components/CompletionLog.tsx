@@ -47,8 +47,8 @@ type Entry = {
 
 /** Each kind's dot, from the data palette (--data-* in globals.css). */
 const KIND_COLOR: Record<Entry["kind"], string> = {
-  "To-do": "#11779d",
-  Goal: "#2168e4",
+  "To-do": "#8c4ed3",
+  Goal: "#635fd9",
   Recurring: "#127c72",
   Workout: "#ce352a",
   Cardio: "#b75014",
