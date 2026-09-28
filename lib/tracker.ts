@@ -52,12 +52,18 @@ export type RecurringTask = {
   groupId?: string;
 };
 
-/** A step inside a goal, with its own optional current/target. */
+/**
+ * A step inside a goal: a lesson, a module, a task. Either a checkbox (done
+ * or not) or, with a target, a count ("3 of 10 videos"). A counted step is
+ * done once it reaches its target.
+ */
 export type Subtask = {
   id: string;
   title: string;
   current?: number;
   target?: number;
+  /** Ticked. Only meaningful for a step without a target. */
+  done?: boolean;
 };
 
 // A goal is a progress-tracked objective (e.g. "Read Atomic Habits" 132/396).
@@ -77,13 +83,18 @@ export type Goal = {
    */
   doneAt?: number | null;
   subtasks?: Subtask[];
-  /** Pinned goals stay at the top of their column. */
+  /** Pinned goals stay at the top of their topic. */
   pinned?: boolean;
+  /** Where it lives, e.g. the course page. */
+  link?: string;
+  /** Anything worth remembering about it, in a line or two. */
+  note?: string;
 };
 
 /**
- * A long undertaking made of goals — "become a software architect" — where no
- * single goal is the whole of it and the order they are taken in matters.
+ * A topic: several goals grouped under one heading — "Backend engineering",
+ * "Side projects" — shown as a section of the Goals page with its combined
+ * progress. Stored as a "path" for continuity with saved data.
  *
  * Holds its goals by id rather than owning them, so a goal is the same goal
  * whether it is on a path or not: it keeps its category, its subtasks and its
@@ -719,45 +730,67 @@ export function recurringUnits(
 }
 
 export function subtaskPct(t: Subtask): number {
-  if (!t.target || t.target <= 0) return 0;
+  if (!t.target || t.target <= 0) return t.done ? 100 : 0;
   return Math.max(0, Math.min(100, Math.round(((t.current ?? 0) / t.target) * 100)));
 }
 
-/** Subtasks that actually carry a target (i.e. have a percentage of their own). */
-function measuredSubtasks(g: Goal): Subtask[] {
-  return (g.subtasks ?? []).filter((t) => typeof t.target === "number" && t.target > 0);
+/** A step is done when ticked, or when a counted step reaches its target. */
+export function subtaskDone(t: Subtask): boolean {
+  if (t.target && t.target > 0) return (t.current ?? 0) >= t.target;
+  return !!t.done;
+}
+
+/**
+ * A step's weight in its goal: a counted step counts its target in units, a
+ * checkbox counts as one. So "10 videos" and "write the final project"
+ * combine as 11 units, and each video moves the goal as much as the project.
+ */
+function subtaskUnits(t: Subtask): { current: number; target: number } {
+  if (t.target && t.target > 0) return { current: Math.min(t.current ?? 0, t.target), target: t.target };
+  return { current: t.done ? 1 : 0, target: 1 };
 }
 
 /** True when there is any percentage to show at all. */
 export function goalHasProgress(g: Goal): boolean {
-  return measuredSubtasks(g).length > 0 || (typeof g.target === "number" && g.target > 0);
+  return (g.subtasks?.length ?? 0) > 0 || (typeof g.target === "number" && g.target > 0);
 }
 
-/** True when the shown percentage comes from subtasks rather than the goal itself. */
+/** True when the shown percentage comes from steps rather than the goal itself. */
 export function goalIsDerived(g: Goal): boolean {
-  return measuredSubtasks(g).length > 0;
+  return (g.subtasks?.length ?? 0) > 0;
+}
+
+/** "3 of 8 steps", counting a counted step once it reaches its target. */
+export function goalStepsDone(g: Goal): { done: number; total: number } {
+  const list = g.subtasks ?? [];
+  return { done: list.filter(subtaskDone).length, total: list.length };
 }
 
 /**
  * A goal's percentage.
- * - No subtasks, or no subtask carries a target → the goal's own current/target.
- * - At least one subtask carries a target → the combined total across those
- *   subtasks (all progress summed over all targets), so a small subtask being
- *   part-done can't inflate the whole goal.
+ * - With steps → all steps' units summed over all their targets (see
+ *   subtaskUnits), so part of a big step can't inflate the whole goal.
+ * - Without steps → the goal's own current/target.
  *
  * Floored, so the figure never claims more progress than has actually happened
  * and only reaches 100% when everything really is finished.
  */
 export function goalPct(g: Goal): number {
-  const measured = measuredSubtasks(g);
-  if (measured.length > 0) {
-    const current = measured.reduce((a, t) => a + Math.min(t.current ?? 0, t.target ?? 0), 0);
-    const target = measured.reduce((a, t) => a + (t.target ?? 0), 0);
+  const list = g.subtasks ?? [];
+  if (list.length > 0) {
+    const units = list.map(subtaskUnits);
+    const current = units.reduce((a, u) => a + u.current, 0);
+    const target = units.reduce((a, u) => a + u.target, 0);
     if (target <= 0) return 0;
     return Math.max(0, Math.min(100, Math.floor((current / target) * 100)));
   }
   if (!g.target || g.target <= 0) return 0;
   return Math.max(0, Math.min(100, Math.floor(((g.current ?? 0) / g.target) * 100)));
+}
+
+/** The topic a goal is shown under: the first that holds it, if any. */
+export function goalTopic(goalId: string, paths: Path[]): Path | undefined {
+  return paths.find((p) => p.goalIds.includes(goalId));
 }
 
 /** The goals on a path, in the path's order, skipping any since deleted. */
@@ -827,12 +860,15 @@ function migrate(raw: unknown): TrackerState {
     doneDate: (g.doneDate as string) ?? null,
     doneAt: typeof g.doneAt === "number" ? g.doneAt : null,
     pinned: g.pinned === true ? true : undefined,
+    link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
+    note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     subtasks: Array.isArray(g.subtasks)
       ? (g.subtasks as Array<Record<string, unknown>>).map((t) => ({
           id: (t.id as string) ?? uid(),
           title: t.title as string,
           current: typeof t.current === "number" ? t.current : undefined,
           target: typeof t.target === "number" ? t.target : undefined,
+          done: t.done === true ? true : undefined,
         }))
       : [],
   }));
@@ -1227,21 +1263,74 @@ export function useTracker() {
       !!state?.recurring.some((r) => r.catId === id) || !!state?.goals.some((g) => g.catId === id),
 
     // ---- goals ----
-    addGoal: (title: string, catId: string, current: number | null, target: number | null) =>
+    /** Adds a goal, optionally straight into a topic. */
+    addGoal: (
+      title: string,
+      catId: string,
+      current: number | null,
+      target: number | null,
+      pathId?: string | null
+    ) =>
+      commit((s) => {
+        const id = uid();
+        return {
+          ...s,
+          goals: [
+            ...s.goals,
+            {
+              id,
+              title,
+              catId,
+              current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
+              target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
+              done: false,
+              doneDate: null,
+            },
+          ],
+          paths: pathId
+            ? s.paths.map((p) => (p.id === pathId ? { ...p, goalIds: [...p.goalIds, id] } : p))
+            : s.paths,
+        };
+      }),
+
+    /** The goal's link and note, saved together. Empty clears them. */
+    setGoalDetails: (id: string, patch: { link?: string; note?: string }) =>
       commit((s) => ({
         ...s,
-        goals: [
-          ...s.goals,
-          {
-            id: uid(),
-            title,
-            catId,
-            current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
-            target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
-            done: false,
-            doneDate: null,
-          },
-        ],
+        goals: s.goals.map((g) =>
+          g.id === id
+            ? {
+                ...g,
+                ...("link" in patch ? { link: patch.link?.trim() || undefined } : {}),
+                ...("note" in patch ? { note: patch.note?.trim() || undefined } : {}),
+              }
+            : g
+        ),
+      })),
+
+    /**
+     * Puts a goal in one topic — or none — taking it out of any other. A goal
+     * belongs to one topic on this page.
+     */
+    setGoalTopic: (goalId: string, pathId: string | null) =>
+      commit((s) => ({
+        ...s,
+        paths: s.paths.map((p) => {
+          const has = p.goalIds.includes(goalId);
+          if (p.id === pathId) return has ? p : { ...p, goalIds: [...p.goalIds, goalId] };
+          return has ? { ...p, goalIds: p.goalIds.filter((g) => g !== goalId) } : p;
+        }),
+      })),
+
+    /** Moves a goal's own count by a step, clamped to 0 and its target. */
+    stepGoal: (id: string, delta: number) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) => {
+          if (g.id !== id) return g;
+          const next = Math.max(0, (g.current ?? 0) + delta);
+          return { ...g, current: g.target ? Math.min(next, g.target) : next };
+        }),
       })),
 
     /** Saves every editable field of a goal in a single write. */
@@ -1464,6 +1553,57 @@ export function useTracker() {
               }
             : g
         ),
+      })),
+
+    /** Ticks a step, or unticks it. A counted step is filled or emptied. */
+    toggleSubtask: (goalId: string, subtaskId: string) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === goalId
+            ? {
+                ...g,
+                subtasks: (g.subtasks ?? []).map((t) => {
+                  if (t.id !== subtaskId) return t;
+                  if (t.target && t.target > 0) {
+                    return { ...t, current: (t.current ?? 0) >= t.target ? 0 : t.target };
+                  }
+                  return { ...t, done: t.done ? undefined : true };
+                }),
+              }
+            : g
+        ),
+      })),
+
+    /** Moves a counted step by one, clamped to 0 and its target. */
+    stepSubtask: (goalId: string, subtaskId: string, delta: number) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) =>
+          g.id === goalId
+            ? {
+                ...g,
+                subtasks: (g.subtasks ?? []).map((t) =>
+                  t.id === subtaskId && t.target
+                    ? { ...t, current: Math.max(0, Math.min(t.target, (t.current ?? 0) + delta)) }
+                    : t
+                ),
+              }
+            : g
+        ),
+      })),
+
+    /** Reorders a goal's steps to match the given ids. */
+    reorderSubtasks: (goalId: string, ids: string[]) =>
+      commit((s) => ({
+        ...s,
+        goals: s.goals.map((g) => {
+          if (g.id !== goalId) return g;
+          const byId = new Map((g.subtasks ?? []).map((t) => [t.id, t]));
+          const ordered = ids.map((id) => byId.get(id)).filter(Boolean) as Subtask[];
+          const rest = (g.subtasks ?? []).filter((t) => !ids.includes(t.id));
+          return { ...g, subtasks: [...ordered, ...rest] };
+        }),
       })),
 
     deleteSubtask: (goalId: string, subtaskId: string) =>

@@ -1,589 +1,283 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Chip, Input, AddButton } from "./ui";
-import { ActionButton, usePending } from "./ActionButton";
-import { DeleteButton } from "./DeleteButton";
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  Pencil,
-  Pin,
-  PinOff,
-  RotateCcw,
-  Target,
-} from "./icons";
+import { AddButton, PanelHeader } from "./ui";
+import { Modal } from "./Modal";
+import { GoalForm } from "./Forms";
+import { GoalDetail } from "./GoalDetail";
+import { TopicForm } from "./TopicForm";
 import { ProgressRing } from "./ProgressRing";
-import { PathsView } from "./PathsView";
-import { Tracker, Goal, Subtask, goalPct, goalHasProgress, goalIsDerived, subtaskPct } from "@/lib/tracker";
+import { Segmented } from "./books/bits";
+import { ChevronRight, Pin, Target } from "./icons";
+import { fmtDateAuto } from "@/lib/dates";
+import {
+  Tracker,
+  Goal,
+  Path,
+  goalHasProgress,
+  goalPct,
+  goalStepsDone,
+  pathGoals,
+  pathPct,
+} from "@/lib/tracker";
 
-function SubtaskRow({
-  goalId,
-  t,
-  tracker,
-}: {
-  goalId: string;
-  t: Subtask;
-  tracker: Tracker;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(t.title);
-  const [current, setCurrent] = useState(String(t.current ?? ""));
-  const [target, setTarget] = useState(String(t.target ?? ""));
-  const { pending, run } = usePending();
-  const pct = subtaskPct(t);
-  const hasTarget = typeof t.target === "number" && t.target > 0;
+type View = "active" | "done";
 
-  const save = async () => {
-    // Closed on the press rather than on the network. The editor keeps what
-    // was typed, so if the write is refused it reopens with the draft intact.
-    setEditing(false);
-    const ok = await run(() =>
-      tracker.setSubtaskProgress(
-        goalId,
-        t.id,
-        current === "" ? null : Number(current),
-        target === "" ? null : Number(target),
-        name
-      )
-    );
-    if (!ok) setEditing(true);
-  };
+/** Pinned goals first; otherwise the order they were given. */
+function pinnedFirst(list: Goal[]): Goal[] {
+  return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+}
+
+/**
+ * Goals: courses, projects, anything tracked to completion, grouped under
+ * topics.
+ *
+ * The page is a stack of topics, each a section with its combined progress
+ * and its goals as rows; goals in no topic come last. A row opens the goal,
+ * where its steps are ticked off and its details changed. Active and done
+ * goals are two views of the same list rather than columns side by side.
+ */
+export default function GoalsView({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const [view, setView] = useState<View>("active");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [adding, setAdding] = useState<{ pathId: string | null } | null>(null);
+  const [topicEdit, setTopicEdit] = useState<{ id: string | null } | null>(null);
+
+  const inView = (g: Goal) => (view === "done" ? g.done : !g.done);
+
+  // A goal appears under one topic only: the first that holds it.
+  const seen = new Set<string>();
+  const sections = s.paths.map((topic) => {
+    const all = pathGoals(topic, s.goals).filter((g) => !seen.has(g.id));
+    all.forEach((g) => seen.add(g.id));
+    return { topic, all, shown: pinnedFirst(all.filter(inView)) };
+  });
+  const loose = pinnedFirst(s.goals.filter((g) => !seen.has(g.id) && inView(g)));
+
+  const activeCount = s.goals.filter((g) => !g.done).length;
+  const doneCount = s.goals.length - activeCount;
+  const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
+  const editingTopic = topicEdit?.id ? s.paths.find((p) => p.id === topicEdit.id) : undefined;
+
+  const nothing = s.goals.length === 0 && s.paths.length === 0;
 
   return (
-    <li className="py-1.5">
-      <div className="flex items-center gap-1.5">
-        <button
-          className="min-w-0 flex-1 break-words text-left text-[13px]"
-          onClick={() => setEditing((v) => !v)}
-          title="Edit progress"
-        >
-          {t.title}
-        </button>
-        <span className="font-mono-n shrink-0 text-[11px] text-[var(--muted)]">
-          {hasTarget ? `${t.current ?? 0}/${t.target}` : "—"}
+    <div className="goals">
+      <div className="goals-toolbar">
+        <Segmented
+          label="Show"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "active", label: `Active · ${activeCount}` },
+            { value: "done", label: `Done · ${doneCount}` },
+          ]}
+        />
+        <span className="goals-toolbar__actions">
+          <AddButton label="New topic" onPress={() => setTopicEdit({ id: null })} />
+          <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
         </span>
       </div>
 
-      <div className="progress-track mt-1 h-1.5">
-        <div className="progress-fill" style={{ width: `${pct}%` }} />
-      </div>
-
-      {editing && (
-        <div className="mt-2 flex flex-col gap-2">
-          <label className="block text-[11px] text-[var(--muted)]">
-            Name
-            <Input
-              aria-label="Subtask name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-0.5 w-full"
-            />
-          </label>
-          <label className="block text-[11px] text-[var(--muted)]">
-            Current
-            <Input
-              type="number"
-              step="any"
-              inputMode="decimal"
-              aria-label="Subtask current value"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              className="mt-0.5 w-full"
-            />
-          </label>
-          <label className="block text-[11px] text-[var(--muted)]">
-            Target
-            <Input
-              type="number"
-              step="any"
-              inputMode="decimal"
-              aria-label="Subtask target value"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className="mt-0.5 w-full"
-            />
-          </label>
-          <Button
-            size="sm"
-            variant="primary"
-            onPress={() => void save()}
-            isDisabled={pending}
-            className="w-full"
-          >
-            Save
-          </Button>
-          <Button size="sm" variant="ghost" onPress={() => setEditing(false)} className="w-full">
-            Cancel
-          </Button>
-          <DeleteButton
-            what={`the subtask "${t.title}"`}
-            fullWidth
-            onDelete={() => tracker.deleteSubtask(goalId, t.id)}
-          />
+      {nothing ? (
+        <div className="card goals-empty">
+          <Target className="h-8 w-8" aria-hidden />
+          <p className="goals-empty__title">Track a course or a project</p>
+          <p className="goals-empty__text">
+            Add a goal for each one and break it into steps: lessons, chapters, tasks. Group
+            related goals under a topic to see how the whole area is going.
+          </p>
+          <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
         </div>
+      ) : (
+        <>
+          {sections.map(({ topic, all, shown }) =>
+            view === "done" && shown.length === 0 ? null : (
+              <TopicSection
+                key={topic.id}
+                tracker={tracker}
+                topic={topic}
+                all={all}
+                goals={shown}
+                view={view}
+                onOpen={setOpenId}
+                onAdd={() => setAdding({ pathId: topic.id })}
+                onEdit={() => setTopicEdit({ id: topic.id })}
+              />
+            )
+          )}
+
+          {(loose.length > 0 || (view === "active" && s.paths.length === 0)) && (
+            <section className="goal-topic">
+              <PanelHeader title={s.paths.length > 0 ? "Not in a topic" : "All goals"} />
+              <div className="card goal-list">
+                {loose.length === 0 ? (
+                  <p className="goal-list__empty">No goals yet.</p>
+                ) : (
+                  <ul className="goal-list__rows">
+                    {loose.map((g) => (
+                      <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={setOpenId} />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          )}
+
+          {view === "done" && doneCount === 0 && (
+            <p className="goal-list__empty">Nothing finished yet. Goals you mark as done land here.</p>
+          )}
+        </>
       )}
-    </li>
-  );
-}
 
-function AddSubtask({ goalId, tracker }: { goalId: string; tracker: Tracker }) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [current, setCurrent] = useState("");
-  const [target, setTarget] = useState("");
-  const { pending, run } = usePending();
-
-  const add = async () => {
-    const t = title.trim();
-    if (!t) return;
-    const ok = await run(() =>
-      tracker.addSubtask(
-        goalId,
-        t,
-        current === "" ? null : Number(current),
-        target === "" ? null : Number(target)
-      )
-    );
-    if (ok) {
-      setTitle("");
-      setCurrent("");
-      setTarget("");
-      setOpen(false);
-    }
-  };
-
-  if (!open) {
-    return (
-      <AddButton label="Add subtask" className="mt-2" onPress={() => setOpen(true)} />
-    );
-  }
-
-  return (
-    <div className="mt-2 flex flex-col gap-2">
-      <Input
-        aria-label="Subtask title"
-        placeholder="Subtask title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        autoFocus
-      />
-      <label className="block text-[11px] text-[var(--muted)]">
-        Current
-        <Input
-          type="number"
-          step="any"
-          inputMode="decimal"
-          aria-label="Subtask current value"
-          value={current}
-          onChange={(e) => setCurrent(e.target.value)}
-          className="mt-0.5 w-full"
+      <Modal open={!!adding} onClose={() => setAdding(null)} title="New goal">
+        <GoalForm
+          key={adding?.pathId ?? "none"}
+          tracker={tracker}
+          pathId={adding?.pathId ?? null}
+          onDone={() => setAdding(null)}
         />
-      </label>
-      <label className="block text-[11px] text-[var(--muted)]">
-        Target
-        <Input
-          type="number"
-          step="any"
-          inputMode="decimal"
-          aria-label="Subtask target value"
-          value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          className="mt-0.5 w-full"
-        />
-      </label>
-      <Button
-        size="sm"
-        variant="primary"
-        onPress={() => void add()}
-        isDisabled={pending}
-        className="w-full"
+      </Modal>
+
+      <Modal
+        open={!!topicEdit}
+        onClose={() => setTopicEdit(null)}
+        title={editingTopic ? "Edit topic" : "New topic"}
       >
-        Add subtask
-      </Button>
-      <Button size="sm" variant="ghost" className="w-full" onPress={() => setOpen(false)}>
-        Cancel
-      </Button>
+        <TopicForm
+          key={topicEdit?.id ?? "new"}
+          tracker={tracker}
+          topic={editingTopic}
+          onDone={() => setTopicEdit(null)}
+        />
+      </Modal>
+
+      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} wide>
+        {opened && (
+          <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />
+        )}
+      </Modal>
     </div>
   );
 }
 
-function GoalCard({
-  g,
+/** A topic: its name, how far through it is, and its goals. */
+function TopicSection({
   tracker,
-  onMove,
-  canMoveUp,
-  canMoveDown,
+  topic,
+  all,
+  goals,
+  view,
+  onOpen,
+  onAdd,
+  onEdit,
 }: {
-  g: Goal;
   tracker: Tracker;
-  onMove?: (dir: -1 | 1) => Promise<unknown>;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
+  topic: Path;
+  /** Every goal in the topic, for the totals. */
+  all: Goal[];
+  /** The goals shown in the current view. */
+  goals: Goal[];
+  view: View;
+  onOpen: (id: string) => void;
+  onAdd: () => void;
+  onEdit: () => void;
 }) {
-  const c = tracker.cat(g.catId);
-  const pct = goalPct(g);
-  const hasOwnTarget = typeof g.target === "number" && g.target > 0;
-  const showProgress = goalHasProgress(g);
-  const derived = goalIsDerived(g);
-
-  const [expanded, setExpanded] = useState(false);
-  const [name, setName] = useState(g.title);
-  const [catId, setCatId] = useState(g.catId);
-  const [current, setCurrent] = useState(String(g.current ?? ""));
-  const [target, setTarget] = useState(String(g.target ?? ""));
-
-  const { pending, run } = usePending();
-
-  /** Leaves edit mode and discards any unsaved field changes. */
-  const closeEditor = () => {
-    setName(g.title);
-    setCatId(g.catId);
-    setCurrent(String(g.current ?? ""));
-    setTarget(String(g.target ?? ""));
-    setExpanded(false);
-  };
-
-  const save = async () => {
-    await run(() =>
-      tracker.saveGoal(g.id, {
-        title: name,
-        catId,
-        current: current === "" ? null : Number(current),
-        target: target === "" ? null : Number(target),
-      })
-    );
-  };
+  const s = tracker.state!;
+  const done = all.filter((g) => g.done).length;
+  const pct = pathPct({ ...topic, goalIds: all.map((g) => g.id) }, s.goals);
 
   return (
-    <Card>
-      <Card.Content className="px-3 py-3 md:px-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div
-              className={
-                "font-display text-base font-semibold " +
-                (g.done ? "text-[var(--muted)] line-through" : "")
-              }
-            >
-              {g.pinned && (
-                <Pin className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--muted)]" aria-label="Pinned" />
-              )}
-              {g.title}
+    <section className="goal-topic" aria-label={topic.title}>
+      <PanelHeader title={topic.title}>
+        <button type="button" className="text-action" onClick={onEdit} aria-label={`Edit ${topic.title}`}>
+          Edit
+        </button>
+      </PanelHeader>
+      {(topic.note || all.length > 0) && (
+        <div className="goal-topic__summary">
+          {topic.note && <p className="goal-topic__note">{topic.note}</p>}
+          {all.length > 0 && (
+            <div className="goal-topic__progress">
+              <div className="progress-track h-1.5 flex-1">
+                <div className="progress-fill" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="goal-topic__figure">
+                <span className="font-mono-n">{pct}%</span> · {done} of {all.length} done
+              </span>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <Chip size="sm" color={c.color}>
-                {c.name}
-              </Chip>
-              {derived ? (
-                <span className="text-xs text-[var(--muted)]">from subtasks</span>
-              ) : (
-                hasOwnTarget && (
-                  <span className="font-mono-n text-xs text-[var(--muted)]">
-                    {g.current ?? 0} / {g.target}
-                  </span>
-                )
-              )}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              isIconOnly
-              aria-label={expanded ? "Close editing" : "Edit goal"}
-              className={expanded ? "pill-selected" : ""}
-              onPress={() => (expanded ? closeEditor() : setExpanded(true))}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            {showProgress && <ProgressRing pct={pct} color="var(--accent)" size={48} />}
-          </div>
+          )}
         </div>
-
-        {(g.subtasks?.length ?? 0) > 0 && (
-          <ul className="mt-3 list-none divide-y divide-foreground/10 p-0">
-            {(g.subtasks ?? []).map((t) => (
-              <SubtaskRow key={t.id} goalId={g.id} t={t} tracker={tracker} />
+      )}
+      <div className="card goal-list">
+        {goals.length === 0 ? (
+          <p className="goal-list__empty">No goals in this topic yet.</p>
+        ) : (
+          <ul className="goal-list__rows">
+            {goals.map((g) => (
+              <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} />
             ))}
           </ul>
         )}
-
-        {/* Adding a subtask sits directly under the list it belongs to. */}
-        {expanded && <AddSubtask goalId={g.id} tracker={tracker} />}
-
-        {expanded && (
-          <div className="mt-3 border-t border-foreground/10 pt-3">
-            <label className="block text-[11px] text-[var(--muted)]">
-              Name
-              <Input
-                aria-label="Goal name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-0.5 w-full"
-              />
-            </label>
-
-            <div className="mt-2">
-              <div className="mb-1 text-[11px] text-[var(--muted)]">Category</div>
-              <div className="flex flex-wrap gap-1.5">
-                {tracker.state!.categories.map((cat) => (
-                  <Button
-                    key={cat.id}
-                    size="sm"
-                    variant="outline"
-                    className={catId === cat.id ? "pill-selected" : ""}
-                    onPress={() => setCatId(cat.id)}
-                  >
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: cat.color }}
-                      aria-hidden
-                    />
-                    {cat.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="block text-[11px] text-[var(--muted)]">
-                Current
-                <Input
-                  type="number"
-                  step="any"
-                  inputMode="decimal"
-                  aria-label="Current value"
-                  value={current}
-                  onChange={(e) => setCurrent(e.target.value)}
-                  className="mt-0.5 w-full"
-                />
-              </label>
-              <label className="block text-[11px] text-[var(--muted)]">
-                Target
-                <Input
-                  type="number"
-                  step="any"
-                  inputMode="decimal"
-                  aria-label="Target value"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  className="mt-0.5 w-full"
-                />
-              </label>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="primary"
-                onPress={() => void save()}
-                isDisabled={pending}
-                className="flex-1"
-              >
-                Save changes
-              </Button>
-              <Button size="sm" variant="ghost" onPress={closeEditor} isDisabled={pending}>
-                Close
-              </Button>
-            </div>
-
-            {/* separator between saving and the goal's other actions */}
-            <div className="mt-3 flex items-center gap-2 border-t border-foreground/10 pt-3">
-              {g.done ? (
-                <ActionButton
-                  size="sm"
-                  variant="secondary"
-                  onAction={() => tracker.toggleGoalDone(g.id)}
-                >
-                  <RotateCcw className="h-4 w-4" /> Reopen
-                </ActionButton>
-              ) : (
-                <ActionButton
-                  size="sm"
-                  variant="primary"
-                  className="btn-success"
-                  onAction={() => tracker.toggleGoalDone(g.id)}
-                >
-                  <Check className="h-4 w-4" /> Mark as done
-                </ActionButton>
-              )}
-
-              <div className="ml-auto flex items-center gap-1">
-                <ActionButton
-                  size="sm"
-                  variant="ghost"
-                  isIconOnly
-                  aria-label={g.pinned ? "Unpin goal" : "Pin goal to the top"}
-                  className={g.pinned ? "pill-selected" : ""}
-                  onAction={() => tracker.toggleGoalPin(g.id)}
-                >
-                  {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-                </ActionButton>
-                {onMove && (
-                  <>
-                    <ActionButton
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      aria-label="Move goal up"
-                      isDisabled={!canMoveUp}
-                      onAction={() => onMove(-1)}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </ActionButton>
-                    <ActionButton
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      aria-label="Move goal down"
-                      isDisabled={!canMoveDown}
-                      onAction={() => onMove(1)}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </ActionButton>
-                  </>
-                )}
-                <DeleteButton
-                  what={`the goal "${g.title}"`}
-                  iconOnly
-                  onDelete={() => tracker.deleteGoal(g.id)}
-                />
-              </div>
-            </div>
+        {view === "active" && (
+          <div className="goal-list__foot">
+            <AddButton size="sm" label="Add goal" onPress={onAdd} />
           </div>
         )}
-      </Card.Content>
-    </Card>
+      </div>
+    </section>
   );
 }
 
-function ColumnHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="group-label">{children}</h2>
-  );
-}
+/** One goal as a row: its progress, name, what it's at, and a way in. */
+function GoalRow({
+  tracker,
+  goal: g,
+  onOpen,
+}: {
+  tracker: Tracker;
+  goal: Goal;
+  onOpen: (id: string) => void;
+}) {
+  const cat = tracker.cat(g.catId);
+  const steps = goalStepsDone(g);
+  const measured = goalHasProgress(g);
 
-export default function GoalsView({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
-  const s = tracker.state!;
-
-  /** Swaps a goal with its neighbour inside its own column. */
-  const makeMove = (list: Goal[]) => (id: string) => async (dir: -1 | 1) => {
-    const i = list.findIndex((g) => g.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= list.length) return false;
-    // pinned items always sort above unpinned ones, so a swap across that
-    // boundary would simply be undone by the sort
-    if (!!list[i].pinned !== !!list[j].pinned) return false;
-    const all = [...s.goals];
-    const a = all.findIndex((g) => g.id === list[i].id);
-    const b = all.findIndex((g) => g.id === list[j].id);
-    [all[a], all[b]] = [all[b], all[a]];
-    return tracker.reorderGoals(all.map((g) => g.id));
-  };
-  const done = s.goals.filter((g) => g.done);
-  const active = s.goals.filter((g) => !g.done);
-  const pinnedFirst = (list: Goal[]) =>
-    [...list].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
-  const todo = pinnedFirst(active.filter((g) => goalPct(g) <= 0));
-  const inProgress = pinnedFirst(active.filter((g) => goalPct(g) > 0));
+  const meta = g.done
+    ? `Done${g.doneDate ? ` ${fmtDateAuto(g.doneDate)}` : ""}`
+    : steps.total > 0
+      ? `${steps.done} of ${steps.total} ${steps.total === 1 ? "step" : "steps"}`
+      : g.target
+        ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
+        : "No steps yet";
 
   return (
-    <div>
-      {/* Paths sit above the goals they are made of, in the same section: a
-          path is only its goals seen together, and putting it elsewhere would
-          mean crossing between two screens to work on one. */}
-      <div className="mb-5">
-        <PathsView tracker={tracker} />
-      </div>
-
-      <div className="mb-4 flex items-end justify-between">
-        <div>
-          <p className="text-sm text-[var(--muted)]">
-            {todo.length} to do · {inProgress.length} in progress · {done.length} done
-          </p>
-        </div>
-        <AddButton label="New goal" onPress={onAdd} />
-      </div>
-
-      {active.length === 0 && done.length === 0 ? (
-        <Card>
-          <Card.Content className="p-8 text-center">
-            <Target className="mx-auto mb-3 h-8 w-8 text-foreground/30" />
-            <p className="text-[var(--muted)]">No goals yet. Add one to start tracking progress.</p>
-          </Card.Content>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <ColumnHeader>To do</ColumnHeader>
-            <div className="space-y-3">
-              {todo.length === 0 ? (
-                <p className="px-1 text-sm text-[var(--muted)]">Nothing to do.</p>
-              ) : (
-                todo.map((g, i) => (
-                  <GoalCard
-                    key={g.id}
-                    g={g}
-                    tracker={tracker}
-                    onMove={makeMove(todo)(g.id)}
-                    canMoveUp={i > 0}
-                    canMoveDown={i < todo.length - 1}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-          <div>
-            <ColumnHeader>In progress</ColumnHeader>
-            <div className="space-y-3">
-              {inProgress.length === 0 ? (
-                <p className="px-1 text-sm text-[var(--muted)]">Nothing in progress.</p>
-              ) : (
-                inProgress.map((g, i) => (
-                  <GoalCard
-                    key={g.id}
-                    g={g}
-                    tracker={tracker}
-                    onMove={makeMove(inProgress)(g.id)}
-                    canMoveUp={i > 0}
-                    canMoveDown={i < inProgress.length - 1}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {done.length > 0 && (
-        <>
-          <h2 className="group-label mt-6">Completed</h2>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-            {done.map((g) => (
-              <Card key={g.id}>
-                <Card.Content className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 break-words text-[15px] text-[var(--muted)] line-through">{g.title}</span>
-                    <ActionButton
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      aria-label="Reopen goal"
-                      onAction={() => tracker.toggleGoalDone(g.id)}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </ActionButton>
-                    <DeleteButton what={`the goal "${g.title}"`} iconOnly bare onDelete={() => tracker.deleteGoal(g.id)} />
-                  </div>
-                </Card.Content>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <li>
+      <button type="button" className="goal-row" onClick={() => onOpen(g.id)}>
+        <span className="goal-row__ring" aria-hidden>
+          {measured || g.done ? (
+            <ProgressRing pct={g.done ? 100 : goalPct(g)} color="var(--accent)" size={40} />
+          ) : (
+            <span className="goal-row__blank">
+              <Target />
+            </span>
+          )}
+        </span>
+        <span className="goal-row__text">
+          <span className={"goal-row__title" + (g.done ? " is-done" : "")}>
+            {g.pinned && <Pin className="goal-row__pin" aria-label="Pinned" />}
+            {g.title}
+          </span>
+          <span className="goal-row__meta">
+            <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
+            {cat.name}
+            <span aria-hidden>·</span>
+            {meta}
+          </span>
+        </span>
+        <ChevronRight className="rd-link__chevron" aria-hidden />
+      </button>
+    </li>
   );
 }

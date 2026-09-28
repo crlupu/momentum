@@ -21,7 +21,7 @@ title and path.
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
 | Today | `/` | The day's momentum ring and figures, recurring tasks (daily / weekly / biweekly / monthly) and to-dos. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
-| Goals | `/goals` | Goals with subtasks, grouped into paths | `GoalsView`, `PathsView` |
+| Goals | `/goals` | Courses and projects, each broken into steps and grouped under topics | `GoalsView`, `GoalDetail`, `TopicForm` |
 | Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
 | Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
 | Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |

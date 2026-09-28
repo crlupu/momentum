@@ -18,6 +18,8 @@
 export {
   // actions
   MdAdd as Plus,
+  MdRemove as Minus,
+  MdOpenInNew as ExternalLink,
   MdCheck as Check,
   MdClose as X,
   MdEdit as Pencil,

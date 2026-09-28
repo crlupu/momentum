@@ -46,7 +46,7 @@ function GroupPicker({
   );
 }
 
-function CatPicker({
+export function CatPicker({
   tracker,
   catId,
   setCatId }: {
@@ -76,10 +76,25 @@ function CatPicker({
   );
 }
 
-export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => void }) {
+/**
+ * A new goal: a course, a project, anything tracked to completion. Starts in
+ * a topic when opened from one; the count is optional, since most goals are
+ * measured by their steps instead.
+ */
+export function GoalForm({
+  tracker,
+  onDone,
+  pathId = null,
+}: {
+  tracker: Tracker;
+  onDone: () => void;
+  /** The topic to start in, when added from one. */
+  pathId?: string | null;
+}) {
   const s = tracker.state!;
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
+  const [topic, setTopic] = useState(pathId ?? "");
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
   const { pending, run } = usePending();
@@ -98,24 +113,35 @@ export function GoalForm({ tracker, onDone }: { tracker: Tracker; onDone: () => 
         t,
         catId || s.categories[0]?.id,
         current === "" ? null : Number(current),
-        target === "" ? null : Number(target)
+        target === "" ? null : Number(target),
+        topic || null
       )
     );
   };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Input aria-label="Goal title" placeholder="e.g. Read Atomic Habits" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      <Input aria-label="Goal name" placeholder="e.g. Kubernetes course" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      {s.paths.length > 0 && (
+        <label className="text-xs text-[var(--muted)]">
+          Topic
+          <select value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1 w-full text-base text-foreground">
+            <option value="">No topic</option>
+            {s.paths.map((p) => (
+              <option key={p.id} value={p.id}>{p.title}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
-      <div className="flex gap-3">
-        <label className="flex-1 text-xs text-[var(--muted)]">
-          Current
-          <Input type="number" step="any" inputMode="decimal" aria-label="Current value" placeholder="132" value={current} onChange={(e) => setCurrent(e.target.value)} className="mt-0.5" />
-        </label>
-        <label className="flex-1 text-xs text-[var(--muted)]">
-          Target
-          <Input type="number" step="any" inputMode="decimal" aria-label="Target value" placeholder="396" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-0.5" />
-        </label>
+      <div>
+        <div className="mb-1 text-xs text-[var(--muted)]">
+          A count to track, if it has one (pages, videos, chapters). Leave empty to track it by steps.
+        </div>
+        <div className="flex gap-3">
+          <Input type="number" step="any" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />
+          <Input type="number" step="any" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
+        </div>
       </div>
       <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
         Add goal
