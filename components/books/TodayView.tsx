@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button } from "../ui";
-import { Check, Clock, Flame, Play, Tune, Warning } from "../icons";
+import { Check, ChevronRight, Clock, Flame, Play, Tune, Warning } from "../icons";
 import { usePending } from "../ActionButton";
 import { Tracker, Book, dateKey, uid } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -182,35 +182,30 @@ function OpenBook({
 
   return (
     <li className="rd-open">
-      <div className="flex gap-3">
-        <button
-          type="button"
-          className="book-card__open"
-          onClick={() => flow.open({ kind: "detail", bookId: book.id })}
-          aria-label={`Open ${book.title}`}
-        >
-          <Cover book={book} size="sm" />
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <button
-            type="button"
-            className="book-card__title-btn"
-            onClick={() => flow.open({ kind: "detail", bookId: book.id })}
-          >
+      {/* The whole book is one row that opens it, marked with a chevron. */}
+      <button
+        type="button"
+        className="rd-link"
+        onClick={() => flow.open({ kind: "detail", bookId: book.id })}
+      >
+        <Cover book={book} size="sm" />
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex min-w-0 flex-col">
             <span className="book-card__title">{book.title}</span>
             {book.author && <span className="book-card__author">{book.author}</span>}
-          </button>
+          </span>
           <Meter book={book} />
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+          <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
             <ProgressText book={book} />
             {pace.perDay > 0 && (
               <span className="text-xs text-[var(--muted)]">
                 {fmtPace(pace.perDay)}/day{pace.eta ? ` · done ~${fmtDateAuto(pace.eta)}` : ""}
               </span>
             )}
-          </div>
-        </div>
-      </div>
+          </span>
+        </span>
+        <ChevronRight className="rd-link__chevron" aria-hidden />
+      </button>
 
       <form onSubmit={submit} className="rd-quick">
         <input

@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, AddButton } from "../ui";
-import { ChevronDown, ChevronRight, GripVertical, Play, Settings, Unarchive } from "../icons";
+import { ChevronDown, ChevronRight, Play, ReorderLines, Settings, Unarchive } from "../icons";
 import { Tracker, Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -81,6 +81,9 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
   const open = R.activeBooks(s, track.id);
   const queue = R.trackQueue(s, track.id);
   const [showLater, setShowLater] = useState(false);
+  // Reordering is a mode, as in any iOS list: the handles appear only
+  // while editing, so the everyday view is just the books.
+  const [reordering, setReordering] = useState(false);
   const shown = showLater ? queue : queue.slice(0, UP_NEXT);
   const later = queue.length - UP_NEXT;
 
@@ -141,20 +144,38 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
         <ul className="flex flex-col">
           {open.map((b) => (
             <li key={b.id} className="rd-row">
-              <button type="button" className="book-card__open" onClick={() => flow.open({ kind: "detail", bookId: b.id })} aria-label={`Open ${b.title}`}>
+              <button
+                type="button"
+                className="rd-link"
+                onClick={() => flow.open({ kind: "detail", bookId: b.id })}
+              >
                 <Cover book={b} size="sm" />
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <BookName book={b} />
+                  <Meter book={b} />
+                  <ProgressText book={b} />
+                </span>
+                <ChevronRight className="rd-link__chevron" aria-hidden />
               </button>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <RowTitle book={b} />
-                <Meter book={b} />
-                <ProgressText book={b} />
-              </div>
             </li>
           ))}
         </ul>
       )}
 
-      <h4 className="rd-sub">Up next</h4>
+      <div className="rd-sub-row">
+        <h4 className="rd-sub">Up next</h4>
+        {queue.length > 1 && (
+          <button
+            type="button"
+            className="text-action"
+            aria-pressed={reordering}
+            aria-label={reordering ? `Done reordering ${track.name}` : `Reorder ${track.name}`}
+            onClick={() => setReordering((v) => !v)}
+          >
+            {reordering ? "Done" : "Edit"}
+          </button>
+        )}
+      </div>
       {queue.length === 0 ? (
         <p className="py-1 text-sm text-[var(--muted)]">The queue is empty.</p>
       ) : (
@@ -162,7 +183,13 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
           <SortableContext items={shown.map((b) => b.id)} strategy={verticalListSortingStrategy}>
             <ul className="flex flex-col">
               {shown.map((b, i) => (
-                <QueueRow key={b.id} book={b} first={i === 0} divider={showLater && i === UP_NEXT} />
+                <QueueRow
+                  key={b.id}
+                  book={b}
+                  first={i === 0}
+                  divider={showLater && i === UP_NEXT}
+                  reordering={reordering}
+                />
               ))}
             </ul>
           </SortableContext>
@@ -178,21 +205,46 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
   );
 }
 
-function RowTitle({ book }: { book: Book }) {
-  const flow = useFlow();
+/** A book's title and author, as the text of a row. */
+function BookName({ book }: { book: Book }) {
   return (
-    <button type="button" className="book-card__title-btn" onClick={() => flow.open({ kind: "detail", bookId: book.id })}>
+    <span className="flex min-w-0 flex-col">
       <span className="book-card__title">{book.title}</span>
       {book.author && <span className="book-card__author">{book.author}</span>}
-    </button>
+    </span>
   );
 }
 
-/** A waiting book, draggable by its handle into a new place in the queue. */
-function QueueRow({ book, first, divider }: { book: Book; first: boolean; divider: boolean }) {
+/**
+ * A waiting book. Normally a row that opens the book, with a button to start
+ * it now; while the queue is being reordered, a row with a handle to drag.
+ */
+function QueueRow({
+  book,
+  first,
+  divider,
+  reordering,
+}: {
+  book: Book;
+  first: boolean;
+  divider: boolean;
+  reordering: boolean;
+}) {
   const flow = useFlow();
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: book.id });
+    useSortable({ id: book.id, disabled: !reordering });
+
+  const details = (
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <BookName book={book} />
+      <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
+        {book.status === "paused" && <StatusBadge status="paused" />}
+        {book.status === "paused" && book.read > 0 && <span>page {book.read}</span>}
+        {book.pages > 0 && <span>{book.pages} pages</span>}
+        {book.note && <span className="truncate italic">{book.note}</span>}
+      </span>
+    </span>
+  );
 
   return (
     <li
@@ -200,34 +252,41 @@ function QueueRow({ book, first, divider }: { book: Book; first: boolean; divide
       className={"rd-row rd-row--queue" + (isDragging ? " rd-row--dragging" : "") + (divider ? " rd-row--later" : "")}
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        className="rd-grip"
-        aria-label={`Move ${book.title}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <RowTitle book={book} />
-        <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
-          {book.status === "paused" && <StatusBadge status="paused" />}
-          {book.status === "paused" && book.read > 0 && <span>page {book.read}</span>}
-          {book.pages > 0 && <span>{book.pages} pages</span>}
-          {book.note && <span className="truncate italic">{book.note}</span>}
-        </span>
-      </div>
-      <Button
-        size="sm"
-        variant={first ? "outline" : "ghost"}
-        isIconOnly
-        aria-label={`${book.status === "paused" ? "Resume" : "Start"} ${book.title}`}
-        onPress={() => flow.start(book.id)}
-      >
-        <Play className="h-4 w-4" />
-      </Button>
+      {reordering ? (
+        <>
+          <span className="rd-link rd-link--static">{details}</span>
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            className="rd-grip"
+            aria-label={`Move ${book.title}`}
+            {...attributes}
+            {...listeners}
+          >
+            <ReorderLines className="h-6 w-6" />
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="rd-link"
+            onClick={() => flow.open({ kind: "detail", bookId: book.id })}
+          >
+            {details}
+            <ChevronRight className="rd-link__chevron" aria-hidden />
+          </button>
+          <Button
+            size="sm"
+            variant={first ? "outline" : "ghost"}
+            isIconOnly
+            aria-label={`${book.status === "paused" ? "Resume" : "Start"} ${book.title}`}
+            onPress={() => flow.start(book.id)}
+          >
+            <Play className="h-4 w-4" />
+          </Button>
+        </>
+      )}
     </li>
   );
 }

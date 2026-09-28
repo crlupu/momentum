@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, AddButton } from "../ui";
-import { Pencil } from "../icons";
+import { ChevronRight, Pencil } from "../icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
@@ -113,8 +113,9 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
                                 className="rd-phase__book"
                                 onClick={() => flow.open({ kind: "detail", bookId: b.id })}
                               >
-                                <span className="min-w-0 truncate">{b.title}</span>
+                                <span className="min-w-0 flex-1 truncate">{b.title}</span>
                                 <StatusBadge status={b.status} />
+                                <ChevronRight className="rd-link__chevron" aria-hidden />
                               </button>
                             </li>
                           ))}

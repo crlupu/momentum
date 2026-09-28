@@ -43,6 +43,7 @@ export {
   MdSchedule as Clock,
   MdWarning as Warning,
   MdDragIndicator as GripVertical,
+  MdDragHandle as ReorderLines,
   MdTune as Tune,
   MdFileUpload as Upload,
 
