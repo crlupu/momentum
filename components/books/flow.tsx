@@ -9,7 +9,7 @@ import * as R from "@/lib/reading";
 import { FlowContext, useFlow as useFlowFromContext, type Dialog, type Flow } from "./flowContext";
 import { BookDetail } from "./BookDetail";
 import { BookForm } from "./BookForm";
-import { BulkAddForm, PhaseForm, TrackForm } from "./forms";
+import { BulkAddForm, ImportPlanForm, PhaseForm, TrackForm } from "./forms";
 import { Field, Segmented } from "./bits";
 
 /** The book has reached its last page but hasn't been marked finished. */
@@ -245,6 +245,13 @@ function DialogFor({
       return (
         <Modal open onClose={close} title="Add several books">
           <BulkAddForm tracker={tracker} trackId={d.trackId} onClose={close} />
+        </Modal>
+      );
+
+    case "import":
+      return (
+        <Modal open onClose={close} title="Import a reading plan" wide>
+          <ImportPlanForm tracker={tracker} onClose={close} />
         </Modal>
       );
 

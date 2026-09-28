@@ -49,7 +49,11 @@ The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/b
   notes and quotes, and status timeline.
 - A track counts toward the top bar's *done today / not done* once it has an open book
   and a target, and it is done when today's pages reach the target.
-- Covers and missing authors are still looked up from Open Library (`lib/covers.ts`),
+- **Import plan** reads a reading plan written in Markdown (`lib/planImport.ts`): a table of
+  tracks, `## Phase … (Q4 2026)` headings with a `**Track**` line above each numbered list,
+  a `## Slow lane (continuous)` list and a `## Dropped` list. Importing again updates what's
+  there instead of duplicating it. `docs/reading-plan-2026-2028.md` is an example.
+- Covers, missing authors and missing page counts are looked up from Open Library (`lib/covers.ts`),
   and a cover image address can be set by hand.
 
 ## Run locally

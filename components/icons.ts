@@ -44,6 +44,7 @@ export {
   MdWarning as Warning,
   MdDragIndicator as GripVertical,
   MdTune as Tune,
+  MdFileUpload as Upload,
 
   // direction
   MdArrowUpward as ArrowUp,

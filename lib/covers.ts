@@ -28,6 +28,8 @@ export type BookLookup = {
   coverId: string | null;
   /** The author as Open Library has it, if it named one. */
   author?: string;
+  /** Median page count across editions, where Open Library has one. */
+  pages?: number;
 };
 
 /**
@@ -45,24 +47,46 @@ export async function lookupBook(title: string, author?: string): Promise<BookLo
     limit: "1",
     // Only the fields used; asking for the whole record would pull down a few
     // hundred kilobytes per book for no reason.
-    fields: "cover_i,author_name",
+    fields: "cover_i,author_name,number_of_pages_median",
   });
-  if (author?.trim()) params.set("author", author.trim());
+  const lead = leadAuthor(author);
+  if (lead) params.set("author", lead);
 
   const res = await fetch(`${SEARCH}?${params.toString()}`);
   if (!res.ok) throw new Error(`Open Library returned ${res.status}`);
   const data: unknown = await res.json();
-  const doc = (data as { docs?: { cover_i?: number; author_name?: string[] }[] })?.docs?.[0];
+  const doc = (
+    data as {
+      docs?: { cover_i?: number; author_name?: string[]; number_of_pages_median?: number }[];
+    }
+  )?.docs?.[0];
 
   const id = doc?.cover_i;
   // Several authors are possible; the first is the one the book is filed
   // under, and a card has room for one name.
   const name = doc?.author_name?.[0]?.trim();
 
+  const pages = doc?.number_of_pages_median;
+
   return {
     coverId: typeof id === "number" && id > 0 ? String(id) : null,
     ...(name ? { author: name } : {}),
+    ...(typeof pages === "number" && pages > 0 ? { pages: Math.round(pages) } : {}),
   };
+}
+
+/**
+ * The first author named, which is what Open Library files a book under.
+ * "Neal Ford, Mark Richards & Zhamak Dehghani", "Gwen Shapira et al." and
+ * "Massimo Pigliucci (eds.)" all search better as the first name alone:
+ * the whole string matches nothing.
+ */
+function leadAuthor(author?: string): string | undefined {
+  const first = author
+    ?.replace(/\(eds?\.?\)/gi, "")
+    .split(/,|&|\band\b|\bet al\.?/i)[0]
+    .trim();
+  return first || undefined;
 }
 
 /** One candidate from a title search, as shown in the suggestion list. */

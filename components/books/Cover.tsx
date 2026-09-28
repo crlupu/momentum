@@ -98,7 +98,7 @@ export function useCoverLookup(tracker: Tracker, books: Book[]) {
         normaliseTitle(b.title) === normaliseTitle(next.title)
     );
     if (known) {
-      void tracker.resolveBook(next.id, known.coverId ?? null, known.author);
+      void tracker.resolveBook(next.id, known.coverId ?? null, known.author, known.pages || undefined);
       busy.current = false;
       return;
     }
@@ -109,8 +109,8 @@ export function useCoverLookup(tracker: Tracker, books: Book[]) {
     // already been made, and the book was never resolved. Only unmounting
     // stops it, and the write is harmless either way.
     lookupBook(next.title, next.author)
-      .then(({ coverId, author }) => {
-        if (alive.current) void tracker.resolveBook(next.id, coverId, author);
+      .then(({ coverId, author, pages }) => {
+        if (alive.current) void tracker.resolveBook(next.id, coverId, author, pages);
       })
       .catch(() => {
         // Left unresolved on purpose: a reload will try again.

@@ -67,6 +67,8 @@ export type ReadingPhase = {
   start: string;
   /** YYYY-MM-DD */
   end: string;
+  /** What the phase is for, in a sentence. */
+  goal?: string;
 };
 
 /** One sitting: the pages read, on a day. */
@@ -547,10 +549,13 @@ export function phaseStats(s: TrackerState, today: string = dateKey()): Map<stri
     }
 
     const remaining = books.some((b) => b.status !== "finished");
+    // Nothing left has a length yet: there is nothing to project from, and
+    // a projection of "today" would read as done.
+    const sized = books.some((b) => b.status !== "finished" && b.pages > 0);
     let projected: string | null = null;
     let flag: PhaseFlag;
     if (books.length > 0 && !remaining) flag = "done";
-    else if (books.length === 0 || !projectable) flag = "unknown";
+    else if (books.length === 0 || !projectable || !sized) flag = "unknown";
     else {
       projected = addDays(today, days);
       if (today > p.end) flag = "behind";
@@ -611,6 +616,7 @@ export type BookInput = {
   coverId?: string | null;
   coverImage?: string;
   after?: string[];
+  note?: string;
 };
 
 const clean = (v?: string) => {
@@ -653,6 +659,7 @@ export function addBook(s: TrackerState, input: BookInput, id: string = uid()): 
     tags: cleanTags(input.tags),
     coverImage: clean(input.coverImage),
     after: input.after?.length ? input.after : undefined,
+    note: clean(input.note),
     statusLog: [{ status: "queued", date: today }],
     // Only when it came from a chosen suggestion. Left absent otherwise,
     // which is what marks it for a lookup.
@@ -694,6 +701,7 @@ export function updateBook(s: TrackerState, id: string, input: BookInput): Track
       coverImage: clean(input.coverImage),
       phaseId: input.phaseId || undefined,
       after: after.length ? after : undefined,
+      note: clean(input.note),
       trackId: input.trackId,
       queueOrder: moved ? queueEnd(s, input.trackId, id) : b.queueOrder,
       // A change of title or author is a change of book as far as the cover
@@ -922,7 +930,7 @@ export type PhaseInput = Omit<ReadingPhase, "id">;
 
 function normalisePhase(p: PhaseInput): PhaseInput {
   const [start, end] = p.start <= p.end ? [p.start, p.end] : [p.end, p.start];
-  return { name: p.name.trim() || "Phase", start, end };
+  return { name: p.name.trim() || "Phase", start, end, goal: clean(p.goal) };
 }
 
 export function addPhase(s: TrackerState, p: PhaseInput): TrackerState {

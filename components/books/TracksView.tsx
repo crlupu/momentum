@@ -224,6 +224,7 @@ function QueueRow({ book, first, divider }: { book: Book; first: boolean; divide
           {book.status === "paused" && <StatusBadge status="paused" />}
           {book.status === "paused" && book.read > 0 && <span>page {book.read}</span>}
           {book.pages > 0 && <span>{book.pages} pages</span>}
+          {book.note && <span className="truncate italic">{book.note}</span>}
         </span>
       </div>
       <Button

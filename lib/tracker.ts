@@ -16,6 +16,7 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getFirebase, isFirebaseConfigured } from "./firebase";
 import { contrast } from "./color";
 import * as R from "./reading";
+import { applyPlan, type Plan } from "./planImport";
 import type {
   BookStatus,
   BookQuote,
@@ -191,6 +192,8 @@ export type Book = {
   dropReason?: string;
   /** Books meant to be read before this one. */
   after?: string[];
+  /** A line about how to read it: "skim dated chapters", "finish". */
+  note?: string;
   /** The last day it moved other than by a session: a correction or a skim. */
   touched?: string;
   /** The day a "no progress lately" nudge was waved off. */
@@ -1700,24 +1703,33 @@ export function useTracker() {
       })),
 
     /**
-     * Records everything one lookup found: the cover, and the author when the
-     * book hasn't got one.
+     * Records everything one lookup found: the cover, and the author and
+     * length when the book hasn't got them.
      *
-     * An author already on the book is never overwritten. It was either typed
-     * or filled in from an earlier lookup and corrected since, and neither is
-     * something a guess from a title match should be allowed to undo.
+     * Nothing already on the book is overwritten. An author or length was
+     * either typed or filled in from an earlier lookup and corrected since,
+     * and neither is something a guess from a title match should undo. The
+     * length is the median across editions: a starting figure, there so the
+     * plan can be projected, to be corrected against the copy in hand.
      */
-    resolveBook: (id: string, coverId: string | null, author?: string) =>
+    resolveBook: (id: string, coverId: string | null, author?: string, pages?: number) =>
       commit((s) => ({
         ...s,
         books: s.books.map((b) =>
           b.id === id
-            ? { ...b, coverId, ...(!b.author?.trim() && author ? { author } : {}) }
+            ? {
+                ...b,
+                coverId,
+                ...(!b.author?.trim() && author ? { author } : {}),
+                ...(!(b.pages > 0) && pages && pages > 0 ? { pages: Math.round(pages) } : {}),
+              }
             : b
         ),
       })),
 
     removeBook: (id: string) => commit((s) => R.removeBook(s, id)),
+    /** Reads a Markdown reading plan into tracks, phases and books. See lib/planImport.ts. */
+    importPlan: (plan: Plan) => commit((s) => applyPlan(s, plan).state),
 
     setCalorieBudget: (kcal: number | null) =>
       commit((s) => ({
