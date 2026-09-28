@@ -75,16 +75,14 @@
    Colour.
 
    Momentum is ink on paper with one colour that means one thing:
-   electric blue, #1A8CFF, for progress. A checkmark, a progress ring, a
+   electric blue, #097CFB, for progress. A checkmark, a progress ring, a
    primary button, the current tab, the fallen dominoes in the mark —
    anything electric blue is something done or the next thing to do.
 
-   It is the same colour in light and dark: the brightest blue that still
-   reads as a shape on the light ground (3.0:1), and on a dark card it
-   reaches 5.1:1. Text and checkmarks on it are white in both themes: a
-   deliberate choice of look over the numbers, since white on it measures
-   3.4:1 — enough for the ticks and for bold text 19px and up, short of
-   the 4.5:1 AA asks of smaller button labels. No
+   It is the same colour in light and dark: 3.6:1 as a shape on the light
+   ground and 4.3:1 on a dark card. Text and checkmarks on it are white in
+   both themes, at 4.0:1 — enough for the ticks and for bold text 19px and
+   up, a little short of the 4.5:1 AA asks of smaller button labels. No
    colour can also be small *text* on both grounds (that would need it to
    be darker and lighter at once), so the accent never carries text: text
    is ink, and the accent goes to the shape, the fill or the icon beside it.
@@ -116,7 +114,7 @@
   --data-slate: #646f7f;
 
   /* Electric blue: one value for both themes. */
-  --electric: #1a8cff;
+  --electric: #097cfb;
 
   /* Shape. Corners sized by what the shape holds: cards largest,
      controls smaller, chips fully round. */
@@ -163,10 +161,10 @@
   /* Electric blue */
   --accent: var(--electric);
   --accent-text: var(--foreground);  /* the accent never carries text */
-  --accent-foreground: #ffffff;      /* 3.4:1, see above */
-  --accent-soft: rgba(26, 140, 255, 0.12);
-  --accent-soft-strong: rgba(26, 140, 255, 0.2);
-  --accent-track: rgba(26, 140, 255, 0.16);
+  --accent-foreground: #ffffff;      /* 4.0:1, see above */
+  --accent-soft: rgba(9, 124, 251, 0.12);
+  --accent-soft-strong: rgba(9, 124, 251, 0.2);
+  --accent-track: rgba(9, 124, 251, 0.16);
 
   /* Status */
   --warning: #9a5b00;               /* 5.4:1 on white */
@@ -240,9 +238,9 @@
   --accent: var(--electric);
   --accent-text: var(--foreground);
   --accent-foreground: #ffffff;
-  --accent-soft: rgba(26, 140, 255, 0.2);
-  --accent-soft-strong: rgba(26, 140, 255, 0.3);
-  --accent-track: rgba(26, 140, 255, 0.24);
+  --accent-soft: rgba(9, 124, 251, 0.22);
+  --accent-soft-strong: rgba(9, 124, 251, 0.32);
+  --accent-track: rgba(9, 124, 251, 0.26);
   --warning: #ffc453;
   --warning-soft: rgba(255, 196, 83, 0.14);
   --success: var(--accent);
