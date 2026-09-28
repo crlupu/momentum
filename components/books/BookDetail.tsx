@@ -92,6 +92,12 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
           </div>
         )}
       </dl>
+      {book.note && book.status !== "dropped" && (
+        <p className="text-sm text-foreground/75">
+          <span className="text-foreground/50">Note: </span>
+          {book.note}
+        </p>
+      )}
       {book.dropReason && (
         <p className="text-sm text-foreground/70">Dropped because: {book.dropReason}</p>
       )}

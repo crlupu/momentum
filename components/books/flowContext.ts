@@ -19,6 +19,7 @@ export type Dialog =
   | { kind: "drop"; bookId: string }
   | { kind: "page"; bookId: string; skim?: boolean }
   | { kind: "bulk"; trackId?: string }
+  | { kind: "import" }
   | { kind: "track"; trackId: string | null }
   | { kind: "phase"; phaseId: string | null };
 

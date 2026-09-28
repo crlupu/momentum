@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Button } from "../ui";
 import { Archive, Unarchive } from "../icons";
 import { DeleteButton } from "../DeleteButton";
 import { usePending } from "../ActionButton";
 import { Tracker, BOOK_COLORS, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
+import { applyPlan, parsePlan } from "@/lib/planImport";
+import { fmtDate } from "@/lib/dates";
 import { Field } from "./bits";
 
 /** Create or edit a track: its name, colour, limit, target and time of day. */
@@ -165,13 +167,14 @@ export function PhaseForm({
   const [name, setName] = useState(phase?.name ?? "");
   const [start, setStart] = useState(phase?.start ?? today);
   const [end, setEnd] = useState(phase?.end ?? R.addDays(today, 90));
+  const [goal, setGoal] = useState(phase?.goal ?? "");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !start || !end || pending) return;
     onClose();
-    const input = { name, start, end };
+    const input = { name, start, end, goal };
     await run(() => (phase ? tracker.updatePhase(phase.id, input) : tracker.addPhase(input)));
   };
 
@@ -193,6 +196,9 @@ export function PhaseForm({
           <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
         </Field>
       </div>
+      <Field label="Goal (optional)">
+        <textarea rows={2} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="What this phase is for" />
+      </Field>
       <p className="text-xs text-foreground/50">Books are put in a phase from their edit form, or when adding several.</p>
       <div className="flex items-center justify-between gap-2">
         {phase ? (
@@ -299,6 +305,111 @@ export function BulkAddForm({
         </Button>
         <Button type="submit" variant="primary" isDisabled={pending || !list.length || !track}>
           Add {list.length || ""} book{list.length === 1 ? "" : "s"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Pastes in a reading plan written in Markdown and shows what it will do
+ * before doing it. See lib/planImport.ts for the shape it reads.
+ */
+export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose: () => void }) {
+  const s = tracker.state!;
+  const [text, setText] = useState("");
+  const { pending, run } = usePending();
+  const plan = useMemo(() => parsePlan(text), [text]);
+  const preview = useMemo(() => applyPlan(s, plan).preview, [s, plan]);
+  const empty = plan.books.length === 0 && plan.phases.length === 0 && plan.tracks.length === 0;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (empty || pending) return;
+    onClose();
+    await run(() => tracker.importPlan(plan));
+  };
+
+  const list = (items: string[]) => (items.length > 3 ? `${items.slice(0, 3).join(", ")} and ${items.length - 3} more` : items.join(", "));
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <p className="text-sm text-foreground/70">
+        Paste a plan in Markdown: a table of tracks, <code>## Phase … (Q4 2026)</code> headings with a{" "}
+        <code>**Track**</code> line above each numbered list, a <code>## Slow lane (continuous)</code> list and
+        a <code>## Dropped</code> list. Importing again updates what is there rather than adding it twice.
+      </p>
+      <textarea
+        aria-label="Reading plan"
+        rows={10}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"| Track | Daily target | Slot |\n|---|---|---|\n| Technical | ~20 pages | 12:15 iPad block |\n\n## Phase 1 — Foundations (Q4 2026)\n**Technical**\n1. Effective Java — Joshua Bloch *(finish)*"}
+        className="w-full font-mono text-[13px]"
+        autoFocus
+      />
+
+      {!empty && (
+        <div className="rd-import">
+          <h3 className="mb-1 text-sm font-semibold">This will</h3>
+          <ul className="flex flex-col gap-1 text-sm">
+            {plan.tracks.length > 0 && (
+              <li>
+                Set up {plan.tracks.length} track{plan.tracks.length === 1 ? "" : "s"}:{" "}
+                {plan.tracks
+                  .map((t) => `${t.name}${t.dailyTarget ? ` (${t.dailyTarget}/day)` : ""}`)
+                  .join(", ")}
+                {plan.wipLimit ? ` · ${plan.wipLimit} open book${plan.wipLimit === 1 ? "" : "s"} per track` : ""}
+              </li>
+            )}
+            {plan.phases.length > 0 && (
+              <li>
+                {[
+                  preview.phasesNew > 0 && `Add ${preview.phasesNew} phase${preview.phasesNew === 1 ? "" : "s"}`,
+                  preview.phasesUpdated > 0 &&
+                    `${preview.phasesNew > 0 ? "update" : "Update"} ${preview.phasesUpdated} already there`,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+                :{" "}
+                {fmtDate(plan.phases[0].start, true)} – {fmtDate(plan.phases[plan.phases.length - 1].end, true)}
+              </li>
+            )}
+            {plan.books.length > 0 && (
+              <li>
+                {[
+                  preview.booksNew > 0 && `Add ${preview.booksNew} book${preview.booksNew === 1 ? "" : "s"}`,
+                  preview.booksMatched.length > 0 &&
+                    `${preview.booksNew > 0 ? "place" : "Place"} ${preview.booksMatched.length} already on your shelf (${list(preview.booksMatched)}), keeping their progress`,
+                ]
+                  .filter(Boolean)
+                  .join(", and ")}
+              </li>
+            )}
+            {preview.open.length > 0 && <li>Open: {preview.open.join(", ")}</li>}
+            {preview.paused.length > 0 && (
+              <li>Pause, keeping their progress: {list(preview.paused)}</li>
+            )}
+            {preview.dropped.length > 0 && <li>Mark dropped: {preview.dropped.join(", ")}</li>}
+          </ul>
+          {plan.skipped.length > 0 && (
+            <p className="mt-2 text-xs" style={{ color: "var(--danger)" }}>
+              Couldn&apos;t place {plan.skipped.length} line{plan.skipped.length === 1 ? "" : "s"} (no track above
+              them): {list(plan.skipped)}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-foreground/50">
+            Covers, missing authors and page counts are looked up afterwards, a book at a time.
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onPress={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" isDisabled={pending || empty}>
+          Import
         </Button>
       </div>
     </form>

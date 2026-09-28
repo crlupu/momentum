@@ -12,7 +12,7 @@ const FLAG_LABEL: Record<R.PhaseFlag, string> = {
   "on-track": "On track",
   "at-risk": "At risk",
   behind: "Behind",
-  unknown: "Not enough to go on",
+  unknown: "No projection yet",
 };
 
 /**
@@ -39,9 +39,16 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
               ? `${unassigned} unfinished book${unassigned === 1 ? " isn't" : "s aren't"} in a phase.`
               : "Every unfinished book is in a phase."}
         </p>
-        <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "phase", phaseId: null })}>
-          <Plus className="h-3.5 w-3.5" /> New phase
-        </Button>
+        <span className="flex gap-2">
+          {phases.length === 0 && (
+            <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "import" })}>
+              Import a plan
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "phase", phaseId: null })}>
+            <Plus className="h-3.5 w-3.5" /> New phase
+          </Button>
+        </span>
       </div>
 
       {phases.map((p) => {
@@ -57,6 +64,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
                   {fmtDate(p.start, true)} – {fmtDate(p.end, true)}
                   {current ? " · now" : ""}
                 </p>
+                {p.goal && <p className="mt-1 max-w-prose text-sm text-foreground/75">{p.goal}</p>}
               </div>
               <span className="flex items-center gap-1">
                 <span className={`rd-flag rd-flag--${st.flag}`}>{FLAG_LABEL[st.flag]}</span>
@@ -82,7 +90,10 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
               {st.finished} of {st.books.length} books finished
               {st.projected &&
                 ` · projected ${fmtDateAuto(st.projected)}${st.assumed ? " (at target pace)" : ""}`}
-              {st.unsized > 0 && ` · ${st.unsized} without a page count not projected`}
+              {st.unsized > 0 &&
+                (st.projected
+                  ? ` · ${st.unsized} without a page count not projected`
+                  : ` · page counts needed for a projection (${st.unsized} missing)`)}
             </p>
 
             {st.books.length > 0 && (

@@ -144,6 +144,7 @@ export function BookForm({
   const [phase, setPhase] = useState(book?.phaseId ?? "");
   const [coverImage, setCoverImage] = useState(book?.coverImage ?? "");
   const [after, setAfter] = useState<string[]>(book?.after ?? []);
+  const [note, setNote] = useState(book?.note ?? "");
   const { pending, run } = usePending();
 
   // The cover from a chosen suggestion. Undefined means nothing was chosen, so
@@ -208,6 +209,7 @@ export function BookForm({
       phaseId: phase || undefined,
       coverImage,
       after,
+      note,
       ...(book ? {} : { coverId: pickedCover }),
     };
     onClose();
@@ -338,6 +340,9 @@ export function BookForm({
           That track is already at its limit, so this book will be paused there.
         </p>
       )}
+      <Field label="Note">
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. skim dated chapters" />
+      </Field>
       <Field label="Tags" hint="Separated by commas">
         <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. architecture, ddd" />
       </Field>

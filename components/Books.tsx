@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "./ui";
-import { ListPlus, Plus } from "./icons";
+import { ListPlus, Plus, Upload } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
@@ -67,7 +67,10 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
             ]}
           />
         </div>
-        <span className="flex gap-2">
+        <span className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "import" })}>
+            <Upload className="h-3.5 w-3.5" /> Import plan
+          </Button>
           <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "bulk" })}>
             <ListPlus className="h-3.5 w-3.5" /> Add several
           </Button>

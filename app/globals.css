@@ -2776,3 +2776,13 @@ html.dark {
     padding-right: 20px;
   }
 }
+
+/* What an import will do, shown before it is done. */
+.rd-import {
+  padding: 0.75rem;
+  background: var(--pane-bg);
+  border: 1px solid var(--pane-border);
+  border-left: 3px solid var(--accent);
+}
+.rd-import code,
+.rd-import + * code { font-size: 12px; }
