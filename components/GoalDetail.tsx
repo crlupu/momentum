@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   KeyboardSensor,
@@ -23,8 +24,9 @@ import { AddButton, Button, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { CatPicker } from "./Forms";
+import { Modal } from "./Modal";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Minus, Pin, PinOff, Plus, ReorderLines, RotateCcw } from "./icons";
+import { Check, ExternalLink, Kanban, Minus, Pin, PinOff, Plus, ReorderLines, RotateCcw } from "./icons";
 import {
   Goal,
   Subtask,
@@ -145,6 +147,7 @@ export function GoalDetail({
           {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
           {g.pinned ? "Unpin" : "Pin to top"}
         </ActionButton>
+        <MoveToProjects tracker={tracker} goal={g} onClose={onClose} />
         <span className="ml-auto">
           <DeleteButton
             what={`the goal "${g.title}"`}
@@ -159,6 +162,54 @@ export function GoalDetail({
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Turns a goal into a project, for things that turned out to be work to
+ * build rather than material to get through. Asks first, since the goal
+ * leaves Learning; then opens the new board.
+ */
+function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal: Goal; onClose: () => void }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const { pending, run } = usePending();
+  const steps = g.subtasks?.length ?? 0;
+
+  const move = async () => {
+    const id = await run(() => tracker.goalToProject(g.id));
+    setOpen(false);
+    if (typeof id === "string") {
+      onClose();
+      router.push(`/projects?p=${id}`);
+    }
+  };
+
+  return (
+    <>
+      <Button variant="ghost" onPress={() => setOpen(true)}>
+        <Kanban className="h-4 w-4" /> Move to Projects
+      </Button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Move to Projects">
+        <p className="mb-1 text-[15px]">
+          Make <span className="font-semibold">{g.title}</span> a project?
+        </p>
+        <p className="mb-4 text-sm text-[var(--muted)]">
+          {steps > 0
+            ? `Its ${steps} ${steps === 1 ? "step becomes a card" : "steps become cards"} on the board: finished ones in Done, started ones in Doing, the rest in To do. `
+            : "It gets an empty board to add cards to. "}
+          It leaves Learning.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onPress={() => setOpen(false)} isDisabled={pending}>
+            Cancel
+          </Button>
+          <Button variant="primary" onPress={() => void move()} isDisabled={pending}>
+            Move
+          </Button>
+        </div>
+      </Modal>
+    </>
   );
 }
 

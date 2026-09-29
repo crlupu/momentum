@@ -12,18 +12,20 @@ Tailwind CSS 4 · next-themes · Firebase v12 · dnd-kit · react-icons.
 ## Sections
 
 Each section has its own page. On a desktop (1056px and wider) a sidebar lists
-them all. On phones and tablets a tab bar holds Today, Goals, Fitness,
-Nutrition and Books, and the More button beside each page title opens
+them all. On phones and tablets a tab bar holds Today, Learning, Projects,
+Health and Books, and the More button beside each page title opens
 Progress, Log, Settings and the appearance setting. Today is the home page.
-`components/sections.ts` is the single source of truth for each section's id,
-title and path.
+Health holds Fitness and Nutrition, with a switch between them at the top of
+each. `components/sections.ts` is the single source of truth for each
+section's id, title and path, and for the tabs (`NAV`).
 
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
 | Today | `/` | The day's momentum ring and figures, recurring tasks (daily / weekly / biweekly / monthly) and to-dos. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
-| Goals | `/goals` | Courses and projects, each broken into steps and grouped under topics | `GoalsView`, `GoalDetail`, `TopicForm` |
-| Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
-| Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
+| Learning | `/learning` | Courses and subjects, each a goal broken into steps and grouped under topics. A goal can be moved to Projects. `/goals` forwards here | `GoalsView`, `GoalDetail`, `TopicForm` |
+| Projects | `/projects` | Personal projects, each a board of cards in To do / Doing / Done, dragged between columns. `?p=<id>` opens a board | `ProjectsView`, `ProjectBoard`, `CardSheet`, `ProjectForm`; logic in `lib/projects.ts` |
+| Health: Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
+| Health: Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
 | Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
 | Progress | `/progress` | Completion charts and a month calendar | `Charts` |
 | Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |

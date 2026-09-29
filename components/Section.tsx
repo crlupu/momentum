@@ -54,13 +54,19 @@ export function SectionBand({
  */
 export function SectionPage({
   id,
+  title,
   size = "lg",
   subtitle,
+  header,
   children,
 }: {
   id: SectionId;
+  /** The large title, when it isn't the section's own (Health, over Fitness). */
+  title?: string;
   size?: "lg" | "md";
   subtitle?: ReactNode;
+  /** Sits under the large title, before the content: a switch between pages. */
+  header?: ReactNode;
   children: ReactNode;
 }) {
   const { openMore } = useShell();
@@ -91,7 +97,7 @@ export function SectionPage({
     <section id={id} className="section-panel">
       {/* Compact bar: phones and tablets, once the large title is gone. */}
       <div className={"nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")} aria-hidden={!compact}>
-        <span className="nav-compact__title">{sectionTitle(id)}</span>
+        <span className="nav-compact__title">{title ?? sectionTitle(id)}</span>
         <button
           type="button"
           onClick={openMore}
@@ -104,10 +110,11 @@ export function SectionPage({
       </div>
 
       <div ref={titleRef}>
-        <SectionBand id={id} size={size} subtitle={subtitle}>
+        <SectionBand id={id} title={title} size={size} subtitle={subtitle}>
           {more}
         </SectionBand>
       </div>
+      {header}
       <div className="section-panel__body">{children}</div>
     </section>
   );

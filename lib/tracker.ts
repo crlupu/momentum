@@ -16,6 +16,7 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getFirebase, isFirebaseConfigured } from "./firebase";
 import { contrast } from "./color";
 import * as R from "./reading";
+import * as P from "./projects";
 import { applyPlan, type Plan } from "./planImport";
 import type {
   BookStatus,
@@ -499,6 +500,8 @@ export type TrackerState = {
   todos: TodoItem[];
   completions: Completion[];
   paths: Path[];
+  /** Personal projects, each a board of cards. See lib/projects.ts. */
+  projects: P.Project[];
   weights: WeightEntry[];
   cardio: CardioEntry[];
   books: Book[];
@@ -640,6 +643,7 @@ const DEFAULT_STATE: TrackerState = {
   todos: [],
   completions: [],
   paths: [],
+  projects: [],
   weights: [],
   cardio: [],
   books: [],
@@ -956,6 +960,7 @@ function migrate(raw: unknown): TrackerState {
     todos,
     completions,
     paths,
+    projects: P.migrateProjects(s.projects, uid),
     weights,
     cardio,
     ...reading,
@@ -1613,6 +1618,178 @@ export function useTracker() {
           g.id === goalId
             ? { ...g, subtasks: (g.subtasks ?? []).filter((t) => t.id !== subtaskId) }
             : g
+        ),
+      })),
+
+    /**
+     * Turns a learning goal into a project: its name, note, link and
+     * category carry over, and its steps become cards — finished ones in
+     * Done, part-way counted ones in Doing, the rest in To do. The goal is
+     * then removed. Resolves to the new project's id.
+     */
+    goalToProject: async (goalId: string): Promise<string | null> => {
+      const base = stateRef.current ?? state;
+      const g = base?.goals.find((x) => x.id === goalId);
+      if (!g) return null;
+      const id = uid();
+      const now = Date.now();
+      const project: P.Project = {
+        id,
+        title: g.title,
+        note: g.note,
+        link: g.link,
+        catId: g.catId,
+        done: g.done ? true : undefined,
+        doneDate: g.done ? (g.doneDate ?? null) : null,
+        createdAt: now,
+        cards: (g.subtasks ?? []).map((t) => {
+          const status: P.CardStatus = subtaskDone(t)
+            ? "done"
+            : t.target && (t.current ?? 0) > 0
+              ? "doing"
+              : "todo";
+          return {
+            id: uid(),
+            title: t.target ? `${t.title} (${t.current ?? 0} of ${t.target})` : t.title,
+            status,
+            doneAt: status === "done" ? now : undefined,
+          };
+        }),
+      };
+      const ok = await commit((s) => ({
+        ...s,
+        projects: [...s.projects, project],
+        goals: s.goals.filter((x) => x.id !== goalId),
+        paths: s.paths.map((p) =>
+          p.goalIds.includes(goalId) ? { ...p, goalIds: p.goalIds.filter((x) => x !== goalId) } : p
+        ),
+      }));
+      return ok ? id : null;
+    },
+
+    // ---- projects ----
+
+    /** Resolves to the new project's id, so the page can open its board. */
+    addProject: async (
+      fields: { title: string; note?: string; link?: string; catId?: string }
+    ): Promise<string | null> => {
+      const id = uid();
+      const ok = await commit((s) => ({
+        ...s,
+        projects: [
+          ...s.projects,
+          {
+            id,
+            title: fields.title.trim(),
+            note: fields.note?.trim() || undefined,
+            link: fields.link?.trim() || undefined,
+            catId: fields.catId || undefined,
+            createdAt: Date.now(),
+            cards: [],
+          },
+        ],
+      }));
+      return ok ? id : null;
+    },
+
+    updateProject: (id: string, fields: { title?: string; note?: string; link?: string; catId?: string }) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                title: fields.title?.trim() || p.title,
+                note: fields.note !== undefined ? fields.note.trim() || undefined : p.note,
+                link: fields.link !== undefined ? fields.link.trim() || undefined : p.link,
+                catId: fields.catId !== undefined ? fields.catId || undefined : p.catId,
+              }
+            : p
+        ),
+      })),
+
+    setProjectDone: (id: string, done: boolean) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === id ? { ...p, done: done ? true : undefined, doneDate: done ? dateKey() : null } : p
+        ),
+      })),
+
+    deleteProject: (id: string) =>
+      commit((s) => ({ ...s, projects: s.projects.filter((p) => p.id !== id) })),
+
+    addCard: (projectId: string, title: string, status: P.CardStatus = "todo") =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                cards: [
+                  ...p.cards,
+                  {
+                    id: uid(),
+                    title: title.trim(),
+                    status,
+                    doneAt: status === "done" ? Date.now() : undefined,
+                  },
+                ],
+              }
+            : p
+        ),
+      })),
+
+    updateCard: (
+      projectId: string,
+      cardId: string,
+      fields: { title?: string; note?: string; due?: string | null; status?: P.CardStatus }
+    ) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                cards: p.cards.map((c) => {
+                  if (c.id !== cardId) return c;
+                  const next = {
+                    ...c,
+                    title: fields.title?.trim() || c.title,
+                    note: fields.note !== undefined ? fields.note.trim() || undefined : c.note,
+                    due: fields.due !== undefined ? fields.due || undefined : c.due,
+                  };
+                  return fields.status ? P.withStatus(next, fields.status) : next;
+                }),
+              }
+            : p
+        ),
+      })),
+
+    /** Moves a card to the end of another column. */
+    moveCard: (projectId: string, cardId: string, status: P.CardStatus) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) => {
+          if (p.id !== projectId) return p;
+          const c = p.cards.find((x) => x.id === cardId);
+          if (!c || c.status === status) return p;
+          return { ...p, cards: [...p.cards.filter((x) => x.id !== cardId), P.withStatus(c, status)] };
+        }),
+      })),
+
+    /** Sets every column's cards and order at once, after a drag. */
+    arrangeCards: (projectId: string, cols: Record<P.CardStatus, string[]>) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) => (p.id === projectId ? { ...p, cards: P.arrangeCards(p, cols) } : p)),
+      })),
+
+    deleteCard: (projectId: string, cardId: string) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId ? { ...p, cards: p.cards.filter((c) => c.id !== cardId) } : p
         ),
       })),
 

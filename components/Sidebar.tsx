@@ -5,19 +5,21 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Target, Today, BarChart3, ScrollText, Settings, LogOut, Dumbbell, Apple, BookOpen,
-  ChevronRight,
+  X, Today, BarChart3, ScrollText, Settings, LogOut, BookOpen, ChevronRight, School, Kanban,
+  Health,
 } from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker } from "@/lib/tracker";
-import { sectionPath, sectionTitle, trimPath, type SectionId } from "./sections";
+import {
+  NAV, navHolds, navPath, sectionPath, sectionTitle, trimPath, type NavId, type SectionId,
+} from "./sections";
 
-const ICON: Record<SectionId, typeof Target> = {
+const ICON: Record<NavId | "charts" | "log" | "config", typeof Today> = {
   tasks: Today,
-  goals: Target,
-  fitness: Dumbbell,
-  nutrition: Apple,
+  learning: School,
+  projects: Kanban,
+  health: Health,
   books: BookOpen,
   charts: BarChart3,
   log: ScrollText,
@@ -25,26 +27,42 @@ const ICON: Record<SectionId, typeof Target> = {
 };
 
 /**
- * The sections, split by what they are for. The first five are where things
+ * The sections, split by what they are for. The five in NAV are where things
  * get recorded, and are the phone's tabs: Today first, since that is where
- * the app opens. Progress and Log look back over what was recorded; Settings
- * shapes the rest. On a phone those three live behind More.
+ * the app opens; Health holds Fitness and Nutrition. Progress and Log look
+ * back over what was recorded; Settings shapes the rest. On a phone those
+ * three live behind More.
  */
-const TRACK: SectionId[] = ["tasks", "goals", "fitness", "nutrition", "books"];
 const REVIEW: SectionId[] = ["charts", "log"];
 
 function useCurrentPath() {
   return trimPath(usePathname() ?? "/");
 }
 
-function NavLink({ id, current, onNavigate }: { id: SectionId; current: string; onNavigate?: () => void }) {
+function NavLink({ id, current }: { id: NavId; current: string }) {
+  const active = navHolds(id, current);
+  const Icon = ICON[id];
+  return (
+    <Link
+      href={navPath(id)}
+      aria-current={active ? "page" : undefined}
+      className={"side-link" + (active ? " is-active" : "")}
+    >
+      <span className="side-link__icon" aria-hidden>
+        <Icon />
+      </span>
+      {NAV.find((n) => n.id === id)!.title}
+    </Link>
+  );
+}
+
+function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current: string }) {
   const href = sectionPath(id);
   const active = trimPath(href) === current;
   const Icon = ICON[id];
   return (
     <Link
       href={href}
-      onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={"side-link" + (active ? " is-active" : "")}
     >
@@ -73,10 +91,11 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
       </Link>
 
       <nav className="sidebar__nav">
-        {TRACK.map((id) => <NavLink key={id} id={id} current={current} />)}
+        {NAV.map((n) => <NavLink key={n.id} id={n.id} current={current} />)}
         <div className="sidebar__gap" />
-        {REVIEW.map((id) => <NavLink key={id} id={id} current={current} />)}
-        <NavLink id="config" current={current} />
+        <SectionLink id="charts" current={current} />
+        <SectionLink id="log" current={current} />
+        <SectionLink id="config" current={current} />
       </nav>
 
       <div className="sidebar__foot">
@@ -100,19 +119,18 @@ export function TabBar() {
   const current = useCurrentPath();
   return (
     <nav className="tabbar bar-material" aria-label="Sections">
-      {TRACK.map((id) => {
-        const href = sectionPath(id);
-        const active = trimPath(href) === current;
+      {NAV.map(({ id, title }) => {
+        const active = navHolds(id, current);
         const Icon = ICON[id];
         return (
           <Link
             key={id}
-            href={href}
+            href={navPath(id)}
             aria-current={active ? "page" : undefined}
             className={"tabbar__tab" + (active ? " is-active" : "")}
           >
             <Icon aria-hidden />
-            <span>{sectionTitle(id)}</span>
+            <span>{title}</span>
           </Link>
         );
       })}
@@ -164,7 +182,7 @@ export function MoreSheet({
           {[...REVIEW, "config" as SectionId].map((id) => {
             const href = sectionPath(id);
             const active = trimPath(href) === current;
-            const Icon = ICON[id];
+            const Icon = ICON[id as "charts" | "log" | "config"];
             return (
               <li key={id}>
                 <Link

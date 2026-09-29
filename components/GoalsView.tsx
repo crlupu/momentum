@@ -29,8 +29,8 @@ function pinnedFirst(list: Goal[]): Goal[] {
 }
 
 /**
- * Goals: courses, projects, anything tracked to completion, grouped under
- * topics.
+ * Learning: courses and subjects, each a goal broken into steps, grouped
+ * under topics. Projects have a page of their own (ProjectsView).
  *
  * The page is a stack of topics, each a section with its combined progress
  * and its goals as rows; goals in no topic come last. A row opens the goal,
@@ -83,10 +83,10 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
       {nothing ? (
         <div className="card goals-empty">
           <Target className="h-8 w-8" aria-hidden />
-          <p className="goals-empty__title">Track a course or a project</p>
+          <p className="goals-empty__title">Track what you&apos;re learning</p>
           <p className="goals-empty__text">
-            Add a goal for each one and break it into steps: lessons, chapters, tasks. Group
-            related goals under a topic to see how the whole area is going.
+            Add a goal for each course or subject and break it into steps: lessons, chapters,
+            exercises. Group related goals under a topic to see how the whole area is going.
           </p>
           <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
         </div>

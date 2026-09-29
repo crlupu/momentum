@@ -1,14 +1,13 @@
 "use client";
 
-import { useShell } from "@/components/AppShell";
-import { SectionPage } from "@/components/Section";
-import GoalsView from "@/components/GoalsView";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function GoalsPage() {
-  const { tracker } = useShell();
-  return (
-    <SectionPage id="goals">
-      <GoalsView tracker={tracker} />
-    </SectionPage>
-  );
+/** Goals became Learning, with projects on a page of their own. Old links land there. */
+export default function GoalsRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/learning");
+  }, [router]);
+  return null;
 }
