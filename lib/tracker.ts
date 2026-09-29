@@ -977,6 +977,23 @@ function migrate(raw: unknown): TrackerState {
   };
 }
 
+/**
+ * Resolves after the next frame has been painted — or after 100 ms, for a
+ * page in the background, where frames aren't drawn.
+ */
+function afterPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => setTimeout(go, 0));
+    setTimeout(go, 100);
+  });
+}
+
 /** Strips `undefined` values — Firestore rejects them outright. */
 function clean<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -1022,6 +1039,12 @@ export function useTracker() {
   const lastUpdated = useRef(0);
   // true once this signed-in user's cloud doc has been read at least once
   const remoteSynced = useRef(false);
+  // The newest state the cloud is known to hold, and its stamp: what a failed
+  // save falls back to. See commit.
+  const confirmed = useRef<TrackerState | null>(null);
+  const confirmedAt = useRef(0);
+  // Saves on their way to the cloud, so signing out can let them land first.
+  const inflight = useRef(new Set<Promise<unknown>>());
   // skips caching a state change (used for the sign-out reset)
   const suppressPersist = useRef(false);
 
@@ -1070,6 +1093,8 @@ export function useTracker() {
     const fb = getFirebase();
     if (!fb) return;
     remoteSynced.current = false;
+    confirmed.current = null;
+    confirmedAt.current = 0;
     const ref = doc(fb.db, "users", user.uid);
     return onSnapshot(
       ref,
@@ -1079,16 +1104,23 @@ export function useTracker() {
         if (snap.exists()) {
           const data = snap.data();
           const remoteUpdated = typeof data.updated === "number" ? data.updated : 0;
+          if (data.state && remoteUpdated >= confirmedAt.current) {
+            confirmed.current = migrate(data.state);
+            confirmedAt.current = remoteUpdated;
+          }
           if (data.state && remoteUpdated !== lastUpdated.current) {
             lastUpdated.current = remoteUpdated;
-            setState(migrate(data.state));
+            setState(confirmed.current ?? migrate(data.state));
           }
         } else {
           // no cloud record yet — seed it from whatever is on screen
           const updated = Date.now();
-          setDoc(ref, clean({ state: stateRef.current ?? DEFAULT_STATE, updated }))
+          const seed = stateRef.current ?? DEFAULT_STATE;
+          setDoc(ref, clean({ state: seed, updated }))
             .then(() => {
               lastUpdated.current = updated;
+              confirmed.current = seed;
+              confirmedAt.current = updated;
               setSyncError(null);
             })
             .catch((e) => {
@@ -1105,23 +1137,63 @@ export function useTracker() {
   }, [user]);
 
   // ---- cache to localStorage for fast first paint (never the source of truth) ----
+  // Written once changes pause rather than on each one: serialising the whole
+  // state and storing it took tens of milliseconds on a phone, inside the tap.
+  // Flushed when the page is hidden, so leaving the app never loses it.
+  const cacheTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writeCache = () => {
+    if (cacheTimer.current) clearTimeout(cacheTimer.current);
+    cacheTimer.current = null;
+    const s = stateRef.current;
+    if (!s) return;
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ state: s, updated: lastUpdated.current }));
+    } catch (e) {
+      console.error("cache write failed", e);
+    }
+  };
   useEffect(() => {
     if (!loaded.current || !state) return;
     if (suppressPersist.current) {
       suppressPersist.current = false;
+      if (cacheTimer.current) clearTimeout(cacheTimer.current);
+      cacheTimer.current = null;
       return;
     }
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ state, updated: lastUpdated.current }));
-    } catch (e) {
-      console.error("cache write failed", e);
-    }
+    if (cacheTimer.current) clearTimeout(cacheTimer.current);
+    cacheTimer.current = setTimeout(writeCache, 600);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+  useEffect(() => {
+    const flush = () => {
+      if (document.visibilityState === "hidden" && cacheTimer.current) writeCache();
+    };
+    const onHide = () => {
+      if (cacheTimer.current) writeCache();
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", onHide);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
-   * Applies a change by WRITING IT TO THE DATABASE FIRST. The on-screen state is
-   * only updated once the write is acknowledged, so the UI always reflects what
-   * is actually stored. Resolves true on success, false on failure.
+   * Applies a change: on screen at once, then saved to the cloud behind it.
+   *
+   * Resolves as soon as the change is on screen — true, or false when it was
+   * refused outright (no state yet, or the cloud copy not read yet) — not
+   * when the save lands. Everything that awaits a write (a form clearing its
+   * field, a dialog closing) used to wait out the network round trip, which
+   * on a phone left the page looking frozen for seconds after every tap.
+   *
+   * Every save writes the whole state, so a newer one carries every change
+   * before it. A failed save therefore only matters if nothing newer has been
+   * made since: then the screen goes back to the last state the cloud is
+   * known to hold, and the sync banner says why. When something newer is on
+   * its way, that save decides.
    */
   const commit = async (fn: (s: TrackerState) => TrackerState): Promise<boolean> => {
     // The ref is kept in step by an effect, and a child's effect runs before
@@ -1151,11 +1223,8 @@ export function useTracker() {
     }
 
     const updated = Date.now();
-    const prevState = base;
-    const prevUpdated = lastUpdated.current;
+    const fallback = { state: confirmed.current ?? base, at: confirmed.current ? confirmedAt.current : lastUpdated.current };
 
-    // Apply locally first, then write. Waiting for the round trip before
-    // touching state made every edit feel a network hop slow.
     // The ref is updated synchronously because React state only lands on the
     // next render, and a second write issued immediately after this one would
     // otherwise start from the stale state and undo this change.
@@ -1163,19 +1232,38 @@ export function useTracker() {
     stateRef.current = next;
     setState(next);
 
-    try {
-      await setDoc(doc(fb.db, "users", userRef.current.uid), clean({ state: next, updated }));
-      setSyncError(null);
-      return true;
-    } catch (e) {
-      console.error("save failed", e);
-      // Put it back, so the screen never claims something was saved that wasn't.
-      lastUpdated.current = prevUpdated;
-      stateRef.current = prevState;
-      setState(prevState);
-      setSyncError("Couldn't save to the cloud. Your change was not applied.");
-      return false;
-    }
+    // The save starts once the change has been painted: preparing the
+    // document is work proportional to all the data, and it no longer
+    // delays the frame that shows the tap. Changes made within one frame
+    // are sent as one — the newest state holds them all.
+    const uid = userRef.current.uid;
+    const save = afterPaint()
+      .then(async (): Promise<boolean> => {
+        if (stateRef.current !== next) return false; // superseded: the newer save sends it
+        await setDoc(doc(fb.db, "users", uid), clean({ state: next, updated }));
+        return true;
+      })
+      .then((sent) => {
+        if (!sent) return;
+        if (updated >= confirmedAt.current) {
+          confirmed.current = next;
+          confirmedAt.current = updated;
+        }
+        if (stateRef.current === next) setSyncError(null);
+      })
+      .catch((e) => {
+        console.error("save failed", e);
+        if (stateRef.current !== next) return; // a newer save carries this change
+        // Put it back, so the screen never claims something was saved that wasn't.
+        const back = confirmed.current ?? fallback.state;
+        lastUpdated.current = confirmed.current ? confirmedAt.current : fallback.at;
+        stateRef.current = back;
+        setState(back);
+        setSyncError("Couldn't save to the cloud. Your last change was not applied.");
+      })
+      .finally(() => inflight.current.delete(save));
+    inflight.current.add(save);
+    return true;
   };
 
   /**
@@ -1246,10 +1334,13 @@ export function useTracker() {
     signOutUser: async () => {
       const fb = getFirebase();
       if (!fb) return;
-      // Every change is already written, so nothing to flush. Clear the screen
+      // Let any save still on its way land first, then clear the screen
       // WITHOUT persisting the empty state anywhere.
+      await Promise.allSettled([...inflight.current]);
       suppressPersist.current = true;
       await signOut(fb.auth);
+      if (cacheTimer.current) clearTimeout(cacheTimer.current);
+      cacheTimer.current = null;
       try {
         localStorage.removeItem(KEY);
       } catch {
@@ -1257,6 +1348,8 @@ export function useTracker() {
       }
       lastUpdated.current = 0;
       remoteSynced.current = false;
+      confirmed.current = null;
+      confirmedAt.current = 0;
       setState(DEFAULT_STATE);
     },
 

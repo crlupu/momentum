@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -122,7 +122,9 @@ export function GoalDetail({
         {!editingSteps && <AddStep tracker={tracker} goalId={g.id} first={steps.length === 0} />}
       </section>
 
-      <Details tracker={tracker} goal={g} />
+      <AfterFirstFrame>
+        <Details tracker={tracker} goal={g} />
+      </AfterFirstFrame>
 
       <div className="goal-detail__actions">
         <ActionButton
@@ -436,6 +438,21 @@ function AddStep({ tracker, goalId, first }: { tracker: Tracker; goalId: string;
       <AddButton type="submit" aria-label="Add step" isDisabled={pending || !title.trim()} />
     </form>
   );
+}
+
+/**
+ * Renders its children one frame after the sheet opens. The details form is
+ * the heaviest part of the sheet and sits below the fold on a phone; drawn
+ * with the rest, it held back the frame that shows the sheet at all. The
+ * slide-in covers the gap.
+ */
+function AfterFirstFrame({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return ready ? <>{children}</> : <div className="goal-section goal-section--pending" aria-hidden />;
 }
 
 /** Name, topic, category, count, link and note. */

@@ -3129,6 +3129,7 @@ button.rd-link:active { background: var(--default); }
 .add-step__count { flex: 0 0 5.5rem; min-inline-size: 0; }
 
 .goal-fields { display: flex; flex-direction: column; gap: 0.875rem; }
+.goal-section--pending { min-block-size: 24rem; }
 .goal-field { display: flex; flex-direction: column; gap: 0.375rem; font-size: 0.8125rem; color: var(--muted); }
 .goal-field select, .goal-field textarea { inline-size: 100%; color: var(--foreground); font-size: 1rem; }
 .goal-link {

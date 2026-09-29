@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Tracker, useTracker } from "@/lib/tracker";
 import { AuthGate } from "./AuthGate";
 import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
@@ -40,6 +40,16 @@ export function usePageTracker(): Tracker {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const tracker = useTracker();
+
+  // The first number formatted in a session loads the locale's rules, which
+  // took ~30 ms on a phone — spent on whichever tap first showed a count.
+  // Done here instead, once the page is idle.
+  useEffect(() => {
+    const warm = () => void (1234.5).toLocaleString();
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(warm);
+    else setTimeout(warm, 500);
+  }, []);
   const [goalOpen, setGoalOpen] = useState(false);
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);

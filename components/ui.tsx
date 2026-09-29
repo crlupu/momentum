@@ -61,17 +61,21 @@ export function Button({
 }) {
   const ariaLabel = (rest as Record<string, unknown>)["aria-label"] as string | undefined;
   const ariaPressed = (rest as Record<string, unknown>)["aria-pressed"] as boolean | undefined;
+  // Icon-only buttons skip Carbon's own icon-only mode, which wraps each one
+  // in a tooltip whose effect reads computed styles on every render: with a
+  // few dozen on a page, every tap anywhere paid for a style recalculation
+  // per button. The class keeps Carbon's icon-only sizing; `title` gives the
+  // name on hover, and aria-label to assistive tech.
   return (
     <CarbonButton
       kind={KIND[variant]}
       size={size}
       disabled={isDisabled}
       onClick={onPress}
-      className={[isIconOnly ? "btn-icon-only" : "", className].filter(Boolean).join(" ")}
+      className={[isIconOnly ? "btn-icon-only cds--btn--icon-only" : "", className].filter(Boolean).join(" ")}
       type={type}
       style={style}
-      hasIconOnly={isIconOnly}
-      iconDescription={isIconOnly ? (ariaLabel ?? "button") : undefined}
+      title={isIconOnly ? ariaLabel : undefined}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
     >
