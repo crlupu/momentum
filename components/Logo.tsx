@@ -1,55 +1,67 @@
 "use client";
 
 /**
- * The Momentum mark: an M that climbs.
+ * The Momentum mark: a domino chain mid-topple.
  *
- * One continuous stroke through five points. Each foot of the M lands higher
- * than the last (80, then 62, then 44) and the second peak stands above the
- * first, so the letter reads left to right as progress building on itself.
+ * Three bars at 46, 26 and 0 degrees from upright — one fallen, one going
+ * over, one still standing. Read left to right it's the app's premise: start
+ * tracking one small thing and it knocks over the next, and the next.
  *
- * Two layers, as an app icon would have: the first half of the stroke, where
- * it has come from, sits back in a translucent layer; the second half, the
- * climb, is solid. Round caps and joins, and a stroke a sixth of the mark's
- * width, so it holds up at the 20 pixels the sidebar shows it at.
+ * The bars meet at their edges rather than overlapping. Solved rather than
+ * eyeballed: angles, bar length and base spacing were searched for the
+ * steepest possible fall whose joints still share under 2% of a bar's area,
+ * so the chain reads as three distinct dominoes in contact instead of one
+ * merged silhouette.
  *
- * public/logo.svg and the PNG icons in public/icons are this same geometry,
- * white on an electric-blue tile.
+ * Drawn as rotated rectangles rather than polygons, because only a rect can
+ * carry a corner radius. Each is the same bar — near enough 24 by 8 — turned
+ * about its own centre. The radius is a quarter of the bar's width.
+ *
+ * Two layers, as an app icon has: the fallen two sit back at 45%, what's
+ * done; the standing one is solid, the next thing to do.
+ *
+ * public/logo.svg and the PNG icons in public/icons are the same bars, white
+ * on an electric-blue tile, centred by eye: halfway between the chain's
+ * bounding box and its centre of mass (OPTICAL_CENTRE). The fallen bar's
+ * weight sits low and left, so centring on the box alone looks off.
  */
 
-/** The stroke's points, in a 100-unit box. */
-export const MARK_POINTS: [number, number][] = [
-  [20, 80],
-  [30, 40],
-  [50, 62],
-  [72, 20],
-  [80, 44],
+/** One bar, three times over: position, size and the angle it has fallen to. */
+export const BARS = [
+  { x: 1.438, y: 13.144, w: 23.974, h: 8.062, angle: -44.155, cx: 13.425, cy: 17.175 },
+  { x: 15.042, y: 10.7, w: 24.017, h: 8.05, angle: -64.075, cx: 27.05, cy: 14.725 },
+  { x: 26.8, y: 9.5, w: 24, h: 8, angle: -90, cx: 38.8, cy: 13.5 },
 ];
-export const MARK_STROKE = 16;
-/** The points from here on are the solid layer. */
-const SOLID_FROM = 2;
 
-/** The mark's box, stroke included: 12 to 88 on both axes. */
-const VIEWBOX = "12 12 76 76";
+/** A quarter of the bar's width. */
+export const RADIUS = 2;
 
-const d = (pts: [number, number][]) => "M" + pts.map((p) => p.join(" ")).join(" L");
+/** The chain's box: x 2.02–42.8, y 1.5–28.42. */
+const VIEWBOX = "2.02 1.5 40.78 26.92";
+
+/** Where the chain looks centred: between the box's centre and the bars'. */
+export const OPTICAL_CENTRE = [24.417, 15.046] as const;
 
 /**
- * The mark in the app's colours: electric blue, the path so far at 45%.
- * Pass `mono` to draw it in currentColor where the accent would clash.
+ * The mark in the app's colours: electric blue, the fallen dominoes at 45%.
+ * Pass `mono` for a single colour (currentColor) where the accent would clash.
  */
 export function Logo({ className, mono }: { className?: string; mono?: boolean }) {
-  const color = mono ? "currentColor" : "var(--accent)";
-  const common = {
-    fill: "none",
-    stroke: color,
-    strokeWidth: MARK_STROKE,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
   return (
     <svg viewBox={VIEWBOX} className={className} role="img" aria-label="Momentum">
-      <path d={d(MARK_POINTS.slice(0, SOLID_FROM + 1))} strokeOpacity={0.45} {...common} />
-      <path d={d(MARK_POINTS.slice(SOLID_FROM))} {...common} />
+      {BARS.map((b, i) => (
+        <rect
+          key={i}
+          x={b.x}
+          y={b.y}
+          width={b.w}
+          height={b.h}
+          rx={RADIUS}
+          transform={`rotate(${b.angle} ${b.cx} ${b.cy})`}
+          fill={mono ? "currentColor" : "var(--accent)"}
+          fillOpacity={i < BARS.length - 1 ? 0.45 : 1}
+        />
+      ))}
     </svg>
   );
 }
