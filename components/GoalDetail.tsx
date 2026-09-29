@@ -162,7 +162,17 @@ export function GoalDetail({
   );
 }
 
-/** "3 of 10" between a − and a +. */
+/**
+ * "3 of 10" between a − and a +.
+ *
+ * Presses are never held back while a save is in flight: the change is on
+ * screen at once and each write starts from the one before, so tapping + five
+ * times quickly counts five. Locking the buttons until the round trip ended
+ * made + ignore taps and − flash to disabled and back on every press.
+ *
+ * The figure is as wide as the largest it can be, so the buttons don't shift
+ * as the count gains a digit.
+ */
 function Stepper({
   value,
   total,
@@ -174,7 +184,7 @@ function Stepper({
   onStep: (delta: number) => Promise<unknown>;
   what: string;
 }) {
-  const { pending, run } = usePending();
+  const digits = total.toLocaleString().length;
   return (
     <span className="stepper">
       <Button
@@ -182,12 +192,12 @@ function Stepper({
         variant="ghost"
         isIconOnly
         aria-label={`One less, ${what}`}
-        isDisabled={pending || value <= 0}
-        onPress={() => void run(() => onStep(-1))}
+        isDisabled={value <= 0}
+        onPress={() => void onStep(-1)}
       >
         <Minus className="h-4 w-4" />
       </Button>
-      <span className="stepper__value font-mono-n">
+      <span className="stepper__value font-mono-n" style={{ minInlineSize: `${digits * 2 + 3.5}ch` }}>
         {value.toLocaleString()}
         <span className="stepper__total"> of {total.toLocaleString()}</span>
       </span>
@@ -196,8 +206,8 @@ function Stepper({
         variant="ghost"
         isIconOnly
         aria-label={`One more, ${what}`}
-        isDisabled={pending || value >= total}
-        onPress={() => void run(() => onStep(1))}
+        isDisabled={value >= total}
+        onPress={() => void onStep(1)}
       >
         <Plus className="h-4 w-4" />
       </Button>
