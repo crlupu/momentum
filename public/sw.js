@@ -14,12 +14,18 @@
  * shell would otherwise be served indefinitely and a deploy would never be
  * picked up.
  *
- * Everything else — the hashed JS and CSS bundles, icons — is served from the
- * cache first. Their names change whenever their contents do, so a cached one
- * is never wrong, and going to the network for them is a waste of a radio.
+ * The hashed JS and CSS bundles under /_next/static/ are served from the cache
+ * first. Their names change whenever their contents do, so a cached one is
+ * never wrong, and going to the network for them is a waste of a radio.
+ *
+ * Everything else — icons, the manifest, the favicon — keeps its name when its
+ * contents change, so it goes to the network first like a page does. Served
+ * cache-first, a new app icon never reached anyone who had opened the app
+ * before: the old one was handed back for good, including to iOS when adding
+ * the app to the Home Screen.
  */
 
-const VERSION = "momentum-v2";
+const VERSION = "momentum-v3";
 const SHELL = "./";
 
 self.addEventListener("install", (event) => {
@@ -100,18 +106,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const keep = (res) => {
+    // Opaque and error responses are not worth keeping.
+    if (res.ok && res.type === "basic") {
+      const copy = res.clone();
+      caches.open(VERSION).then((c) => c.put(request, copy));
+    }
+    return res;
+  };
+
+  // Hashed bundles: the cache, and the network only for what isn't in it.
+  if (url.pathname.includes("/_next/static/")) {
+    event.respondWith(caches.match(request).then((hit) => hit ?? fetch(request).then(keep)));
+    return;
+  }
+
+  // Unhashed files: the network, and the cache only when there is none.
   event.respondWith(
-    caches.match(request).then(
-      (hit) =>
-        hit ??
-        fetch(request).then((res) => {
-          // Opaque and error responses are not worth keeping.
-          if (res.ok && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(VERSION).then((c) => c.put(request, copy));
-          }
-          return res;
-        })
-    )
+    fetch(request)
+      .then(keep)
+      .catch(() => caches.match(request).then((hit) => hit ?? Response.error()))
   );
 });
