@@ -4,14 +4,15 @@ import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
-import { CatPicker } from "./Forms";
+import { TagManager } from "./TagPicker";
 import { ExternalLink, RotateCcw } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import type { Project } from "@/lib/projects";
 
 /**
- * A project's name, what it is, where it lives and its category. Editing an
- * existing project also finishes, reopens or deletes it.
+ * A project's name, what it is and where it lives. Editing an existing
+ * project also manages its tags, and finishes, reopens or deletes it. A
+ * new project starts with no tags: they're made as its cards need them.
  */
 export function ProjectForm({
   tracker,
@@ -27,17 +28,15 @@ export function ProjectForm({
   onCreated?: (id: string) => void;
   onDeleted?: () => void;
 }) {
-  const s = tracker.state!;
   const [title, setTitle] = useState(project?.title ?? "");
   const [note, setNote] = useState(project?.note ?? "");
   const [link, setLink] = useState(project?.link ?? "");
-  const [catId, setCatId] = useState(project?.catId ?? s.categories[0]?.id ?? "");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || pending) return;
-    const fields = { title, note, link, catId };
+    const fields = { title, note, link };
     if (project) {
       onDone();
       await run(() => tracker.updateProject(project.id, fields));
@@ -93,7 +92,12 @@ export function ProjectForm({
         </span>
       </label>
 
-      <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
+      {project && (
+        <div className="goal-field">
+          <span>Tags for this project&apos;s cards</span>
+          <TagManager tracker={tracker} project={project} />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>

@@ -62,7 +62,7 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
         <ul className="project-grid">
           {shown.map((p) => (
             <li key={p.id}>
-              <ProjectTile tracker={tracker} project={p} onOpen={onOpen} />
+              <ProjectTile project={p} onOpen={onOpen} />
             </li>
           ))}
         </ul>
@@ -76,15 +76,12 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
 }
 
 function ProjectTile({
-  tracker,
   project: p,
   onOpen,
 }: {
-  tracker: Tracker;
   project: Project;
   onOpen: (id: string) => void;
 }) {
-  const cat = p.catId ? tracker.cat(p.catId) : null;
   const { done, total, pct } = projectProgress(p);
   const todo = columnCards(p, "todo").length;
   const doing = columnCards(p, "doing").length;
@@ -103,13 +100,6 @@ function ProjectTile({
         <span className="project-tile__pct font-mono-n">{pct}%</span>
       </span>
       <span className="project-tile__meta">
-        {cat && (
-          <>
-            <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
-            {cat.name}
-            <span aria-hidden>·</span>
-          </>
-        )}
         {p.done
           ? `Finished${p.doneDate ? ` ${fmtDateAuto(p.doneDate)}` : ""}`
           : total === 0

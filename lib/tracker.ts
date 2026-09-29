@@ -1638,10 +1638,10 @@ export function useTracker() {
         title: g.title,
         note: g.note,
         link: g.link,
-        catId: g.catId,
         done: g.done ? true : undefined,
         doneDate: g.done ? (g.doneDate ?? null) : null,
         createdAt: now,
+        tags: [],
         cards: (g.subtasks ?? []).map((t) => {
           const status: P.CardStatus = subtaskDone(t)
             ? "done"
@@ -1675,7 +1675,7 @@ export function useTracker() {
      * write goes out, as with every change. A refused save takes it back
      * out, and the board page then returns to the list.
      */
-    addProject: (fields: { title: string; note?: string; link?: string; catId?: string }): string => {
+    addProject: (fields: { title: string; note?: string; link?: string }): string => {
       const id = uid();
       void commit((s) => ({
         ...s,
@@ -1686,8 +1686,8 @@ export function useTracker() {
             title: fields.title.trim(),
             note: fields.note?.trim() || undefined,
             link: fields.link?.trim() || undefined,
-            catId: fields.catId || undefined,
             createdAt: Date.now(),
+            tags: [],
             cards: [],
           },
         ],
@@ -1695,7 +1695,7 @@ export function useTracker() {
       return id;
     },
 
-    updateProject: (id: string, fields: { title?: string; note?: string; link?: string; catId?: string }) =>
+    updateProject: (id: string, fields: { title?: string; note?: string; link?: string }) =>
       commit((s) => ({
         ...s,
         projects: s.projects.map((p) =>
@@ -1705,7 +1705,6 @@ export function useTracker() {
                 title: fields.title?.trim() || p.title,
                 note: fields.note !== undefined ? fields.note.trim() || undefined : p.note,
                 link: fields.link !== undefined ? fields.link.trim() || undefined : p.link,
-                catId: fields.catId !== undefined ? fields.catId || undefined : p.catId,
               }
             : p
         ),
@@ -1722,7 +1721,11 @@ export function useTracker() {
     deleteProject: (id: string) =>
       commit((s) => ({ ...s, projects: s.projects.filter((p) => p.id !== id) })),
 
-    addCard: (projectId: string, title: string, status: P.CardStatus = "todo") =>
+    addCard: (
+      projectId: string,
+      fields: { title: string; note?: string; tagIds?: string[] },
+      status: P.CardStatus = "todo"
+    ) =>
       commit((s) => ({
         ...s,
         projects: s.projects.map((p) =>
@@ -1733,8 +1736,10 @@ export function useTracker() {
                   ...p.cards,
                   {
                     id: uid(),
-                    title: title.trim(),
+                    title: fields.title.trim(),
                     status,
+                    note: fields.note?.trim() || undefined,
+                    tagIds: fields.tagIds?.length ? fields.tagIds : undefined,
                     doneAt: status === "done" ? Date.now() : undefined,
                   },
                 ],
@@ -1743,10 +1748,46 @@ export function useTracker() {
         ),
       })),
 
+    /**
+     * Makes a tag for one project's cards and returns its id at once, so a
+     * card being written can carry it straight away.
+     */
+    addProjectTag: (projectId: string, name: string): string => {
+      const id = uid();
+      void commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId
+            ? { ...p, tags: [...p.tags, { id, name: name.trim(), color: P.nextTagColor(p, CAT_COLORS) }] }
+            : p
+        ),
+      }));
+      return id;
+    },
+
+    /** Deletes a tag and takes it off every card that had it. */
+    deleteProjectTag: (projectId: string, tagId: string) =>
+      commit((s) => ({
+        ...s,
+        projects: s.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                tags: p.tags.filter((t) => t.id !== tagId),
+                cards: p.cards.map((c) =>
+                  c.tagIds?.includes(tagId)
+                    ? { ...c, tagIds: c.tagIds.filter((x) => x !== tagId).length ? c.tagIds.filter((x) => x !== tagId) : undefined }
+                    : c
+                ),
+              }
+            : p
+        ),
+      })),
+
     updateCard: (
       projectId: string,
       cardId: string,
-      fields: { title?: string; note?: string; due?: string | null; status?: P.CardStatus }
+      fields: { title?: string; note?: string; due?: string | null; status?: P.CardStatus; tagIds?: string[] }
     ) =>
       commit((s) => ({
         ...s,
@@ -1761,6 +1802,7 @@ export function useTracker() {
                     title: fields.title?.trim() || c.title,
                     note: fields.note !== undefined ? fields.note.trim() || undefined : c.note,
                     due: fields.due !== undefined ? fields.due || undefined : c.due,
+                    tagIds: fields.tagIds !== undefined ? (fields.tagIds.length ? fields.tagIds : undefined) : c.tagIds,
                   };
                   return fields.status ? P.withStatus(next, fields.status) : next;
                 }),

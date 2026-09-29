@@ -19,10 +19,22 @@ export const COLUMNS: { id: CardStatus; title: string }[] = [
   { id: "done", title: "Done" },
 ];
 
+/**
+ * A label for cards, made for one project and belonging to it: "Backend",
+ * "Bug", "Design". Colours come round the data palette in turn.
+ */
+export type ProjectTag = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export type ProjectCard = {
   id: string;
   title: string;
   status: CardStatus;
+  /** Its tags, by id, from the project's own list. */
+  tagIds?: string[];
   /** Anything worth remembering about it. */
   note?: string;
   /** When it should be done by, as YYYY-MM-DD. */
@@ -38,13 +50,27 @@ export type Project = {
   note?: string;
   /** Where it lives: a repository, a design file. */
   link?: string;
+  /** Saved by the first version, which gave projects a category; unused now. */
   catId?: string;
+  /** The tags its cards can carry. */
+  tags: ProjectTag[];
   /** Finished projects move out of the way, to their own view. */
   done?: boolean;
   doneDate?: string | null;
   createdAt: number;
   cards: ProjectCard[];
 };
+
+/** The colour for a project's next tag: round the palette, in order. */
+export function nextTagColor(p: Project, palette: readonly string[]): string {
+  return palette[p.tags.length % palette.length];
+}
+
+/** A card's tags, in the project's order, skipping any since deleted. */
+export function cardTags(p: Project, c: ProjectCard): ProjectTag[] {
+  const ids = new Set(c.tagIds ?? []);
+  return p.tags.filter((t) => ids.has(t.id));
+}
 
 /** The cards of one column, in order. */
 export function columnCards(p: Project, status: CardStatus): ProjectCard[] {
@@ -99,11 +125,19 @@ export function migrateProjects(raw: unknown, uid: () => string): Project[] {
     done: p.done === true ? true : undefined,
     doneDate: (p.doneDate as string) ?? null,
     createdAt: typeof p.createdAt === "number" ? p.createdAt : Date.now(),
+    tags: Array.isArray(p.tags)
+      ? (p.tags as Array<Record<string, unknown>>)
+          .filter((t) => typeof t.id === "string" && typeof t.name === "string")
+          .map((t) => ({ id: t.id as string, name: t.name as string, color: (t.color as string) ?? "#646f7f" }))
+      : [],
     cards: Array.isArray(p.cards)
       ? (p.cards as Array<Record<string, unknown>>).map((c) => ({
           id: (c.id as string) ?? uid(),
           title: (c.title as string) ?? "",
           status: STATUSES.includes(c.status as CardStatus) ? (c.status as CardStatus) : "todo",
+          tagIds: Array.isArray(c.tagIds) && c.tagIds.length
+            ? (c.tagIds as unknown[]).filter((x): x is string => typeof x === "string")
+            : undefined,
           note: str(c.note),
           due: str(c.due),
           doneAt: typeof c.doneAt === "number" ? c.doneAt : undefined,

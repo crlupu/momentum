@@ -1,42 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { Segmented } from "./books/bits";
+import { TagPicker } from "./TagPicker";
 import { Tracker } from "@/lib/tracker";
-import { COLUMNS, type CardStatus, type ProjectCard } from "@/lib/projects";
+import { COLUMNS, type CardStatus, type Project, type ProjectCard } from "@/lib/projects";
+
+const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
 /**
- * One card, opened: which column it's in, its name, due date and note.
+ * A new card: its name, a description and its tags, added to the column
+ * whose "Add card" opened it.
+ */
+export function NewCardForm({
+  tracker,
+  project,
+  status,
+  onDone,
+}: {
+  tracker: Tracker;
+  project: Project;
+  status: CardStatus;
+  onDone: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [tagIds, setTagIds] = useState<string[]>([]);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onDone();
+    void tracker.addCard(project.id, { title, note, tagIds }, status);
+  };
+
+  return (
+    <form onSubmit={submit} className="goal-fields">
+      <label className="goal-field">
+        <span>Name</span>
+        <Input
+          aria-label="Card name"
+          placeholder="What needs doing"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          autoFocus
+        />
+      </label>
+
+      <label className="goal-field">
+        <span>Description</span>
+        <textarea
+          aria-label="Description"
+          rows={3}
+          placeholder="Details, links, what done looks like (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
+
+      <div className="goal-field">
+        <span>Tags</span>
+        <TagPicker tracker={tracker} project={project} selected={tagIds} onChange={setTagIds} />
+      </div>
+
+      <div>
+        <Button type="submit" variant="primary" isDisabled={!title.trim()}>
+          Add card
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * One card, opened: which column it's in, its name, tags, due date and
+ * description.
  *
  * The column switch applies at once — it's the phone's way to move a card
- * without dragging it — while the text fields wait for Save, so a half-typed
- * name is never written.
+ * without dragging it — while the rest waits for Save, so a half-typed name
+ * is never written.
  */
 export function CardSheet({
   tracker,
-  projectId,
+  project,
   card: c,
   onClose,
 }: {
   tracker: Tracker;
-  projectId: string;
+  project: Project;
   card: ProjectCard;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(c.title);
   const [due, setDue] = useState(c.due ?? "");
   const [note, setNote] = useState(c.note ?? "");
+  const [tagIds, setTagIds] = useState<string[]>(c.tagIds ?? []);
   const { pending, run } = usePending();
 
-  const dirty = title.trim() !== c.title || due !== (c.due ?? "") || note.trim() !== (c.note ?? "");
+  const dirty =
+    title.trim() !== c.title ||
+    due !== (c.due ?? "") ||
+    note.trim() !== (c.note ?? "") ||
+    !sameIds(tagIds, c.tagIds ?? []);
 
   const save = async () => {
     if (!title.trim()) return;
     onClose();
-    await run(() => tracker.updateCard(projectId, c.id, { title, due: due || null, note }));
+    await run(() => tracker.updateCard(project.id, c.id, { title, due: due || null, note, tagIds }));
   };
 
   return (
@@ -46,7 +119,7 @@ export function CardSheet({
         <Segmented<CardStatus>
           label="Column"
           value={c.status}
-          onChange={(status) => void tracker.moveCard(projectId, c.id, status)}
+          onChange={(status) => void tracker.moveCard(project.id, c.id, status)}
           options={COLUMNS.map((col) => ({ value: col.id, label: col.title }))}
         />
       </div>
@@ -55,6 +128,22 @@ export function CardSheet({
         <span>Name</span>
         <Input aria-label="Card name" value={title} onChange={(e) => setTitle(e.target.value)} />
       </label>
+
+      <label className="goal-field">
+        <span>Description</span>
+        <textarea
+          aria-label="Description"
+          rows={3}
+          placeholder="Details, links, what done looks like"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
+
+      <div className="goal-field">
+        <span>Tags</span>
+        <TagPicker tracker={tracker} project={project} selected={tagIds} onChange={setTagIds} />
+      </div>
 
       <label className="goal-field">
         <span>Due</span>
@@ -68,17 +157,6 @@ export function CardSheet({
         </span>
       </label>
 
-      <label className="goal-field">
-        <span>Note</span>
-        <textarea
-          aria-label="Note"
-          rows={3}
-          placeholder="Details, links, what done looks like"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-      </label>
-
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" onPress={() => void save()} isDisabled={pending || !dirty || !title.trim()}>
           Save card
@@ -90,7 +168,7 @@ export function CardSheet({
           bare
           onDelete={async () => {
             onClose();
-            return tracker.deleteCard(projectId, c.id);
+            return tracker.deleteCard(project.id, c.id);
           }}
         />
       </div>

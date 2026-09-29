@@ -3353,4 +3353,72 @@ button.rd-link:active { background: var(--default); }
 .board-card__due.is-today { color: var(--warning); background: var(--warning-soft); }
 .board-card__due.is-late { color: var(--danger-soft-foreground); background: var(--danger-soft); }
 .board-card__note { inline-size: 1rem; block-size: 1rem; fill: var(--faint); }
+
+/* Tags: a project's own labels for its cards. The palette carries white
+   text at 5:1, so a chip is the colour itself with the name on it. */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  max-inline-size: 100%;
+  padding: 0.0625rem 0.5rem;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #fff;
+}
+.board-card__tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+.tag-picker { display: flex; flex-direction: column; gap: 0.625rem; }
+.tag-picker__list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.tag-toggle,
+.tag-owned {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+  border: 0;
+  border-radius: var(--r-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: var(--default);
+}
+.tag-toggle { cursor: pointer; }
+.tag-toggle svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.tag-toggle.is-on { color: #fff; background: var(--tag); }
+.tag-toggle__dot { inline-size: 0.625rem; block-size: 0.625rem; flex: none; border-radius: var(--r-pill); background: var(--tag); }
+.tag-owned { padding-inline-end: 0.25rem; }
+.tag-owned__remove {
+  display: inline-grid;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-pill);
+  color: var(--danger);
+  background: var(--danger-soft);
+  cursor: pointer;
+}
+.tag-owned__remove svg { inline-size: 0.875rem; block-size: 0.875rem; fill: currentColor; }
+.tag-picker__new { display: flex; gap: 0.5rem; }
+.tag-picker__new input { flex: 1 1 auto; min-inline-size: 0; }
+.tag-picker__add {
+  display: inline-grid;
+  inline-size: 2.5rem;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-control);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  cursor: pointer;
+}
+.tag-picker__add:disabled { color: var(--faint); background: var(--default); cursor: default; }
+.tag-picker__add svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
 } /* @layer components */

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -23,13 +23,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { AddButton, Input } from "./ui";
+import { AddButton } from "./ui";
 import { Modal } from "./Modal";
-import { CardSheet } from "./CardSheet";
+import { CardSheet, NewCardForm } from "./CardSheet";
+import { TagChip } from "./TagPicker";
 import { CalendarEvent, Notes } from "./icons";
 import { dateKey, Tracker } from "@/lib/tracker";
 import { fmtDateAuto } from "@/lib/dates";
-import { COLUMNS, type CardStatus, type Project, type ProjectCard } from "@/lib/projects";
+import { COLUMNS, cardTags, type CardStatus, type Project, type ProjectCard } from "@/lib/projects";
 
 type Cols = Record<CardStatus, string[]>;
 
@@ -55,6 +56,7 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
   const [drag, setDrag] = useState<Cols | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [adding, setAdding] = useState<CardStatus | null>(null);
 
   const base = useMemo(() => colsOf(p), [p]);
   const cols = drag ?? base;
@@ -133,21 +135,31 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
           {COLUMNS.map((col) => (
             <Column
               key={col.id}
-              tracker={tracker}
-              projectId={p.id}
+              project={p}
               status={col.id}
               title={col.title}
               cards={cols[col.id].map((id) => byId.get(id)).filter(Boolean) as ProjectCard[]}
               onOpen={setOpenId}
+              onAdd={() => setAdding(col.id)}
             />
           ))}
         </div>
-        <DragOverlay>{active ? <CardFace card={active} lifted /> : null}</DragOverlay>
+        <DragOverlay>{active ? <CardFace project={p} card={active} lifted /> : null}</DragOverlay>
       </DndContext>
 
       <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""}>
         {opened && (
-          <CardSheet key={opened.id} tracker={tracker} projectId={p.id} card={opened} onClose={() => setOpenId(null)} />
+          <CardSheet key={opened.id} tracker={tracker} project={p} card={opened} onClose={() => setOpenId(null)} />
+        )}
+      </Modal>
+
+      <Modal
+        open={!!adding}
+        onClose={() => setAdding(null)}
+        title={adding ? `New card in ${COLUMNS.find((c) => c.id === adding)!.title}` : ""}
+      >
+        {adding && (
+          <NewCardForm key={adding} tracker={tracker} project={p} status={adding} onDone={() => setAdding(null)} />
         )}
       </Modal>
     </>
@@ -155,19 +167,19 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
 }
 
 function Column({
-  tracker,
-  projectId,
+  project,
   status,
   title,
   cards,
   onOpen,
+  onAdd,
 }: {
-  tracker: Tracker;
-  projectId: string;
+  project: Project;
   status: CardStatus;
   title: string;
   cards: ProjectCard[];
   onOpen: (id: string) => void;
+  onAdd: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
@@ -179,17 +191,27 @@ function Column({
       <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className={"board-col__cards" + (isOver ? " is-over" : "")}>
           {cards.map((c) => (
-            <SortableCard key={c.id} card={c} onOpen={onOpen} />
+            <SortableCard key={c.id} project={project} card={c} onOpen={onOpen} />
           ))}
           {cards.length === 0 && <li className="board-col__empty">Drop cards here</li>}
         </ul>
       </SortableContext>
-      <AddCard tracker={tracker} projectId={projectId} status={status} />
+      <div className="board-col__foot">
+        <AddButton size="sm" label="Add card" onPress={onAdd} />
+      </div>
     </section>
   );
 }
 
-function SortableCard({ card: c, onOpen }: { card: ProjectCard; onOpen: (id: string) => void }) {
+function SortableCard({
+  project,
+  card: c,
+  onOpen,
+}: {
+  project: Project;
+  card: ProjectCard;
+  onOpen: (id: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
   return (
     <li
@@ -204,28 +226,37 @@ function SortableCard({ card: c, onOpen }: { card: ProjectCard; onOpen: (id: str
         {...attributes}
         {...listeners}
         aria-roledescription="card"
+        aria-label={c.title}
       >
-        <CardBody card={c} />
+        <CardBody project={project} card={c} />
       </button>
     </li>
   );
 }
 
 /** The card as it follows the pointer while dragged. */
-function CardFace({ card, lifted }: { card: ProjectCard; lifted?: boolean }) {
+function CardFace({ project, card, lifted }: { project: Project; card: ProjectCard; lifted?: boolean }) {
   return (
     <div className={"board-card" + (lifted ? " is-lifted" : "")}>
-      <CardBody card={card} />
+      <CardBody project={project} card={card} />
     </div>
   );
 }
 
-function CardBody({ card: c }: { card: ProjectCard }) {
+function CardBody({ project, card: c }: { project: Project; card: ProjectCard }) {
   const today = dateKey();
   const late = c.due && c.status !== "done" && c.due < today;
   const soon = c.due && c.status !== "done" && c.due === today;
+  const tags = cardTags(project, c);
   return (
     <>
+      {tags.length > 0 && (
+        <span className="board-card__tags">
+          {tags.map((t) => (
+            <TagChip key={t.id} tag={t} />
+          ))}
+        </span>
+      )}
       <span className={"board-card__title" + (c.status === "done" ? " is-done" : "")}>{c.title}</span>
       {(c.due || c.note) && (
         <span className="board-card__meta">
@@ -235,48 +266,9 @@ function CardBody({ card: c }: { card: ProjectCard }) {
               {c.due === today ? "Today" : fmtDateAuto(c.due)}
             </span>
           )}
-          {c.note && <Notes className="board-card__note" aria-label="Has a note" />}
+          {c.note && <Notes className="board-card__note" aria-label="Has a description" />}
         </span>
       )}
     </>
-  );
-}
-
-/** "Add card" at the foot of a column: a button that becomes a field. */
-function AddCard({ tracker, projectId, status }: { tracker: Tracker; projectId: string; status: CardStatus }) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const t = title.trim();
-    if (!t) return;
-    setTitle("");
-    // The field stays open and focused, so a list of cards is typed in a row.
-    void tracker.addCard(projectId, t, status);
-  };
-
-  if (!open) {
-    return (
-      <div className="board-col__foot">
-        <AddButton size="sm" label="Add card" onPress={() => setOpen(true)} />
-      </div>
-    );
-  }
-  return (
-    <form className="board-col__foot add-step" onSubmit={submit}>
-      <Input
-        aria-label={`New card in ${COLUMNS.find((c) => c.id === status)!.title}`}
-        placeholder="Card name"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={() => {
-          if (!title.trim()) setOpen(false);
-        }}
-        autoFocus
-        className="add-step__name"
-      />
-      <AddButton type="submit" aria-label="Add card" isDisabled={!title.trim()} />
-    </form>
   );
 }
