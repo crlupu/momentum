@@ -115,7 +115,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
               variant="primary"
               onPress={() => flow.open({ kind: "log", bookId: book.id })}
             >
-              Log reading
+              Update page
             </Button>
             <Button size="sm" variant="outline" onPress={() => void flow.finish(book.id)}>
               <Check className="h-3.5 w-3.5" /> Finish

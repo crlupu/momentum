@@ -122,7 +122,7 @@ function DialogFor({
 
     case "log":
       return (
-        <Modal open onClose={close} title="Log reading">
+        <Modal open onClose={close} title="Update page">
           {book ? <LogForm tracker={tracker} book={book} /> : <Gone />}
         </Modal>
       );
@@ -235,9 +235,15 @@ function DialogFor({
       );
 
     case "page":
-      return (
-        <Modal open onClose={close} title={d.skim ? "Skim ahead" : "Set current page"}>
-          {book ? <PageForm tracker={tracker} book={book} skim={d.skim} /> : <Gone />}
+      // Setting the page counts the difference as read, like any update; only
+      // skimming ahead moves the book without it.
+      return d.skim ? (
+        <Modal open onClose={close} title="Skim ahead">
+          {book ? <PageForm tracker={tracker} book={book} skim /> : <Gone />}
+        </Modal>
+      ) : (
+        <Modal open onClose={close} title="Update page">
+          {book ? <LogForm tracker={tracker} book={book} /> : <Gone />}
         </Modal>
       );
 
@@ -285,14 +291,20 @@ function Actions({ children }: { children: ReactNode }) {
 }
 
 /**
- * Logs a sitting, by the page reached or the pages read — whichever is to
- * hand. The other figure is shown as it is typed, so a slip is caught before
- * it is saved.
+ * Updates a book to the page you're on. The pages read are the difference
+ * from where it stood, shown as the page is typed so a slip is caught before
+ * it's saved; that difference is what's logged as today's reading.
+ *
+ * Two ways out of counting: pages skimmed can be marked as not read, and a
+ * page behind the current one is a correction, which moves the book back
+ * without logging anything. Entering pages read instead of a page is there
+ * for when that's the number to hand.
  */
 function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   const { close, replace, checkEnd } = useFlowFromContext();
   const [mode, setMode] = useState<"page" | "pages">("page");
   const [value, setValue] = useState("");
+  const [skimmed, setSkimmed] = useState(false);
   const [date, setDate] = useState(dateKey());
   const [minutes, setMinutes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -301,19 +313,33 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   const v = Number(value);
   const valid = value.trim() !== "" && Number.isFinite(v) && v >= 0;
   const cap = (n: number) => (book.pages > 0 ? Math.min(n, book.pages) : n);
+  const diff = valid && mode === "page" ? cap(v) - book.read : 0;
+  const counts = mode === "pages" || (diff > 0 && !skimmed);
+
   let derived = "";
   if (valid) {
-    if (mode === "page") {
-      const d = cap(v) - book.read;
-      derived = d >= 0 ? `${d} page${d === 1 ? "" : "s"} read` : `moves back ${-d} pages (a correction, not logged as reading)`;
-    } else {
-      derived = `to page ${cap(book.read + v)}`;
-    }
+    if (mode === "pages") derived = `Takes you to page ${cap(book.read + v)}`;
+    else if (diff > 0) derived = skimmed ? `Moves ahead ${diff} pages, not counted as read` : `${diff} page${diff === 1 ? "" : "s"} read`;
+    else if (diff < 0) derived = `Moves back ${-diff} pages — a correction, nothing is logged`;
+    else derived = `Already on page ${book.read}`;
   }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid || pending) return;
+
+    // Skimmed, or moved back: the book goes to the page, nothing is logged.
+    if (mode === "page" && !counts) {
+      if (diff === 0) {
+        setError(`Already on page ${book.read}.`);
+        return;
+      }
+      close();
+      const ok = await run(() => tracker.setCurrentPage(book.id, v));
+      if (ok) checkEnd(book.id);
+      return;
+    }
+
     const input: R.LogInput = {
       id: uid(),
       date,
@@ -337,58 +363,72 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Segmented
-        label="Log by"
-        value={mode}
-        onChange={(m) => {
-          setMode(m);
-          setError(null);
-        }}
-        options={[
-          { value: "page", label: "Current page" },
-          { value: "pages", label: "Pages read" },
-        ]}
-      />
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        aria-label={mode === "page" ? "Current page" : "Pages read"}
-        placeholder={mode === "page" ? `Page (now ${book.read})` : "Pages read"}
-        value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          setError(null);
-        }}
-        autoFocus
-        className="w-full"
-      />
-      <p className="min-h-4 text-xs text-[var(--muted)]">
-        {error ? <span style={{ color: "var(--danger)" }}>{error}</span> : derived}
-        {!error && book.pages > 0 && `${derived ? " · " : ""}${book.pages} pages in all`}
+      <Field label={mode === "page" ? "Page you're on" : "Pages read"}>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={mode === "page" && book.pages > 0 ? book.pages : undefined}
+          placeholder={mode === "page" ? `Now on ${book.read}${book.pages > 0 ? ` of ${book.pages}` : ""}` : "e.g. 25"}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(null);
+          }}
+          autoFocus
+          className="w-full rd-page-input"
+        />
+      </Field>
+      <p className={"rd-derived" + (valid && counts && (mode === "pages" || diff > 0) ? " is-counted" : "")}>
+        {error ? <span style={{ color: "var(--danger)" }}>{error}</span> : derived || "\u00a0"}
       </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Date">
-          <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value || dateKey())} />
-        </Field>
-        <Field label="Minutes (optional)">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={minutes}
-            onChange={(e) => setMinutes(e.target.value)}
-          />
-        </Field>
+
+      {mode === "page" && diff > 0 && (
+        <label className="rd-skim">
+          <input type="checkbox" checked={skimmed} onChange={(e) => setSkimmed(e.target.checked)} />
+          Skimmed — don&apos;t count these pages as read
+        </label>
+      )}
+
+      {counts && (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Date">
+            <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value || dateKey())} />
+          </Field>
+          <Field label="Minutes (optional)">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          className="text-action"
+          onClick={() => {
+            setMode(mode === "page" ? "pages" : "page");
+            setValue("");
+            setSkimmed(false);
+            setError(null);
+          }}
+        >
+          {mode === "page" ? "Enter pages read instead" : "Enter the page you're on"}
+        </button>
+        <span className="flex gap-2">
+          <Button variant="outline" onPress={close}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" isDisabled={pending || !valid}>
+            Save
+          </Button>
+        </span>
       </div>
-      <Actions>
-        <Button variant="outline" onPress={close}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || !valid}>
-          Log
-        </Button>
-      </Actions>
     </form>
   );
 }

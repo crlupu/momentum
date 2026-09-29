@@ -131,8 +131,9 @@ function TrackToday({
 }
 
 /**
- * An open book with its quick log. A plain number is the page reached; one
- * with a plus in front, "+25", is pages read. Either way one tap logs it.
+ * An open book with its quick update: type the page you're on and the pages
+ * since the last update are logged as read. A number with a plus in front,
+ * "+25", is taken as pages read instead.
  */
 function OpenBook({
   tracker,
@@ -160,6 +161,17 @@ function OpenBook({
     const m = v.match(/^\+\s*(\d+)$/);
     if (m) return { pages: Number(m[1]) };
     if (/^\d+$/.test(v)) return { toPage: Number(v) };
+    return null;
+  })();
+
+  // What the typed page comes to, before it's saved.
+  const preview = (() => {
+    if (!parsed) return null;
+    if (parsed.pages != null) return parsed.pages > 0 ? `${parsed.pages} pages read` : null;
+    const to = book.pages > 0 ? Math.min(parsed.toPage!, book.pages) : parsed.toPage!;
+    const d = to - book.read;
+    if (d > 0) return `${d} page${d === 1 ? "" : "s"} read`;
+    if (d < 0) return `Moves back ${-d} pages — a correction, nothing is logged`;
     return null;
   })();
 
@@ -212,8 +224,8 @@ function OpenBook({
           type="text"
           inputMode="numeric"
           enterKeyHint="done"
-          aria-label={`Log ${book.title}: page reached, or +pages read`}
-          placeholder={`Page (now ${book.read}) or +pages`}
+          aria-label={`${book.title}: the page you're on (or +pages read)`}
+          placeholder="Page you're on"
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -222,21 +234,23 @@ function OpenBook({
           className="min-w-0 flex-1"
         />
         <Button type="submit" variant="primary" isDisabled={pending || !parsed}>
-          Log
+          Update
         </Button>
         <Button
           variant="ghost"
           isIconOnly
-          aria-label="Log with details"
+          aria-label="Update with details"
           onPress={() => flow.open({ kind: "log", bookId: book.id })}
         >
           <Tune className="h-5 w-5" />
         </Button>
       </form>
-      {error && (
+      {error ? (
         <p className="mt-1 text-xs" style={{ color: "var(--danger)" }}>
           {error}
         </p>
+      ) : (
+        preview && <p className="rd-derived rd-derived--quick is-counted">{preview}</p>
       )}
       {idea && (
         <IdeaForm

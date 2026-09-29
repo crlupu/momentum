@@ -42,7 +42,8 @@ The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/b
   is logged with its date. Each track has an ordered queue (queued and paused books) that
   you reorder by dragging. When a book is finished, the next one in its queue is offered.
 - **Sessions** record the pages read on a day, with optional minutes and a key idea. You
-  can log by the page reached or by pages read. A book's `read` is `base` plus all of its
+  update a book by the page you're on (the difference is logged as read; pages marked as
+  skimmed, and moves back, aren't) or by pages read. A book's `read` is `base` plus all of its
   sessions, so editing or deleting a session recalculates it. `base` holds progress no
   session accounts for: reading from before sessions existed, corrections, skims.
 - **Phases** group books across tracks into blocks of the plan. A phase shows its

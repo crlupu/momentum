@@ -398,7 +398,7 @@ export function BookForm({
       {book && (
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onPress={() => flow.replace({ kind: "page", bookId: book.id })}>
-            Set current page…
+            Update current page…
           </Button>
           <Button
             size="sm"
