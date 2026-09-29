@@ -42,9 +42,9 @@ export function ProjectForm({
       onDone();
       await run(() => tracker.updateProject(project.id, fields));
     } else {
-      const id = await run(() => tracker.addProject(fields));
+      // Closes and opens the new board straight away; the save carries on.
       onDone();
-      if (typeof id === "string") onCreated?.(id);
+      onCreated?.(tracker.addProject(fields));
     }
   };
 

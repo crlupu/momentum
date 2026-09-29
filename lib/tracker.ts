@@ -1625,9 +1625,9 @@ export function useTracker() {
      * Turns a learning goal into a project: its name, note, link and
      * category carry over, and its steps become cards — finished ones in
      * Done, part-way counted ones in Doing, the rest in To do. The goal is
-     * then removed. Resolves to the new project's id.
+     * then removed. Returns the new project's id at once, like addProject.
      */
-    goalToProject: async (goalId: string): Promise<string | null> => {
+    goalToProject: (goalId: string): string | null => {
       const base = stateRef.current ?? state;
       const g = base?.goals.find((x) => x.id === goalId);
       if (!g) return null;
@@ -1656,7 +1656,7 @@ export function useTracker() {
           };
         }),
       };
-      const ok = await commit((s) => ({
+      void commit((s) => ({
         ...s,
         projects: [...s.projects, project],
         goals: s.goals.filter((x) => x.id !== goalId),
@@ -1664,17 +1664,20 @@ export function useTracker() {
           p.goalIds.includes(goalId) ? { ...p, goalIds: p.goalIds.filter((x) => x !== goalId) } : p
         ),
       }));
-      return ok ? id : null;
+      return id;
     },
 
     // ---- projects ----
 
-    /** Resolves to the new project's id, so the page can open its board. */
-    addProject: async (
-      fields: { title: string; note?: string; link?: string; catId?: string }
-    ): Promise<string | null> => {
+    /**
+     * Returns the new project's id at once, so the page can open its board
+     * without waiting on the save: the project is on screen before the
+     * write goes out, as with every change. A refused save takes it back
+     * out, and the board page then returns to the list.
+     */
+    addProject: (fields: { title: string; note?: string; link?: string; catId?: string }): string => {
       const id = uid();
-      const ok = await commit((s) => ({
+      void commit((s) => ({
         ...s,
         projects: [
           ...s.projects,
@@ -1689,7 +1692,7 @@ export function useTracker() {
           },
         ],
       }));
-      return ok ? id : null;
+      return id;
     },
 
     updateProject: (id: string, fields: { title?: string; note?: string; link?: string; catId?: string }) =>

@@ -173,13 +173,13 @@ export function GoalDetail({
 function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal: Goal; onClose: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { pending, run } = usePending();
   const steps = g.subtasks?.length ?? 0;
 
-  const move = async () => {
-    const id = await run(() => tracker.goalToProject(g.id));
+  // The new board opens straight away; the save carries on behind it.
+  const move = () => {
+    const id = tracker.goalToProject(g.id);
     setOpen(false);
-    if (typeof id === "string") {
+    if (id) {
       onClose();
       router.push(`/projects?p=${id}`);
     }
@@ -201,10 +201,10 @@ function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal:
           It leaves Learning.
         </p>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onPress={() => setOpen(false)} isDisabled={pending}>
+          <Button variant="outline" onPress={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant="primary" onPress={() => void move()} isDisabled={pending}>
+          <Button variant="primary" onPress={move}>
             Move
           </Button>
         </div>
