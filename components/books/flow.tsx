@@ -4,6 +4,7 @@ import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { Button } from "../ui";
 import { Modal } from "../Modal";
 import { usePending } from "../ActionButton";
+import { DialogActions } from "../DialogActions";
 import { Tracker, dateKey, uid, type Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { FlowContext, useFlow as useFlowFromContext, type Dialog, type Flow } from "./flowContext";
@@ -144,20 +145,16 @@ function DialogFor({
               </li>
             ))}
           </ul>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onPress={close}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onPress={() => {
+          <DialogActions
+            onCancel={close}
+            primary={{
+              label: "Start anyway",
+              onPress: () => {
                 close();
                 flow.startAnyway(d.bookId);
-              }}
-            >
-              Start anyway
-            </Button>
-          </div>
+              },
+            }}
+          />
         </Modal>
       );
     }
@@ -176,20 +173,17 @@ function DialogFor({
             You&apos;ve reached the end of <span className="font-semibold">{book?.title}</span>. Mark it
             finished?
           </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onPress={close}>
-              Not yet
-            </Button>
-            <Button
-              variant="primary"
-              onPress={() => {
+          <DialogActions
+            onCancel={close}
+            cancelLabel="Not yet"
+            primary={{
+              label: "Mark finished",
+              onPress: () => {
                 close();
                 if (book) void flow.finish(book.id);
-              }}
-            >
-              Mark finished
-            </Button>
-          </div>
+              },
+            }}
+          />
         </Modal>
       );
 
@@ -204,21 +198,18 @@ function DialogFor({
             Next in {track?.name ?? "this track"}:{" "}
             <span className="font-semibold">{book?.title ?? "—"}</span>. Start it now?
           </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onPress={close}>
-              Skip
-            </Button>
-            <Button
-              variant="primary"
-              isDisabled={!book}
-              onPress={() => {
+          <DialogActions
+            onCancel={close}
+            cancelLabel="Skip"
+            primary={{
+              label: "Start",
+              disabled: !book,
+              onPress: () => {
                 close();
                 if (book) flow.start(book.id);
-              }}
-            >
-              Start
-            </Button>
-          </div>
+              },
+            }}
+          />
         </Modal>
       );
     }
@@ -280,10 +271,6 @@ function DialogFor({
 /** Shown if a dialog outlives its book — deleted on another device, say. */
 function Gone() {
   return <p className="text-[15px] text-[var(--muted)]">This book is no longer on the shelf.</p>;
-}
-
-function Actions({ children }: { children: ReactNode }) {
-  return <div className="flex justify-end gap-2">{children}</div>;
 }
 
 /**
@@ -385,28 +372,19 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
         </Field>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <button
-          type="button"
-          className="text-action"
-          onClick={() => {
-            setMode(mode === "page" ? "pages" : "page");
-            setValue("");
-            setSkimmed(false);
-            setError(null);
-          }}
-        >
-          {mode === "page" ? "Enter pages read instead" : "Enter the page you're on"}
-        </button>
-        <span className="flex gap-2">
-          <Button variant="outline" onPress={close}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !valid}>
-            Save
-          </Button>
-        </span>
-      </div>
+      <button
+        type="button"
+        className="text-action self-start"
+        onClick={() => {
+          setMode(mode === "page" ? "pages" : "page");
+          setValue("");
+          setSkimmed(false);
+          setError(null);
+        }}
+      >
+        {mode === "page" ? "Enter pages read instead" : "Enter the page you're on"}
+      </button>
+      <DialogActions onCancel={close} primary={{ label: "Save", disabled: pending || !valid }} />
     </form>
   );
 }
@@ -429,7 +407,7 @@ function WipChoice({ tracker, book }: { tracker: Tracker; book: Book }) {
         {open.map((b) => (
           <Button
             key={b.id}
-            variant="primary"
+            variant="outline"
             isDisabled={pending}
             className="w-full justify-start"
             onPress={() => {
@@ -456,10 +434,8 @@ function WipChoice({ tracker, book }: { tracker: Tracker; book: Book }) {
         >
           Finish current first — put this next in line
         </Button>
-        <Button variant="ghost" className="w-full justify-start" onPress={close}>
-          Cancel
-        </Button>
       </div>
+      <DialogActions onCancel={close} />
     </div>
   );
 }
@@ -486,14 +462,7 @@ function DropForm({ tracker, book }: { tracker: Tracker; book: Book }) {
         autoFocus
         className="w-full"
       />
-      <Actions>
-        <Button variant="outline" onPress={close}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="danger" isDisabled={pending}>
-          Drop
-        </Button>
-      </Actions>
+      <DialogActions onCancel={close} primary={{ label: "Drop", disabled: pending, danger: true }} />
     </form>
   );
 }
@@ -538,14 +507,7 @@ function PageForm({ tracker, book, skim }: { tracker: Tracker; book: Book; skim?
         Now on page {book.read}
         {book.pages > 0 ? ` of ${book.pages}` : ""}.
       </p>
-      <Actions>
-        <Button variant="outline" onPress={close}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || !valid}>
-          Set
-        </Button>
-      </Actions>
+      <DialogActions onCancel={close} primary={{ label: "Set", disabled: pending || !valid }} />
     </form>
   );
 }

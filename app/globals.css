@@ -3451,3 +3451,34 @@ button.rd-link:active { background: var(--default); }
   color: var(--foreground);
   background: var(--default);
 }
+
+/* ============================================================
+   Pop-up footer (DialogActions): delete and extras on the left, Cancel and
+   the main action on the right, the same in every pop-up.
+   ============================================================ */
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.dialog-actions__side,
+.dialog-actions__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dialog-actions__main { margin-left: auto; }
+/* On a phone: Cancel and the main action share the bottom row, full width;
+   delete and extras sit on the row above. The same shape in every pop-up. */
+@media (max-width: 671px) {
+  .dialog-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dialog-actions__main { margin-left: 0; flex-wrap: nowrap; }
+  .dialog-actions__main > * { flex: 1 1 0; }
+}

@@ -2,9 +2,9 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "../ui";
-import { Archive, Trash2, Unarchive } from "../icons";
+import { Archive, Unarchive } from "../icons";
 import { Modal } from "../Modal";
-import { DeleteButton } from "../DeleteButton";
+import { DialogActions } from "../DialogActions";
 import { usePending } from "../ActionButton";
 import { Tracker, BOOK_COLORS, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -128,12 +128,19 @@ export function TrackForm({
         book open in one never blocks another.
       </p>
 
-      <div className="flex items-center justify-between gap-2">
-        {track ? (
-          <span className="flex flex-wrap gap-1">
+      {track && !track.archived && open > 0 && (
+        <p className="text-xs text-[var(--muted)]">
+          Archiving hides the track from Today and its counters. Its books stay where they are.
+        </p>
+      )}
+      <DialogActions
+        onCancel={onClose}
+        primary={{ label: track ? "Save" : "Add", disabled: pending || !name.trim() }}
+        del={track ? { onPress: () => setDeleting(true) } : undefined}
+        extra={
+          track && (
             <Button
               variant="ghost"
-              size="sm"
               isDisabled={pending}
               onPress={() => {
                 onClose();
@@ -150,27 +157,9 @@ export function TrackForm({
                 </>
               )}
             </Button>
-            <Button variant="ghost" size="sm" className="btn-delete-bare" onPress={() => setDeleting(true)}>
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
-          </span>
-        ) : (
-          <span />
-        )}
-        <span className="flex gap-2">
-          <Button variant="outline" onPress={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !name.trim()}>
-            {track ? "Save" : "Add"}
-          </Button>
-        </span>
-      </div>
-      {track && !track.archived && open > 0 && (
-        <p className="text-xs text-[var(--muted)]">
-          Archiving hides the track from Today and its counters. Its books stay where they are.
-        </p>
-      )}
+          )
+        }
+      />
 
       {track && (
         <Modal open={deleting} onClose={() => setDeleting(false)} title="Delete track">
@@ -204,14 +193,14 @@ export function TrackForm({
               </p>
             )}
             <p className="text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onPress={() => setDeleting(false)}>
-                Cancel
-              </Button>
-              <Button variant="danger" className="btn-danger-solid" onPress={remove}>
-                {books > 0 && then === "delete" ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track"}
-              </Button>
-            </div>
+            <DialogActions
+              onCancel={() => setDeleting(false)}
+              primary={{
+                label: books > 0 && then === "delete" ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track",
+                onPress: remove,
+                danger: true,
+              }}
+            />
           </div>
         </Modal>
       )}
@@ -266,29 +255,19 @@ export function PhaseForm({
         <textarea rows={2} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="What this phase is for" />
       </Field>
       <p className="text-xs text-[var(--muted)]">Books are put in a phase from their edit form, or when adding several.</p>
-      <div className="flex items-center justify-between gap-2">
-        {phase ? (
-          <DeleteButton
-            what={`"${phase.name}"`}
-            bare
-            iconOnly
-            onDelete={async () => {
+      <DialogActions
+        onCancel={onClose}
+        primary={{ label: phase ? "Save" : "Add", disabled: pending || !name.trim() }}
+        del={
+          phase && {
+            what: `"${phase.name}"`,
+            onDelete: async () => {
               onClose();
               return tracker.removePhase(phase.id);
-            }}
-          />
-        ) : (
-          <span />
-        )}
-        <span className="flex gap-2">
-          <Button variant="outline" onPress={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !name.trim()}>
-            {phase ? "Save" : "Add"}
-          </Button>
-        </span>
-      </div>
+            },
+          }
+        }
+      />
     </form>
   );
 }
@@ -365,14 +344,13 @@ export function BulkAddForm({
         They join the end of the track&apos;s queue, in this order. A page count in brackets after a line
         is picked up; covers and missing authors are looked up afterwards.
       </p>
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onPress={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || !list.length || !track}>
-          Add {list.length || ""} book{list.length === 1 ? "" : "s"}
-        </Button>
-      </div>
+      <DialogActions
+        onCancel={onClose}
+        primary={{
+          label: `Add ${list.length || ""} book${list.length === 1 ? "" : "s"}`.replace("  ", " "),
+          disabled: pending || !list.length || !track,
+        }}
+      />
     </form>
   );
 }
@@ -466,14 +444,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
         </div>
       )}
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onPress={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || empty}>
-          Import
-        </Button>
-      </div>
+      <DialogActions onCancel={onClose} primary={{ label: "Import", disabled: pending || empty }} />
     </form>
   );
 }

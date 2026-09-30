@@ -2,9 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DialogActions } from "./DialogActions";
 import { Button, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
-import { DeleteButton } from "./DeleteButton";
 import { CatPicker } from "./Forms";
 import { Modal } from "./Modal";
 import { ProgressRing } from "./ProgressRing";
@@ -71,16 +71,25 @@ export function GoalDetail({
         <Details tracker={tracker} goal={g} />
       </AfterFirstFrame>
 
-      <div className="goal-detail__actions">
-        <ActionButton
-          variant="primary"
-          onAction={async () => {
-            const r = await tracker.toggleGoalDone(g.id);
-            if (!g.done) onClose();
-            return r;
-          }}
-        >
-          {g.done ? (
+      <DialogActions
+        del={{
+          what: `the goal "${g.title}"`,
+          onDelete: async () => {
+            onClose();
+            return tracker.deleteGoal(g.id);
+          },
+        }}
+        extra={
+          <>
+            <ActionButton variant="ghost" onAction={() => tracker.toggleGoalPin(g.id)}>
+              {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              {g.pinned ? "Unpin" : "Pin"}
+            </ActionButton>
+            <MoveToProjects tracker={tracker} goal={g} onClose={onClose} />
+          </>
+        }
+        primary={{
+          label: g.done ? (
             <>
               <RotateCcw className="h-4 w-4" /> Reopen
             </>
@@ -88,26 +97,13 @@ export function GoalDetail({
             <>
               <Check className="h-4 w-4" /> Mark as done
             </>
-          )}
-        </ActionButton>
-        <ActionButton variant="ghost" onAction={() => tracker.toggleGoalPin(g.id)}>
-          {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-          {g.pinned ? "Unpin" : "Pin to top"}
-        </ActionButton>
-        <MoveToProjects tracker={tracker} goal={g} onClose={onClose} />
-        <span className="ml-auto">
-          <DeleteButton
-            what={`the goal "${g.title}"`}
-            label="Delete"
-            size="md"
-            bare
-            onDelete={async () => {
-              onClose();
-              return tracker.deleteGoal(g.id);
-            }}
-          />
-        </span>
-      </div>
+          ),
+          onPress: () => {
+            void tracker.toggleGoalDone(g.id);
+            if (!g.done) onClose();
+          },
+        }}
+      />
     </div>
   );
 }
@@ -144,14 +140,7 @@ function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal:
           It gets an empty board to add cards to, keeping its description and link, and
           leaves Learning.
         </p>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onPress={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onPress={move}>
-            Move
-          </Button>
-        </div>
+        <DialogActions onCancel={() => setOpen(false)} primary={{ label: "Move", onPress: move }} />
       </Modal>
     </>
   );

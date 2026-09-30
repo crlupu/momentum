@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
 import { Button } from "./ui";
+import { DialogActions } from "./DialogActions";
 import { CatPicker } from "./Forms";
 import { Upload } from "./icons";
 import { FormatHelp } from "./FormatHelp";
@@ -148,14 +149,10 @@ export function GoalImportForm({
         </div>
       )}
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onPress={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={!goals}>
-          Import{goals ? ` ${goals} goal${goals === 1 ? "" : "s"}` : ""}
-        </Button>
-      </div>
+      <DialogActions
+        onCancel={onClose}
+        primary={{ label: `Import${goals ? ` ${goals} goal${goals === 1 ? "" : "s"}` : ""}`, disabled: !goals }}
+      />
     </form>
   );
 }

@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Button, Input, AddButton } from "./ui";
 import { Pencil, Check, X, Palette } from "./icons";
 import { DeleteButton } from "./DeleteButton";
+import { RowActions } from "./RowActions";
+import { DialogActions } from "./DialogActions";
 import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { Modal } from "./Modal";
 import { ActionButton, usePending } from "./ActionButton";
@@ -157,9 +159,7 @@ export function GoalForm({
           <Input type="number" step="any" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
         </div>
       </div>
-      <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
-        Add goal
-      </Button>
+      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: pending }} />
     </form>
   );
 }
@@ -202,9 +202,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
       </div>
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
-      <Button type="submit" variant="primary" className="mt-1" isDisabled={pending}>
-        Add recurring task
-      </Button>
+      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: pending }} />
     </form>
   );
 }
@@ -254,23 +252,17 @@ export function RecurringEditForm({
       </div>
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
-      <div className="mt-1 flex items-center gap-2">
-        <Button
-          type="submit"
-          variant="primary"
-          className="flex-1"
-          isDisabled={pending}
-        >
-          Save changes
-        </Button>
-        <DeleteButton
-          what={`the recurring task "${task.title}"`}
-          onDelete={async () => {
+      <DialogActions
+        onCancel={onDone}
+        primary={{ label: "Save", disabled: pending }}
+        del={{
+          what: `the recurring task "${task.title}"`,
+          onDelete: async () => {
             onDone();
             return tracker.deleteRecurring(task.id);
-          }}
-        />
-      </div>
+          },
+        }}
+      />
     </form>
   );
 }
@@ -357,29 +349,20 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
               <span className="cfg-label">{c.name}</span>
               {editing && (
                 <span className="cfg-actions">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    isIconOnly
-                    aria-label={`Edit ${c.name}`}
-                    onPress={() => {
+                  <RowActions
+                    name={c.name}
+                    onEdit={() => {
                       setEditId(c.id);
                       setEditName(c.name);
                       setEditColor(c.color);
                     }}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <DeleteButton
-                    what={`the category "${c.name}"`}
-                    iconOnly
-                    onDelete={async () => {
+                    del={{ what: `the category "${c.name}"`, onDelete: async () => {
                       if (tracker.categoryInUse(c.id)) {
                         alert("This category is in use. Remove or reassign its items first.");
                         return false;
                       }
                       return tracker.deleteCategory(c.id);
-                    }}
+                    } }}
                   />
                 </span>
               )}
@@ -502,20 +485,11 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
                 </span>
                 {editing && (
                   <span className="cfg-actions">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      isIconOnly
-                      aria-label={`Edit ${r.title}`}
-                      onPress={() => setEditTask(r)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <DeleteButton
-                      what={`the recurring task "${r.title}"`}
-                      iconOnly
-                      onDelete={() => tracker.deleteRecurring(r.id)}
-                    />
+                    <RowActions
+                    name={r.title}
+                    onEdit={() => setEditTask(r)}
+                    del={{ what: `the recurring task "${r.title}"`, onDelete: () => tracker.deleteRecurring(r.id) }}
+                  />
                   </span>
                 )}
               </li>
@@ -698,24 +672,15 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
                 <span className="cfg-label">{m.name}</span>
                 {editing && (
                   <span className="cfg-actions">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      isIconOnly
-                      aria-label={`Edit ${m.name}`}
-                      onPress={() => {
+                    <RowActions
+                    name={m.name}
+                    onEdit={() => {
                         setEditId(m.id);
                         setEditName(m.name);
                         setEditColor(m.color);
                       }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <DeleteButton
-                      what={`the meal tag "${m.name}"`}
-                      iconOnly
-                      onDelete={() => tracker.removeMealTag(m.id)}
-                    />
+                    del={{ what: `the meal tag "${m.name}"`, onDelete: () => tracker.removeMealTag(m.id) }}
+                  />
                   </span>
                 )}
               </li>

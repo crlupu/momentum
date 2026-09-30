@@ -5,10 +5,12 @@ import { Button } from "./ui";
 import { Trash2 } from "./icons";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
+import { DialogActions } from "./DialogActions";
 
 /**
- * A full delete button (icon + text, danger colour) that always asks for
- * confirmation before running the deletion.
+ * The one delete button: a red bin (and label, unless icon-only) on a soft
+ * red ground, the same everywhere. Always asks before deleting. In a pop-up
+ * it belongs in DialogActions; on a list row it is icon-only.
  */
 export function DeleteButton({
   what,
@@ -29,10 +31,7 @@ export function DeleteButton({
   fullWidth?: boolean;
   /** Render just the trash icon (still confirms before deleting). */
   iconOnly?: boolean;
-  /**
-   * Drop the filled background and colour the icon itself instead. For lists
-   * where a solid danger button on every row would shout louder than the rows.
-   */
+  /** @deprecated Every delete is the soft red one now; kept so callers compile. */
   bare?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -52,10 +51,10 @@ export function DeleteButton({
     <>
       <Button
         size={size}
-        variant={bare ? "ghost" : "danger"}
+        variant="ghost"
         isIconOnly={iconOnly}
         aria-label={iconOnly ? `Delete ${what}` : undefined}
-        className={[fullWidth ? "w-full" : "", bare ? "btn-delete-bare" : "", className]
+        className={[fullWidth ? "w-full" : "", "btn-delete-bare", className]
           .filter(Boolean)
           .join(" ")}
         onPress={() => setOpen(true)}
@@ -69,20 +68,10 @@ export function DeleteButton({
           Delete <span className="font-semibold">{what}</span>?
         </p>
         <p className="mb-4 text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onPress={() => setOpen(false)} isDisabled={pending}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            className="btn-danger-solid"
-            onPress={() => void confirm()}
-            isDisabled={pending}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
+        <DialogActions
+          onCancel={() => setOpen(false)}
+          primary={{ label: "Delete", onPress: () => void confirm(), disabled: pending, danger: true }}
+        />
       </Modal>
     </>
   );

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "../ui";
 import { ImageOff, X } from "../icons";
-import { DeleteButton } from "../DeleteButton";
+import { DialogActions } from "../DialogActions";
 import { usePending } from "../ActionButton";
 import { Tracker, Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -406,32 +406,22 @@ export function BookForm({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2">
-        {book ? (
-          <DeleteButton
-            what={`"${book.title}"`}
-            bare
-            iconOnly
-            onDelete={async () => {
+      <DialogActions
+        onCancel={onClose}
+        primary={{ label: book ? "Save" : "Add", disabled: pending || !title.trim() }}
+        del={
+          book && {
+            what: `"${book.title}"`,
+            onDelete: async () => {
               // Out of every dialog: the book's own page would be left
               // showing a book that is gone.
               onClose();
               flow.close();
               return tracker.removeBook(book.id);
-            }}
-          />
-        ) : (
-          <span />
-        )}
-        <span className="flex gap-2">
-          <Button variant="outline" onPress={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>
-            {book ? "Save" : "Add"}
-          </Button>
-        </span>
-      </div>
+            },
+          }
+        }
+      />
     </form>
   );
 }

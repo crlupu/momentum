@@ -14,6 +14,7 @@ import {
 import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
+import { DialogActions } from "./DialogActions";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
 
@@ -223,18 +224,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
             autoFocus
           />
           <p className="text-xs text-[var(--muted)]">Logged against today.</p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onPress={close}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isDisabled={pending || mins.trim() === ""}
-            >
-              Add
-            </Button>
-          </div>
+          <DialogActions onCancel={close} primary={{ label: "Add", disabled: pending || mins.trim() === "" }} />
         </form>
       </Modal>
     </>

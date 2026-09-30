@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { usePending } from "./ActionButton";
-import { DeleteButton } from "./DeleteButton";
+import { DialogActions } from "./DialogActions";
 import { Segmented } from "./books/bits";
 import { TagPicker } from "./TagPicker";
 import { Tracker } from "@/lib/tracker";
@@ -66,11 +66,7 @@ export function NewCardForm({
         <TagPicker tracker={tracker} project={project} selected={tagIds} onChange={setTagIds} />
       </div>
 
-      <div>
-        <Button type="submit" variant="primary" isDisabled={!title.trim()}>
-          Add card
-        </Button>
-      </div>
+      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: !title.trim() }} />
     </form>
   );
 }
@@ -157,21 +153,17 @@ export function CardSheet({
         </span>
       </label>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" onPress={() => void save()} isDisabled={pending || !dirty || !title.trim()}>
-          Save card
-        </Button>
-        <DeleteButton
-          what={`the card "${c.title}"`}
-          label="Delete card"
-          size="md"
-          bare
-          onDelete={async () => {
+      <DialogActions
+        onCancel={onClose}
+        primary={{ label: "Save", onPress: () => void save(), disabled: pending || !dirty || !title.trim() }}
+        del={{
+          what: `the card "${c.title}"`,
+          onDelete: async () => {
             onClose();
             return tracker.deleteCard(project.id, c.id);
-          }}
-        />
-      </div>
+          },
+        }}
+      />
     </div>
   );
 }

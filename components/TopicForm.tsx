@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { DeleteButton } from "./DeleteButton";
+import { DialogActions } from "./DialogActions";
 import { CatPicker } from "./Forms";
 import { usePending } from "./ActionButton";
 import { Path, Tracker } from "@/lib/tracker";
@@ -51,23 +51,19 @@ export function TopicForm({
         onChange={(e) => setNote(e.target.value)}
       />
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>
-          {topic ? "Save topic" : "Add topic"}
-        </Button>
-        {topic && (
-          <DeleteButton
-            what={`the topic "${topic.title}" (its goals stay)`}
-            label="Delete topic"
-            size="md"
-            bare
-            onDelete={async () => {
+      <DialogActions
+        onCancel={onDone}
+        primary={{ label: topic ? "Save" : "Add", disabled: pending || !title.trim() }}
+        del={
+          topic && {
+            what: `the topic "${topic.title}" (its goals stay)`,
+            onDelete: async () => {
               onDone();
               return tracker.removePath(topic.id);
-            }}
-          />
-        )}
-      </div>
+            },
+          }
+        }
+      />
     </form>
   );
 }

@@ -3,9 +3,9 @@
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
-import { DeleteButton } from "./DeleteButton";
+import { DialogActions } from "./DialogActions";
 import { TagManager } from "./TagPicker";
-import { ExternalLink, RotateCcw } from "./icons";
+import { CheckCircle2, ExternalLink, RotateCcw } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import type { Project } from "@/lib/projects";
 
@@ -99,14 +99,23 @@ export function ProjectForm({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>
-          {project ? "Save project" : "Add project"}
-        </Button>
-        {project && (
-          <>
+      <DialogActions
+        onCancel={onDone}
+        primary={{ label: project ? "Save" : "Add", disabled: pending || !title.trim() }}
+        del={
+          project && {
+            what: `the project "${project.title}" and its cards`,
+            onDelete: async () => {
+              onDone();
+              onDeleted?.();
+              return tracker.deleteProject(project.id);
+            },
+          }
+        }
+        extra={
+          project && (
             <ActionButton
-              variant="outline"
+              variant="ghost"
               onAction={async () => {
                 onDone();
                 return tracker.setProjectDone(project.id, !project.done);
@@ -117,23 +126,14 @@ export function ProjectForm({
                   <RotateCcw className="h-4 w-4" aria-hidden /> Reopen
                 </>
               ) : (
-                "Mark as finished"
+                <>
+                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Finish
+                </>
               )}
             </ActionButton>
-            <DeleteButton
-              what={`the project "${project.title}" and its cards`}
-              label="Delete project"
-              size="md"
-              bare
-              onDelete={async () => {
-                onDone();
-                onDeleted?.();
-                return tracker.deleteProject(project.id);
-              }}
-            />
-          </>
-        )}
-      </div>
+          )
+        }
+      />
     </form>
   );
 }

@@ -13,6 +13,7 @@ import {
   Copy } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
+import { RowActions } from "./RowActions";
 import { useConfigEditing } from "./ConfigCard";
 import { CircuitPlayer } from "./CircuitPlayer";
 import {
@@ -337,20 +338,11 @@ function ExerciseRow({
         >
           <ArrowDown className="h-3.5 w-3.5" />
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label={`Edit ${exercise.name}`}
-          onPress={() => setEditing(true)}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <DeleteButton
-          what={`the exercise "${exercise.name}"`}
-          iconOnly
-          onDelete={() => tracker.removeExercise(workout.id, exercise.id)}
-        />
+        <RowActions
+                    name={exercise.name}
+                    onEdit={() => setEditing(true)}
+                    del={{ what: `the exercise "${exercise.name}"`, onDelete: () => tracker.removeExercise(workout.id, exercise.id) }}
+                  />
       </span>
     </div>
   );
@@ -987,23 +979,14 @@ function WorkoutRow({
             <span className="cfg-actions">
               {/* The pencil renames. Opening the workout is the row itself,
                   which the chevron already says. */}
-              <Button
-                size="sm"
-                variant="outline"
-                isIconOnly
-                aria-label={`Rename ${workout.name}`}
-                onPress={() => {
+              <RowActions
+                    name={workout.name} editLabel="Rename"
+                    onEdit={() => {
                   setTitle(workout.name);
                   setRenaming(true);
                 }}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <DeleteButton
-                what={`the workout "${workout.name}"`}
-                iconOnly
-                onDelete={() => tracker.removeWorkout(workout.id)}
-              />
+                    del={{ what: `the workout "${workout.name}"`, onDelete: () => tracker.removeWorkout(workout.id) }}
+                  />
             </span>
           </>
         ) : (
