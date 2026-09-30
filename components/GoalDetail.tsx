@@ -455,7 +455,7 @@ function AfterFirstFrame({ children }: { children: React.ReactNode }) {
   return ready ? <>{children}</> : <div className="goal-section goal-section--pending" aria-hidden />;
 }
 
-/** Name, topic, category, count, link and note. */
+/** Name, description, topic, category, count and link. */
 function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   const s = tracker.state!;
   const topic = goalTopic(g.id, s.paths);
@@ -494,6 +494,17 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
         <label className="goal-field">
           <span>Name</span>
           <Input aria-label="Goal name" value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+
+        <label className="goal-field">
+          <span>Description</span>
+          <textarea
+            aria-label="Description"
+            rows={4}
+            placeholder="Details: what it covers, why, where you left off…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
         </label>
 
         <label className="goal-field">
@@ -546,16 +557,6 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           </span>
         </label>
 
-        <label className="goal-field">
-          <span>Note</span>
-          <textarea
-            aria-label="Note"
-            rows={2}
-            placeholder="Anything worth remembering about it"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </label>
 
         {dirty && (
           <div>

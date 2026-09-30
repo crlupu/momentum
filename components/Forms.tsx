@@ -97,6 +97,7 @@ export function GoalForm({
   const [topic, setTopic] = useState(pathId ?? "");
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
+  const [note, setNote] = useState("");
   const { pending, run } = usePending();
 
   const submit = async (e: FormEvent) => {
@@ -114,7 +115,8 @@ export function GoalForm({
         catId || s.categories[0]?.id,
         current === "" ? null : Number(current),
         target === "" ? null : Number(target),
-        topic || null
+        topic || null,
+        note
       )
     );
   };
@@ -122,6 +124,17 @@ export function GoalForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <Input aria-label="Goal name" placeholder="e.g. Kubernetes course" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      <label className="text-xs text-[var(--muted)]">
+        Description
+        <textarea
+          aria-label="Description"
+          rows={3}
+          placeholder="Details: what it covers, why, where you left off… (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="mt-1 w-full text-base text-foreground"
+        />
+      </label>
       {s.paths.length > 0 && (
         <label className="text-xs text-[var(--muted)]">
           Topic

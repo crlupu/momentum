@@ -3132,6 +3132,7 @@ button.rd-link:active { background: var(--default); }
 .goal-section--pending { min-block-size: 24rem; }
 .goal-field { display: flex; flex-direction: column; gap: 0.375rem; font-size: 0.8125rem; color: var(--muted); }
 .goal-field select, .goal-field textarea { inline-size: 100%; color: var(--foreground); font-size: 1rem; }
+.goal-field textarea { line-height: 1.45; }
 .goal-link {
   display: inline-flex;
   flex: none;

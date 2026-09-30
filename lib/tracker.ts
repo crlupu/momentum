@@ -88,7 +88,7 @@ export type Goal = {
   pinned?: boolean;
   /** Where it lives, e.g. the course page. */
   link?: string;
-  /** Anything worth remembering about it, in a line or two. */
+  /** Its description: details, in as many lines as it takes. */
   note?: string;
 };
 
@@ -1367,7 +1367,8 @@ export function useTracker() {
       catId: string,
       current: number | null,
       target: number | null,
-      pathId?: string | null
+      pathId?: string | null,
+      note?: string
     ) =>
       commit((s) => {
         const id = uid();
@@ -1383,6 +1384,7 @@ export function useTracker() {
               target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
               done: false,
               doneDate: null,
+              note: note?.trim() || undefined,
             },
           ],
           paths: pathId
