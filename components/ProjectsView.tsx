@@ -9,8 +9,7 @@ import { ProjectBoard } from "./ProjectBoard";
 import { Segmented } from "./books/bits";
 import { ChevronLeft, ChevronRight, ExternalLink, Kanban } from "./icons";
 import { Tracker } from "@/lib/tracker";
-import { fmtDateAuto } from "@/lib/dates";
-import { columnCards, projectProgress, type Project } from "@/lib/projects";
+import { columnCards, projectFinished, projectProgress, type Project } from "@/lib/projects";
 
 type View = "active" | "done";
 
@@ -23,8 +22,8 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
   const [view, setView] = useState<View>("active");
   const [adding, setAdding] = useState(false);
 
-  const active = s.projects.filter((p) => !p.done);
-  const finished = s.projects.filter((p) => p.done);
+  const active = s.projects.filter((p) => !projectFinished(p));
+  const finished = s.projects.filter((p) => projectFinished(p));
   const shown = view === "done" ? finished : active;
 
   return (
@@ -100,8 +99,8 @@ function ProjectTile({
         <span className="project-tile__pct font-mono-n">{pct}%</span>
       </span>
       <span className="project-tile__meta">
-        {p.done
-          ? `Finished${p.doneDate ? ` ${fmtDateAuto(p.doneDate)}` : ""}`
+        {projectFinished(p)
+          ? "Finished"
           : total === 0
             ? "No cards yet"
             : `${todo} to do · ${doing} doing · ${done} done`}
@@ -121,7 +120,7 @@ export function ProjectPage({ tracker, project: p }: { tracker: Tracker; project
       <div className="project-page__bar">
         <span className="project-page__figure">
           <span className="font-mono-n">{pct}%</span> · {done} of {total} done
-          {p.done && " · Finished"}
+          {projectFinished(p) && " · Finished"}
         </span>
         <span className="project-page__actions">
           {href && (

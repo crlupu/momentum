@@ -3527,23 +3527,3 @@ button.rd-link:active { background: var(--default); }
 .panel > .card > .rd-sub:first-child,
 .panel > .card > .rd-track__bar:first-child { margin-top: 0; }
 .panel > .card > .rd-track__bar:first-child { margin-bottom: 0.5rem; }
-
-/* A set of buttons that belong together, laid out like the pop-up footer
-   on a phone: two to a row, an odd one out across the whole row. */
-.button-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-@media (max-width: 671px) {
-  .button-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  .button-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
-  .button-grid > * {
-    justify-content: center;
-    inline-size: 100%;
-    max-inline-size: none;
-  }
-}

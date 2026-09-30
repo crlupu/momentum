@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "../ui";
-import { ImageOff, X } from "../icons";
+import { X } from "../icons";
 import { DialogActions } from "../DialogActions";
 import { usePending } from "../ActionButton";
 import { Tracker, Book } from "@/lib/tracker";
@@ -190,6 +190,35 @@ export function BookForm({
     track !== book.trackId &&
     (!track || R.wipBlockers(s, book.id, track).length > 0);
 
+  // Where a book stands, changed from here rather than by buttons on its
+  // page: pausing and dropping are rare, and finishing happens by reaching
+  // the last page. Only the moves that make sense from where it is.
+  const statusOptions: { value: R.BookStatus; label: string }[] = !book
+    ? []
+    : book.status === "active"
+      ? [
+          { value: "active", label: "Reading" },
+          { value: "paused", label: "Paused" },
+          { value: "dropped", label: "Dropped" },
+        ]
+      : book.status === "queued"
+        ? [
+            { value: "queued", label: "Up next" },
+            { value: "dropped", label: "Dropped" },
+          ]
+        : book.status === "paused"
+          ? [
+              { value: "paused", label: "Paused" },
+              { value: "dropped", label: "Dropped" },
+            ]
+          : book.status === "dropped"
+            ? [
+                { value: "dropped", label: "Dropped" },
+                { value: "queued", label: "Back in the queue" },
+              ]
+            : [];
+  const [status, setStatus] = useState<R.BookStatus | undefined>(book?.status);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
@@ -210,7 +239,12 @@ export function BookForm({
       ...(book ? {} : { coverId: pickedCover }),
     };
     onClose();
-    await run(() => (book ? tracker.updateBook(book.id, input) : tracker.addBook(input)));
+    const ok = await run(() => (book ? tracker.updateBook(book.id, input) : tracker.addBook(input)));
+    if (ok !== false && book && status && status !== book.status) {
+      await run(() =>
+        tracker.setBookStatus(book.id, status, { place: status === "paused" ? "top" : "end" })
+      );
+    }
   };
 
   const others = shelf
@@ -372,6 +406,18 @@ export function BookForm({
         </div>
       </Field>
 
+      {statusOptions.length > 1 && (
+        <Field label="Status">
+          <select value={status} onChange={(e) => setStatus(e.target.value as R.BookStatus)}>
+            {statusOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+
       <Field label="Cover image address (optional)" hint="Leave empty to use a cover found online, or a plain one">
         <input
           type="url"
@@ -381,30 +427,6 @@ export function BookForm({
           placeholder="https://…"
         />
       </Field>
-
-      {book && (
-        <div className="button-grid">
-          <Button size="sm" variant="outline" onPress={() => flow.replace({ kind: "page", bookId: book.id })}>
-            Update page
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => void tracker.setBookCover(book.id, undefined)}
-          >
-            Find cover
-          </Button>
-          {book.coverId && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onPress={() => void tracker.setBookCover(book.id, null)}
-            >
-              <ImageOff className="h-3.5 w-3.5" /> Use plain cover
-            </Button>
-          )}
-        </div>
-      )}
 
       <DialogActions
         primary={{ label: book ? "Save" : "Add", disabled: pending || !title.trim() }}

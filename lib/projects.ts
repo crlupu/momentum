@@ -54,7 +54,7 @@ export type Project = {
   catId?: string;
   /** The tags its cards can carry. */
   tags: ProjectTag[];
-  /** Finished projects move out of the way, to their own view. */
+  /** Set by the first version's Finish button; unused now (see projectFinished). */
   done?: boolean;
   doneDate?: string | null;
   createdAt: number;
@@ -70,6 +70,15 @@ export function nextTagColor(p: Project, palette: readonly string[]): string {
 export function cardTags(p: Project, c: ProjectCard): ProjectTag[] {
   const ids = new Set(c.tagIds ?? []);
   return p.tags.filter((t) => ids.has(t.id));
+}
+
+/**
+ * Finished when every card is in Done. There is no separate "finish"
+ * switch: moving the last card across is finishing it, and a new card
+ * reopens it.
+ */
+export function projectFinished(p: Project): boolean {
+  return p.cards.length > 0 && p.cards.every((c) => c.status === "done");
 }
 
 /** The cards of one column, in order. */

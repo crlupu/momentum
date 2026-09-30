@@ -2,10 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Input } from "./ui";
-import { ActionButton, usePending } from "./ActionButton";
+import { usePending } from "./ActionButton";
 import { DialogActions } from "./DialogActions";
 import { TagManager } from "./TagPicker";
-import { CheckCircle2, ExternalLink, RotateCcw } from "./icons";
+import { ExternalLink } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import type { Project } from "@/lib/projects";
 
@@ -110,27 +110,6 @@ export function ProjectForm({
               return tracker.deleteProject(project.id);
             },
           }
-        }
-        extra={
-          project && (
-            <ActionButton
-              variant="ghost"
-              onAction={async () => {
-                onDone();
-                return tracker.setProjectDone(project.id, !project.done);
-              }}
-            >
-              {project.done ? (
-                <>
-                  <RotateCcw className="h-4 w-4" aria-hidden /> Reopen
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" aria-hidden /> Finish
-                </>
-              )}
-            </ActionButton>
-          )
         }
       />
     </form>

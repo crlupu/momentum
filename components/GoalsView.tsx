@@ -10,7 +10,7 @@ import { TopicForm } from "./TopicForm";
 import { GoalImportForm } from "./GoalImport";
 import { ProgressRing } from "./ProgressRing";
 import { Segmented } from "./books/bits";
-import { ChevronRight, Pin, Target, Upload } from "./icons";
+import { ChevronRight, Target, Upload } from "./icons";
 import { fmtDateAuto } from "@/lib/dates";
 import {
   Tracker,
@@ -25,9 +25,7 @@ import {
 type View = "active" | "done";
 
 /** Pinned goals first; otherwise the order they were given. */
-function pinnedFirst(list: Goal[]): Goal[] {
-  return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-}
+
 
 /**
  * Learning: courses and subjects, each a goal with an optional count, grouped
@@ -53,9 +51,9 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
   const sections = s.paths.map((topic) => {
     const all = pathGoals(topic, s.goals).filter((g) => !seen.has(g.id));
     all.forEach((g) => seen.add(g.id));
-    return { topic, all, shown: pinnedFirst(all.filter(inView)) };
+    return { topic, all, shown: all.filter(inView) };
   });
-  const loose = pinnedFirst(s.goals.filter((g) => !seen.has(g.id) && inView(g)));
+  const loose = s.goals.filter((g) => !seen.has(g.id) && inView(g));
 
   const activeCount = s.goals.filter((g) => !g.done).length;
   const doneCount = s.goals.length - activeCount;
@@ -274,7 +272,6 @@ function GoalRow({
         </span>
         <span className="goal-row__text">
           <span className={"goal-row__title" + (g.done ? " is-done" : "")}>
-            {g.pinned && <Pin className="goal-row__pin" aria-label="Pinned" />}
             {g.title}
           </span>
           <span className="goal-row__meta">

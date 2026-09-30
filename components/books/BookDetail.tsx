@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "../ui";
-import { Check, Pause, Pencil, Play } from "../icons";
+import { Pencil, Play } from "../icons";
 import { Tracker, Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -71,63 +71,41 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {book.status === "active" && (
-          <>
-            <Button
-              size="sm"
-              variant="primary"
-              onPress={() => flow.open({ kind: "log", bookId: book.id })}
-            >
+      {/* Two actions, laid out like a pop-up's footer: Edit, and the one
+          thing to do next with the book where it stands. Pausing and
+          dropping are in Edit, as its status; finishing is reaching the
+          last page. */}
+      <div className="dialog-actions">
+        <div className="dialog-actions__side">
+          <Button variant="outline" onPress={() => flow.open({ kind: "edit", bookId: book.id })}>
+            <Pencil className="h-4 w-4" /> Edit
+          </Button>
+        </div>
+        <div className="dialog-actions__main">
+          {book.status === "active" && (
+            <Button variant="primary" onPress={() => flow.open({ kind: "log", bookId: book.id })}>
               Update page
             </Button>
-            <Button size="sm" variant="outline" onPress={() => void flow.finish(book.id)}>
-              <Check className="h-3.5 w-3.5" /> Finish
+          )}
+          {(book.status === "queued" || book.status === "paused") && (
+            <Button variant="primary" onPress={() => flow.start(book.id)}>
+              <Play className="h-4 w-4" /> {book.status === "paused" ? "Resume" : "Start"}
             </Button>
+          )}
+          {book.status === "finished" && (
+            <Button variant="primary" onPress={() => flow.start(book.id)}>
+              Reopen
+            </Button>
+          )}
+          {book.status === "dropped" && (
             <Button
-              size="sm"
-              variant="outline"
-              onPress={() => void tracker.setBookStatus(book.id, "paused", { place: "top" })}
+              variant="primary"
+              onPress={() => void tracker.setBookStatus(book.id, "queued", { place: "end" })}
             >
-              <Pause className="h-3.5 w-3.5" /> Pause
+              Back in the queue
             </Button>
-          </>
-        )}
-        {(book.status === "queued" || book.status === "paused") && (
-          <Button size="sm" variant="primary" onPress={() => flow.start(book.id)}>
-            <Play className="h-3.5 w-3.5" /> {book.status === "paused" ? "Resume" : "Start"}
-          </Button>
-        )}
-        {book.status === "finished" && (
-          <Button size="sm" variant="outline" onPress={() => flow.start(book.id)}>
-            Reopen
-          </Button>
-        )}
-        {book.status === "dropped" && (
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => void tracker.setBookStatus(book.id, "queued", { place: "end" })}
-          >
-            Back to the queue
-          </Button>
-        )}
-        {book.status !== "finished" && book.status !== "dropped" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onPress={() => flow.open({ kind: "drop", bookId: book.id })}
-          >
-            Drop
-          </Button>
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          onPress={() => flow.open({ kind: "edit", bookId: book.id })}
-        >
-          <Pencil className="h-3.5 w-3.5" /> Edit
-        </Button>
+          )}
+        </div>
       </div>
 
       {(book.statusLog ?? []).length > 0 && (

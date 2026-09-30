@@ -1,14 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { DialogActions } from "./DialogActions";
 import { Button, Input } from "./ui";
-import { ActionButton, usePending } from "./ActionButton";
+import { usePending } from "./ActionButton";
 import { CatPicker } from "./Forms";
-import { Modal } from "./Modal";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Kanban, Minus, Pin, PinOff, Plus, RotateCcw } from "./icons";
+import { Check, ExternalLink, Minus, Plus, RotateCcw } from "./icons";
 import { Goal, Tracker, goalPct, goalTopic } from "@/lib/tracker";
 
 /** A number field's value, or null when empty or not a number. */
@@ -79,15 +77,6 @@ export function GoalDetail({
             return tracker.deleteGoal(g.id);
           },
         }}
-        extra={
-          <>
-            <ActionButton variant="ghost" onAction={() => tracker.toggleGoalPin(g.id)}>
-              {g.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-              {g.pinned ? "Unpin" : "Pin"}
-            </ActionButton>
-            <MoveToProjects tracker={tracker} goal={g} onClose={onClose} />
-          </>
-        }
         primary={{
           label: g.done ? (
             <>
@@ -105,44 +94,6 @@ export function GoalDetail({
         }}
       />
     </div>
-  );
-}
-
-/**
- * Turns a goal into a project, for things that turned out to be work to
- * build rather than material to get through. Asks first, since the goal
- * leaves Learning; then opens the new board.
- */
-function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal: Goal; onClose: () => void }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-
-  // The new board opens straight away; the save carries on behind it.
-  const move = () => {
-    const id = tracker.goalToProject(g.id);
-    setOpen(false);
-    if (id) {
-      onClose();
-      router.push(`/projects?p=${id}`);
-    }
-  };
-
-  return (
-    <>
-      <Button variant="ghost" onPress={() => setOpen(true)}>
-        <Kanban className="h-4 w-4" /> Move to Projects
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Move to Projects">
-        <p className="mb-1 text-[15px]">
-          Make <span className="font-semibold">{g.title}</span> a project?
-        </p>
-        <p className="mb-4 text-sm text-[var(--muted)]">
-          It gets an empty board to add cards to, keeping its description and link, and
-          leaves Learning.
-        </p>
-        <DialogActions primary={{ label: "Move", onPress: move }} />
-      </Modal>
-    </>
   );
 }
 
