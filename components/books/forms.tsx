@@ -197,10 +197,10 @@ export function TrackForm({
             {books > 0 && (
               <p className="text-sm text-[var(--muted)]">
                 {then === "keep"
-                  ? "They stay in your library under “No track”, with their progress, notes and history. A book you're reading is paused until you give it a track."
+                  ? "They stay in your library under “No track”, with their progress and history. A book you're reading is paused until you give it a track."
                   : then === "delete"
-                    ? "Their progress, sessions and notes are deleted with them."
-                    : "They go to the end of that track's queue, keeping their progress, notes and history."}
+                    ? "Their progress and history are deleted with them."
+                    : "They go to the end of that track's queue, keeping their progress and history."}
               </p>
             )}
             <p className="text-sm text-[var(--muted)]">This can&apos;t be undone.</p>

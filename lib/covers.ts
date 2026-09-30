@@ -111,7 +111,8 @@ async function lookupGoogle(title: string, author?: string): Promise<BookLookup 
     const n = v.volumeInfo?.pageCount;
     return n && n > 0 ? n : undefined;
   });
-  const category = first((v) => v.volumeInfo?.categories?.[0]?.trim() || undefined);
+  // "Business & Economics / Leadership" is filed under its first part.
+  const category = first((v) => v.volumeInfo?.categories?.[0]?.split("/")[0].trim() || undefined);
 
   return {
     coverId: hasCover(pick) ? GOOGLE_PREFIX + pick.id : null,

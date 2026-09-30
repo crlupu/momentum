@@ -11,16 +11,15 @@ import { Segmented } from "./books/bits";
 import { TodayView } from "./books/TodayView";
 import { TracksView } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
-import { NotesView } from "./books/NotesView";
 import { HistoryView } from "./books/HistoryView";
 
-type Tab = "today" | "tracks" | "phases" | "notes" | "history";
-const TABS: Tab[] = ["today", "tracks", "phases", "notes", "history"];
+type Tab = "today" | "tracks" | "phases" | "history";
+const TABS: Tab[] = ["today", "tracks", "phases", "history"];
 const TAB_KEY = "momentum:books-tab";
 
 /**
- * The reading plan. Today shows only the books open now; the queues, phases,
- * notes and history each have a tab of their own.
+ * The reading plan. Today shows only the books open now; the queues, phases
+ * and history each have a tab of their own.
  */
 export function Books({ tracker }: { tracker: Tracker }) {
   useCoverLookup(tracker, tracker.state!.books);
@@ -62,7 +61,6 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
               { value: "today", label: "Today" },
               { value: "tracks", label: "Tracks" },
               { value: "phases", label: "Phases" },
-              { value: "notes", label: "Notes" },
               { value: "history", label: "History" },
             ]}
           />
@@ -85,7 +83,6 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
       {tab === "today" && <TodayView tracker={tracker} />}
       {tab === "tracks" && <TracksView tracker={tracker} />}
       {tab === "phases" && <PhasesView tracker={tracker} />}
-      {tab === "notes" && <NotesView tracker={tracker} />}
       {tab === "history" && <HistoryView tracker={tracker} />}
     </div>
   );

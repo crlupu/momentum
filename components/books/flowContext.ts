@@ -11,7 +11,6 @@ export type Dialog =
   | { kind: "detail"; bookId: string }
   | { kind: "edit"; bookId: string | null; trackId?: string }
   | { kind: "log"; bookId: string }
-  | { kind: "idea"; bookId: string; sessionId: string; pages: number }
   | { kind: "deps"; bookId: string }
   | { kind: "wip"; bookId: string }
   | { kind: "finish"; bookId: string }

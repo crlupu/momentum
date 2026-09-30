@@ -130,13 +130,6 @@ function DialogFor({
         </Modal>
       );
 
-    case "idea":
-      return (
-        <Modal open onClose={() => { close(); flow.checkEnd(d.bookId); }} title="Key idea">
-          <IdeaForm tracker={tracker} sessionId={d.sessionId} pages={d.pages} bookId={d.bookId} />
-        </Modal>
-      );
-
     case "deps": {
       const first = book ? R.unmetPrerequisites(s, book) : [];
       return (
@@ -304,12 +297,11 @@ function Actions({ children }: { children: ReactNode }) {
  * for when that's the number to hand.
  */
 function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
-  const { close, replace, checkEnd } = useFlowFromContext();
+  const { close, checkEnd } = useFlowFromContext();
   const [mode, setMode] = useState<"page" | "pages">("page");
   const [value, setValue] = useState("");
   const [skimmed, setSkimmed] = useState(false);
   const [date, setDate] = useState(dateKey());
-  const [minutes, setMinutes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { pending, run } = usePending();
 
@@ -347,21 +339,15 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
       id: uid(),
       date,
       ...(mode === "page" ? { toPage: v } : { pages: v }),
-      minutes: Number(minutes) || undefined,
     };
     const predicted = R.logSession(tracker.state!, book.id, input);
     if (predicted === tracker.state) {
       setError(mode === "page" ? `Already on page ${book.read}.` : "Nothing to log.");
       return;
     }
+    close();
     const ok = await run(() => tracker.logReading(book.id, input));
-    if (!ok) return;
-    const logged = predicted.readingSessions.find((x) => x.id === input.id);
-    if (logged) replace({ kind: "idea", bookId: book.id, sessionId: logged.id, pages: logged.pages });
-    else {
-      close();
-      checkEnd(book.id);
-    }
+    if (ok) checkEnd(book.id);
   };
 
   return (
@@ -394,20 +380,9 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
       )}
 
       {counts && (
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Date">
-            <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value || dateKey())} />
-          </Field>
-          <Field label="Minutes (optional)">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={minutes}
-              onChange={(e) => setMinutes(e.target.value)}
-            />
-          </Field>
-        </div>
+        <Field label="Date">
+          <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value || dateKey())} />
+        </Field>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -432,85 +407,6 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
           </Button>
         </span>
       </div>
-    </form>
-  );
-}
-
-/** Offered after a sitting is logged: one line on what it was about. Skippable. */
-export function IdeaForm({
-  tracker,
-  sessionId,
-  pages,
-  bookId,
-  inline,
-  onDone,
-}: {
-  tracker: Tracker;
-  sessionId: string;
-  pages: number;
-  bookId: string;
-  /** Drawn under a row on Today rather than in a dialog. */
-  inline?: boolean;
-  onDone?: () => void;
-}) {
-  const flow = useFlowFromContext();
-  const [note, setNote] = useState("");
-  const { pending, run } = usePending();
-  const done = () => {
-    if (onDone) onDone();
-    else {
-      flow.close();
-      flow.checkEnd(bookId);
-    }
-  };
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!note.trim()) return done();
-    const ok = await run(() => tracker.updateReadingSession(sessionId, { note }));
-    if (ok) done();
-  };
-
-  if (inline) {
-    return (
-      <form onSubmit={submit} className="rd-idea">
-        <input
-          aria-label="Key idea from this session"
-          placeholder={`Key idea from these ${pages} pages? (optional)`}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="min-w-0 flex-1"
-        />
-        <Button type="submit" size="sm" variant="primary" isDisabled={pending || !note.trim()}>
-          Save
-        </Button>
-        <Button size="sm" variant="ghost" onPress={done}>
-          Skip
-        </Button>
-      </form>
-    );
-  }
-
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-[15px]">
-        Logged {pages} page{pages === 1 ? "" : "s"}. Anything worth keeping from them?
-      </p>
-      <input
-        aria-label="Key idea"
-        placeholder="One line (optional)"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        autoFocus
-        className="w-full"
-      />
-      <Actions>
-        <Button variant="outline" onPress={done}>
-          Skip
-        </Button>
-        <Button type="submit" variant="primary" isDisabled={pending || !note.trim()}>
-          Save
-        </Button>
-      </Actions>
     </form>
   );
 }

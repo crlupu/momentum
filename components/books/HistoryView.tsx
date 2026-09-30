@@ -404,7 +404,7 @@ function FinishedPerMonth({ tracker }: { tracker: Tracker }) {
   );
 }
 
-/** A year in review: books and pages by track, best streaks, the most-noted book. */
+/** A year in review: books and pages by track, and best streaks. */
 function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) {
   const s = tracker.state!;
   const [year, setYear] = useState(years[0] ?? dateKey().slice(0, 4));
@@ -426,13 +426,6 @@ function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) 
       streak: R.longestStreak(s, t, from, to),
     }))
     .filter((r) => r.books || r.pages || !r.t.archived);
-
-  const noted = new Map<string, number>();
-  for (const x of sessions) if (x.note) noted.set(x.bookId, (noted.get(x.bookId) ?? 0) + 1);
-  for (const q of s.bookQuotes)
-    if (q.date.startsWith(year)) noted.set(q.bookId, (noted.get(q.bookId) ?? 0) + 1);
-  const top = [...noted.entries()].sort((a, b) => b[1] - a[1])[0];
-  const topBook = top ? s.books.find((b) => b.id === top[0]) : undefined;
 
   return (
     <section>
@@ -482,19 +475,8 @@ function YearSummary({ tracker, years }: { tracker: Tracker; years: string[] }) 
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-sm text-foreground/70">
-          Most-noted book:{" "}
-          {topBook ? (
-            <>
-              <span className="font-semibold">{topBook.title}</span> ({top![1]} note
-              {top![1] === 1 ? "" : "s"})
-            </>
-          ) : (
-            "none yet"
-          )}
-        </p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Pages count logged sessions; progress entered before sessions existed isn&apos;t dated.
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Pages count page updates; progress entered before those existed isn&apos;t dated.
         </p>
       </div>
     </section>

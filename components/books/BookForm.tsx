@@ -137,14 +137,10 @@ export function BookForm({
   const [title, setTitle] = useState(book?.title ?? "");
   const [author, setAuthor] = useState(book?.author ?? "");
   const [pages, setPages] = useState(book?.pages ? String(book.pages) : "");
-  const [edition, setEdition] = useState(book?.edition ?? "");
-  const [language, setLanguage] = useState(book?.language ?? "");
-  const [tags, setTags] = useState((book?.tags ?? []).join(", "));
   const [track, setTrack] = useState(book?.trackId ?? trackId ?? tracks[0]?.id ?? "");
   const [phase, setPhase] = useState(book?.phaseId ?? "");
   const [coverImage, setCoverImage] = useState(book?.coverImage ?? "");
   const [after, setAfter] = useState<string[]>(book?.after ?? []);
-  const [note, setNote] = useState(book?.note ?? "");
   const { pending, run } = usePending();
 
   // The cover from a chosen suggestion. Undefined means nothing was chosen, so
@@ -202,14 +198,15 @@ export function BookForm({
       title: t,
       author,
       pages: Number(pages) || 0,
-      edition,
-      language,
-      tags: tags.split(","),
+      // Not asked for any more; kept as they were rather than wiped.
+      edition: book?.edition,
+      language: book?.language,
+      tags: book?.tags,
       trackId: track,
       phaseId: phase || undefined,
       coverImage,
       after,
-      note,
+      note: book?.note,
       ...(book ? {} : { coverId: pickedCover }),
     };
     onClose();
@@ -296,24 +293,17 @@ export function BookForm({
         onChange={(e) => setAuthor(e.target.value)}
         className="w-full"
       />
-      <div className="grid grid-cols-3 gap-2">
-        <Field label="Pages">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="Unknown"
-            value={pages}
-            onChange={(e) => setPages(e.target.value)}
-          />
-        </Field>
-        <Field label="Edition">
-          <input value={edition} onChange={(e) => setEdition(e.target.value)} placeholder="e.g. 2nd" />
-        </Field>
-        <Field label="Language">
-          <input value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="e.g. EN" />
-        </Field>
-      </div>
+      <Field label="Pages">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          placeholder="Unknown"
+          value={pages}
+          onChange={(e) => setPages(e.target.value)}
+          className="w-full"
+        />
+      </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Track">
           <select value={track} onChange={(e) => setTrack(e.target.value)}>
@@ -343,12 +333,6 @@ export function BookForm({
             : "Without a track it won't show on Today, so it will be paused."}
         </p>
       )}
-      <Field label="Note">
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. skim dated chapters" />
-      </Field>
-      <Field label="Tags" hint="Separated by commas">
-        <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. architecture, ddd" />
-      </Field>
 
       <Field label="Read after">
         <div className="flex flex-col gap-1.5">
@@ -388,7 +372,7 @@ export function BookForm({
         </div>
       </Field>
 
-      <Field label="Cover image address (optional)" hint="Leave empty to use Open Library's cover or a drawn one">
+      <Field label="Cover image address (optional)" hint="Leave empty to use a cover found online, or a plain one">
         <input
           type="url"
           inputMode="url"

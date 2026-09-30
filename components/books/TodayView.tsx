@@ -9,7 +9,6 @@ import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
 import { Meter, ProgressText, TrackDot, fmtDateAuto, fmtPace } from "./bits";
 import { useFlow } from "./flowContext";
-import { IdeaForm } from "./flow";
 
 /**
  * The day's reading: each track's open books, how much of its target has
@@ -149,7 +148,6 @@ function OpenBook({
   const s = tracker.state!;
   const flow = useFlow();
   const [value, setValue] = useState("");
-  const [idea, setIdea] = useState<{ sessionId: string; pages: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { pending, run } = usePending();
   const pace = R.bookPace(s, book, today);
@@ -187,8 +185,6 @@ function OpenBook({
     const ok = await run(() => tracker.logReading(book.id, input));
     if (!ok) return;
     setValue("");
-    const logged = predicted.readingSessions.find((x) => x.id === input.id);
-    setIdea(logged ? { sessionId: logged.id, pages: logged.pages } : null);
     flow.checkEnd(book.id);
   };
 
@@ -251,16 +247,6 @@ function OpenBook({
         </p>
       ) : (
         preview && <p className="rd-derived rd-derived--quick is-counted">{preview}</p>
-      )}
-      {idea && (
-        <IdeaForm
-          tracker={tracker}
-          sessionId={idea.sessionId}
-          pages={idea.pages}
-          bookId={book.id}
-          inline
-          onDone={() => setIdea(null)}
-        />
       )}
 
       {stalled && (
