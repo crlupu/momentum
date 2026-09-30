@@ -150,7 +150,7 @@ export function GoalForm({
       {!topic && <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />}
       <div>
         <div className="mb-1 text-xs text-[var(--muted)]">
-          A count to track, if it has one (pages, videos, chapters). Leave empty to track it by steps.
+          A count to track, if it has one (pages, videos, modules). Leave it empty to just mark the goal done when it is.
         </div>
         <div className="flex gap-3">
           <Input type="number" step="any" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />

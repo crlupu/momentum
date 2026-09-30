@@ -22,7 +22,7 @@ section's id, title and path, and for the tabs (`NAV`).
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
 | Today | `/` | The day's momentum ring and figures, recurring tasks (daily / weekly / biweekly / monthly) and to-dos. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
-| Learning | `/learning` | Courses and subjects, each a goal broken into steps and grouped under topics. A goal can be moved to Projects. `/goals` forwards here | `GoalsView`, `GoalDetail`, `TopicForm` |
+| Learning | `/learning` | Courses and subjects, each a goal with a description and an optional count (moved with − / +), grouped under topics that set their category. A goal can be moved to Projects. `/goals` forwards here | `GoalsView`, `GoalDetail`, `TopicForm` |
 | Projects | `/projects` | Personal projects, each a board of cards in To do / Doing / Done, dragged between columns. Each project has its own tags for its cards. `?p=<id>` opens a board | `ProjectsView`, `ProjectBoard`, `CardSheet`, `ProjectForm`, `TagPicker`; logic in `lib/projects.ts` |
 | Health: Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
 | Health: Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |

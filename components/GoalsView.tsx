@@ -16,7 +16,6 @@ import {
   Path,
   goalHasProgress,
   goalPct,
-  goalStepsDone,
   pathGoals,
   pathPct,
 } from "@/lib/tracker";
@@ -29,12 +28,12 @@ function pinnedFirst(list: Goal[]): Goal[] {
 }
 
 /**
- * Learning: courses and subjects, each a goal broken into steps, grouped
+ * Learning: courses and subjects, each a goal with an optional count, grouped
  * under topics. Projects have a page of their own (ProjectsView).
  *
  * The page is a stack of topics, each a section with its combined progress
  * and its goals as rows; goals in no topic come last. A row opens the goal,
- * where its steps are ticked off and its details changed. Active and done
+ * where its count is moved along and its details changed. Active and done
  * goals are two views of the same list rather than columns side by side.
  */
 export default function GoalsView({ tracker }: { tracker: Tracker }) {
@@ -85,8 +84,8 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
           <Target className="h-8 w-8" aria-hidden />
           <p className="goals-empty__title">Track what you&apos;re learning</p>
           <p className="goals-empty__text">
-            Add a goal for each course or subject and break it into steps: lessons, chapters,
-            exercises. Group related goals under a topic to see how the whole area is going.
+            Add a goal for each course or subject, with a count to track if it has one: lessons,
+            chapters, videos. Group related goals under a topic to see how the whole area is going.
           </p>
           <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
         </div>
@@ -251,16 +250,13 @@ function GoalRow({
   inTopic?: boolean;
 }) {
   const cat = tracker.cat(g.catId);
-  const steps = goalStepsDone(g);
   const measured = goalHasProgress(g);
 
   const meta = g.done
     ? `Done${g.doneDate ? ` ${fmtDateAuto(g.doneDate)}` : ""}`
-    : steps.total > 0
-      ? `${steps.done} of ${steps.total} ${steps.total === 1 ? "step" : "steps"}`
-      : g.target
-        ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
-        : "No steps yet";
+    : g.target
+      ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
+      : "Open";
 
   return (
     <li>

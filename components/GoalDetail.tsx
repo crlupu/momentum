@@ -2,40 +2,14 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { AddButton, Button, Input } from "./ui";
+import { Button, Input } from "./ui";
 import { ActionButton, usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { CatPicker } from "./Forms";
 import { Modal } from "./Modal";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Kanban, Minus, Pin, PinOff, Plus, ReorderLines, RotateCcw } from "./icons";
-import {
-  Goal,
-  Subtask,
-  Tracker,
-  goalPct,
-  goalStepsDone,
-  goalTopic,
-  subtaskDone,
-} from "@/lib/tracker";
+import { Check, ExternalLink, Kanban, Minus, Pin, PinOff, Plus, RotateCcw } from "./icons";
+import { Goal, Tracker, goalPct, goalTopic } from "@/lib/tracker";
 
 /** A number field's value, or null when empty or not a number. */
 function num(v: string): number | null {
@@ -45,13 +19,10 @@ function num(v: string): number | null {
 }
 
 /**
- * One goal, opened: how far it is, its steps, its details, and what can be
- * done with it.
+ * One goal, opened: how far it is, its details, and what can be done with it.
  *
- * Steps are the everyday part, so they come first and every one is directly
- * actionable — a round checkbox to tick it, and − / + for a counted step.
- * Renaming, recounting and reordering steps is a mode, behind Edit, as in
- * any iOS list.
+ * A goal with a count (videos, pages, modules) is moved along with − and +;
+ * one without is simply done or not, with Mark as done.
  */
 export function GoalDetail({
   tracker,
@@ -63,34 +34,28 @@ export function GoalDetail({
   onClose: () => void;
 }) {
   const s = tracker.state!;
-  const steps = g.subtasks ?? [];
   const pct = g.done ? 100 : goalPct(g);
-  const count = goalStepsDone(g);
   const topic = goalTopic(g.id, s.paths);
-  const [editingSteps, setEditingSteps] = useState(false);
 
   const summary = g.done
     ? "Done"
-    : steps.length > 0
-      ? `${count.done} of ${count.total} ${count.total === 1 ? "step" : "steps"} done`
-      : g.target
-        ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
-        : "Add steps to track it, or give it a count in Details.";
+    : g.target
+      ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
+      : "No count yet. Add one in Details to track how far along it is.";
 
   return (
     <div className="goal-detail">
       <div className="goal-detail__summary">
         <ProgressRing pct={pct} color="var(--accent)" size={64} />
         <div className="min-w-0">
-          <p className="goal-detail__pct">{pct}% complete</p>
+          <p className="goal-detail__pct">{g.target || g.done ? `${pct}% complete` : "Open"}</p>
           <p className="goal-detail__sub">{summary}</p>
           {topic && <p className="goal-detail__sub">In {topic.title}</p>}
         </div>
       </div>
 
-      {/* A goal measured by its own count, not by steps: the count is the
-          control, with − and + beside it. */}
-      {steps.length === 0 && !!g.target && !g.done && (
+      {/* The count is the control, with − and + beside it. */}
+      {!!g.target && !g.done && (
         <div className="goal-counter">
           <span className="goal-counter__label">Progress</span>
           <Stepper
@@ -101,26 +66,6 @@ export function GoalDetail({
           />
         </div>
       )}
-
-      <section className="goal-section" aria-labelledby="goal-steps">
-        <div className="goal-section__head">
-          <h3 id="goal-steps" className="group-label">
-            Steps{steps.length > 0 ? ` · ${count.done} of ${count.total}` : ""}
-          </h3>
-          {steps.length > 0 && (
-            <button
-              type="button"
-              className="text-action"
-              aria-pressed={editingSteps}
-              onClick={() => setEditingSteps((v) => !v)}
-            >
-              {editingSteps ? "Done" : "Edit"}
-            </button>
-          )}
-        </div>
-        <StepList tracker={tracker} goal={g} editing={editingSteps} />
-        {!editingSteps && <AddStep tracker={tracker} goalId={g.id} first={steps.length === 0} />}
-      </section>
 
       <AfterFirstFrame>
         <Details tracker={tracker} goal={g} />
@@ -175,7 +120,6 @@ export function GoalDetail({
 function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal: Goal; onClose: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const steps = g.subtasks?.length ?? 0;
 
   // The new board opens straight away; the save carries on behind it.
   const move = () => {
@@ -197,10 +141,8 @@ function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal:
           Make <span className="font-semibold">{g.title}</span> a project?
         </p>
         <p className="mb-4 text-sm text-[var(--muted)]">
-          {steps > 0
-            ? `Its ${steps} ${steps === 1 ? "step becomes a card" : "steps become cards"} on the board: finished ones in Done, started ones in Doing, the rest in To do. `
-            : "It gets an empty board to add cards to. "}
-          It leaves Learning.
+          It gets an empty board to add cards to, keeping its description and link, and
+          leaves Learning.
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onPress={() => setOpen(false)}>
@@ -268,178 +210,6 @@ function Stepper({
   );
 }
 
-/** The goal's steps: tick them off, or, while editing, rename and reorder. */
-function StepList({ tracker, goal: g, editing }: { tracker: Tracker; goal: Goal; editing: boolean }) {
-  const steps = g.subtasks ?? [];
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-  if (steps.length === 0) return null;
-
-  const onDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const ids = steps.map((t) => t.id);
-    const from = ids.indexOf(String(active.id));
-    const to = ids.indexOf(String(over.id));
-    if (from < 0 || to < 0) return;
-    void tracker.reorderSubtasks(g.id, arrayMove(ids, from, to));
-  };
-
-  return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={steps.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <ul className="step-list">
-          {steps.map((t) => (
-            <StepRow key={t.id} tracker={tracker} goalId={g.id} step={t} editing={editing} />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
-  );
-}
-
-function StepRow({
-  tracker,
-  goalId,
-  step: t,
-  editing,
-}: {
-  tracker: Tracker;
-  goalId: string;
-  step: Subtask;
-  editing: boolean;
-}) {
-  const done = subtaskDone(t);
-  const { pending, run } = usePending();
-  const [name, setName] = useState(t.title);
-  const [total, setTotal] = useState(t.target ? String(t.target) : "");
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: t.id, disabled: !editing });
-
-  // Saved when a field loses focus, so editing a list of steps is typing and
-  // tabbing, with no Save button per row.
-  const save = () => {
-    const title = name.trim() || t.title;
-    const target = num(total);
-    const current = target ? Math.min(t.current ?? 0, target) : null;
-    if (title === t.title && (target ?? undefined) === t.target) return;
-    void tracker.setSubtaskProgress(goalId, t.id, current, target, title);
-  };
-
-  return (
-    <li
-      ref={setNodeRef}
-      className={"step-row" + (isDragging ? " is-dragging" : "")}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-    >
-      {editing ? (
-        <>
-          <Input
-            aria-label="Step name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={save}
-            className="step-row__name-input"
-          />
-          <Input
-            type="number"
-            inputMode="numeric"
-            aria-label={`Count for ${t.title}`}
-            placeholder="Count"
-            value={total}
-            onChange={(e) => setTotal(e.target.value)}
-            onBlur={save}
-            className="step-row__count-input"
-          />
-          <DeleteButton
-            what={`the step "${t.title}"`}
-            iconOnly
-            bare
-            onDelete={() => tracker.deleteSubtask(goalId, t.id)}
-          />
-          <button
-            type="button"
-            ref={setActivatorNodeRef}
-            className="rd-grip"
-            aria-label={`Move ${t.title}`}
-            {...attributes}
-            {...listeners}
-          >
-            <ReorderLines className="h-6 w-6" />
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={done}
-            aria-label={t.title}
-            disabled={pending}
-            onClick={() => void run(() => tracker.toggleSubtask(goalId, t.id))}
-            className={"check" + (done ? " check--on" : "")}
-          >
-            <span className="check__ring">{done && <Check className="h-4 w-4" aria-hidden />}</span>
-          </button>
-          <span className={"step-row__title" + (done ? " is-done" : "")}>{t.title}</span>
-          {t.target ? (
-            <Stepper
-              value={t.current ?? 0}
-              total={t.target}
-              onStep={(d) => tracker.stepSubtask(goalId, t.id, d)}
-              what={t.title}
-            />
-          ) : null}
-        </>
-      )}
-    </li>
-  );
-}
-
-/**
- * Adds a step. The field keeps focus afterwards, so a course's lessons can be
- * typed in one after another. A count is optional: "Videos, 24".
- */
-function AddStep({ tracker, goalId, first }: { tracker: Tracker; goalId: string; first: boolean }) {
-  const [title, setTitle] = useState("");
-  const [count, setCount] = useState("");
-  const { pending, run } = usePending();
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const t = title.trim();
-    if (!t || pending) return;
-    setTitle("");
-    setCount("");
-    await run(() => tracker.addSubtask(goalId, t, null, num(count)));
-  };
-
-  return (
-    <form onSubmit={submit} className="add-step">
-      <Input
-        aria-label="New step"
-        placeholder={first ? "First step, e.g. Module 1" : "Add a step…"}
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="add-step__name"
-      />
-      <Input
-        type="number"
-        inputMode="numeric"
-        aria-label="Count, optional"
-        placeholder="Count"
-        value={count}
-        onChange={(e) => setCount(e.target.value)}
-        className="add-step__count"
-      />
-      <AddButton type="submit" aria-label="Add step" isDisabled={pending || !title.trim()} />
-    </form>
-  );
-}
-
 /**
  * Renders its children one frame after the sheet opens. The details form is
  * the heaviest part of the sheet and sits below the fold on a phone; drawn
@@ -462,6 +232,10 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   const [name, setName] = useState(g.title);
   const [current, setCurrent] = useState(g.current != null ? String(g.current) : "");
   const [target, setTarget] = useState(g.target != null ? String(g.target) : "");
+  // − and + change the count from above; the fields follow, so they never
+  // hold a figure that Save would write back over the newer one.
+  useEffect(() => setCurrent(g.current != null ? String(g.current) : ""), [g.current]);
+  useEffect(() => setTarget(g.target != null ? String(g.target) : ""), [g.target]);
   const [link, setLink] = useState(g.link ?? "");
   const [note, setNote] = useState(g.note ?? "");
   const { pending, run } = usePending();
@@ -534,15 +308,13 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
         )}
 
-        {(g.subtasks?.length ?? 0) === 0 && (
-          <div className="goal-field">
-            <span>Count, if it has one (pages, videos)</span>
-            <div className="flex gap-2">
-              <Input type="number" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />
-              <Input type="number" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
-            </div>
+        <div className="goal-field">
+          <span>Count, if it has one (pages, videos, modules)</span>
+          <div className="flex gap-2">
+            <Input type="number" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />
+            <Input type="number" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
           </div>
-        )}
+        </div>
 
         <label className="goal-field">
           <span>Link</span>
