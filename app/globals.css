@@ -2972,7 +2972,11 @@ button.rd-link:active { background: var(--default); }
   .goals-toolbar > .seg { inline-size: 100%; }
   .goals-toolbar > .seg .seg__btn { flex: 1 1 0; }
   .goals-toolbar__actions { inline-size: 100%; }
+  .goals-toolbar__actions { flex-wrap: wrap; }
   .goals-toolbar__actions > * { flex: 1 1 0; }
+  /* A third action (Import) takes a row of its own rather than squeezing
+     the two above onto two lines each. */
+  .goals-toolbar__actions > :nth-child(3) { flex-basis: 100%; }
 }
 
 .goals-empty {

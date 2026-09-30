@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AddButton, PanelHeader } from "./ui";
+import { AddButton, Button, PanelHeader } from "./ui";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { GoalDetail } from "./GoalDetail";
 import { TopicForm } from "./TopicForm";
+import { GoalImportForm } from "./GoalImport";
 import { ProgressRing } from "./ProgressRing";
 import { Segmented } from "./books/bits";
-import { ChevronRight, Pin, Target } from "./icons";
+import { ChevronRight, Pin, Target, Upload } from "./icons";
 import { fmtDateAuto } from "@/lib/dates";
 import {
   Tracker,
@@ -42,6 +43,7 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState<{ pathId: string | null } | null>(null);
   const [topicEdit, setTopicEdit] = useState<{ id: string | null } | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const inView = (g: Goal) => (view === "done" ? g.done : !g.done);
 
@@ -76,6 +78,9 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
         <span className="goals-toolbar__actions">
           <AddButton label="New topic" onPress={() => setTopicEdit({ id: null })} />
           <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
+          <Button variant="outline" onPress={() => setImporting(true)}>
+            <Upload className="h-4 w-4" /> Import
+          </Button>
         </span>
       </div>
 
@@ -129,6 +134,10 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
           )}
         </>
       )}
+
+      <Modal open={importing} onClose={() => setImporting(false)} title="Import goals">
+        {importing && <GoalImportForm tracker={tracker} onClose={() => setImporting(false)} />}
+      </Modal>
 
       <Modal open={!!adding} onClose={() => setAdding(null)} title="New goal">
         <GoalForm

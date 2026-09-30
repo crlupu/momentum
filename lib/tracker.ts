@@ -18,6 +18,7 @@ import { contrast } from "./color";
 import * as R from "./reading";
 import * as P from "./projects";
 import { applyPlan, type Plan } from "./planImport";
+import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import type {
   BookStatus,
   BookQuote,
@@ -2086,6 +2087,9 @@ export function useTracker() {
     removeBook: (id: string) => commit((s) => R.removeBook(s, id)),
     /** Reads a Markdown reading plan into tracks, phases and books. See lib/planImport.ts. */
     importPlan: (plan: Plan) => commit((s) => applyPlan(s, plan).state),
+
+    /** Learning goals from a JSON or Markdown file. See lib/goalImport.ts. */
+    importGoals: (plan: GoalPlan, opts: ImportOptions) => commit((s) => applyGoalPlan(s, plan, opts).state),
 
     setCalorieBudget: (kcal: number | null) =>
       commit((s) => ({
