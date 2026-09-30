@@ -2,7 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "../ui";
-import { Archive, Unarchive } from "../icons";
+import { Archive, Trash2, Unarchive } from "../icons";
+import { Modal } from "../Modal";
 import { DeleteButton } from "../DeleteButton";
 import { usePending } from "../ActionButton";
 import { Tracker, BOOK_COLORS, dateKey } from "@/lib/tracker";
@@ -52,6 +53,17 @@ export function TrackForm({
   };
 
   const open = track ? s.books.filter((b) => b.trackId === track.id && b.status === "active").length : 0;
+  const books = track ? s.books.filter((b) => b.trackId === track.id).length : 0;
+  const others = track ? s.readingTracks.filter((t) => t.id !== track.id) : [];
+  const [deleting, setDeleting] = useState(false);
+  const [moveTo, setMoveTo] = useState<string>(others.find((t) => !t.archived)?.id ?? others[0]?.id ?? "");
+
+  const remove = () => {
+    if (!track) return;
+    setDeleting(false);
+    onClose();
+    void tracker.removeTrack(track.id, books > 0 && moveTo ? moveTo : null);
+  };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
@@ -114,25 +126,30 @@ export function TrackForm({
 
       <div className="flex items-center justify-between gap-2">
         {track ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={pending}
-            onPress={() => {
-              onClose();
-              void run(() => tracker.updateTrack(track.id, input(!track.archived)));
-            }}
-          >
-            {track.archived ? (
-              <>
-                <Unarchive className="h-4 w-4" /> Restore
-              </>
-            ) : (
-              <>
-                <Archive className="h-4 w-4" /> Archive
-              </>
-            )}
-          </Button>
+          <span className="flex flex-wrap gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              isDisabled={pending}
+              onPress={() => {
+                onClose();
+                void run(() => tracker.updateTrack(track.id, input(!track.archived)));
+              }}
+            >
+              {track.archived ? (
+                <>
+                  <Unarchive className="h-4 w-4" /> Restore
+                </>
+              ) : (
+                <>
+                  <Archive className="h-4 w-4" /> Archive
+                </>
+              )}
+            </Button>
+            <Button variant="ghost" size="sm" className="btn-delete-bare" onPress={() => setDeleting(true)}>
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          </span>
         ) : (
           <span />
         )}
@@ -149,6 +166,47 @@ export function TrackForm({
         <p className="text-xs text-[var(--muted)]">
           Archiving hides the track from Today and its counters. Its books stay where they are.
         </p>
+      )}
+
+      {track && (
+        <Modal open={deleting} onClose={() => setDeleting(false)} title="Delete track">
+          <div className="flex flex-col gap-3">
+            <p className="text-[15px]">
+              Delete the track <span className="font-semibold">{track.name}</span>?
+            </p>
+            {books > 0 ? (
+              <Field label={`Its ${books} book${books === 1 ? "" : "s"}`}>
+                <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                  {others.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      Move to {t.name}
+                      {t.archived ? " (archived)" : ""}
+                    </option>
+                  ))}
+                  <option value="">Delete them too</option>
+                </select>
+              </Field>
+            ) : null}
+            {books > 0 ? (
+              <p className="text-sm text-[var(--muted)]">
+                {moveTo
+                  ? "They go to the end of that track's queue, keeping their progress, notes and history."
+                  : "Their progress, sessions and notes are deleted with them."}
+              </p>
+            ) : (
+              <p className="text-sm text-[var(--muted)]">It has no books.</p>
+            )}
+            <p className="text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onPress={() => setDeleting(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" className="btn-danger-solid" onPress={remove}>
+                {books > 0 && !moveTo ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </form>
   );

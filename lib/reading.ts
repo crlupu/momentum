@@ -926,6 +926,25 @@ export function updateTrack(s: TrackerState, id: string, t: TrackInput): Tracker
   };
 }
 
+/**
+ * Deletes a track. Its books either move to another track — to the end of
+ * its queue, in their order, keeping their progress, notes and history — or,
+ * with no track to move to, are deleted with everything logged against them.
+ */
+export function removeTrack(s: TrackerState, id: string, moveTo: string | null): TrackerState {
+  const books = s.books.filter((b) => b.trackId === id).sort((a, b) => a.queueOrder - b.queueOrder);
+  let next: TrackerState = { ...s, readingTracks: s.readingTracks.filter((t) => t.id !== id) };
+  if (moveTo && next.readingTracks.some((t) => t.id === moveTo)) {
+    for (const b of books) {
+      const order = queueEnd(next, moveTo, b.id);
+      next = { ...next, books: next.books.map((x) => (x.id === b.id ? { ...x, trackId: moveTo, queueOrder: order } : x)) };
+    }
+    return next;
+  }
+  for (const b of books) next = removeBook(next, b.id);
+  return next;
+}
+
 /* ---- phases ---- */
 
 export type PhaseInput = Omit<ReadingPhase, "id">;

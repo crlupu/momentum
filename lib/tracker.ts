@@ -2044,6 +2044,8 @@ export function useTracker() {
     removeQuote: (id: string) => commit((s) => R.removeQuote(s, id)),
     addTrack: (t: R.TrackInput) => commit((s) => R.addTrack(s, t)),
     updateTrack: (id: string, t: R.TrackInput) => commit((s) => R.updateTrack(s, id, t)),
+    /** Deletes a track, moving its books to another (or deleting them, given null). */
+    removeTrack: (id: string, moveTo: string | null) => commit((s) => R.removeTrack(s, id, moveTo)),
     addPhase: (p: R.PhaseInput) => commit((s) => R.addPhase(s, p)),
     updatePhase: (id: string, p: R.PhaseInput) => commit((s) => R.updatePhase(s, id, p)),
     removePhase: (id: string) => commit((s) => R.removePhase(s, id)),
