@@ -27,7 +27,7 @@
  * the file gives one.
  */
 
-import { dateKey, uid, type Goal, type Path, type TrackerState } from "./tracker";
+import { dateKey, uid, type Goal, type Path, type TrackerState } from "./model";
 
 export type PlanGoal = {
   title: string;

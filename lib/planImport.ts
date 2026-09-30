@@ -20,7 +20,7 @@
  * adding it twice, and a book's progress is never touched.
  */
 
-import { BOOK_COLORS, bookColor, dateKey, uid, type Book, type TrackerState } from "./tracker";
+import { BOOK_COLORS, bookColor, dateKey, uid, type Book, type TrackerState } from "./model";
 import * as R from "./reading";
 
 export type PlanBook = {

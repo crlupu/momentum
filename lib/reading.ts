@@ -12,6 +12,7 @@
  */
 
 import {
+  DEFAULT_TRACKS,
   BOOK_COLORS,
   bookColor,
   currentColor,
@@ -19,7 +20,7 @@ import {
   uid,
   type Book,
   type TrackerState,
-} from "./tracker";
+} from "./model";
 
 /* ================================ Types ================================ */
 
@@ -96,35 +97,7 @@ export type BookQuote = {
 
 /* ============================== Defaults =============================== */
 
-export const DEFAULT_TRACKS: ReadingTrack[] = [
-  {
-    id: "track-technical",
-    name: "Technical",
-    color: "#635fd9",
-    wipLimit: 1,
-    dailyTarget: 20,
-    slot: "12:15 iPad block",
-    restDays: 1,
-  },
-  {
-    id: "track-nontechnical",
-    name: "Non-technical",
-    color: "#b75014",
-    wipLimit: 1,
-    dailyTarget: 30,
-    slot: "Evening",
-    restDays: 1,
-  },
-  {
-    id: "track-slow",
-    name: "Slow lane",
-    color: "#8c4ed3",
-    wipLimit: 1,
-    dailyTarget: 10,
-    slot: "Morning coffee",
-    restDays: 1,
-  },
-];
+export { DEFAULT_TRACKS };
 
 /* ============================== Dates ================================== */
 
