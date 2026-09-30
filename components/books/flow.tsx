@@ -44,7 +44,10 @@ export function ReadingFlow({ tracker, children }: { tracker: Tracker; children:
     const startChecked = (bookId: string) => {
       const b = s.books.find((x) => x.id === bookId);
       if (!b) return;
-      if (R.wipBlockers(s, bookId, b.trackId).length > 0) open({ kind: "wip", bookId });
+      // A book in no track would open where Today can't show it: it gets a
+      // track first, in its Edit.
+      if (!R.trackOf(s, b.trackId)) open({ kind: "edit", bookId });
+      else if (R.wipBlockers(s, bookId, b.trackId).length > 0) open({ kind: "wip", bookId });
       else void tracker.setBookStatus(bookId, "active");
     };
     return {

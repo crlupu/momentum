@@ -233,7 +233,14 @@ export function migrateReading(
       color: currentColor(b.color),
       pages,
       read,
-      trackId: b.trackId && trackIds.has(b.trackId) ? b.trackId : firstTrack,
+      // "" is a book in no track (its track was deleted and it was kept); one
+      // from before tracks existed goes in the first.
+      trackId:
+        b.trackId === undefined || b.trackId === null
+          ? firstTrack
+          : trackIds.has(b.trackId)
+            ? b.trackId
+            : "",
       status,
       queueOrder: num(b.queueOrder, i),
       // A book from before sessions has all its progress in the base.
@@ -683,8 +690,12 @@ export function updateBook(s: TrackerState, id: string, input: BookInput): Track
     const author = clean(input.author);
     const moved = b.trackId !== input.trackId;
     // An open book moved into a track that is already at its limit is paused
-    // there rather than pushing the track over it.
-    const bumped = moved && b.status === "active" && wipBlockers(s, id, input.trackId).length > 0;
+    // there rather than pushing the track over it; one taken out of every
+    // track is paused too, since only a track's books appear on Today.
+    const bumped =
+      moved &&
+      b.status === "active" &&
+      (!input.trackId || wipBlockers(s, id, input.trackId).length > 0);
     return {
       ...b,
       ...(bumped
@@ -926,23 +937,42 @@ export function updateTrack(s: TrackerState, id: string, t: TrackInput): Tracker
   };
 }
 
+/** What becomes of a deleted track's books. */
+export type TrackBooks = { keep: true } | { moveTo: string } | { delete: true };
+
 /**
- * Deletes a track. Its books either move to another track — to the end of
- * its queue, in their order, keeping their progress, notes and history — or,
- * with no track to move to, are deleted with everything logged against them.
+ * Deletes a track. Its books are kept without a track (the default), moved
+ * to another track — to the end of its queue, in their order — or deleted
+ * with everything logged against them. Kept or moved, a book keeps its
+ * progress, notes and history; a book being read and left without a track
+ * is paused, since only a track's books appear on Today.
  */
-export function removeTrack(s: TrackerState, id: string, moveTo: string | null): TrackerState {
+export function removeTrack(s: TrackerState, id: string, then: TrackBooks): TrackerState {
   const books = s.books.filter((b) => b.trackId === id).sort((a, b) => a.queueOrder - b.queueOrder);
   let next: TrackerState = { ...s, readingTracks: s.readingTracks.filter((t) => t.id !== id) };
-  if (moveTo && next.readingTracks.some((t) => t.id === moveTo)) {
+  if ("moveTo" in then && next.readingTracks.some((t) => t.id === then.moveTo)) {
     for (const b of books) {
-      const order = queueEnd(next, moveTo, b.id);
-      next = { ...next, books: next.books.map((x) => (x.id === b.id ? { ...x, trackId: moveTo, queueOrder: order } : x)) };
+      const order = queueEnd(next, then.moveTo, b.id);
+      next = { ...next, books: next.books.map((x) => (x.id === b.id ? { ...x, trackId: then.moveTo, queueOrder: order } : x)) };
     }
     return next;
   }
-  for (const b of books) next = removeBook(next, b.id);
+  if ("delete" in then) {
+    for (const b of books) next = removeBook(next, b.id);
+    return next;
+  }
+  for (const b of books) {
+    next = { ...next, books: next.books.map((x) => (x.id === b.id ? { ...x, trackId: "" } : x)) };
+    if (b.status === "active") next = setStatus(next, b.id, "paused");
+  }
   return next;
+}
+
+/** Books in no track: kept when their track was deleted, or put there by hand. */
+export function untrackedBooks(s: TrackerState): Book[] {
+  return s.books
+    .filter((b) => !b.trackId || !s.readingTracks.some((t) => t.id === b.trackId))
+    .sort((a, b) => a.queueOrder - b.queueOrder);
 }
 
 /* ---- phases ---- */

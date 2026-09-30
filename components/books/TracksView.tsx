@@ -34,6 +34,8 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
   const flow = useFlow();
   const live = R.liveTracks(s);
   const archived = s.readingTracks.filter((t) => t.archived);
+  // Finished and dropped books without a track are in History already.
+  const untracked = R.untrackedBooks(s).filter((b) => b.status !== "finished" && b.status !== "dropped");
 
   return (
     <div className="flex flex-col gap-4">
@@ -41,6 +43,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
         {live.map((t) => (
           <TrackQueue key={t.id} tracker={tracker} track={t} />
         ))}
+        {untracked.length > 0 && <NoTrack books={untracked} />}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <AddButton label="New track" onPress={() => flow.open({ kind: "track", trackId: null })} />
@@ -201,6 +204,48 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
           {showLater ? "Hide later" : `Later (${later} more)`}
         </button>
       )}
+    </section>
+  );
+}
+
+/**
+ * Books in no track — kept when their track was deleted, or taken out of
+ * one. They wait here until given a track again, from the book's Edit.
+ */
+function NoTrack({ books }: { books: Book[] }) {
+  const flow = useFlow();
+  return (
+    <section className="rd-track rd-track--none" aria-label="No track">
+      <header className="rd-track__head">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-semibold">No track</span>
+          <span className="text-xs text-[var(--muted)]">
+            {books.length} book{books.length === 1 ? "" : "s"} · give one a track from its Edit
+          </span>
+        </div>
+      </header>
+      <ul className="flex flex-col">
+        {books.map((b) => (
+          <li key={b.id} className="rd-row">
+            <button
+              type="button"
+              className="rd-link"
+              onClick={() => flow.open({ kind: "detail", bookId: b.id })}
+            >
+              <Cover book={b} size="sm" />
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <BookName book={b} />
+                <span className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
+                  <StatusBadge status={b.status} />
+                  {b.read > 0 && <span>page {b.read}</span>}
+                  {b.pages > 0 && <span>{b.pages} pages</span>}
+                </span>
+              </span>
+              <ChevronRight className="rd-link__chevron" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

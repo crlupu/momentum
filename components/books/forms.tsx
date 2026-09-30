@@ -56,13 +56,17 @@ export function TrackForm({
   const books = track ? s.books.filter((b) => b.trackId === track.id).length : 0;
   const others = track ? s.readingTracks.filter((t) => t.id !== track.id) : [];
   const [deleting, setDeleting] = useState(false);
-  const [moveTo, setMoveTo] = useState<string>(others.find((t) => !t.archived)?.id ?? others[0]?.id ?? "");
+  // "keep", "delete", or the id of a track to move them to.
+  const [then, setThen] = useState<string>("keep");
 
   const remove = () => {
     if (!track) return;
     setDeleting(false);
     onClose();
-    void tracker.removeTrack(track.id, books > 0 && moveTo ? moveTo : null);
+    void tracker.removeTrack(
+      track.id,
+      then === "delete" ? { delete: true } : then === "keep" ? { keep: true } : { moveTo: then }
+    );
   };
 
   return (
@@ -176,25 +180,28 @@ export function TrackForm({
             </p>
             {books > 0 ? (
               <Field label={`Its ${books} book${books === 1 ? "" : "s"}`}>
-                <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+                <select value={then} onChange={(e) => setThen(e.target.value)}>
+                  <option value="keep">Keep them, without a track</option>
                   {others.map((t) => (
                     <option key={t.id} value={t.id}>
                       Move to {t.name}
                       {t.archived ? " (archived)" : ""}
                     </option>
                   ))}
-                  <option value="">Delete them too</option>
+                  <option value="delete">Delete them too</option>
                 </select>
               </Field>
-            ) : null}
-            {books > 0 ? (
-              <p className="text-sm text-[var(--muted)]">
-                {moveTo
-                  ? "They go to the end of that track's queue, keeping their progress, notes and history."
-                  : "Their progress, sessions and notes are deleted with them."}
-              </p>
             ) : (
               <p className="text-sm text-[var(--muted)]">It has no books.</p>
+            )}
+            {books > 0 && (
+              <p className="text-sm text-[var(--muted)]">
+                {then === "keep"
+                  ? "They stay in your library under “No track”, with their progress, notes and history. A book you're reading is paused until you give it a track."
+                  : then === "delete"
+                    ? "Their progress, sessions and notes are deleted with them."
+                    : "They go to the end of that track's queue, keeping their progress, notes and history."}
+              </p>
             )}
             <p className="text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
             <div className="flex justify-end gap-2">
@@ -202,7 +209,7 @@ export function TrackForm({
                 Cancel
               </Button>
               <Button variant="danger" className="btn-danger-solid" onPress={remove}>
-                {books > 0 && !moveTo ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track"}
+                {books > 0 && then === "delete" ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track"}
               </Button>
             </div>
           </div>

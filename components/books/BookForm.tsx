@@ -192,12 +192,12 @@ export function BookForm({
     !!book &&
     book.status === "active" &&
     track !== book.trackId &&
-    R.wipBlockers(s, book.id, track).length > 0;
+    (!track || R.wipBlockers(s, book.id, track).length > 0);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const t = title.trim();
-    if (!t || !track || pending) return;
+    if (!t || pending) return;
     const input: R.BookInput = {
       title: t,
       author,
@@ -322,6 +322,7 @@ export function BookForm({
                 {t.name}
               </option>
             ))}
+            <option value="">No track</option>
           </select>
         </Field>
         <Field label="Phase">
@@ -337,7 +338,9 @@ export function BookForm({
       </div>
       {bumps && (
         <p className="text-xs" style={{ color: "var(--danger)" }}>
-          That track is already at its limit, so this book will be paused there.
+          {track
+            ? "That track is already at its limit, so this book will be paused there."
+            : "Without a track it won't show on Today, so it will be paused."}
         </p>
       )}
       <Field label="Note">
@@ -440,7 +443,7 @@ export function BookForm({
           <Button variant="outline" onPress={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" isDisabled={pending || !title.trim() || !track}>
+          <Button type="submit" variant="primary" isDisabled={pending || !title.trim()}>
             {book ? "Save" : "Add"}
           </Button>
         </span>
