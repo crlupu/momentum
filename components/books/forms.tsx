@@ -7,7 +7,7 @@ import { DeleteButton } from "../DeleteButton";
 import { usePending } from "../ActionButton";
 import { Tracker, BOOK_COLORS, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
-import { PLAN_AI_PROMPT, PLAN_FORMAT, PLAN_RULES, applyPlan, parsePlan } from "@/lib/planImport";
+import { PLAN_FORMAT, applyPlan, parsePlan } from "@/lib/planImport";
 import { FormatHelp } from "../FormatHelp";
 import { fmtDate } from "@/lib/dates";
 import { Field } from "./bits";
@@ -335,16 +335,13 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-sm text-foreground/70">
-        Paste a reading plan in Markdown. Importing again updates what is there rather than adding it twice.
-      </p>
-      <FormatHelp formats={[{ label: "Markdown", text: PLAN_FORMAT }]} rules={PLAN_RULES} prompt={PLAN_AI_PROMPT} />
+      <FormatHelp text={PLAN_FORMAT} />
       <textarea
         aria-label="Reading plan"
         rows={10}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={"| Track | Daily target | Slot |\n|---|---|---|\n| Technical | ~20 pages | 12:15 iPad block |\n\n## Phase 1 — Foundations (Q4 2026)\n**Technical**\n1. Effective Java — Joshua Bloch *(finish)*"}
+        placeholder="Paste the plan here"
         className="w-full font-mono text-[13px]"
         autoFocus
       />

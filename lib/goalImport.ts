@@ -340,7 +340,7 @@ export function applyGoalPlan(
   return { state: { ...s, goals, paths }, preview };
 }
 
-/** The JSON format as a worked example: shown in the import dialog, and in the AI prompt. */
+/** The JSON format as a worked example, shown in the import dialog to copy. */
 export const GOAL_JSON_FORMAT = `{
   "topic": "Rust ramp up",
   "category": "Learning",
@@ -356,31 +356,3 @@ export const GOAL_JSON_FORMAT = `{
     { "title": "Rewrite the fixtures consumer in Rust" }
   ]
 }`;
-
-/** The same plan in Markdown. */
-export const GOAL_MD_FORMAT = `# Rust ramp up
-Category: Learning
-Enough Rust to rewrite the fixtures consumer
-
-- [The Rust Book](https://doc.rust-lang.org/book/) (20)
-  Chapters 1–20, with the exercises
-- Rustlings (3/94)
-- Rewrite the fixtures consumer in Rust — the real goal`;
-
-export const GOAL_RULES = [
-  "\"topic\" is the group the goals go in; a topic with the same name is added to rather than made twice. Several topics: { \"topics\": [ … ] }. Goals only: a plain list [ … ].",
-  "\"category\" names one of your categories (Learning, Work…); \"description\" is a line on what the topic is for.",
-  "Each goal has a \"title\"; the rest is optional: \"description\" for details, \"link\" to the course or book, \"count\" for how many units it has (lessons, videos, pages), \"done\" for how many are done already.",
-  "In Markdown: \"# Topic\", an optional \"Category:\" line and a description, then one \"- Goal\" per line. A link sets the goal's link, \"(20)\" or \"(3/20)\" at the end its count, \"[x]\" marks it done, and indented lines or \"— details\" become its description.",
-];
-
-/** A prompt for an AI chat that asks for exactly the JSON the import reads. */
-export const AI_PROMPT = `I track what I'm learning in an app that imports goals from JSON. Make me a study plan for: [WHAT YOU WANT TO LEARN, AND WHY]
-
-Split it into goals I can work through one at a time (courses, books, modules, projects), in the order they should be done. Answer with only JSON, no other text, in exactly this format:
-
-${GOAL_JSON_FORMAT}
-
-Rules:
-${GOAL_RULES.slice(0, 3).map((r) => `- ${r}`).join("\n")}
-- Leave out "link" unless it's a real resource, and "count" when there's nothing to count.`;

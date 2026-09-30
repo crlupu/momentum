@@ -6,19 +6,12 @@ import { CatPicker } from "./Forms";
 import { Upload } from "./icons";
 import { FormatHelp } from "./FormatHelp";
 import { Tracker } from "@/lib/tracker";
-import {
-  AI_PROMPT,
-  GOAL_JSON_FORMAT,
-  GOAL_MD_FORMAT,
-  GOAL_RULES,
-  applyGoalPlan,
-  parseGoalPlan,
-} from "@/lib/goalImport";
+import { GOAL_JSON_FORMAT, applyGoalPlan, parseGoalPlan } from "@/lib/goalImport";
 
 /**
  * Goals from a JSON or Markdown file — pasted, or chosen from the phone or
  * computer — with a preview of what importing will do before it's done.
- * The prompt button copies a request an AI chat answers in the right shape.
+ * The format is shown to copy, to hand to an AI.
  */
 export function GoalImportForm({
   tracker,
@@ -71,18 +64,7 @@ export function GoalImportForm({
 
   return (
     <form onSubmit={submit} className="goal-fields">
-      <p className="text-sm text-[var(--muted)]">
-        Paste goals as JSON or Markdown, or choose a <code>.json</code> / <code>.md</code> file.
-      </p>
-
-      <FormatHelp
-        formats={[
-          { label: "JSON", text: GOAL_JSON_FORMAT },
-          { label: "Markdown", text: GOAL_MD_FORMAT },
-        ]}
-        rules={GOAL_RULES}
-        prompt={AI_PROMPT}
-      />
+      <FormatHelp text={GOAL_JSON_FORMAT} />
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onPress={() => fileRef.current?.click()}>
@@ -107,7 +89,7 @@ export function GoalImportForm({
             setText(e.target.value);
             setFileName(null);
           }}
-          placeholder={"# Rust ramp up\nCategory: Learning\n- [The Rust Book](https://doc.rust-lang.org/book/) (20)\n  Chapters 1–20, with the exercises\n- Rustlings (94)\n- Rewrite the fixtures consumer in Rust"}
+          placeholder="Paste JSON or Markdown here"
           className="font-mono text-[13px]"
         />
       </label>
