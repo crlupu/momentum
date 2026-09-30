@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { readableText } from "@/lib/color";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Tracker, Book, bookColor } from "@/lib/tracker";
 import { coverUrl, lookupBook } from "@/lib/covers";
 
@@ -13,17 +12,15 @@ export function normaliseTitle(s: string): string {
 /**
  * The cover.
  *
- * A real one if Open Library had it; otherwise one set like a plain cloth
- * jacket from what is already known — the book's colour, a spine with its
- * hinge, the title in a serif and the author in small capitals. At list size
- * there is no room for words, so it carries the title's initial instead, as a
- * monogram. The drawn cover is also what shows when the image fails —
+ * A real one if Open Library had it; otherwise a plain paper one drawn from
+ * what is already known — a thin band of the book's colour across the top,
+ * the title in the system face and the author beneath it, muted. At list size
+ * there is no room for words, so it carries the title's initial instead, in
+ * the book's colour. The drawn cover is also what shows when the image fails —
  * offline, or a cover id that no longer resolves — so a book never appears as
  * a broken image.
  */
 export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" }) {
-  const colour = bookColor(book);
-  const ink = readableText(colour);
   const [broken, setBroken] = useState(false);
 
   // A new cover deserves a fresh attempt, whatever happened to the last one.
@@ -43,35 +40,29 @@ export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" })
     );
   }
 
-  // The title as a jacket would carry it: without its subtitle.
+  // The title as a cover would carry it: without its subtitle.
   const title = book.title.split(/\s*[:|—–]\s+|:\s*/)[0].trim() || book.title;
   const initial = (title.match(/[\p{L}\p{N}]/u)?.[0] ?? "?").toUpperCase();
-  // Set small enough that the longest word fits a line whole: a jacket
-  // breaks lines between words, never inside one. About 40px of line, at
-  // roughly half an em a letter.
+  // Set small enough that the longest word fits a line whole, so lines break
+  // between words, never inside one: 46px of line at roughly 0.6em a letter.
   const longest = Math.max(...title.split(/\s+/).map((w) => w.length));
-  const titleSize = Math.max(5.5, Math.min(7.75, 40 / (longest * 0.52)));
+  const titleSize = Math.max(5, Math.min(7, 46 / (longest * 0.6)));
 
   return (
     <span
       className={"book-cover book-cover--drawn" + sizeClass}
-      style={{ background: colour, color: ink }}
+      style={{ "--book": bookColor(book) } as CSSProperties}
       aria-hidden
     >
-      <span className="book-cover__spine" />
       {size === "sm" ? (
-        <span className="book-cover__mono">
-          {initial}
-          <span className="book-cover__rule" />
-        </span>
+        <span className="book-cover__mono">{initial}</span>
       ) : (
-        <span className="book-cover__face">
+        <>
           <span className="book-cover__title" style={{ fontSize: `${titleSize}px` }}>
             {title}
           </span>
-          <span className="book-cover__rule" />
           {book.author && <span className="book-cover__author">{book.author}</span>}
-        </span>
+        </>
       )}
     </span>
   );
