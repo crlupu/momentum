@@ -419,3 +419,56 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
 
   return { state: s, preview };
 }
+
+/**
+ * The format, as a worked example with its rules — shown in the import
+ * dialog and built into the AI prompt, so both always match what parsePlan
+ * reads.
+ */
+export const PLAN_FORMAT = `| Track | Daily target | Slot |
+|---|---|---|
+| Technical | 20 pages | 12:15 iPad block |
+| Non-technical | 30 pages | Evening |
+
+Rule: one active book per track.
+
+## Phase 1 — Foundations (Q4 2026)
+**Goal:** Solid Java and system-design basics.
+
+**Technical**
+1. Effective Java (3rd ed.) — Joshua Bloch *(finish)*
+2. Designing Data-Intensive Applications — Martin Kleppmann
+   - *Optional:* Database Internals — Alex Petrov
+
+**Non-technical**
+1. Atomic Habits — James Clear
+
+## Phase 2 — Architecture (Q1 2027)
+**Technical**
+1. Fundamentals of Software Architecture — Mark Richards
+
+## Slow lane (continuous)
+1. Gödel, Escher, Bach — Douglas Hofstadter
+
+## Dropped
+- Clean Code — Robert C. Martin *(outdated)*`;
+
+export const PLAN_RULES = [
+  "The table lists the tracks (reading lanes): name, pages a day, and when you read.",
+  "\"Rule: one active book per track.\" sets how many books are open at once (one to five).",
+  "\"## Phase name (Q4 2026)\" starts a phase; the brackets take a quarter (Q1–Q4), a half (H1/H2), a year, or \"2026-10-01 – 2026-12-31\". \"**Goal:**\" under it says what it's for.",
+  "\"**Track**\" on its own line puts the numbered list below it in that track, in reading order.",
+  "A book is \"Title — Author\"; \"(2nd ed.)\" after the title is its edition; a note goes in \"*(…)*\" at the end, and \"*(finish)*\" marks the book you're reading now.",
+  "An indented \"- *Optional:* …\" under a book is an optional extra.",
+  "\"## Track name (continuous)\" is a track's standing list outside the phases; \"## Dropped\" lists books given up on, with the reason in \"*(…)*\".",
+];
+
+/** A prompt for an AI chat that asks for a plan in exactly this format. */
+export const PLAN_AI_PROMPT = `I plan my reading in an app that imports a reading plan written in Markdown. Make me a reading plan for: [WHAT YOU WANT TO READ ABOUT, HOW MUCH TIME YOU HAVE, AND BOOKS YOU'VE ALREADY READ]
+
+Answer with only the plan, in exactly this format:
+
+${PLAN_FORMAT}
+
+Rules:
+${PLAN_RULES.map((r) => `- ${r}`).join("\n")}`;

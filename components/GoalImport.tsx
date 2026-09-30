@@ -3,9 +3,17 @@
 import { ChangeEvent, FormEvent, useMemo, useRef, useState } from "react";
 import { Button } from "./ui";
 import { CatPicker } from "./Forms";
-import { Copy, Upload } from "./icons";
+import { Upload } from "./icons";
+import { FormatHelp } from "./FormatHelp";
 import { Tracker } from "@/lib/tracker";
-import { AI_PROMPT, applyGoalPlan, parseGoalPlan } from "@/lib/goalImport";
+import {
+  AI_PROMPT,
+  GOAL_JSON_FORMAT,
+  GOAL_MD_FORMAT,
+  GOAL_RULES,
+  applyGoalPlan,
+  parseGoalPlan,
+} from "@/lib/goalImport";
 
 /**
  * Goals from a JSON or Markdown file — pasted, or chosen from the phone or
@@ -26,8 +34,6 @@ export function GoalImportForm({
   const [text, setText] = useState("");
   const [into, setInto] = useState<string>(topicId ?? "file");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
-  const [copied, setCopied] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -53,17 +59,6 @@ export function GoalImportForm({
     e.target.value = "";
   };
 
-  const copyPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(AI_PROMPT);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard refused (not a secure page, say): show it to copy by hand.
-      setShowPrompt(true);
-    }
-  };
-
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!goals) return;
@@ -77,16 +72,21 @@ export function GoalImportForm({
   return (
     <form onSubmit={submit} className="goal-fields">
       <p className="text-sm text-[var(--muted)]">
-        Paste goals as JSON or Markdown, or choose a <code>.json</code> / <code>.md</code> file. To have an AI
-        write them, copy the prompt, fill in what you want to learn, and import its answer.
+        Paste goals as JSON or Markdown, or choose a <code>.json</code> / <code>.md</code> file.
       </p>
+
+      <FormatHelp
+        formats={[
+          { label: "JSON", text: GOAL_JSON_FORMAT },
+          { label: "Markdown", text: GOAL_MD_FORMAT },
+        ]}
+        rules={GOAL_RULES}
+        prompt={AI_PROMPT}
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onPress={() => fileRef.current?.click()}>
           <Upload className="h-4 w-4" /> Choose file
-        </Button>
-        <Button variant="outline" onPress={() => void copyPrompt()}>
-          <Copy className="h-4 w-4" /> {copied ? "Prompt copied" : "Copy AI prompt"}
         </Button>
         <input
           ref={fileRef}
@@ -96,13 +96,6 @@ export function GoalImportForm({
           hidden
         />
       </div>
-
-      {showPrompt && (
-        <label className="goal-field">
-          <span>The prompt — select it and copy</span>
-          <textarea readOnly rows={8} value={AI_PROMPT} onFocus={(e) => e.target.select()} className="text-[13px]" />
-        </label>
-      )}
 
       <label className="goal-field">
         <span>{fileName ? `From ${fileName}` : "Goals"}</span>
