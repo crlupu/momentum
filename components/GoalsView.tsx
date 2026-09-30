@@ -185,6 +185,7 @@ function TopicSection({
   onEdit: () => void;
 }) {
   const s = tracker.state!;
+  const cat = topic.catId ? tracker.cat(topic.catId) : null;
   const done = all.filter((g) => g.done).length;
   const pct = pathPct({ ...topic, goalIds: all.map((g) => g.id) }, s.goals);
 
@@ -195,8 +196,14 @@ function TopicSection({
           Edit
         </button>
       </PanelHeader>
-      {(topic.note || all.length > 0) && (
+      {(topic.note || all.length > 0 || cat) && (
         <div className="goal-topic__summary">
+          {cat && (
+            <p className="goal-topic__cat">
+              <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
+              {cat.name}
+            </p>
+          )}
           {topic.note && <p className="goal-topic__note">{topic.note}</p>}
           {all.length > 0 && (
             <div className="goal-topic__progress">
@@ -216,7 +223,7 @@ function TopicSection({
         ) : (
           <ul className="goal-list__rows">
             {goals.map((g) => (
-              <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} />
+              <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} inTopic />
             ))}
           </ul>
         )}
@@ -235,10 +242,13 @@ function GoalRow({
   tracker,
   goal: g,
   onOpen,
+  inTopic,
 }: {
   tracker: Tracker;
   goal: Goal;
   onOpen: (id: string) => void;
+  /** In a topic, the category is the topic's and shown on it, not per row. */
+  inTopic?: boolean;
 }) {
   const cat = tracker.cat(g.catId);
   const steps = goalStepsDone(g);
@@ -270,9 +280,13 @@ function GoalRow({
             {g.title}
           </span>
           <span className="goal-row__meta">
-            <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
-            {cat.name}
-            <span aria-hidden>·</span>
+            {!inTopic && (
+              <>
+                <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
+                {cat.name}
+                <span aria-hidden>·</span>
+              </>
+            )}
             {meta}
           </span>
         </span>

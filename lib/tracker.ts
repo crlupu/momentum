@@ -954,12 +954,11 @@ function migrate(raw: unknown): TrackerState {
     // — silently deleting that data for every other device.
     ...(s as Partial<TrackerState>),
     categories,
-    goals,
+    ...topicCategories(paths, goals),
     recurring,
     recurringGroups,
     todos,
     completions,
-    paths,
     projects: P.migrateProjects(s.projects, uid),
     weights,
     cardio,
@@ -992,6 +991,39 @@ function afterPaint(): Promise<void> {
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => setTimeout(go, 0));
     setTimeout(go, 100);
   });
+}
+
+/** The goals named, given the topic's category (when it has one). */
+function withTopicCategory(goals: Goal[], topic: Path | undefined, ids: string[]): Goal[] {
+  if (!topic?.catId) return goals;
+  const set = new Set(ids);
+  return goals.map((g) => (set.has(g.id) && g.catId !== topic.catId ? { ...g, catId: topic.catId! } : g));
+}
+
+/**
+ * Category moved from goals to topics: a topic without one takes the one
+ * most of its goals share, and a goal in a topic takes its topic's. A goal
+ * belongs to the first topic that holds it, as everywhere else.
+ */
+function topicCategories(paths: Path[], goals: Goal[]): { paths: Path[]; goals: Goal[] } {
+  const byId = new Map(goals.map((g) => [g.id, g]));
+  const outPaths = paths.map((p) => {
+    if (p.catId) return p;
+    const counts = new Map<string, number>();
+    for (const id of p.goalIds) {
+      const c = byId.get(id)?.catId;
+      if (c) counts.set(c, (counts.get(c) ?? 0) + 1);
+    }
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    return top ? { ...p, catId: top } : p;
+  });
+  const topicOf = new Map<string, Path>();
+  for (const p of outPaths) for (const id of p.goalIds) if (!topicOf.has(id)) topicOf.set(id, p);
+  const outGoals = goals.map((g) => {
+    const c = topicOf.get(g.id)?.catId;
+    return c && g.catId !== c ? { ...g, catId: c } : g;
+  });
+  return { paths: outPaths, goals: outGoals };
 }
 
 /** Strips `undefined` values — Firestore rejects them outright. */
@@ -1379,7 +1411,8 @@ export function useTracker() {
             {
               id,
               title,
-              catId,
+              // In a topic, the topic's category is the goal's.
+              catId: (pathId && s.paths.find((p) => p.id === pathId)?.catId) || catId,
               current: current != null && Number.isFinite(current) && current >= 0 ? current : undefined,
               target: target != null && Number.isFinite(target) && target > 0 ? target : undefined,
               done: false,
@@ -1412,9 +1445,11 @@ export function useTracker() {
      * Puts a goal in one topic — or none — taking it out of any other. A goal
      * belongs to one topic on this page.
      */
+    /** Moves a goal into a topic (or out of any), taking the topic's category. */
     setGoalTopic: (goalId: string, pathId: string | null) =>
       commit((s) => ({
         ...s,
+        goals: withTopicCategory(s.goals, s.paths.find((p) => p.id === pathId), [goalId]),
         paths: s.paths.map((p) => {
           const has = p.goalIds.includes(goalId);
           if (p.id === pathId) return has ? p : { ...p, goalIds: [...p.goalIds, goalId] };
@@ -1492,6 +1527,10 @@ export function useTracker() {
           paths: s.paths.map((p) =>
             p.id === id ? { ...p, title: t, catId: catId || undefined, note: note?.trim() || undefined } : p
           ),
+          // The topic's goals follow its category.
+          goals: catId
+            ? withTopicCategory(s.goals, { catId } as Path, s.paths.find((p) => p.id === id)?.goalIds ?? [])
+            : s.goals,
         };
       }),
 

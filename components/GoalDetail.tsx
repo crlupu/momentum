@@ -520,7 +520,19 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           </select>
         </label>
 
-        <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
+        {/* In a topic, the category is the topic's; changed there. */}
+        {topic?.catId ? (
+          <div className="goal-field">
+            <span>Category</span>
+            <span className="goal-field__value">
+              <span className="cat-dot" style={{ background: tracker.cat(topic.catId).color }} aria-hidden />
+              {tracker.cat(topic.catId).name}
+              <span className="goal-field__hint">from {topic.title}</span>
+            </span>
+          </div>
+        ) : (
+          <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
+        )}
 
         {(g.subtasks?.length ?? 0) === 0 && (
           <div className="goal-field">

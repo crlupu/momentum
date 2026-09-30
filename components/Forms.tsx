@@ -146,7 +146,8 @@ export function GoalForm({
           </select>
         </label>
       )}
-      <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
+      {/* In a topic, the goal takes the topic's category. */}
+      {!topic && <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />}
       <div>
         <div className="mb-1 text-xs text-[var(--muted)]">
           A count to track, if it has one (pages, videos, chapters). Leave empty to track it by steps.
