@@ -27,6 +27,7 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: "true"
+          NEXT_PUBLIC_GOOGLE_BOOKS_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_BOOKS_KEY }}
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

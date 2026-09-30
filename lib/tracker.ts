@@ -19,6 +19,7 @@ import * as R from "./reading";
 import * as P from "./projects";
 import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
+import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type {
   BookStatus,
   BookQuote,
@@ -162,6 +163,10 @@ export type Book = {
   coverId?: string | null;
   /** A cover image of the reader's own, by address. Wins over coverId. */
   coverImage?: string;
+  /** Which lookup filled this book in (see LOOKUP_VERSION); older ones are looked up again. */
+  lookup?: number;
+  /** Its category as Google Books files it: "Computers", "Self-Help". */
+  category?: string;
   /** The day it was finished. */
   doneDate?: string;
 
@@ -2058,7 +2063,10 @@ export function useTracker() {
     setBookCover: (id: string, coverId: string | null | undefined) =>
       commit((s) => ({
         ...s,
-        books: s.books.map((b) => (b.id === id ? { ...b, coverId } : b)),
+        books: s.books.map((b) =>
+          // A plain cover chosen by hand is final; a new look starts afresh.
+          b.id === id ? { ...b, coverId, lookup: coverId === undefined ? undefined : LOOKUP_VERSION } : b
+        ),
       })),
 
     /**
@@ -2071,16 +2079,19 @@ export function useTracker() {
      * length is the median across editions: a starting figure, there so the
      * plan can be projected, to be corrected against the copy in hand.
      */
-    resolveBook: (id: string, coverId: string | null, author?: string, pages?: number) =>
+    resolveBook: (id: string, found: BookLookup) =>
       commit((s) => ({
         ...s,
         books: s.books.map((b) =>
           b.id === id
             ? {
                 ...b,
-                coverId,
-                ...(!b.author?.trim() && author ? { author } : {}),
-                ...(!(b.pages > 0) && pages && pages > 0 ? { pages: Math.round(pages) } : {}),
+                // A cover already found stays unless this lookup found one.
+                coverId: found.coverId ?? (typeof b.coverId === "string" ? b.coverId : null),
+                lookup: found.complete === false ? b.lookup : LOOKUP_VERSION,
+                ...(!b.author?.trim() && found.author ? { author: found.author } : {}),
+                ...(!(b.pages > 0) && found.pages && found.pages > 0 ? { pages: Math.round(found.pages) } : {}),
+                ...(!b.category && found.category ? { category: found.category } : {}),
               }
             : b
         ),

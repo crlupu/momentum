@@ -2,7 +2,7 @@
 
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Tracker, Book, bookColor } from "@/lib/tracker";
-import { coverUrl, lookupBook } from "@/lib/covers";
+import { LOOKUP_VERSION, coverUrl, lookupBook } from "@/lib/covers";
 
 /** Loose comparison for matching titles typed by hand against stored ones. */
 export function normaliseTitle(s: string): string {
@@ -69,6 +69,14 @@ export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" })
 }
 
 /**
+ * Never looked up, or looked up by an older lookup that knew less. A cover of
+ * the reader's own needs nothing.
+ */
+function needsLookup(b: Book): boolean {
+  return !b.coverImage && (b.coverId === undefined || (b.lookup ?? 1) < LOOKUP_VERSION);
+}
+
+/**
  * Looks up the cover — and the author, where one is missing — for books that
  * have never been looked up.
  *
@@ -92,9 +100,7 @@ export function useCoverLookup(tracker: Tracker, books: Book[]) {
   }, []);
 
   useEffect(() => {
-    const next = books.find(
-      (b) => b.coverId === undefined && !b.coverImage && !tried.current.has(b.id)
-    );
+    const next = books.find((b) => needsLookup(b) && !tried.current.has(b.id));
     if (!next || busy.current) return;
 
     busy.current = true;
@@ -106,11 +112,17 @@ export function useCoverLookup(tracker: Tracker, books: Book[]) {
     const known = books.find(
       (b) =>
         b.id !== next.id &&
+        !needsLookup(b) &&
         b.coverId !== undefined &&
         normaliseTitle(b.title) === normaliseTitle(next.title)
     );
     if (known) {
-      void tracker.resolveBook(next.id, known.coverId ?? null, known.author, known.pages || undefined);
+      void tracker.resolveBook(next.id, {
+        coverId: known.coverId ?? null,
+        author: known.author,
+        pages: known.pages || undefined,
+        category: known.category,
+      });
       busy.current = false;
       return;
     }
@@ -121,8 +133,8 @@ export function useCoverLookup(tracker: Tracker, books: Book[]) {
     // already been made, and the book was never resolved. Only unmounting
     // stops it, and the write is harmless either way.
     lookupBook(next.title, next.author)
-      .then(({ coverId, author, pages }) => {
-        if (alive.current) void tracker.resolveBook(next.id, coverId, author, pages);
+      .then((found) => {
+        if (alive.current) void tracker.resolveBook(next.id, found);
       })
       .catch(() => {
         // Left unresolved on purpose: a reload will try again.

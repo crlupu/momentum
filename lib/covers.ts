@@ -1,9 +1,13 @@
 /**
- * Book covers from Open Library.
+ * Book covers, categories and lengths — from Google Books first, and Open
+ * Library where Google has nothing or can't be reached.
  *
- * Chosen because it needs no API key, which matters for an app served as a
- * static site: there is nowhere to keep a secret. The image itself is fetched
- * by the browser as an ordinary <img>, so nothing here has to deal with CORS.
+ * Google's covers are usually the publisher's own, and it gives each book a
+ * category; Open Library needs no key and fills the gaps. The Google key comes
+ * from the build (NEXT_PUBLIC_GOOGLE_BOOKS_KEY, a repository secret): a
+ * browser key restricted to this site and the Books API. Without one, lookups
+ * go to Open Library alone. The image itself is fetched by the browser as an
+ * ordinary <img>, so nothing here has to deal with CORS.
  *
  * Open Library ask that their cover API is not crawled, and rate-limit lookups
  * by anything other than a cover id. So a book is looked up once, when it is
@@ -13,12 +17,30 @@
  */
 
 const SEARCH = "https://openlibrary.org/search.json";
+const GOOGLE = "https://www.googleapis.com/books/v1/volumes";
+const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_KEY;
+
+/**
+ * Bumped when the lookup learns something new, so books looked up before are
+ * looked up once more. 2: Google Books, with categories. Without a Google key
+ * there is nothing new to learn, so it stays at 1.
+ */
+export const LOOKUP_VERSION = GOOGLE_KEY ? 2 : 1;
+
+/** A stored cover id from Google Books carries this prefix; Open Library's are bare numbers. */
+const GOOGLE_PREFIX = "g:";
 
 /** Size suffixes Open Library serves: small, medium, large. */
 export type CoverSize = "S" | "M" | "L";
 
 /** The image URL for a stored cover id. */
 export function coverUrl(coverId: string, size: CoverSize = "M"): string {
+  if (coverId.startsWith(GOOGLE_PREFIX)) {
+    // zoom 1 is 128px wide, 2 is 300px: enough for a cover at 3x.
+    const zoom = size === "S" ? 1 : 2;
+    const id = encodeURIComponent(coverId.slice(GOOGLE_PREFIX.length));
+    return `https://books.google.com/books/content?id=${id}&printsec=frontcover&img=1&zoom=${zoom}`;
+  }
   return `https://covers.openlibrary.org/b/id/${coverId}-${size}.jpg`;
 }
 
@@ -30,7 +52,91 @@ export type BookLookup = {
   author?: string;
   /** Median page count across editions, where Open Library has one. */
   pages?: number;
+  /** The book's category as Google Books files it: "Computers", "Self-Help". */
+  category?: string;
+  /**
+   * False when Google couldn't be asked (over quota, a bad response), so the
+   * book is left to be looked up again later rather than marked as done.
+   */
+  complete?: boolean;
 };
+
+type GoogleVolume = {
+  id?: string;
+  volumeInfo?: {
+    title?: string;
+    authors?: string[];
+    pageCount?: number;
+    categories?: string[];
+    imageLinks?: { thumbnail?: string };
+  };
+};
+
+const loose = (s: string) =>
+  s.toLowerCase().split(/\s*[:|—–]\s*/)[0].replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+/**
+ * Asks Google Books. Null when Google can't answer — no key, over quota, a
+ * bad response — so the caller falls back to Open Library.
+ *
+ * The first result is often a translation or a workbook, so the pick is the
+ * first whose title matches the book's (subtitles aside), preferring one with
+ * a cover, and only then the first with a cover at all.
+ */
+async function lookupGoogle(title: string, author?: string): Promise<BookLookup | null> {
+  if (!GOOGLE_KEY) return null;
+  const lead = leadAuthor(author);
+  const params = new URLSearchParams({
+    q: `intitle:${title}${lead ? ` inauthor:${lead}` : ""}`,
+    maxResults: "10",
+    printType: "books",
+    fields: "items(id,volumeInfo(title,authors,pageCount,categories,imageLinks/thumbnail))",
+    key: GOOGLE_KEY,
+  });
+  const res = await fetch(`${GOOGLE}?${params.toString()}`);
+  if (!res.ok) return null;
+  const items = ((await res.json()) as { items?: GoogleVolume[] })?.items ?? [];
+
+  const want = loose(title);
+  const same = items.filter((v) => loose(v.volumeInfo?.title ?? "") === want);
+  const hasCover = (v: GoogleVolume) => !!v.id && !!v.volumeInfo?.imageLinks?.thumbnail;
+  const pick = same.find(hasCover) ?? same[0] ?? items.find(hasCover);
+  if (!pick) return { coverId: null };
+
+  // Length and category from any matching edition that has them.
+  const first = <T,>(get: (v: GoogleVolume) => T | undefined) =>
+    [pick, ...same].map(get).find((x) => x !== undefined);
+  const name = pick.volumeInfo?.authors?.[0]?.trim();
+  const pages = first((v) => {
+    const n = v.volumeInfo?.pageCount;
+    return n && n > 0 ? n : undefined;
+  });
+  const category = first((v) => v.volumeInfo?.categories?.[0]?.trim() || undefined);
+
+  return {
+    coverId: hasCover(pick) ? GOOGLE_PREFIX + pick.id : null,
+    ...(name ? { author: name } : {}),
+    ...(pages ? { pages } : {}),
+    ...(category ? { category } : {}),
+  };
+}
+
+/**
+ * Looks a book up: Google Books first, then Open Library for whatever Google
+ * lacked — a cover, most often.
+ */
+export async function lookupBook(title: string, author?: string): Promise<BookLookup> {
+  const google = await lookupGoogle(title, author).catch(() => null);
+  if (google?.coverId) return google;
+  const complete = !!google || !GOOGLE_KEY;
+  const open = await lookupOpenLibrary(title, author).catch((e) => {
+    // With Google's answer in hand, Open Library being down loses only the
+    // fallback cover; without it, the lookup failed and should be retried.
+    if (google) return { coverId: null } as BookLookup;
+    throw e;
+  });
+  return { ...open, ...google, coverId: open.coverId, complete };
+}
 
 /**
  * Looks a book up by title, and by author too when one is already known.
@@ -41,7 +147,7 @@ export type BookLookup = {
  * so the caller can leave the book unresolved and try again later rather than
  * recording "no cover" for a book that has one.
  */
-export async function lookupBook(title: string, author?: string): Promise<BookLookup> {
+async function lookupOpenLibrary(title: string, author?: string): Promise<BookLookup> {
   const params = new URLSearchParams({
     title,
     limit: "1",

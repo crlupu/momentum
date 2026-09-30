@@ -720,7 +720,7 @@ export function updateBook(s: TrackerState, id: string, input: BookInput): Track
       // A change of title or author is a change of book as far as the cover
       // is concerned, so it goes to be looked up again rather than keeping
       // the old book's picture.
-      ...(title !== b.title || author !== b.author ? { coverId: undefined } : {}),
+      ...(title !== b.title || author !== b.author ? { coverId: undefined, lookup: undefined } : {}),
     };
   });
   // Shortening a book below where it had been read to would leave it past

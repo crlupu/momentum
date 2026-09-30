@@ -39,6 +39,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
       : null;
 
   const meta = [
+    book.category,
     book.edition && `${book.edition} edition`,
     book.language,
     ...(book.tags ?? []),
