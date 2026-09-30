@@ -13,11 +13,13 @@ export function normaliseTitle(s: string): string {
 /**
  * The cover.
  *
- * A real one if Open Library had it, otherwise one built from what is already
- * known: the book's colour, a darker band down the binding edge, and its
- * initials. The drawn cover is also what shows when the image fails — offline,
- * or a cover id that no longer resolves — so a book never appears as a broken
- * image.
+ * A real one if Open Library had it; otherwise one set like a plain cloth
+ * jacket from what is already known — the book's colour, a spine with its
+ * hinge, the title in a serif and the author in small capitals. At list size
+ * there is no room for words, so it carries the title's initial instead, as a
+ * monogram. The drawn cover is also what shows when the image fails —
+ * offline, or a cover id that no longer resolves — so a book never appears as
+ * a broken image.
  */
 export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" }) {
   const colour = bookColor(book);
@@ -27,13 +29,6 @@ export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" })
   // A new cover deserves a fresh attempt, whatever happened to the last one.
   useEffect(() => setBroken(false), [book.coverId, book.coverImage]);
   const sizeClass = size === "sm" ? " book-cover--sm" : "";
-
-  const initials = book.title
-    .split(/\s+/)
-    .filter((w) => /[a-z0-9]/i.test(w[0] ?? ""))
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
 
   const src = book.coverImage || (book.coverId ? coverUrl(book.coverId, "M") : null);
   if (src && !broken) {
@@ -48,10 +43,36 @@ export function Cover({ book, size = "md" }: { book: Book; size?: "sm" | "md" })
     );
   }
 
+  // The title as a jacket would carry it: without its subtitle.
+  const title = book.title.split(/\s*[:|—–]\s+|:\s*/)[0].trim() || book.title;
+  const initial = (title.match(/[\p{L}\p{N}]/u)?.[0] ?? "?").toUpperCase();
+  // Set small enough that the longest word fits a line whole: a jacket
+  // breaks lines between words, never inside one. About 40px of line, at
+  // roughly half an em a letter.
+  const longest = Math.max(...title.split(/\s+/).map((w) => w.length));
+  const titleSize = Math.max(5.5, Math.min(7.75, 40 / (longest * 0.52)));
+
   return (
-    <span className={"book-cover" + sizeClass} style={{ background: colour, color: ink }} aria-hidden>
+    <span
+      className={"book-cover book-cover--drawn" + sizeClass}
+      style={{ background: colour, color: ink }}
+      aria-hidden
+    >
       <span className="book-cover__spine" />
-      <span className="book-cover__initials">{initials}</span>
+      {size === "sm" ? (
+        <span className="book-cover__mono">
+          {initial}
+          <span className="book-cover__rule" />
+        </span>
+      ) : (
+        <span className="book-cover__face">
+          <span className="book-cover__title" style={{ fontSize: `${titleSize}px` }}>
+            {title}
+          </span>
+          <span className="book-cover__rule" />
+          {book.author && <span className="book-cover__author">{book.author}</span>}
+        </span>
+      )}
     </span>
   );
 }
