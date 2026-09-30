@@ -252,21 +252,18 @@ function OpenBook({
             <Warning className="h-4 w-4 shrink-0" />
             No progress for {last ? R.daysBetween(last, today) : R.STALL_DAYS} days.
           </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "page", bookId: book.id, skim: true })}>
-              Skim to next useful chapter
-            </Button>
+          {/* Two answers: set it aside, or carry on. Dropping it is in its
+              Edit, as its status. */}
+          <div className="mt-2 grid grid-cols-2 gap-2">
             <Button
               size="sm"
               variant="outline"
+              className="justify-center"
               onPress={() => void tracker.setBookStatus(book.id, "paused", { place: "end" })}
             >
-              Pause, move later
+              Pause
             </Button>
-            <Button size="sm" variant="outline" onPress={() => flow.open({ kind: "drop", bookId: book.id })}>
-              Drop
-            </Button>
-            <Button size="sm" variant="ghost" onPress={() => void tracker.dismissStall(book.id)}>
+            <Button size="sm" variant="outline" className="justify-center" onPress={() => void tracker.dismissStall(book.id)}>
               Keep going
             </Button>
           </div>

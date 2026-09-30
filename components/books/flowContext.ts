@@ -15,8 +15,6 @@ export type Dialog =
   | { kind: "wip"; bookId: string }
   | { kind: "finish"; bookId: string }
   | { kind: "next"; bookId: string; finishedTitle: string }
-  | { kind: "drop"; bookId: string }
-  | { kind: "page"; bookId: string; skim?: boolean }
   | { kind: "bulk"; trackId?: string }
   | { kind: "import" }
   | { kind: "track"; trackId: string | null }

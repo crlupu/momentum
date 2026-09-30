@@ -209,26 +209,6 @@ function DialogFor({
       );
     }
 
-    case "drop":
-      return (
-        <Modal open onClose={close} title="Drop book">
-          {book ? <DropForm tracker={tracker} book={book} /> : <Gone />}
-        </Modal>
-      );
-
-    case "page":
-      // Setting the page counts the difference as read, like any update; only
-      // skimming ahead moves the book without it.
-      return d.skim ? (
-        <Modal open onClose={close} title="Skim ahead">
-          {book ? <PageForm tracker={tracker} book={book} skim /> : <Gone />}
-        </Modal>
-      ) : (
-        <Modal open onClose={close} title="Update page">
-          {book ? <LogForm tracker={tracker} book={book} /> : <Gone />}
-        </Modal>
-      );
-
     case "bulk":
       return (
         <Modal open onClose={close} title="Add several books">
@@ -431,78 +411,6 @@ function WipChoice({ tracker, book }: { tracker: Tracker; book: Book }) {
         </Button>
       </div>
     </div>
-  );
-}
-
-function DropForm({ tracker, book }: { tracker: Tracker; book: Book }) {
-  const { close } = useFlowFromContext();
-  const [reason, setReason] = useState("");
-  const { pending, run } = usePending();
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    close();
-    await run(() => tracker.setBookStatus(book.id, "dropped", { reason }));
-  };
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-[15px]">
-        <span className="font-semibold">{book.title}</span> leaves its queue but stays in your history.
-      </p>
-      <input
-        aria-label="Reason"
-        placeholder="Reason (optional), e.g. outdated"
-        value={reason}
-        onChange={(e) => setReason(e.target.value)}
-        autoFocus
-        className="w-full"
-      />
-      <DialogActions primary={{ label: "Drop", disabled: pending, danger: true }} />
-    </form>
-  );
-}
-
-/**
- * Puts a book at a page without counting the pages as read: to correct a
- * mistake, or to jump past chapters that weren't worth reading closely.
- */
-function PageForm({ tracker, book, skim }: { tracker: Tracker; book: Book; skim?: boolean }) {
-  const { close, checkEnd } = useFlowFromContext();
-  const [value, setValue] = useState(String(book.read || ""));
-  const { pending, run } = usePending();
-  const v = Number(value);
-  const valid = value.trim() !== "" && Number.isFinite(v) && v >= 0;
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!valid || pending) return;
-    close();
-    const ok = await run(() => tracker.setCurrentPage(book.id, v));
-    if (ok) checkEnd(book.id);
-  };
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-sm text-[var(--muted)]">
-        {skim
-          ? "Jump to the next chapter worth reading. Skimmed pages don't count toward today's target."
-          : "Moves the book to this page without logging a session."}
-      </p>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        max={book.pages > 0 ? book.pages : undefined}
-        aria-label="Page"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onFocus={(e) => e.target.select()}
-        autoFocus
-        className="w-full"
-      />
-      <p className="text-xs text-[var(--muted)]">
-        Now on page {book.read}
-        {book.pages > 0 ? ` of ${book.pages}` : ""}.
-      </p>
-      <DialogActions primary={{ label: "Set", disabled: pending || !valid }} />
-    </form>
   );
 }
 
