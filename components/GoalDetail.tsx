@@ -140,7 +140,7 @@ function MoveToProjects({ tracker, goal: g, onClose }: { tracker: Tracker; goal:
           It gets an empty board to add cards to, keeping its description and link, and
           leaves Learning.
         </p>
-        <DialogActions onCancel={() => setOpen(false)} primary={{ label: "Move", onPress: move }} />
+        <DialogActions primary={{ label: "Move", onPress: move }} />
       </Modal>
     </>
   );

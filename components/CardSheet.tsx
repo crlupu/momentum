@@ -66,7 +66,7 @@ export function NewCardForm({
         <TagPicker tracker={tracker} project={project} selected={tagIds} onChange={setTagIds} />
       </div>
 
-      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: !title.trim() }} />
+      <DialogActions primary={{ label: "Add", disabled: !title.trim() }} />
     </form>
   );
 }
@@ -154,7 +154,6 @@ export function CardSheet({
       </label>
 
       <DialogActions
-        onCancel={onClose}
         primary={{ label: "Save", onPress: () => void save(), disabled: pending || !dirty || !title.trim() }}
         del={{
           what: `the card "${c.title}"`,

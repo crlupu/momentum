@@ -52,7 +52,6 @@ export function TopicForm({
       />
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
       <DialogActions
-        onCancel={onDone}
         primary={{ label: topic ? "Save" : "Add", disabled: pending || !title.trim() }}
         del={
           topic && {

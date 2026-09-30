@@ -150,7 +150,6 @@ export function GoalImportForm({
       )}
 
       <DialogActions
-        onCancel={onClose}
         primary={{ label: `Import${goals ? ` ${goals} goal${goals === 1 ? "" : "s"}` : ""}`, disabled: !goals }}
       />
     </form>

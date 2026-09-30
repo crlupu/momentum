@@ -3496,6 +3496,9 @@ button.rd-link:active { background: var(--default); }
     inline-size: 100%;
     max-inline-size: none;
   }
+  /* Just Delete and Save: side by side, half each. */
+  .dialog-actions:has(.dialog-actions__side > :only-child) { flex-direction: row; }
+  .dialog-actions:has(.dialog-actions__side > :only-child) > * { flex: 1 1 0; min-width: 0; }
 }
 
 /* Panel (components/Panel.tsx): the title block beside its actions. */

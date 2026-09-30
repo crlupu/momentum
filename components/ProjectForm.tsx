@@ -100,7 +100,6 @@ export function ProjectForm({
       )}
 
       <DialogActions
-        onCancel={onDone}
         primary={{ label: project ? "Save" : "Add", disabled: pending || !title.trim() }}
         del={
           project && {

@@ -407,7 +407,6 @@ export function BookForm({
       )}
 
       <DialogActions
-        onCancel={onClose}
         primary={{ label: book ? "Save" : "Add", disabled: pending || !title.trim() }}
         del={
           book && {

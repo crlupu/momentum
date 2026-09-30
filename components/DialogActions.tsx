@@ -7,22 +7,18 @@ import { Trash2 } from "./icons";
 
 /**
  * The one footer for every pop-up, so they all read the same way: a delete
- * (when there is one) and any extra actions on the left, Cancel and the main
- * action on the right. Delete sits apart from Save so it's never pressed on
- * the way to it, and always asks first.
+ * (when there is one) on the left and the main action on the right — at most
+ * those two. There is no Cancel: the ✕ in the header closes without saving.
+ * Delete always asks first.
  *
  * The main action submits the surrounding form unless it is given an
  * onPress, so a form's own onSubmit — Enter included — stays the one path.
  */
 export function DialogActions({
-  onCancel,
-  cancelLabel = "Cancel",
   primary,
   del,
   extra,
 }: {
-  onCancel?: () => void;
-  cancelLabel?: string;
   primary?: {
     label: ReactNode;
     onPress?: () => void;
@@ -62,11 +58,6 @@ export function DialogActions({
         </div>
       )}
       <div className="dialog-actions__main">
-        {onCancel && (
-          <Button variant="outline" onPress={onCancel}>
-            {cancelLabel}
-          </Button>
-        )}
         {primary && (
           <Button
             type={primary.onPress ? "button" : "submit"}

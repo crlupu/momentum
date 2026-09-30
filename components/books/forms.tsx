@@ -1,8 +1,6 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { Button } from "../ui";
-import { Archive, Unarchive } from "../icons";
 import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { usePending } from "../ActionButton";
@@ -52,7 +50,6 @@ export function TrackForm({
     await run(() => (track ? tracker.updateTrack(track.id, input()) : tracker.addTrack(input())));
   };
 
-  const open = track ? s.books.filter((b) => b.trackId === track.id && b.status === "active").length : 0;
   const books = track ? s.books.filter((b) => b.trackId === track.id).length : 0;
   const others = track ? s.readingTracks.filter((t) => t.id !== track.id) : [];
   const [deleting, setDeleting] = useState(false);
@@ -128,37 +125,9 @@ export function TrackForm({
         book open in one never blocks another.
       </p>
 
-      {track && !track.archived && open > 0 && (
-        <p className="text-xs text-[var(--muted)]">
-          Archiving hides the track from Today and its counters. Its books stay where they are.
-        </p>
-      )}
       <DialogActions
-        onCancel={onClose}
         primary={{ label: track ? "Save" : "Add", disabled: pending || !name.trim() }}
         del={track ? { onPress: () => setDeleting(true) } : undefined}
-        extra={
-          track && (
-            <Button
-              variant="ghost"
-              isDisabled={pending}
-              onPress={() => {
-                onClose();
-                void run(() => tracker.updateTrack(track.id, input(!track.archived)));
-              }}
-            >
-              {track.archived ? (
-                <>
-                  <Unarchive className="h-4 w-4" /> Restore
-                </>
-              ) : (
-                <>
-                  <Archive className="h-4 w-4" /> Archive
-                </>
-              )}
-            </Button>
-          )
-        }
       />
 
       {track && (
@@ -194,7 +163,6 @@ export function TrackForm({
             )}
             <p className="text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
             <DialogActions
-              onCancel={() => setDeleting(false)}
               primary={{
                 label: books > 0 && then === "delete" ? `Delete track and ${books} book${books === 1 ? "" : "s"}` : "Delete track",
                 onPress: remove,
@@ -256,7 +224,6 @@ export function PhaseForm({
       </Field>
       <p className="text-xs text-[var(--muted)]">Books are put in a phase from their edit form, or when adding several.</p>
       <DialogActions
-        onCancel={onClose}
         primary={{ label: phase ? "Save" : "Add", disabled: pending || !name.trim() }}
         del={
           phase && {
@@ -345,7 +312,6 @@ export function BulkAddForm({
         is picked up; covers and missing authors are looked up afterwards.
       </p>
       <DialogActions
-        onCancel={onClose}
         primary={{
           label: `Add ${list.length || ""} book${list.length === 1 ? "" : "s"}`.replace("  ", " "),
           disabled: pending || !list.length || !track,
@@ -444,7 +410,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
         </div>
       )}
 
-      <DialogActions onCancel={onClose} primary={{ label: "Import", disabled: pending || empty }} />
+      <DialogActions primary={{ label: "Import", disabled: pending || empty }} />
     </form>
   );
 }

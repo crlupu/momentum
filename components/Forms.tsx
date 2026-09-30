@@ -159,7 +159,7 @@ export function GoalForm({
           <Input type="number" step="any" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
         </div>
       </div>
-      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: pending }} />
+      <DialogActions primary={{ label: "Add", disabled: pending }} />
     </form>
   );
 }
@@ -202,7 +202,7 @@ export function RecurringForm({ tracker, onDone }: { tracker: Tracker; onDone: (
       </div>
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
-      <DialogActions onCancel={onDone} primary={{ label: "Add", disabled: pending }} />
+      <DialogActions primary={{ label: "Add", disabled: pending }} />
     </form>
   );
 }
@@ -253,7 +253,6 @@ export function RecurringEditForm({
       <GroupPicker tracker={tracker} groupId={groupId} setGroupId={setGroupId} />
 
       <DialogActions
-        onCancel={onDone}
         primary={{ label: "Save", disabled: pending }}
         del={{
           what: `the recurring task "${task.title}"`,

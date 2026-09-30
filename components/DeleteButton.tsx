@@ -69,7 +69,6 @@ export function DeleteButton({
         </p>
         <p className="mb-4 text-sm text-[var(--muted)]">This can&apos;t be undone.</p>
         <DialogActions
-          onCancel={() => setOpen(false)}
           primary={{ label: "Delete", onPress: () => void confirm(), disabled: pending, danger: true }}
         />
       </Modal>

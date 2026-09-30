@@ -146,7 +146,6 @@ function DialogFor({
             ))}
           </ul>
           <DialogActions
-            onCancel={close}
             primary={{
               label: "Start anyway",
               onPress: () => {
@@ -174,8 +173,6 @@ function DialogFor({
             finished?
           </p>
           <DialogActions
-            onCancel={close}
-            cancelLabel="Not yet"
             primary={{
               label: "Mark finished",
               onPress: () => {
@@ -199,8 +196,6 @@ function DialogFor({
             <span className="font-semibold">{book?.title ?? "—"}</span>. Start it now?
           </p>
           <DialogActions
-            onCancel={close}
-            cancelLabel="Skip"
             primary={{
               label: "Start",
               disabled: !book,
@@ -384,7 +379,7 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
       >
         {mode === "page" ? "Enter pages read instead" : "Enter the page you're on"}
       </button>
-      <DialogActions onCancel={close} primary={{ label: "Save", disabled: pending || !valid }} />
+      <DialogActions primary={{ label: "Save", disabled: pending || !valid }} />
     </form>
   );
 }
@@ -435,7 +430,6 @@ function WipChoice({ tracker, book }: { tracker: Tracker; book: Book }) {
           Finish current first — put this next in line
         </Button>
       </div>
-      <DialogActions onCancel={close} />
     </div>
   );
 }
@@ -462,7 +456,7 @@ function DropForm({ tracker, book }: { tracker: Tracker; book: Book }) {
         autoFocus
         className="w-full"
       />
-      <DialogActions onCancel={close} primary={{ label: "Drop", disabled: pending, danger: true }} />
+      <DialogActions primary={{ label: "Drop", disabled: pending, danger: true }} />
     </form>
   );
 }
@@ -507,7 +501,7 @@ function PageForm({ tracker, book, skim }: { tracker: Tracker; book: Book; skim?
         Now on page {book.read}
         {book.pages > 0 ? ` of ${book.pages}` : ""}.
       </p>
-      <DialogActions onCancel={close} primary={{ label: "Set", disabled: pending || !valid }} />
+      <DialogActions primary={{ label: "Set", disabled: pending || !valid }} />
     </form>
   );
 }

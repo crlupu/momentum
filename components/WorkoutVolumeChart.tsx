@@ -224,7 +224,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
             autoFocus
           />
           <p className="text-xs text-[var(--muted)]">Logged against today.</p>
-          <DialogActions onCancel={close} primary={{ label: "Add", disabled: pending || mins.trim() === "" }} />
+          <DialogActions primary={{ label: "Add", disabled: pending || mins.trim() === "" }} />
         </form>
       </Modal>
     </>
