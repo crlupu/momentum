@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, createContext, useCallback, useContext, useState } from "react";
-import { Card, PanelHeader } from "./ui";
+import { Panel } from "./Panel";
 
 /**
  * Whether the surrounding configuration card is in edit mode. Cards read this
@@ -33,27 +33,17 @@ export function ConfigCard({ title, children }: { title: string; children: React
   const set = useCallback((on: boolean) => setEditing(on), []);
 
   return (
-    <div>
-      <PanelHeader title={title}>
-        {/* Edit / Done, in words: the convention for a list that turns
-            editable, and clearer than a gear. */}
-        <button
-          type="button"
-          className="text-action"
-          aria-label={editing ? `Done editing ${title}` : `Edit ${title}`}
-          aria-pressed={editing}
-          onClick={() => setEditing((v) => !v)}
-        >
-          {editing ? "Done" : "Edit"}
-        </button>
-      </PanelHeader>
-      <Card className={editing ? "config-card--editing" : undefined}>
-        <Card.Content className="p-4 md:p-5">
-          <EditingContext.Provider value={editing}>
-            <SetEditingContext.Provider value={set}>{children}</SetEditingContext.Provider>
-          </EditingContext.Provider>
-        </Card.Content>
-      </Card>
-    </div>
+    <Panel
+      title={title}
+      // Edit / Done, in words: the convention for a list that turns editable.
+      onEdit={() => setEditing((v) => !v)}
+      editLabel={editing ? "Done" : "Edit"}
+      editPressed={editing}
+      bodyClassName={editing ? "config-card--editing" : undefined}
+    >
+      <EditingContext.Provider value={editing}>
+        <SetEditingContext.Provider value={set}>{children}</SetEditingContext.Provider>
+      </EditingContext.Provider>
+    </Panel>
   );
 }

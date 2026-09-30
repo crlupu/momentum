@@ -3482,3 +3482,30 @@ button.rd-link:active { background: var(--default); }
   .dialog-actions__main { margin-left: 0; flex-wrap: nowrap; }
   .dialog-actions__main > * { flex: 1 1 0; }
 }
+
+/* Panel (components/Panel.tsx): the title block beside its actions. */
+.panel-head__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+.panel-head__sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.75rem;
+  font-size: 13px;
+  color: var(--muted);
+}
+.panel-head__dot {
+  flex: none;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: 50%;
+}
+
+/* The first sub-heading in a card needs no space above it. */
+.panel > .card > .rd-sub:first-child,
+.panel > .card > .rd-track__bar:first-child { margin-top: 0; }
+.panel > .card > .rd-track__bar:first-child { margin-bottom: 0.5rem; }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Panel } from "../Panel";
 import { FormEvent, useState } from "react";
 import { Button } from "../ui";
 import { Check, ChevronRight, Clock, Flame, Play, Tune, Warning } from "../icons";
@@ -7,7 +8,7 @@ import { usePending } from "../ActionButton";
 import { Tracker, Book, dateKey, uid } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
-import { Meter, ProgressText, TrackDot, fmtDateAuto, fmtPace } from "./bits";
+import { Meter, ProgressText, fmtDateAuto, fmtPace } from "./bits";
 import { useFlow } from "./flowContext";
 
 /**
@@ -67,18 +68,13 @@ function TrackToday({
   const pct = track.dailyTarget > 0 ? Math.min(100, (read / track.dailyTarget) * 100) : 0;
 
   return (
-    <section
-      className={"rd-track" + (met ? " rd-track--done" : "")}
+    <Panel
+      title={track.name}
+      dot={track.color}
       style={{ ["--track" as string]: track.color }}
-      aria-label={track.name}
-    >
-      <header className="rd-track__head">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex items-center gap-2 font-semibold">
-            <TrackDot color={track.color} />
-            {track.name}
-          </span>
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--muted)]">
+      subtitle={
+        (track.slot || streak > 0) && (
+          <>
             {track.slot && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" /> {track.slot}
@@ -89,20 +85,21 @@ function TrackToday({
                 <Flame className="h-3.5 w-3.5" /> {streak} day{streak === 1 ? "" : "s"}
               </span>
             )}
-          </span>
-        </div>
-        {track.dailyTarget > 0 ? (
+          </>
+        )
+      }
+      actions={
+        track.dailyTarget > 0 ? (
           <span className={"rd-target" + (met ? " rd-target--done" : "")}>
             {met && <Check className="h-3.5 w-3.5" />}
             <span className="font-mono-n font-bold">{read}</span>
             <span className="opacity-70">/ {track.dailyTarget} pages</span>
           </span>
         ) : (
-          <span className="text-xs text-[var(--muted)]">
-            {read} pages · no target
-          </span>
-        )}
-      </header>
+          <span className="text-xs text-[var(--muted)]">{read} pages · no target</span>
+        )
+      }
+    >
       {track.dailyTarget > 0 && (
         <div className="rd-track__bar" aria-hidden>
           <span style={{ width: `${pct}%` }} />
@@ -125,7 +122,7 @@ function TrackToday({
           ))}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }
 

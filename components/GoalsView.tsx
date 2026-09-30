@@ -1,7 +1,8 @@
 "use client";
 
+import { Panel } from "./Panel";
 import { useState } from "react";
-import { AddButton, Button, PanelHeader } from "./ui";
+import { AddButton, Button } from "./ui";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { GoalDetail } from "./GoalDetail";
@@ -113,8 +114,7 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
           )}
 
           {(loose.length > 0 || (view === "active" && s.paths.length === 0)) && (
-            <section className="goal-topic">
-              <PanelHeader title={s.paths.length > 0 ? "Not in a topic" : "All goals"} />
+            <Panel title={s.paths.length > 0 ? "Not in a topic" : "All goals"} className="goal-topic" bare>
               <div className="card goal-list">
                 {loose.length === 0 ? (
                   <p className="goal-list__empty">No goals yet.</p>
@@ -126,7 +126,7 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
                   </ul>
                 )}
               </div>
-            </section>
+            </Panel>
           )}
 
           {view === "done" && doneCount === 0 && (
@@ -198,20 +198,18 @@ function TopicSection({
   const pct = pathPct({ ...topic, goalIds: all.map((g) => g.id) }, s.goals);
 
   return (
-    <section className="goal-topic" aria-label={topic.title}>
-      <PanelHeader title={topic.title}>
-        <button type="button" className="text-action" onClick={onEdit} aria-label={`Edit ${topic.title}`}>
-          Edit
-        </button>
-      </PanelHeader>
-      {(topic.note || all.length > 0 || cat) && (
+    <Panel
+      title={topic.title}
+      dot={cat?.color}
+      subtitle={cat?.name}
+      onEdit={onEdit}
+      onAdd={view === "active" ? onAdd : undefined}
+      addLabel={`Add a goal to ${topic.title}`}
+      className="goal-topic"
+      bare
+    >
+      {(topic.note || all.length > 0) && (
         <div className="goal-topic__summary">
-          {cat && (
-            <p className="goal-topic__cat">
-              <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
-              {cat.name}
-            </p>
-          )}
           {topic.note && <p className="goal-topic__note">{topic.note}</p>}
           {all.length > 0 && (
             <div className="goal-topic__progress">
@@ -235,13 +233,8 @@ function TopicSection({
             ))}
           </ul>
         )}
-        {view === "active" && (
-          <div className="goal-list__foot">
-            <AddButton size="sm" label="Add goal" onPress={onAdd} />
-          </div>
-        )}
       </div>
-    </section>
+    </Panel>
   );
 }
 

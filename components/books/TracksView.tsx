@@ -1,5 +1,6 @@
 "use client";
 
+import { Panel } from "../Panel";
 import { useState } from "react";
 import {
   DndContext,
@@ -18,7 +19,7 @@ import {
   verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, AddButton } from "../ui";
-import { ChevronDown, ChevronRight, Play, ReorderLines, Settings, Unarchive } from "../icons";
+import { ChevronDown, ChevronRight, Play, ReorderLines, Unarchive } from "../icons";
 import { Tracker, Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -109,36 +110,21 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
   };
 
   return (
-    <section className="rd-track" style={{ ["--track" as string]: track.color }} aria-label={track.name}>
-      <header className="rd-track__head">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex items-center gap-2 font-semibold">
-            <TrackDot color={track.color} />
-            {track.name}
-          </span>
-          <span className="text-xs text-[var(--muted)]">
-            {open.length} of {track.wipLimit} open
-            {track.dailyTarget > 0 ? ` · ${track.dailyTarget} pages a day` : ""}
-            {track.slot ? ` · ${track.slot}` : ""}
-          </span>
-        </div>
-        <span className="flex items-center gap-1">
-          <AddButton
-            size="sm"
-            aria-label={`Add a book to ${track.name}`}
-            onPress={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            isIconOnly
-            aria-label={`${track.name} settings`}
-            onPress={() => flow.open({ kind: "track", trackId: track.id })}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+    <Panel
+      title={track.name}
+      dot={track.color}
+      subtitle={
+        <span>
+          {open.length} of {track.wipLimit} open
+          {track.dailyTarget > 0 ? ` · ${track.dailyTarget} pages a day` : ""}
+          {track.slot ? ` · ${track.slot}` : ""}
         </span>
-      </header>
+      }
+      onEdit={() => flow.open({ kind: "track", trackId: track.id })}
+      onAdd={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })}
+      addLabel={`Add a book to ${track.name}`}
+      style={{ ["--track" as string]: track.color }}
+    >
 
       <h4 className="rd-sub">Reading</h4>
       {open.length === 0 ? (
@@ -204,7 +190,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
           {showLater ? "Hide later" : `Later (${later} more)`}
         </button>
       )}
-    </section>
+    </Panel>
   );
 }
 
@@ -215,15 +201,10 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
 function NoTrack({ books }: { books: Book[] }) {
   const flow = useFlow();
   return (
-    <section className="rd-track rd-track--none" aria-label="No track">
-      <header className="rd-track__head">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="font-semibold">No track</span>
-          <span className="text-xs text-[var(--muted)]">
-            {books.length} book{books.length === 1 ? "" : "s"} · give one a track from its Edit
-          </span>
-        </div>
-      </header>
+    <Panel
+      title="No track"
+      subtitle={`${books.length} book${books.length === 1 ? "" : "s"} · give one a track from its Edit`}
+    >
       <ul className="flex flex-col">
         {books.map((b) => (
           <li key={b.id} className="rd-row">
@@ -246,7 +227,7 @@ function NoTrack({ books }: { books: Book[] }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Panel>
   );
 }
 

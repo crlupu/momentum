@@ -1,6 +1,7 @@
 "use client";
 
-import { Card, PanelHeader, AddButton } from "./ui";
+import { Panel } from "./Panel";
+import { Card } from "./ui";
 import { usePending } from "./ActionButton";
 import { Check } from "./icons";
 import { Tracker, dateKey, isRecurringDone } from "@/lib/tracker";
@@ -38,16 +39,12 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
   });
 
   return (
-    <div>
-      <PanelHeader title="Recurring" color="var(--sec-recurring)">
-        <AddButton label="New task" onPress={onAdd} />
-      </PanelHeader>
-
+    <Panel title="Recurring" onAdd={onAdd} addLabel="New recurring task" bare>
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
 
           {recurring.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">No recurring tasks yet. Add one with New.</p>
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">No recurring tasks yet. Add one with +.</p>
           ) : (
             <ul
               className={
@@ -76,7 +73,6 @@ export default function RecurringList({ tracker, onAdd }: { tracker: Tracker; on
           )}
         </Card.Content>
       </Card>
-
-    </div>
+    </Panel>
   );
 }

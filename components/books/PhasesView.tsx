@@ -1,7 +1,8 @@
 "use client";
 
+import { Panel } from "../Panel";
 import { Button, AddButton } from "../ui";
-import { ChevronRight, Pencil } from "../icons";
+import { ChevronRight } from "../icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
@@ -53,31 +54,16 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
         const pct = Math.round(st.completion * 100);
         const current = p.start <= today && today <= p.end;
         return (
-          <section key={p.id} className={"rd-phase" + (current ? " rd-phase--current" : "")}>
-            <header className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h4 className="font-semibold">{p.name}</h4>
-                <p className="text-xs text-[var(--muted)]">
-                  {fmtDate(p.start, true)} – {fmtDate(p.end, true)}
-                  {current ? " · now" : ""}
-                </p>
-                {p.goal && <p className="mt-1 max-w-prose text-sm text-foreground/75">{p.goal}</p>}
-              </div>
-              <span className="flex items-center gap-1">
-                <span className={`rd-flag rd-flag--${st.flag}`}>{FLAG_LABEL[st.flag]}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  isIconOnly
-                  aria-label={`Edit ${p.name}`}
-                  onPress={() => flow.open({ kind: "phase", phaseId: p.id })}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </span>
-            </header>
-
-            <div className="mt-2 flex items-center gap-2">
+          <Panel
+            key={p.id}
+            title={p.name}
+            subtitle={`${fmtDate(p.start, true)} – ${fmtDate(p.end, true)}${current ? " · now" : ""}`}
+            actions={<span className={`rd-flag rd-flag--${st.flag}`}>{FLAG_LABEL[st.flag]}</span>}
+            onEdit={() => flow.open({ kind: "phase", phaseId: p.id })}
+            bodyClassName={current ? "rd-phase--current" : undefined}
+          >
+            {p.goal && <p className="mb-2 max-w-prose text-sm text-foreground/75">{p.goal}</p>}
+            <div className="flex items-center gap-2">
               <div className="book-card__meter flex-1" aria-hidden>
                 <span style={{ width: `${pct}%`, background: "var(--accent)" }} />
               </div>
@@ -124,7 +110,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
                   ))}
               </div>
             )}
-          </section>
+          </Panel>
         );
       })}
     </div>
