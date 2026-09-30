@@ -2,8 +2,8 @@
  * The Claude connector: an MCP server over Streamable HTTP, for adding to
  * Claude as a custom connector at https://<deployment>/api/mcp/<token>.
  *
- * Built only on Vercel (MOMENTUM_CONNECTOR=1, see next.config.mjs); the
- * GitHub Pages build is a static export and leaves it out. The token in the
+ * Served from Vercel (MOMENTUM_CONNECTOR=1, see next.config.mjs); the
+ * GitHub Pages workflow removes app/api before its static export. The token in the
  * path is the key: anyone with the full URL can edit the data, so it is long,
  * random, and compared in constant time. Stateless: each request gets its
  * own server, as serverless functions don't keep one between calls.

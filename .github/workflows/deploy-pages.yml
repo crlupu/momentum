@@ -24,6 +24,9 @@ jobs:
           node-version: "22"
           cache: "npm"
       - run: npm ci
+      # The Claude connector (app/api) runs on Vercel; a static export can't
+      # have server routes.
+      - run: rm -rf app/api
       - run: npm run build
         env:
           GITHUB_PAGES: "true"
