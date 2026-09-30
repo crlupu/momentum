@@ -3472,15 +3472,30 @@ button.rd-link:active { background: var(--default); }
   gap: 0.5rem;
 }
 .dialog-actions__main { margin-left: auto; }
-/* On a phone: Cancel and the main action share the bottom row, full width;
-   delete and extras sit on the row above. The same shape in every pop-up. */
+/* On a phone the footer is a grid of equal buttons: Cancel and the main
+   action share the bottom row, where the thumb is; delete and any extras
+   share the row above, split evenly the same way, so two rows never end
+   up lopsided. The same shape in every pop-up. */
 @media (max-width: 671px) {
   .dialog-actions {
     flex-direction: column;
     align-items: stretch;
   }
-  .dialog-actions__main { margin-left: 0; flex-wrap: nowrap; }
-  .dialog-actions__main > * { flex: 1 1 0; }
+  /* Two to a row; an odd one out takes the whole row. */
+  .dialog-actions__side {
+    order: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .dialog-actions__side > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .dialog-actions__main { order: 2; margin-left: 0; flex-wrap: nowrap; }
+  .dialog-actions__main > * { flex: 1 1 0; min-width: 0; }
+  .dialog-actions__side > *,
+  .dialog-actions__main > * {
+    justify-content: center;
+    inline-size: 100%;
+    max-inline-size: none;
+  }
 }
 
 /* Panel (components/Panel.tsx): the title block beside its actions. */
@@ -3509,3 +3524,23 @@ button.rd-link:active { background: var(--default); }
 .panel > .card > .rd-sub:first-child,
 .panel > .card > .rd-track__bar:first-child { margin-top: 0; }
 .panel > .card > .rd-track__bar:first-child { margin-bottom: 0.5rem; }
+
+/* A set of buttons that belong together, laid out like the pop-up footer
+   on a phone: two to a row, an odd one out across the whole row. */
+.button-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 671px) {
+  .button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .button-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .button-grid > * {
+    justify-content: center;
+    inline-size: 100%;
+    max-inline-size: none;
+  }
+}
