@@ -230,7 +230,8 @@ export function parsePlan(md: string): Plan {
       continue;
     }
     if (dropped) {
-      plan.books.push({ ...book, status: "dropped", track: plan.tracks[0]?.name ?? "Technical" });
+      // A dropped book belongs to no track: it is out of every queue.
+      plan.books.push({ ...book, status: "dropped", track: "" });
       continue;
     }
     // An indented bullet under a numbered book is an extra, e.g. optional.
@@ -350,7 +351,8 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
   const planOpen = new Set<string>();
   const order = new Map<string, number>();
   plan.books.forEach((pb, i) => {
-    const trackId = trackIds.get(norm(pb.track)) ?? tracks[0]?.id;
+    const droppedHere = pb.status === "dropped";
+    const trackId = droppedHere ? "" : (trackIds.get(norm(pb.track)) ?? tracks[0]?.id);
     const phaseId = pb.phase ? phaseIds.get(norm(pb.phase)) : undefined;
     const existing = books.find((b) => norm(b.title) === norm(pb.title) && !planned.has(b.id));
     let book: Book;
@@ -359,7 +361,7 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
       book = {
         ...existing,
         trackId,
-        phaseId: phaseId ?? existing.phaseId,
+        phaseId: droppedHere ? undefined : (phaseId ?? existing.phaseId),
         author: existing.author?.trim() ? existing.author : pb.author,
         edition: existing.edition ?? pb.edition,
         note: existing.note ?? pb.note,
