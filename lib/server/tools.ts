@@ -142,7 +142,10 @@ export function registerTools(server: McpServer) {
         page: z.number().int().min(0).optional().describe("The page the user is on now"),
         pages_read: z.number().int().positive().optional().describe("Pages read, when that's the number given"),
         status: z.enum(["queued", "active", "paused", "finished", "dropped"]).optional(),
-        track: z.string().optional().describe("Move it to this track (name or id)"),
+        track: z
+          .string()
+          .optional()
+          .describe('Move it to this track (name or id); an empty string takes it off every track'),
         total_pages: z.number().int().positive().optional(),
       },
     },
@@ -159,8 +162,11 @@ export function registerTools(server: McpServer) {
           const b = pick(s.books, a.book, (x) => x.title, "book");
           let next = s;
           const did: string[] = [];
-          if (a.track || a.total_pages) {
-            const track = a.track ? pick(next.readingTracks, a.track, (t) => t.name, "track") : undefined;
+          // An empty track means "no track"; it only counts as a change when
+          // the book is on one.
+          const untrack = a.track !== undefined && a.track.trim() === "" && b.trackId !== "";
+          if (a.track || a.total_pages || untrack) {
+            const track = a.track?.trim() ? pick(next.readingTracks, a.track, (t) => t.name, "track") : undefined;
             next = R.updateBook(next, b.id, {
               title: b.title,
               author: b.author,
@@ -168,13 +174,14 @@ export function registerTools(server: McpServer) {
               edition: b.edition,
               language: b.language,
               tags: b.tags,
-              trackId: track?.id ?? b.trackId,
-              phaseId: b.phaseId,
+              trackId: untrack ? "" : (track?.id ?? b.trackId),
+              phaseId: untrack ? undefined : b.phaseId,
               coverImage: b.coverImage,
               after: b.after,
               note: b.note,
             });
             if (track) did.push(`moved to ${track.name}`);
+            if (untrack) did.push("taken off its track");
             if (a.total_pages) did.push(`${a.total_pages} pages`);
           }
           const cur = next.books.find((x) => x.id === b.id)!;
