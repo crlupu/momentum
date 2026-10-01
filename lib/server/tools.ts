@@ -50,6 +50,16 @@ function overview(s: TrackerState, section: string) {
   const out: Record<string, unknown> = {};
   if (section === "all" || section === "books") {
     out.tracks = s.readingTracks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.name, pagesPerDay: t.dailyTarget }));
+    out.phases = [...s.readingPhases]
+      .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.name.localeCompare(b.name)))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        start: p.start,
+        end: p.end,
+        goal: p.goal,
+        books: s.books.filter((b) => b.phaseId === p.id).length,
+      }));
     out.books = s.books.map((b) => ({
       id: b.id,
       title: b.title,
@@ -58,6 +68,7 @@ function overview(s: TrackerState, section: string) {
       page: b.read,
       pages: b.pages || undefined,
       track: s.readingTracks.find((t) => t.id === b.trackId)?.name,
+      phase: s.readingPhases.find((p) => p.id === b.phaseId)?.name,
       category: b.category,
     }));
   }
@@ -208,6 +219,28 @@ export function registerTools(server: McpServer) {
             result: `${b.title}: ${did.join(", ") || "nothing to change"}.${end ? " It's at its last page: ask whether to mark it finished." : ""}`,
           };
         })
+    )
+  );
+
+  server.registerTool(
+    "remove_phase",
+    {
+      title: "Remove a reading phase",
+      description:
+        "Removes one reading phase, such as a duplicate left by an earlier plan import. Its books stay where they are, just without a phase. Take the name or id from the overview's phases.",
+      inputSchema: {
+        phase: z.string().describe("Phase name or id"),
+      },
+    },
+    safe(async (a: { phase: string }) =>
+      change((s) => {
+        const p = pick(s.readingPhases, a.phase, (x) => x.name, "phase");
+        const freed = s.books.filter((b) => b.phaseId === p.id).length;
+        return {
+          state: R.removePhase(s, p.id),
+          result: `Removed phase "${p.name}" (${p.start} to ${p.end})${freed ? `; ${freed} book${freed === 1 ? "" : "s"} left without a phase` : ""}.`,
+        };
+      })
     )
   );
 
