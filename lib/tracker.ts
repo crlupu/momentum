@@ -56,6 +56,7 @@ import type {
   Completion,
   Exercise,
   Frequency,
+  GoalStatus,
   LoggedExercise,
   MacroEntry,
   Path,
@@ -578,6 +579,9 @@ export function useTracker() {
             : g
         ),
       })),
+
+    /** Queued, active, done or dropped. */
+    setGoalStatus: (id: string, status: GoalStatus) => commit((s) => O.setGoalStatus(s, id, status)),
 
     toggleGoalDone: (id: string) =>
       commit((s) => O.setGoalDone(s, id, !s.goals.find((g) => g.id === id)?.done)),

@@ -18,6 +18,7 @@ import {
   Path,
   goalHasProgress,
   goalSummary,
+  goalStatus,
   goalPct,
   pathGoals,
   pathPct,
@@ -253,9 +254,15 @@ export function GoalRow({
   const cat = tracker.cat(g.catId);
   const measured = goalHasProgress(g);
 
-  const meta = g.done
-    ? `Done${g.doneDate ? ` ${fmtDateAuto(g.doneDate)}` : ""}`
-    : goalSummary(g) ?? "Open";
+  const status = goalStatus(g);
+  const meta =
+    status === "done"
+      ? `Done${g.doneDate ? ` ${fmtDateAuto(g.doneDate)}` : ""}`
+      : status === "dropped"
+        ? "Dropped"
+        : status === "active"
+          ? ["Active", goalSummary(g)].filter(Boolean).join(" · ")
+          : goalSummary(g) ?? "Queued";
 
   return (
     <li>
@@ -270,7 +277,7 @@ export function GoalRow({
           )}
         </span>
         <span className="goal-row__text">
-          <span className={"goal-row__title" + (g.done ? " is-done" : "")}>
+          <span className={"goal-row__title" + (status === "done" || status === "dropped" ? " is-done" : "")}>
             {g.title}
           </span>
           <span className="goal-row__meta">

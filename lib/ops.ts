@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { dateKey, uid, type Part, type TrackerState } from "./model";
+import { dateKey, goalStarted, goalStatus, uid, type Goal, type GoalStatus, type Part, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -27,6 +27,7 @@ export function addGoal(
         // A target of 0 is no target.
         target: g.target != null && g.target > 0 ? count(g.target, 0) : undefined,
         done: false,
+        status: "queued",
         doneDate: null,
         note: g.note?.trim() || undefined,
       },
@@ -37,16 +38,42 @@ export function addGoal(
   };
 }
 
-/** Marks a goal done, or open again. */
+/** Marks a goal done, or open again: active if any of it is counted, else queued. */
 export function setGoalDone(s: TrackerState, id: string, done: boolean): TrackerState {
+  const g = s.goals.find((x) => x.id === id);
+  if (!g) return s;
+  return setGoalStatus(s, id, done ? "done" : goalStarted({ ...g, done: false }) ? "active" : "queued");
+}
+
+/**
+ * Sets a goal's status, keeping `done` and the date it was done in step. A
+ * goal leaving done loses its done date; one dropped keeps everything else.
+ */
+export function setGoalStatus(s: TrackerState, id: string, status: GoalStatus): TrackerState {
   return {
     ...s,
-    goals: s.goals.map((g) =>
-      g.id === id && g.done !== done
-        ? { ...g, done, doneDate: done ? dateKey() : null, doneAt: done ? Date.now() : null }
-        : g
-    ),
+    goals: s.goals.map((g) => {
+      if (g.id !== id || goalStatus(g) === status) return g;
+      const done = status === "done";
+      return {
+        ...g,
+        status,
+        done,
+        doneDate: done ? dateKey() : null,
+        doneAt: done ? Date.now() : null,
+      };
+    }),
   };
+}
+
+/** The other active goals in the goal's topic, for a gentle "already active" note. */
+export function otherActiveInTopic(s: TrackerState, id: string): Goal[] {
+  const topic = s.paths.find((p) => p.goalIds.includes(id));
+  if (!topic) return [];
+  return topic.goalIds
+    .filter((gid) => gid !== id)
+    .map((gid) => s.goals.find((g) => g.id === gid))
+    .filter((g): g is Goal => !!g && goalStatus(g) === "active");
 }
 
 /** Sets a goal's count: how far along, and of how many. */

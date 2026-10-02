@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Minus, Plus, RotateCcw } from "./icons";
-import { Goal, Part, Tracker, goalPct, goalSummary, uid } from "@/lib/tracker";
+import { ExternalLink, Minus, Plus } from "./icons";
+import { Segmented } from "./books/bits";
+import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, uid } from "@/lib/tracker";
+import { otherActiveInTopic } from "@/lib/ops";
 
 /** A number field's value, or null when empty or not a number. */
 function num(v: string): number | null {
@@ -99,6 +101,8 @@ export function GoalDetail({
   goal: Goal;
   onClose: () => void;
 }) {
+  const status = goalStatus(g);
+  const alsoActive = otherActiveInTopic(tracker.state!, g.id);
   const pct = g.done ? 100 : goalPct(g);
   const parts = g.parts ?? [];
   const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
@@ -123,7 +127,7 @@ export function GoalDetail({
         list.length === 0 && now.target
           ? [{ id: uid(), title: "Progress", current: now.current ?? 0, target: now.target }]
           : [];
-      return [...list, ...first, { id, title: `Step ${list.length + first.length + 1}`, current: 0, target: 1 }];
+      return [...list, ...first, { id, title: `Part ${list.length + first.length + 1}`, current: 0, target: 1 }];
     });
     setEditing(true);
     setFocusId(id);
@@ -148,11 +152,32 @@ export function GoalDetail({
         </div>
       </div>
 
-      {/* The steps, as an iOS list: counted with − and + as they stand,
-          and renamed, resized or deleted in Edit, which a new step opens. */}
-      <section className="goal-steps" aria-label="Steps">
+      {/* Where it stands, changed in one tap. Two active in a topic is
+          allowed; it's only pointed out. */}
+      <div className="goal-status">
+        <Segmented<GoalStatus>
+          label="Status"
+          value={status}
+          onChange={(v) => void tracker.setGoalStatus(g.id, v)}
+          options={[
+            { value: "queued", label: "Queued" },
+            { value: "active", label: "Active" },
+            { value: "done", label: "Done" },
+            { value: "dropped", label: "Dropped" },
+          ]}
+        />
+        {status === "active" && alsoActive.length > 0 && (
+          <p className="goal-status__note" role="status">
+            {alsoActive.map((x) => x.title).join(", ")} {alsoActive.length === 1 ? "is" : "are"} already active.
+          </p>
+        )}
+      </div>
+
+      {/* The parts, as an iOS list: counted with − and + as they stand,
+          and renamed, resized or deleted in Edit, which a new part opens. */}
+      <section className="goal-steps" aria-label="Parts">
         <div className="goal-steps__head">
-          <h3 className="group-label">{parts.length ? "Steps" : "Progress"}</h3>
+          <h3 className="group-label">{parts.length ? "Parts" : "Progress"}</h3>
           <button
             type="button"
             className="text-action"
@@ -210,7 +235,7 @@ export function GoalDetail({
               <span className="step-add__icon" aria-hidden>
                 <Plus />
               </span>
-              Add Step
+              Add Part
             </button>
           </li>
         </ul>
@@ -226,28 +251,13 @@ export function GoalDetail({
             return tracker.deleteGoal(g.id);
           },
         }}
-        primary={{
-          label: g.done ? (
-            <>
-              <RotateCcw className="h-4 w-4" /> Reopen
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4" /> Mark as done
-            </>
-          ),
-          onPress: () => {
-            void tracker.toggleGoalDone(g.id);
-            if (!g.done) onClose();
-          },
-        }}
       />
     </div>
   );
 }
 
 /**
- * One step. As it stands: its name and "− 4 of 30 +". In Edit: a red delete
+ * One part. As it stands: its name and "− 4 of 30 +". In Edit: a red delete
  * button, and its name, done count and total as text fields.
  */
 function StepRow({
@@ -308,7 +318,7 @@ function StepRow({
           </button>
         )}
         {onName ? (
-          <input ref={nameRef} aria-label="Step name" placeholder="Name" className="step-field step-field--name" {...nameField} />
+          <input ref={nameRef} aria-label="Part name" placeholder="Name" className="step-field step-field--name" {...nameField} />
         ) : (
           <span className="step-row__name">{name}</span>
         )}

@@ -49,6 +49,12 @@ export type Goal = {
   current?: number;
   target?: number;
   done: boolean;
+  /**
+   * Where it stands: queued, active, done or dropped. The source of truth;
+   * `done` is kept in step with it for older code and older copies of the
+   * app. Absent on goals saved before statuses: see goalStatus.
+   */
+  status?: GoalStatus;
   doneDate?: string | null;
   /**
    * When it was ticked, as epoch milliseconds. The date alone puts everything
@@ -70,6 +76,9 @@ export type Goal = {
    */
   parts?: Part[];
 };
+
+export type GoalStatus = "queued" | "active" | "done" | "dropped";
+export const GOAL_STATUSES: GoalStatus[] = ["queued", "active", "done", "dropped"];
 
 /** A part of a goal: "Readings, 4 of 30". */
 export type Part = {
@@ -807,6 +816,22 @@ export function goalStarted(g: Goal): boolean {
 }
 
 /**
+ * A goal's status. One saved before statuses existed is done if ticked,
+ * active if some of it is counted, and queued otherwise; and where an older
+ * copy of the app ticked or unticked a goal without touching its status, the
+ * tick wins.
+ */
+export function goalStatus(g: Goal): GoalStatus {
+  if (g.status === "dropped") return "dropped";
+  if (g.done) return "done";
+  if (g.status && g.status !== "done") return g.status;
+  return goalStarted(g) ? "active" : "queued";
+}
+
+/** Status order in a topic: active, then queued, then done, then dropped. */
+export const STATUS_RANK: Record<GoalStatus, number> = { active: 0, queued: 1, done: 2, dropped: 3 };
+
+/**
  * "2 of 5 done", or, while nothing is finished, "1 of 5 started", so the
  * words never read 0 beside a ring that has moved; "5 parts" before any start.
  */
@@ -818,7 +843,7 @@ export function countLine(total: number, done: number, started: number, noun: st
 
 /** A goal with steps, in words: see countLine. */
 export function stepsLine(steps: Goal[]): string {
-  return countLine(steps.length, steps.filter((g) => g.done).length, steps.filter(goalStarted).length, "step");
+  return countLine(steps.length, steps.filter((g) => g.done).length, steps.filter(goalStarted).length, "goal");
 }
 
 /** How far a goal is, in words: "2 of 4 parts done", "3 of 12", or null. */
@@ -828,7 +853,7 @@ export function goalSummary(g: Goal): string | null {
       g.parts.length,
       g.parts.filter((p) => p.current >= p.target).length,
       g.parts.filter((p) => p.current > 0).length,
-      "step"
+      "part"
     );
   }
   if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;
@@ -957,7 +982,11 @@ export function migrate(raw: unknown): TrackerState {
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
-  }));
+  })).map((g, i) => {
+    const raw = rawGoals[i].status;
+    const status = typeof raw === "string" && (GOAL_STATUSES as string[]).includes(raw) ? (raw as GoalStatus) : undefined;
+    return { ...g, status: goalStatus({ ...g, status }) };
+  });
 
   const todos: TodoItem[] = Array.isArray(s.todos)
     ? (s.todos as Array<Record<string, unknown>>).map((t) => ({

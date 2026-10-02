@@ -105,13 +105,13 @@ export function GoalImportForm({
               <ul className="flex flex-col gap-1 text-sm">
                 {preview.topicsNew.length > 0 && (
                   <li>
-                    Add {preview.topicsNew.length === 1 ? "the goal" : `${preview.topicsNew.length} goals`}{" "}
+                    Add {preview.topicsNew.length === 1 ? "the topic" : `${preview.topicsNew.length} topics`}{" "}
                     {list(preview.topicsNew)}
                   </li>
                 )}
                 {preview.goalsNew > 0 && (
                   <li>
-                    Add {preview.goalsNew} {preview.topicsNew.length || preview.topicsMatched.length ? "step" : "goal"}
+                    Add {preview.goalsNew} goal
                     {preview.goalsNew === 1 ? "" : "s"}
                     {preview.topicsMatched.length > 0 && ` (into ${list(preview.topicsMatched)} too)`}
                   </li>

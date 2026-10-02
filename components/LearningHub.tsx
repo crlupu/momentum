@@ -19,24 +19,20 @@ import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackQueue } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
-import { Tracker, dateKey, goalStarted, stepsLine, pathGoals, pathPct, type Goal, type Path } from "@/lib/tracker";
+import { STATUS_RANK, Tracker, dateKey, goalStatus, stepsLine, pathGoals, pathPct, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
 const TAB_KEY = "momentum:learning-tab";
 
-/** Started: some of its count done. Everything else open is still to start. */
-const inProgress = (g: Goal) => !g.done && goalStarted(g);
-
 /**
- * A goal made of steps (stored as a topic and its goals: "Rust ramp up",
- * with The Rust Book, Rustlings… as its steps), or a goal on its own.
- * Grouped goals show as one goal, whose page lists its steps.
+ * A topic and its goals (Rust ramp up: The Rust Book, Rustlings…), or a goal
+ * in no topic. A topic shows as one row, whose page lists its goals.
  */
 type Item = { kind: "group"; path: Path; steps: Goal[] } | { kind: "goal"; goal: Goal };
 
 function items(s: NonNullable<Tracker["state"]>): Item[] {
-  // A goal belongs to the first group that lists it, as before.
+  // A goal belongs to the first topic that lists it, as before.
   const seen = new Set<string>();
   const groups: Item[] = s.paths.map((path) => {
     const steps = pathGoals(path, s.goals).filter((g) => !seen.has(g.id));
@@ -47,12 +43,26 @@ function items(s: NonNullable<Tracker["state"]>): Item[] {
   return [...groups, ...loose];
 }
 
-const itemDone = (i: Item) =>
-  i.kind === "goal" ? i.goal.done : i.steps.length > 0 && i.steps.every((g) => g.done);
-const itemStarted = (i: Item) =>
-  i.kind === "goal"
-    ? inProgress(i.goal)
-    : i.steps.some(goalStarted);
+/**
+ * Where a row belongs. A topic is active while any of its goals is, queued
+ * while any is still to do (or it has none yet), and otherwise done, or
+ * dropped if every goal in it was.
+ */
+function itemStatus(i: Item): GoalStatus {
+  if (i.kind === "goal") return goalStatus(i.goal);
+  const st = i.steps.map(goalStatus);
+  if (st.includes("active")) return "active";
+  if (st.length === 0 || st.includes("queued")) return "queued";
+  return st.every((x) => x === "dropped") ? "dropped" : "done";
+}
+
+/** A topic's goals in status order (active, queued, done), each keeping the topic's own order. */
+function byStatus(goals: Goal[]): Goal[] {
+  return goals
+    .map((g, i) => ({ g, i }))
+    .sort((a, b) => STATUS_RANK[goalStatus(a.g)] - STATUS_RANK[goalStatus(b.g)] || a.i - b.i)
+    .map((x) => x.g);
+}
 
 /**
  * Learning: books and goals in one place, without a second row of tabs.
@@ -117,9 +127,11 @@ function Hub({ tracker }: { tracker: Tracker }) {
     } catch {}
   };
 
-  const all = items(s).filter((i) => !itemDone(i));
-  const started = all.filter(itemStarted);
-  const notStarted = all.filter((i) => !itemStarted(i));
+  const all = items(s);
+  const started = all.filter((i) => itemStatus(i) === "active");
+  const notStarted = all.filter((i) => itemStatus(i) === "queued");
+  const dropped = all.filter((i) => itemStatus(i) === "dropped");
+  const [showDropped, setShowDropped] = useState(false);
   const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
   const today = dateKey();
   // Every book open, in track order: just the books and their page box.
@@ -159,13 +171,13 @@ function Hub({ tracker }: { tracker: Tracker }) {
               </div>
             )}
           </Panel>
-          <Panel title="Goals" bare>
+          <Panel title="Learning" bare>
             <ItemList
               tracker={tracker}
               items={started}
               onOpen={setOpenId}
               onGroup={(id) => go(`goal=${id}`)}
-              empty="Nothing under way. A goal shows here once its count moves past 0."
+              empty="Nothing active. Set a goal to Active from Library."
             />
           </Panel>
         </>
@@ -204,14 +216,17 @@ function Hub({ tracker }: { tracker: Tracker }) {
             </ul>
           </Panel>
 
-          <Panel title="Goals not started" onAdd={() => setAdding(true)} addLabel="New goal" bare>
+          <Panel title="Queued" onAdd={() => setAdding(true)} addLabel="New goal" bare>
             <ItemList
               tracker={tracker}
-              items={notStarted}
+              items={showDropped ? [...notStarted, ...dropped] : notStarted}
               onOpen={setOpenId}
               onGroup={(id) => go(`goal=${id}`)}
-              empty="Nothing waiting. Add a goal with +."
+              empty="Nothing queued. Add a goal with +."
             />
+            {dropped.length > 0 && (
+              <DroppedToggle shown={showDropped} count={dropped.length} onToggle={() => setShowDropped((v) => !v)} />
+            )}
           </Panel>
 
           {/* Places to look back and plan ahead, apart from the tracks
@@ -317,14 +332,18 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [showDropped, setShowDropped] = useState(false);
 
   useEffect(() => {
     if (!path) router.replace("/education");
   }, [path, router]);
   if (!path) return null;
 
-  const steps = pathGoals(path, s.goals);
-  const pct = pathPct(path, s.goals);
+  const all = byStatus(pathGoals(path, s.goals));
+  const droppedHere = all.filter((g) => goalStatus(g) === "dropped");
+  const steps = all.filter((g) => goalStatus(g) !== "dropped");
+  const shown = showDropped ? all : steps;
+  const pct = pathPct({ ...path, goalIds: steps.map((g) => g.id) }, s.goals);
   const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
 
   return (
@@ -344,30 +363,42 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
           )}
         </div>
       )}
-      <Panel title="Steps" onEdit={() => setEditing(true)} onAdd={() => setAdding(true)} addLabel="Add a step" bare>
+      <Panel title="Goals" onEdit={() => setEditing(true)} onAdd={() => setAdding(true)} addLabel="Add a goal" bare>
         <div className="card goal-list">
-          {steps.length === 0 ? (
-            <p className="goal-list__empty">No steps yet. Add one with +.</p>
+          {shown.length === 0 ? (
+            <p className="goal-list__empty">No goals yet. Add one with +.</p>
           ) : (
             <ul className="goal-list__rows">
-              {steps.map((g) => (
+              {shown.map((g) => (
                 <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={setOpenId} inTopic />
               ))}
             </ul>
           )}
         </div>
+        {droppedHere.length > 0 && (
+          <DroppedToggle shown={showDropped} count={droppedHere.length} onToggle={() => setShowDropped((v) => !v)} />
+        )}
       </Panel>
 
-      <Modal open={adding} onClose={() => setAdding(false)} title="New step">
+      <Modal open={adding} onClose={() => setAdding(false)} title="New goal">
         {adding && <GoalForm tracker={tracker} pathId={path.id} onDone={() => setAdding(false)} />}
       </Modal>
-      <Modal open={editing} onClose={() => setEditing(false)} title="Edit goal">
+      <Modal open={editing} onClose={() => setEditing(false)} title="Edit topic">
         {editing && <TopicForm tracker={tracker} topic={path} onDone={() => setEditing(false)} />}
       </Modal>
       <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
       </Modal>
     </div>
+  );
+}
+
+/** Dropped goals stay out of sight, with everything kept, until asked for. */
+function DroppedToggle({ shown, count, onToggle }: { shown: boolean; count: number; onToggle: () => void }) {
+  return (
+    <button type="button" className="text-action mt-2 self-start" aria-pressed={shown} onClick={onToggle}>
+      {shown ? "Hide dropped" : `Show dropped (${count})`}
+    </button>
   );
 }
 

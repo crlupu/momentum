@@ -3801,3 +3801,10 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .goal-row__meta.book-row__meta { flex-wrap: nowrap; min-inline-size: 0; }
 .book-row__author { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .book-row .rd-mini input { inline-size: 4rem; }
+
+/* A goal's status in its sheet: one segmented control across the sheet,
+   and a quiet note when another goal in its topic is active too. */
+.goal-status { display: flex; flex-direction: column; gap: 0.5rem; }
+.goal-status .seg { inline-size: 100%; }
+.goal-status .seg__btn { flex: 1 1 0; }
+.goal-status__note { margin: 0; padding-inline: 0.25rem; font-size: 0.875rem; color: var(--warning); }

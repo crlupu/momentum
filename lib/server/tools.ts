@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { dateKey, goalTopic, uid, type TrackerState } from "../model";
+import { dateKey, goalStatus, goalTopic, uid, type GoalStatus, type TrackerState } from "../model";
 import * as R from "../reading";
 import * as O from "../ops";
 import { projectFinished, type CardStatus } from "../projects";
@@ -78,7 +78,7 @@ function overview(s: TrackerState, section: string) {
       id: g.id,
       title: g.title,
       topic: goalTopic(g.id, s.paths)?.title,
-      done: g.done,
+      status: goalStatus(g),
       progress: g.parts?.length ? undefined : g.target ? `${g.current ?? 0}/${g.target}` : undefined,
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
     }));
@@ -95,6 +95,15 @@ function overview(s: TrackerState, section: string) {
 }
 
 const COLUMN = z.enum(["todo", "doing", "done"]);
+
+
+/** " Also active in Rust ramp up: The Rust Book." when the goal shares its topic with other active goals. */
+function alsoActive(s: TrackerState, id: string): string {
+  const g = s.goals.find((x) => x.id === id);
+  if (!g || goalStatus(g) !== "active") return "";
+  const others = O.otherActiveInTopic(s, id);
+  return others.length ? ` Also active in ${goalTopic(id, s.paths)?.title}: ${others.map((x) => x.title).join(", ")}.` : "";
+}
 
 export function registerTools(server: McpServer) {
   server.registerTool(
@@ -284,7 +293,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its count (current, target), its parts, or whether it's done. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
+        "Updates one learning goal: its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -307,7 +316,7 @@ export function registerTools(server: McpServer) {
           .optional(),
       },
     },
-    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; parts?: { title: string; target: number; current?: number }[] }) =>
+    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; status?: GoalStatus; parts?: { title: string; target: number; current?: number }[] }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
         let next = s;
@@ -324,6 +333,7 @@ export function registerTools(server: McpServer) {
           );
         }
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
+        if (a.status) next = O.setGoalStatus(next, g.id, a.status);
         const after = next.goals.find((x) => x.id === g.id)!;
         const progress = after.parts?.length
           ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}`).join(", ")}`
@@ -332,7 +342,7 @@ export function registerTools(server: McpServer) {
             : "";
         return {
           state: next,
-          result: `${g.title}: ${after.done ? "done" : "open"}${progress}.`,
+          result: `${g.title}: ${goalStatus(after)}${progress}.${alsoActive(next, g.id)}`,
         };
       })
     )

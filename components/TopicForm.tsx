@@ -38,7 +38,7 @@ export function TopicForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <Input
-        aria-label="Goal name"
+        aria-label="Topic name"
         placeholder="e.g. Rust ramp up"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -55,7 +55,7 @@ export function TopicForm({
         primary={{ label: topic ? "Save" : "Add", disabled: pending || !title.trim() }}
         del={
           topic && {
-            what: `the goal "${topic.title}" (its steps stay, as goals of their own)`,
+            what: `the topic "${topic.title}" (its goals stay, outside any topic)`,
             onDelete: async () => {
               onDone();
               return tracker.removePath(topic.id);
