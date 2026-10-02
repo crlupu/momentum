@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "./ui";
+import { Panel } from "./Panel";
 import { RotateCcw } from "./icons";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
@@ -215,6 +215,9 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
   // scrolls with the page rather than in a box of its own, and "Show
   // earlier" brings in more.
   const [daysShown, setDaysShown] = useState(7);
+  // Deleting and restoring are for correcting a slip, not for every glance
+  // at the log: they show under Edit, as in Settings.
+  const [editing, setEditing] = useState(false);
   const byDay: { date: string; items: Entry[] }[] = [];
   for (const e of entries) {
     const last = byDay[byDay.length - 1];
@@ -238,9 +241,12 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
   };
 
   return (
-    <div>
-      <Card>
-        <Card.Content className="p-4 md:p-5">
+    <Panel
+      title="Completed"
+      onEdit={entries.length ? () => setEditing((v) => !v) : undefined}
+      editLabel={editing ? "Done" : "Edit"}
+      editPressed={editing}
+    >
           {entries.length === 0 ? (
             <p className="py-1 text-[15px] text-[var(--muted)]">
               Nothing finished yet. Completed to-dos, goals and recurring tasks show up here.
@@ -269,8 +275,8 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                         {e.at != null && (
                           <span className="font-mono-n shrink-0 text-xs text-[var(--muted)]">{fmtTime(e.at)}</span>
                         )}
-                        {e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
-                        <DeleteButton what={e.what} iconOnly bare onDelete={e.onDelete} />
+                        {editing && e.todoId && <RestoreTodo tracker={tracker} id={e.todoId} />}
+                        {editing && <DeleteButton what={e.what} iconOnly onDelete={e.onDelete} />}
                       </li>
                     ))}
                   </ul>
@@ -283,9 +289,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
               )}
             </div>
           )}
-        </Card.Content>
-      </Card>
-    </div>
+    </Panel>
   );
 });
 

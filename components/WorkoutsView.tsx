@@ -165,7 +165,7 @@ function BlockSection({
           </div>
         </form>
       ) : (
-        <AddButton label={`Add to ${block.name}`} className="mt-2" onPress={() => setAdding(true)} />
+        <AddButton secondary label={`Add to ${block.name}`} className="mt-2" onPress={() => setAdding(true)} />
       )}
     </div>
   );
@@ -193,7 +193,7 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
   if (!open) {
     return (
-      <AddButton label="Add block" onPress={() => setOpen(true)} />
+      <AddButton secondary label="Add block" onPress={() => setOpen(true)} />
     );
   }
 
@@ -468,7 +468,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             One arm — counts double
           </label>
         ) : (
-          <AddButton label="Add exercise" onPress={() => setAdding(true)} />
+          <AddButton secondary label="Add exercise" onPress={() => setAdding(true)} />
         )}
         </div>
 
@@ -810,7 +810,7 @@ function ExerciseBlock({
               />
             ))}
           </div>
-          <AddButton label="Add set" className="mt-2" onPress={() => void tracker.addSet(e.exerciseId)} />
+          <AddButton secondary label="Add set" className="mt-2" onPress={() => void tracker.addSet(e.exerciseId)} />
         </>
       )}
     </div>

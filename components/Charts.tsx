@@ -4,7 +4,7 @@ import { fmtDate } from "@/lib/dates";
 
 import { memo } from "react";
 
-import { Card } from "./ui";
+import { Card, Stat } from "./ui";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 
 function offsetDate(days: number): Date {
@@ -84,16 +84,6 @@ function Heatmap({
 
 /** One figure and its label. Neutral: the three figures are peers, and
  *  giving each its own colour would suggest they meant different things. */
-function Stat({ value, label }: { value: string | number; label: string }) {
-  return (
-    <div className="rounded-[var(--r-control)] bg-[var(--default)] px-3 py-2.5">
-      <div className="font-mono-n text-2xl font-bold">
-        {value}
-      </div>
-      <div className="text-xs text-[var(--muted)]">{label}</div>
-    </div>
-  );
-}
 
 /** Busier days climb the palette ramp instead of every bar being one colour. */
 function rampStep(n: number, max: number): string {
@@ -146,10 +136,7 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
           <h2 className="mb-3 text-lg font-semibold">
             {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h2>
-          <div
-            className="grid gap-2.5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
-          >
+          <div className="stat-grid stat-grid--3">
             <Stat value={mTotal} label="Completions" />
             <Stat
               value={best ? best[1] : "–"}

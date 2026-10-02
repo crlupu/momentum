@@ -47,7 +47,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
         {untracked.length > 0 && <NoTrack books={untracked} />}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <AddButton label="New track" onPress={() => flow.open({ kind: "track", trackId: null })} />
+        <AddButton secondary label="New track" onPress={() => flow.open({ kind: "track", trackId: null })} />
       </div>
       {archived.length > 0 && (
         <div>

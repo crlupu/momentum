@@ -75,7 +75,7 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
           ]}
         />
         <span className="goals-toolbar__actions">
-          <AddButton label="New topic" onPress={() => setTopicEdit({ id: null })} />
+          <AddButton secondary label="New topic" onPress={() => setTopicEdit({ id: null })} />
           <AddButton label="New goal" onPress={() => setAdding({ pathId: null })} />
           <Button variant="outline" onPress={() => setImporting(true)}>
             <Upload className="h-4 w-4" /> Import

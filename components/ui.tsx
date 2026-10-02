@@ -91,6 +91,10 @@ export function Button({
  * accent with a plus, the same size everywhere. With a label it reads
  * "+ New goal"; without one it is the square + beside an input, and then
  * needs an aria-label.
+ *
+ * `secondary` is the grey version, for an add that isn't the page's main
+ * action or that repeats down a list (the + on every card, Add card in
+ * every column): one filled button per screen, so it stays the one to see.
  */
 export function AddButton({
   label,
@@ -100,9 +104,11 @@ export function AddButton({
   isDisabled,
   className,
   size = "md",
+  secondary,
   ...rest
 }: {
   label?: ReactNode;
+  secondary?: boolean;
   /** "sm" only beside other small icon buttons, so a row lines up. */
   size?: "sm" | "md";
   /** Replaces the plus, for an add that is more specific ("Add several"). */
@@ -116,7 +122,7 @@ export function AddButton({
   const ariaLabel = (rest as Record<string, unknown>)["aria-label"] as string | undefined;
   return (
     <Button
-      variant="primary"
+      variant={secondary ? "ghost" : "primary"}
       size={size}
       type={type}
       isIconOnly={!label}
@@ -294,6 +300,22 @@ export function PanelHeader({
         {title}
       </h2>
       {children && <div className="panel-head__side">{children}</div>}
+    </div>
+  );
+}
+
+/* --------------------------------- Stat --------------------------------- */
+
+/**
+ * A figure and what it counts, as the Today summary shows them: the number
+ * large, its label small and quiet beneath, on the card itself rather than
+ * in a box of its own. Laid out by a .stat-grid.
+ */
+export function Stat({ value, label }: { value: ReactNode; label: ReactNode }) {
+  return (
+    <div className="stat">
+      <span className="stat__value font-mono-n">{value}</span>
+      <span className="stat__label">{label}</span>
     </div>
   );
 }

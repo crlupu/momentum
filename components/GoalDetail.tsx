@@ -203,7 +203,7 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
 
   return (
     <section className="goal-section" aria-labelledby="goal-details">
-      <h3 id="goal-details" className="group-label">Details</h3>
+      <h3 id="goal-details" className="group-label" style={{ paddingInline: 0 }}>Details</h3>
       <div className="goal-fields">
         <label className="goal-field">
           <span>Name</span>
@@ -248,12 +248,17 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
         )}
 
-        <div className="goal-field">
-          <span>Count, if it has one (pages, videos, modules)</span>
-          <div className="flex gap-2">
-            <Input type="number" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />
-            <Input type="number" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
-          </div>
+        {/* Each number labelled: once filled, a placeholder no longer says
+            which is which. */}
+        <div className="grid grid-cols-2 gap-2">
+          <label className="goal-field">
+            <span>Done so far</span>
+            <Input type="number" inputMode="decimal" placeholder="e.g. 3" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          </label>
+          <label className="goal-field">
+            <span>Total (pages, videos…)</span>
+            <Input type="number" inputMode="decimal" placeholder="e.g. 12" value={target} onChange={(e) => setTarget(e.target.value)} />
+          </label>
         </div>
 
         <label className="goal-field">

@@ -99,8 +99,8 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
             kcalLeft == null
               ? "kcal today"
               : kcalLeft >= 0
-                ? `kcal · ${kcalLeft.toLocaleString()} left`
-                : `kcal · ${Math.abs(kcalLeft).toLocaleString()} over`
+                ? `kcal · ${compact(kcalLeft)} left`
+                : `kcal · ${compact(Math.abs(kcalLeft))} over`
           }
           value={kcalToday.toLocaleString()}
           href="/nutrition"
@@ -110,6 +110,11 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
       </ul>
     </section>
   );
+}
+
+/** 9,340 → "9.3k": the week's remainder, short enough for the label's one line. */
+function compact(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(n);
 }
 
 function Figure({

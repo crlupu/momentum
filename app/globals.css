@@ -950,7 +950,7 @@ button {
   align-items: center;
   gap: 0.625rem;
   min-block-size: 2.75rem;   /* comfortable target, consistent rhythm */
-  padding-block: 0.375rem;
+  padding-block: 0.5rem;
 }
 
 /* Row actions always sit at the trailing edge, destructive one last. */
@@ -995,7 +995,7 @@ button {
 }
 .cfg-meta {
   flex: none;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
 
@@ -2128,6 +2128,8 @@ html.dark {
 
 .rd-open { padding-block: 0.75rem 0.25rem; }
 .rd-open + .rd-open { border-top: 1px solid var(--separator); }
+/* The card's own padding is the space above the first book. */
+.rd-open:first-child { padding-block-start: 0; }
 
 /* The quick log: big enough to hit with a thumb. */
 .rd-quick {
@@ -3539,4 +3541,35 @@ button.rd-link:active { background: var(--default); }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ============================================================
+   Stat (components/ui.tsx): a figure and its label, straight on the card,
+   in the same sizes as the Today summary. Columns are hairline-separated on
+   a wide screen; on a phone they wrap two to a row.
+   ============================================================ */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+}
+@media (min-width: 42rem) {
+  .stat-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+.stat__value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.stat__label {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--muted);
 }

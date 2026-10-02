@@ -2,7 +2,7 @@
 
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button, PanelHeader, AddButton } from "./ui";
+import { Card, Input, Button, PanelHeader, AddButton, Stat } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -137,7 +137,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
           <Card>
             <Card.Content className="p-4 md:p-5">
               {/* Four across is too tight on a phone, so they wrap two by two. */}
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="stat-grid stat-grid--4">
                 <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
                 <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="lifting this week" />
                 <Stat value={weekCardio ? `${weekCardio} min` : "–"} label="cardio this week" />
@@ -210,7 +210,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
 
   return (
     <>
-      <AddButton label="Add cardio" onPress={() => setOpen(true)} />
+      <AddButton size="sm" secondary label="Add cardio" onPress={() => setOpen(true)} />
 
       <Modal open={open} onClose={close} title="Add cardio">
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -398,15 +398,5 @@ function TimeLine({
   );
 }
 
-function Stat({ value, label }: { value: string | number; label: string }) {
-  return (
-    <div className="rounded-[var(--r-control)] bg-[var(--default)] px-3 py-2.5">
-      <div className="font-mono-n text-xl font-bold">
-        {value}
-      </div>
-      <div className="text-xs text-[var(--muted)]">{label}</div>
-    </div>
-  );
-}
 
 export default WorkoutVolumeChart;

@@ -197,7 +197,7 @@ function Column({
         </ul>
       </SortableContext>
       <div className="board-col__foot">
-        <AddButton size="sm" label="Add card" onPress={onAdd} />
+        <AddButton size="sm" secondary label="Add card" onPress={onAdd} />
       </div>
     </section>
   );

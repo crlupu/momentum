@@ -163,8 +163,14 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
                 {/* Only the highest day and today are labelled: a figure on
                     every bar crowded a phone and went unread. The rest are in
                     each bar's tooltip. */}
-                <span className="font-mono-n text-[11px] font-bold">
-                  {counts[i] && (i === days.length - 1 || counts[i] === max) ? counts[i].toLocaleString() : ""}
+                <span className="font-mono-n whitespace-nowrap text-[11px] font-bold">
+                  {/* "1.5k" rather than "1,500": the full figure was wider
+                      than a phone's bar and ran past the card's edge. */}
+                  {counts[i] && (i === days.length - 1 || counts[i] === max)
+                    ? counts[i] >= 1000
+                      ? `${(counts[i] / 1000).toFixed(1).replace(/\.0$/, "")}k`
+                      : counts[i]
+                    : ""}
                 </span>
                 {/* Stacked in reverse so the first entry of the day is lowest. */}
                 <div

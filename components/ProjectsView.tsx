@@ -117,11 +117,10 @@ export function ProjectPage({ tracker, project: p }: { tracker: Tracker; project
 
   return (
     <div className="project-page">
+      {/* Read top down as a Learning topic does: what it is, then how far
+          along, the bar and its figure on one line. */}
       <div className="project-page__bar">
-        <span className="project-page__figure">
-          <span className="font-mono-n">{pct}%</span> · {done} of {total} done
-          {projectFinished(p) && " · Finished"}
-        </span>
+        {p.note ? <p className="goal-topic__note m-0">{p.note}</p> : <span />}
         <span className="project-page__actions">
           {href && (
             <a href={href} target="_blank" rel="noopener noreferrer" className="text-action">
@@ -133,9 +132,14 @@ export function ProjectPage({ tracker, project: p }: { tracker: Tracker; project
           </button>
         </span>
       </div>
-      {p.note && <p className="goal-topic__note">{p.note}</p>}
-      <div className="progress-track h-1.5">
-        <div className="progress-fill" style={{ width: `${pct}%` }} />
+      <div className="goal-topic__progress">
+        <div className="progress-track h-1.5 flex-1">
+          <div className="progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="goal-topic__figure">
+          <span className="font-mono-n">{pct}%</span> · {done} of {total} done
+          {projectFinished(p) && " · Finished"}
+        </span>
       </div>
 
       <ProjectBoard tracker={tracker} project={p} />

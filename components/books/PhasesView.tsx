@@ -45,7 +45,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
               Import a plan
             </Button>
           )}
-          <AddButton label="New phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
+          <AddButton secondary label="New phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
         </span>
       </div>
 

@@ -77,7 +77,7 @@ export function Panel({
                 {editLabel}
               </button>
             )}
-            {onAdd && <AddButton size="sm" aria-label={addLabel ?? (name ? `Add to ${name}` : "Add")} onPress={onAdd} />}
+            {onAdd && <AddButton size="sm" secondary aria-label={addLabel ?? (name ? `Add to ${name}` : "Add")} onPress={onAdd} />}
           </div>
         )}
       </div>

@@ -65,7 +65,6 @@ function TrackToday({
   const met = R.trackMet(track, read);
   const streak = R.trackStreak(s, track, today);
   const next = R.nextInQueue(s, track.id);
-  const pct = track.dailyTarget > 0 ? Math.min(100, (read / track.dailyTarget) * 100) : 0;
 
   return (
     <Panel
@@ -100,11 +99,6 @@ function TrackToday({
         )
       }
     >
-      {track.dailyTarget > 0 && (
-        <div className="rd-track__bar" aria-hidden>
-          <span style={{ width: `${pct}%` }} />
-        </div>
-      )}
 
       {open.length === 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-2 py-2">

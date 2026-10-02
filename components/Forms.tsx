@@ -476,8 +476,8 @@ export function RecurringManageCard({ tracker }: { tracker: Tracker }) {
               <li key={r.id} className="cfg-row">
                 <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px]">{r.title}</span>
-                  <span className="block text-[11px] text-[var(--muted)]">
+                  <span className="block truncate text-[15px] leading-snug">{r.title}</span>
+                  <span className="mt-0.5 block text-[13px] leading-snug text-[var(--muted)]">
                     {c.name} · {FREQ_LABEL[r.freq]}
                     {r.groupId ? ` · ${groupName(r.groupId)}` : ""}
                   </span>

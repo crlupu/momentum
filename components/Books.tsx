@@ -72,6 +72,7 @@ function BooksTabs({ tracker }: { tracker: Tracker }) {
             <Upload className="h-4 w-4" /> Import plan
           </Button>
           <AddButton
+            secondary
             label="Add several"
             icon={<ListPlus className="h-4 w-4" aria-hidden />}
             onPress={() => flow.open({ kind: "bulk" })}
