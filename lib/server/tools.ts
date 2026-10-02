@@ -290,8 +290,20 @@ export function registerTools(server: McpServer) {
         current: z.number().min(0).optional(),
         target: z.number().min(0).optional().describe("0 removes the count"),
         done: z.boolean().optional(),
+        // Also taken as JSON text: clients holding the tool list from before
+        // parts existed send an array they don't know the type of as a string.
         parts: z
-          .array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
+          .preprocess(
+            (v) => {
+              if (typeof v !== "string") return v;
+              try {
+                return JSON.parse(v);
+              } catch {
+                return v;
+              }
+            },
+            z.array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
+          )
           .optional(),
       },
     },
