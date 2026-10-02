@@ -806,11 +806,30 @@ export function goalStarted(g: Goal): boolean {
   return (g.current ?? 0) > 0;
 }
 
+/**
+ * "2 of 5 done", or, while nothing is finished, "1 of 5 started", so the
+ * words never read 0 beside a ring that has moved; "5 parts" before any start.
+ */
+export function countLine(total: number, done: number, started: number, noun: string): string {
+  if (done > 0) return `${done} of ${total} done`;
+  if (started > 0) return `${started} of ${total} started`;
+  return `${total} ${noun}${total === 1 ? "" : "s"}`;
+}
+
+/** A goal with steps, in words: see countLine. */
+export function stepsLine(steps: Goal[]): string {
+  return countLine(steps.length, steps.filter((g) => g.done).length, steps.filter(goalStarted).length, "step");
+}
+
 /** How far a goal is, in words: "2 of 4 parts done", "3 of 12", or null. */
 export function goalSummary(g: Goal): string | null {
   if (g.parts?.length) {
-    const done = g.parts.filter((p) => p.current >= p.target).length;
-    return `${done} of ${g.parts.length} part${g.parts.length === 1 ? "" : "s"} done`;
+    return countLine(
+      g.parts.length,
+      g.parts.filter((p) => p.current >= p.target).length,
+      g.parts.filter((p) => p.current > 0).length,
+      "part"
+    );
   }
   if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;
   return null;

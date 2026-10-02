@@ -18,7 +18,7 @@ export type SectionId =
  */
 export const SECTIONS = [
   { id: "tasks", title: "Today", path: "/" },
-  { id: "learning", title: "Learning", path: "/learning" },
+  { id: "learning", title: "Education", path: "/education" },
   { id: "projects", title: "Projects", path: "/projects" },
   { id: "fitness", title: "Fitness", path: "/fitness" },
   { id: "nutrition", title: "Nutrition", path: "/nutrition" },
@@ -54,8 +54,8 @@ export type NavId = "tasks" | "learning" | "projects" | "health";
 
 export const NAV: { id: NavId; title: string; sections: SectionId[] }[] = [
   { id: "tasks", title: "Today", sections: ["tasks"] },
-  // Books are part of Learning: /books only redirects there now.
-  { id: "learning", title: "Learning", sections: ["learning", "books"] },
+  // Books are part of Education: /books only redirects there now.
+  { id: "learning", title: "Education", sections: ["learning", "books"] },
   { id: "projects", title: "Projects", sections: ["projects"] },
   { id: "health", title: "Health", sections: ["fitness", "nutrition"] },
 ];

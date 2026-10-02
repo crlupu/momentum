@@ -11,7 +11,7 @@ import { GoalImportForm } from "./GoalImport";
 import { GoalRow } from "./GoalsView";
 import { TopicForm } from "./TopicForm";
 import { ProgressRing } from "./ProgressRing";
-import { ChevronRight, ListPlus, Upload } from "./icons";
+import { CalendarDays, ChevronRight, Clock, ListPlus, Upload } from "./icons";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
 import { useCoverLookup } from "./books/Cover";
@@ -20,7 +20,7 @@ import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackQueue } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
-import { Tracker, dateKey, goalStarted, pathGoals, pathPct, type Goal, type Path } from "@/lib/tracker";
+import { Tracker, dateKey, goalStarted, stepsLine, pathGoals, pathPct, type Goal, type Path } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
@@ -130,7 +130,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
   const live = R.liveTracks(s);
   const archived = s.readingTracks.filter((t) => t.archived);
   const untracked = R.untrackedBooks(s).filter((b) => b.status !== "finished" && b.status !== "dropped");
-  const go = (q: string) => router.push(`/learning?${q}`);
+  const go = (q: string) => router.push(`/education?${q}`);
 
   return (
     <div className="flex flex-col gap-5">
@@ -201,8 +201,6 @@ function Hub({ tracker }: { tracker: Tracker }) {
               {archived.map((t) => (
                 <HubRow key={t.id} dot={t.color} title={t.name} sub="Archived" onPress={() => go(`track=${t.id}`)} />
               ))}
-              <HubRow title="Phases" sub={phasesLine(s)} onPress={() => go("view=phases")} />
-              <HubRow title="History" sub="Finished books and goals" onPress={() => go("view=history")} />
             </ul>
           </Panel>
 
@@ -215,6 +213,13 @@ function Hub({ tracker }: { tracker: Tracker }) {
               empty="Nothing waiting. Add a goal with +."
             />
           </Panel>
+
+          {/* Places to look back and plan ahead, apart from the tracks
+              themselves. */}
+          <ul className="card hub-list">
+            <HubRow icon={<CalendarDays aria-hidden />} title="Phases" sub={phasesLine(s)} onPress={() => go("view=phases")} />
+            <HubRow icon={<Clock aria-hidden />} title="History" sub="Finished books and goals" onPress={() => go("view=history")} />
+          </ul>
 
           {/* Adding in bulk: rows like the rest of the list, rather than a
               cluster of buttons that wraps unevenly on a phone. */}
@@ -301,7 +306,6 @@ function GroupRow({
 }) {
   const s = tracker.state!;
   const cat = path.catId ? tracker.cat(path.catId) : null;
-  const done = steps.filter((g) => g.done).length;
   const pct = pathPct({ ...path, goalIds: steps.map((g) => g.id) }, s.goals);
   return (
     <li>
@@ -319,7 +323,7 @@ function GroupRow({
                 <span aria-hidden>·</span>
               </>
             )}
-            {done} of {steps.length} step{steps.length === 1 ? "" : "s"} done
+            {stepsLine(steps)}
           </span>
         </span>
         <ChevronRight className="rd-link__chevron" aria-hidden />
@@ -341,12 +345,11 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    if (!path) router.replace("/learning");
+    if (!path) router.replace("/education");
   }, [path, router]);
   if (!path) return null;
 
   const steps = pathGoals(path, s.goals);
-  const done = steps.filter((g) => g.done).length;
   const pct = pathPct(path, s.goals);
   const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
 
@@ -361,7 +364,7 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
                 <div className="progress-fill" style={{ width: `${pct}%` }} />
               </div>
               <span className="goal-topic__figure">
-                <span className="font-mono-n">{pct}%</span> · {done} of {steps.length} done
+                <span className="font-mono-n">{pct}%</span> · {stepsLine(steps)}
               </span>
             </div>
           )}
@@ -466,7 +469,7 @@ function TrackPage({ tracker, trackId }: { tracker: Tracker; trackId: string }) 
   // Deleted, or a stale link: back to Learning.
   const gone = trackId === "none" ? untracked.length === 0 : !track;
   useEffect(() => {
-    if (gone) router.replace("/learning");
+    if (gone) router.replace("/education");
   }, [gone, router]);
 
   if (trackId === "none") return untracked.length ? <NoTrack books={untracked} /> : null;

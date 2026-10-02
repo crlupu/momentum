@@ -36,7 +36,10 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <PanelHeader title="Finished" color="var(--sec-books)">
+        <PanelHeader title="Finished" color="var(--sec-books)" />
+        {/* The filters in a row of their own, under the heading, rather than
+            wrapping beside it. */}
+        <div className="rd-filters">
           <select aria-label="Track" value={track} onChange={(e) => setTrack(e.target.value)}>
             <option value="">All tracks</option>
             {s.readingTracks.map((t) => (
@@ -62,7 +65,7 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
             />
             Include dropped
           </label>
-        </PanelHeader>
+        </div>
         <div className="card p-4 md:p-5">
           {list.length === 0 ? (
             <p className="text-[15px] text-[var(--muted)]">
