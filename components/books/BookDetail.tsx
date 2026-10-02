@@ -2,7 +2,7 @@
 
 import { Button } from "../ui";
 import { Pencil, Play } from "../icons";
-import { Tracker, Book } from "@/lib/tracker";
+import { Tracker, Book, categoryColor } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
 import { Meter, ProgressText, StatusBadge, TrackChip, fmtDate, fmtDateAuto, fmtPace } from "./bits";
@@ -32,7 +32,12 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
             <StatusBadge status={book.status} />
             <TrackChip track={track} />
             {phase && <span className="cat-chip">{phase.name}</span>}
-            {book.category && <span className="cat-chip">{book.category}</span>}
+            {book.category && (
+              <span className="cat-chip">
+                <span className="cat-dot" style={{ background: categoryColor(book.category) }} aria-hidden />
+                {book.category}
+              </span>
+            )}
           </div>
           <Meter book={book} />
           <ProgressText book={book} />

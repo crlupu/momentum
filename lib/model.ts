@@ -528,6 +528,40 @@ export const CAT_COLORS = [
 ];
 
 /**
+ * The categories Google Books gives most, a colour each, so the common ones
+ * never share one. Indexes into CAT_COLORS.
+ */
+const COMMON_CATEGORIES: Record<string, number> = {
+  computers: 0, // indigo
+  psychology: 1, // violet
+  "biography & autobiography": 2, // magenta
+  fiction: 3, // pink
+  "health & fitness": 4, // red
+  history: 5, // orange
+  "business & economics": 6, // amber
+  "technology & engineering": 7, // olive
+  science: 8, // green
+  "self-help": 9, // teal
+  philosophy: 10, // slate
+};
+
+/**
+ * The colour of a book's category ("Computers", "Self-Help"), which comes
+ * from Google Books as a name rather than anything the reader set up. The
+ * common ones have a colour each; any other is worked out from its name. So
+ * the same category is the same colour on every book and every device, with
+ * nothing to store.
+ */
+export function categoryColor(name: string): string {
+  const key = name.trim().toLowerCase();
+  const fixed = COMMON_CATEGORIES[key];
+  if (fixed !== undefined) return CAT_COLORS[fixed];
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return CAT_COLORS[h % CAT_COLORS.length];
+}
+
+/**
  * The colours a spine can be: those from the palette that white text sits
  * legibly on.
  *

@@ -20,7 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Button, AddButton } from "../ui";
 import { ChevronDown, ChevronRight, Play, ReorderLines, Unarchive } from "../icons";
-import { Tracker, Book } from "@/lib/tracker";
+import { Tracker, Book, categoryColor } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
 import { Meter, ProgressText, StatusBadge, TrackDot } from "./bits";
@@ -267,7 +267,12 @@ function QueueRow({
         {book.status === "paused" && <StatusBadge status="paused" />}
         {book.status === "paused" && book.read > 0 && <span>page {book.read}</span>}
         {book.pages > 0 && <span>{book.pages} pages</span>}
-        {book.category && <span className="cat-chip cat-chip--sm">{book.category}</span>}
+        {book.category && (
+          <span className="cat-chip cat-chip--sm">
+            <span className="cat-dot" style={{ background: categoryColor(book.category) }} aria-hidden />
+            {book.category}
+          </span>
+        )}
       </span>
     </span>
   );
