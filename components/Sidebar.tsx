@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Today, BarChart3, ScrollText, Settings, LogOut, BookOpen, ChevronRight, School, Kanban,
+  X, Today, BarChart3, ScrollText, Settings, LogOut, ChevronRight, School, Kanban,
   Health,
 } from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
@@ -20,7 +20,6 @@ const ICON: Record<NavId | "charts" | "log" | "config", typeof Today> = {
   learning: School,
   projects: Kanban,
   health: Health,
-  books: BookOpen,
   charts: BarChart3,
   log: ScrollText,
   config: Settings,

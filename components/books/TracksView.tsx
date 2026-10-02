@@ -79,7 +79,16 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
   );
 }
 
-function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrack }) {
+export function TrackQueue({
+  tracker,
+  track,
+  asPage,
+}: {
+  tracker: Tracker;
+  track: R.ReadingTrack;
+  /** The track's own page, whose large title already names it. */
+  asPage?: boolean;
+}) {
   const s = tracker.state!;
   const flow = useFlow();
   const open = R.activeBooks(s, track.id);
@@ -111,8 +120,8 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
 
   return (
     <Panel
-      title={track.name}
-      dot={track.color}
+      title={asPage ? "Books" : track.name}
+      dot={asPage ? undefined : track.color}
       subtitle={
         <span>
           {open.length} of {track.wipLimit} open
@@ -198,7 +207,7 @@ function TrackQueue({ tracker, track }: { tracker: Tracker; track: R.ReadingTrac
  * Books in no track — kept when their track was deleted, or taken out of
  * one. They wait here until given a track again, from the book's Edit.
  */
-function NoTrack({ books }: { books: Book[] }) {
+export function NoTrack({ books }: { books: Book[] }) {
   const flow = useFlow();
   return (
     <Panel

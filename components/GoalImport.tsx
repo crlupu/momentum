@@ -26,7 +26,8 @@ export function GoalImportForm({
 }) {
   const s = tracker.state!;
   const [text, setText] = useState("");
-  const [into, setInto] = useState<string>(topicId ?? "file");
+  // Topics are set aside for now: imported goals go in none.
+  const into = topicId ?? "none";
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,15 +36,6 @@ export function GoalImportForm({
   const opts = { into: into === "none" ? null : into, fallbackCatId: catId };
   const preview = useMemo(() => applyGoalPlan(s, plan, opts).preview, [s, plan, opts.into, opts.fallbackCatId]); // eslint-disable-line react-hooks/exhaustive-deps
   const goals = plan.topics.reduce((a, t) => a + t.goals.length, 0);
-  const namesTopics = plan.topics.some((t) => t.name);
-  const newTopicsWithoutCategory =
-    into === "file" &&
-    plan.topics.some(
-      (t) =>
-        t.name &&
-        preview.topicsNew.includes(t.name) &&
-        !s.categories.some((c) => c.name.toLowerCase() === (t.category ?? "").toLowerCase())
-    );
 
   const readFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -95,25 +87,10 @@ export function GoalImportForm({
         />
       </label>
 
-      <label className="goal-field">
-        <span>Put the goals in</span>
-        <select value={into} onChange={(e) => setInto(e.target.value)}>
-          <option value="file">{namesTopics ? "The topics the file names" : "No topic (the file names none)"}</option>
-          {s.paths.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-          <option value="none">No topic</option>
-        </select>
-      </label>
-
-      {newTopicsWithoutCategory && (
-        <div className="goal-field">
-          <span>The file gives no category for some new topics; they get this one:</span>
-          <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
-        </div>
-      )}
+      <div className="goal-field">
+        <span>Category, for goals the file gives none</span>
+        <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
+      </div>
 
       {text.trim() && (
         <div className="rd-import">

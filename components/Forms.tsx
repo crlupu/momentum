@@ -96,7 +96,8 @@ export function GoalForm({
   const s = tracker.state!;
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
-  const [topic, setTopic] = useState(pathId ?? "");
+  // Topics are set aside for now: a goal is added on its own.
+  const topic = pathId ?? "";
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
   const [note, setNote] = useState("");
@@ -137,19 +138,7 @@ export function GoalForm({
           className="mt-1 w-full text-base text-foreground"
         />
       </label>
-      {s.paths.length > 0 && (
-        <label className="text-xs text-[var(--muted)]">
-          Topic
-          <select value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-1 w-full text-base text-foreground">
-            <option value="">No topic</option>
-            {s.paths.map((p) => (
-              <option key={p.id} value={p.id}>{p.title}</option>
-            ))}
-          </select>
-        </label>
-      )}
-      {/* In a topic, the goal takes the topic's category. */}
-      {!topic && <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />}
+      <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
       <div>
         <div className="mb-1 text-xs text-[var(--muted)]">
           A count to track, if it has one (pages, videos, modules). Leave it empty to just mark the goal done when it is.

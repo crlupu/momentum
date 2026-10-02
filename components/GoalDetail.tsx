@@ -7,7 +7,7 @@ import { usePending } from "./ActionButton";
 import { CatPicker } from "./Forms";
 import { ProgressRing } from "./ProgressRing";
 import { Check, ExternalLink, Minus, Plus, RotateCcw } from "./icons";
-import { Goal, Tracker, goalPct, goalTopic } from "@/lib/tracker";
+import { Goal, Tracker, goalPct } from "@/lib/tracker";
 
 /** A number field's value, or null when empty or not a number. */
 function num(v: string): number | null {
@@ -33,8 +33,6 @@ export function GoalDetail({
 }) {
   const s = tracker.state!;
   const pct = g.done ? 100 : goalPct(g);
-  const topic = goalTopic(g.id, s.paths);
-
   const summary = g.done
     ? "Done"
     : g.target
@@ -48,7 +46,6 @@ export function GoalDetail({
         <div className="min-w-0">
           <p className="goal-detail__pct">{g.target || g.done ? `${pct}% complete` : "Open"}</p>
           <p className="goal-detail__sub">{summary}</p>
-          {topic && <p className="goal-detail__sub">In {topic.title}</p>}
         </div>
       </div>
 
@@ -165,10 +162,9 @@ function AfterFirstFrame({ children }: { children: React.ReactNode }) {
   return ready ? <>{children}</> : <div className="goal-section goal-section--pending" aria-hidden />;
 }
 
-/** Name, description, topic, category, count and link. */
+/** Name, description, category, count and link. */
 function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   const s = tracker.state!;
-  const topic = goalTopic(g.id, s.paths);
   const [name, setName] = useState(g.title);
   const [current, setCurrent] = useState(g.current != null ? String(g.current) : "");
   const [target, setTarget] = useState(g.target != null ? String(g.target) : "");
@@ -221,32 +217,7 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           />
         </label>
 
-        <label className="goal-field">
-          <span>Topic</span>
-          <select
-            value={topic?.id ?? ""}
-            onChange={(e) => void tracker.setGoalTopic(g.id, e.target.value || null)}
-          >
-            <option value="">No topic</option>
-            {s.paths.map((p) => (
-              <option key={p.id} value={p.id}>{p.title}</option>
-            ))}
-          </select>
-        </label>
-
-        {/* In a topic, the category is the topic's; changed there. */}
-        {topic?.catId ? (
-          <div className="goal-field">
-            <span>Category</span>
-            <span className="goal-field__value">
-              <span className="cat-dot" style={{ background: tracker.cat(topic.catId).color }} aria-hidden />
-              {tracker.cat(topic.catId).name}
-              <span className="goal-field__hint">from {topic.title}</span>
-            </span>
-          </div>
-        ) : (
-          <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
-        )}
+        <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
 
         {/* Each number labelled: once filled, a placeholder no longer says
             which is which. */}

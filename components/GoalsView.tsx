@@ -237,7 +237,7 @@ function TopicSection({
 }
 
 /** One goal as a row: its progress, name, what it's at, and a way in. */
-function GoalRow({
+export function GoalRow({
   tracker,
   goal: g,
   onOpen,

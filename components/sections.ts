@@ -50,14 +50,14 @@ export function sectionForPath(path: string): SectionId {
  * and Nutrition, which share a tab and switch between each other at the top
  * of the page.
  */
-export type NavId = "tasks" | "learning" | "projects" | "health" | "books";
+export type NavId = "tasks" | "learning" | "projects" | "health";
 
 export const NAV: { id: NavId; title: string; sections: SectionId[] }[] = [
   { id: "tasks", title: "Today", sections: ["tasks"] },
-  { id: "learning", title: "Learning", sections: ["learning"] },
+  // Books are part of Learning: /books only redirects there now.
+  { id: "learning", title: "Learning", sections: ["learning", "books"] },
   { id: "projects", title: "Projects", sections: ["projects"] },
   { id: "health", title: "Health", sections: ["fitness", "nutrition"] },
-  { id: "books", title: "Books", sections: ["books"] },
 ];
 
 /** Where a nav place goes: its first section. */

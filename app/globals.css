@@ -2532,7 +2532,9 @@ html.dark {
   inset-block-end: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* One column per tab, however many there are. */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   padding-block-end: env(safe-area-inset-bottom);
   padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
   border-block-start: 0.5px solid var(--bar-border);
@@ -3578,4 +3580,51 @@ button.rd-link:active { background: var(--default); }
 .cat-dot.cat-dot--half {
   inline-size: 0.25rem;
   block-size: 0.25rem;
+}
+
+/* ============================================================
+   Learning hub (components/LearningHub.tsx): rows that open a page, as an
+   iOS list does: a dot when there is a colour, a title and a line under it,
+   and a chevron.
+   ============================================================ */
+.hub-head {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.hub-list {
+  margin: 0;
+  padding: 0.25rem 1rem;
+  list-style: none;
+}
+.hub-list > li + li { border-top: 0.5px solid var(--separator); }
+.hub-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: 0.625rem 0;
+  text-align: start;
+  color: var(--foreground);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.hub-row__text { display: flex; flex: 1; min-inline-size: 0; flex-direction: column; gap: 0.125rem; }
+.hub-row__title { font-size: 1.0625rem; font-weight: 600; line-height: 1.25; }
+.hub-row__sub { font-size: 0.8125rem; color: var(--muted); }
+@media (hover: hover) {
+  .hub-row:hover .hub-row__title { color: var(--accent); }
+}
+
+/* The hub's Now / Library switch spans the page: two halves, as in iOS. */
+.hub-switch > .seg { display: flex; inline-size: 100%; }
+.hub-switch > .seg .seg__btn { flex: 1 1 0; }
+.hub-row__icon { display: inline-flex; color: var(--accent); }
+.hub-row__icon svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+@media (min-width: 42rem) {
+  .hub-switch > .seg { max-inline-size: 22rem; }
 }

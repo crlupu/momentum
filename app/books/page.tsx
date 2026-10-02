@@ -1,14 +1,13 @@
 "use client";
 
-import { usePageTracker } from "@/components/AppShell";
-import { SectionPage } from "@/components/Section";
-import { Books } from "@/components/Books";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function BooksPage() {
-  const tracker = usePageTracker();
-  return (
-    <SectionPage id="books">
-      <Books tracker={tracker} />
-    </SectionPage>
-  );
+/** Books are part of Learning now. Old links land there. */
+export default function BooksRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/learning");
+  }, [router]);
+  return null;
 }

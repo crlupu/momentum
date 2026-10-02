@@ -15,15 +15,26 @@ import { useFlow } from "./flowContext";
  * The day's reading: each track's open books, how much of its target has
  * been read today, and a way to log a sitting without opening anything.
  */
-export function TodayView({ tracker }: { tracker: Tracker }) {
+export function TodayView({
+  tracker,
+  openOnly,
+}: {
+  tracker: Tracker;
+  /** Only the tracks with a book open: what's being read, and nothing else. */
+  openOnly?: boolean;
+}) {
   const s = tracker.state!;
   const today = dateKey();
-  const tracks = R.liveTracks(s);
+  const tracks = R.liveTracks(s).filter((t) => !openOnly || R.activeBooks(s, t.id).length > 0);
   const units = R.readingUnits(s, today);
   const pagesToday = R.pagesOn(s, today);
 
   if (tracks.length === 0) {
-    return <p className="text-[15px] text-[var(--muted)]">No tracks. Add one from Tracks.</p>;
+    return (
+      <p className="text-[15px] text-[var(--muted)]">
+        {openOnly ? "Nothing being read. Start a book from Library." : "No tracks. Add one from Tracks."}
+      </p>
+    );
   }
 
   return (
