@@ -828,7 +828,7 @@ export function goalSummary(g: Goal): string | null {
       g.parts.length,
       g.parts.filter((p) => p.current >= p.target).length,
       g.parts.filter((p) => p.current > 0).length,
-      "part"
+      "step"
     );
   }
   if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;

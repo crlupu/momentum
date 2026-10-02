@@ -168,7 +168,7 @@ export function GoalDetail({
       </ul>
       {!adding && (
         <button type="button" className="text-action self-start" onClick={() => setAdding(true)}>
-          <Plus className="h-4 w-4" aria-hidden /> Add a part
+          <Plus className="h-4 w-4" aria-hidden /> Add a step
         </button>
       )}
 
@@ -226,7 +226,7 @@ function PartRow({
   });
   return (
     <li className="goal-counter">
-      <input aria-label="Part name" placeholder="Name" className="inline-field goal-counter__label" {...name} />
+      <input aria-label="Step name" placeholder="Name" className="inline-field goal-counter__label" {...name} />
       <Counter
         current={p.current}
         total={p.target}
@@ -262,7 +262,7 @@ function NewPart({ onDone }: { onDone: (part: Part | null) => void }) {
     <li ref={row} className="goal-counter" onBlur={onBlur}>
       <input
         autoFocus
-        aria-label="New part name"
+        aria-label="New step name"
         placeholder="Name, e.g. Readings"
         className="inline-field goal-counter__label"
         value={title}
@@ -272,7 +272,7 @@ function NewPart({ onDone }: { onDone: (part: Part | null) => void }) {
       <input
         type="number"
         inputMode="numeric"
-        aria-label="New part total"
+        aria-label="New step total"
         placeholder="Total"
         className="inline-field inline-number"
         style={{ inlineSize: "5ch" }}
