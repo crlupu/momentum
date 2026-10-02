@@ -34,7 +34,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
             {phase && <span className="cat-chip">{phase.name}</span>}
             {book.category && (
               <span className="cat-chip">
-                <span className="cat-dot" style={{ background: categoryColor(book.category) }} aria-hidden />
+                <span className="cat-dot cat-dot--half" style={{ background: categoryColor(book.category) }} aria-hidden />
                 {book.category}
               </span>
             )}

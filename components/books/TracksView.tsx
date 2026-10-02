@@ -269,7 +269,7 @@ function QueueRow({
         {book.pages > 0 && <span>{book.pages} pages</span>}
         {book.category && (
           <span className="cat-chip cat-chip--sm">
-            <span className="cat-dot" style={{ background: categoryColor(book.category) }} aria-hidden />
+            <span className="cat-dot cat-dot--half" style={{ background: categoryColor(book.category) }} aria-hidden />
             {book.category}
           </span>
         )}
