@@ -20,14 +20,14 @@ import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackQueue } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
-import { Tracker, dateKey, pathGoals, pathPct, type Goal, type Path } from "@/lib/tracker";
+import { Tracker, dateKey, goalStarted, pathGoals, pathPct, type Goal, type Path } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
 const TAB_KEY = "momentum:learning-tab";
 
 /** Started: some of its count done. Everything else open is still to start. */
-const inProgress = (g: Goal) => !g.done && (g.current ?? 0) > 0;
+const inProgress = (g: Goal) => !g.done && goalStarted(g);
 
 /**
  * A goal made of steps (stored as a topic and its goals: "Rust ramp up",
@@ -53,7 +53,7 @@ const itemDone = (i: Item) =>
 const itemStarted = (i: Item) =>
   i.kind === "goal"
     ? inProgress(i.goal)
-    : i.steps.some((g) => g.done || (g.current ?? 0) > 0);
+    : i.steps.some(goalStarted);
 
 /**
  * Learning: books and goals in one place, without a second row of tabs.

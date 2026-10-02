@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { dateKey, uid, type TrackerState } from "./model";
+import { dateKey, uid, type Part, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -63,6 +63,46 @@ export function setGoalCount(
       const current = c.current !== undefined ? Math.max(0, c.current) : g.current;
       return { ...g, target, current: target && current != null ? Math.min(current, target) : current };
     }),
+  };
+}
+
+/**
+ * Replaces a goal's parts. Each needs a title and a total above 0; counts are
+ * kept within 0 and the total. An empty list removes them.
+ */
+export function setGoalParts(
+  s: TrackerState,
+  id: string,
+  parts: Array<{ id?: string; title: string; current?: number; target: number }>
+): TrackerState {
+  const clean: Part[] = parts
+    .filter((p) => p.title.trim() && Number.isFinite(p.target) && p.target > 0)
+    .map((p) => ({
+      id: p.id ?? uid(),
+      title: p.title.trim(),
+      target: p.target,
+      current: Math.min(p.target, Math.max(0, p.current ?? 0)),
+    }));
+  return {
+    ...s,
+    goals: s.goals.map((g) => (g.id === id ? { ...g, parts: clean.length ? clean : undefined } : g)),
+  };
+}
+
+/** Moves one part's count by a step, kept within 0 and its total. */
+export function stepPart(s: TrackerState, goalId: string, partId: string, delta: number): TrackerState {
+  return {
+    ...s,
+    goals: s.goals.map((g) =>
+      g.id === goalId && g.parts
+        ? {
+            ...g,
+            parts: g.parts.map((p) =>
+              p.id === partId ? { ...p, current: Math.min(p.target, Math.max(0, p.current + delta)) } : p
+            ),
+          }
+        : g
+    ),
   };
 }
 

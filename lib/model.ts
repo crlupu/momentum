@@ -63,6 +63,20 @@ export type Goal = {
   link?: string;
   /** Its description: details, in as many lines as it takes. */
   note?: string;
+  /**
+   * Its parts, each with a count of its own: a course's readings, problem
+   * sets, project. A goal with parts takes its progress from them, and its
+   * own count is set aside.
+   */
+  parts?: Part[];
+};
+
+/** A part of a goal: "Readings, 4 of 30". */
+export type Part = {
+  id: string;
+  title: string;
+  current: number;
+  target: number;
 };
 
 /**
@@ -774,9 +788,32 @@ export function recurringUnits(
   return units;
 }
 
-/** True when there is a percentage to show: the goal has a count. */
+/** True when there is a percentage to show: the goal has a count or parts. */
 export function goalHasProgress(g: Goal): boolean {
-  return typeof g.target === "number" && g.target > 0;
+  return !!g.parts?.length || (typeof g.target === "number" && g.target > 0);
+}
+
+/** A part's percentage, 0–100. */
+export function partPct(p: Part): number {
+  if (!p.target || p.target <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.floor((p.current / p.target) * 100)));
+}
+
+/** True once some of the goal is done: its count, or any of its parts. */
+export function goalStarted(g: Goal): boolean {
+  if (g.done) return true;
+  if (g.parts?.length) return g.parts.some((p) => p.current > 0);
+  return (g.current ?? 0) > 0;
+}
+
+/** How far a goal is, in words: "2 of 4 parts done", "3 of 12", or null. */
+export function goalSummary(g: Goal): string | null {
+  if (g.parts?.length) {
+    const done = g.parts.filter((p) => p.current >= p.target).length;
+    return `${done} of ${g.parts.length} part${g.parts.length === 1 ? "" : "s"} done`;
+  }
+  if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;
+  return null;
 }
 
 /**
@@ -787,6 +824,8 @@ export function goalHasProgress(g: Goal): boolean {
  * and only reaches 100% when everything really is finished.
  */
 export function goalPct(g: Goal): number {
+  // Each part weighs the same, so thirty readings don't drown out one project.
+  if (g.parts?.length) return Math.floor(g.parts.reduce((sum, p) => sum + partPct(p), 0) / g.parts.length);
   if (!g.target || g.target <= 0) return 0;
   return Math.max(0, Math.min(100, Math.floor(((g.current ?? 0) / g.target) * 100)));
 }
@@ -833,6 +872,19 @@ export function pathPct(p: Path, goals: Goal[]): number {
   if (list.length === 0) return 0;
   const total = list.reduce((sum, g) => sum + (g.done ? 100 : goalPct(g)), 0);
   return Math.max(0, Math.min(100, Math.floor(total / list.length)));
+}
+
+function migrateParts(raw: unknown): Part[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const parts = (raw as Array<Record<string, unknown>>)
+    .filter((p) => typeof p.title === "string" && p.title.trim() && typeof p.target === "number" && p.target > 0)
+    .map((p) => ({
+      id: (p.id as string) ?? uid(),
+      title: (p.title as string).trim(),
+      target: p.target as number,
+      current: Math.min(p.target as number, Math.max(0, typeof p.current === "number" ? p.current : 0)),
+    }));
+  return parts.length ? parts : undefined;
 }
 
 export function migrate(raw: unknown): TrackerState {
@@ -885,6 +937,7 @@ export function migrate(raw: unknown): TrackerState {
     pinned: g.pinned === true ? true : undefined,
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
+    parts: migrateParts(g.parts),
   }));
 
   const todos: TodoItem[] = Array.isArray(s.todos)

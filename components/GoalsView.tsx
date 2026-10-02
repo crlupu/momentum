@@ -17,6 +17,7 @@ import {
   Goal,
   Path,
   goalHasProgress,
+  goalSummary,
   goalPct,
   pathGoals,
   pathPct,
@@ -254,9 +255,7 @@ export function GoalRow({
 
   const meta = g.done
     ? `Done${g.doneDate ? ` ${fmtDateAuto(g.doneDate)}` : ""}`
-    : g.target
-      ? `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`
-      : "Open";
+    : goalSummary(g) ?? "Open";
 
   return (
     <li>

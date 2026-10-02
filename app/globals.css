@@ -3651,3 +3651,10 @@ button.rd-link:active { background: var(--default); }
   text-align: center;
 }
 .rd-mini .cds--btn { min-block-size: 2.25rem; min-inline-size: 2.25rem; }
+
+/* A goal's parts: one counter each in the sheet, and their names and
+   totals in its details. */
+.goal-parts { display: flex; flex-direction: column; gap: 0.5rem; }
+.part-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.part-row { display: flex; align-items: center; gap: 0.5rem; }
+.part-row__total { inline-size: 5.5rem; flex: none; }

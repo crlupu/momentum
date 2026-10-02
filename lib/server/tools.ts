@@ -79,7 +79,8 @@ function overview(s: TrackerState, section: string) {
       title: g.title,
       topic: goalTopic(g.id, s.paths)?.title,
       done: g.done,
-      progress: g.target ? `${g.current ?? 0}/${g.target}` : undefined,
+      progress: g.parts?.length ? undefined : g.target ? `${g.current ?? 0}/${g.target}` : undefined,
+      parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
     }));
   }
   if (section === "all" || section === "projects") {
@@ -282,24 +283,44 @@ export function registerTools(server: McpServer) {
     "update_goal",
     {
       title: "Update a goal",
-      description: "Updates one learning goal: its count (current, target) or whether it's done.",
+      description:
+        "Updates one learning goal: its count (current, target), its parts, or whether it's done. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
         target: z.number().min(0).optional().describe("0 removes the count"),
         done: z.boolean().optional(),
+        parts: z
+          .array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
+          .optional(),
       },
     },
-    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean }) =>
+    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; parts?: { title: string; target: number; current?: number }[] }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
         let next = s;
         if (a.current !== undefined || a.target !== undefined) next = O.setGoalCount(next, g.id, a);
+        if (a.parts !== undefined) {
+          const had = g.parts ?? [];
+          next = O.setGoalParts(
+            next,
+            g.id,
+            a.parts.map((p) => {
+              const old = had.find((x) => x.title.toLowerCase() === p.title.trim().toLowerCase());
+              return { id: old?.id, title: p.title, target: p.target, current: p.current ?? old?.current ?? 0 };
+            })
+          );
+        }
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         const after = next.goals.find((x) => x.id === g.id)!;
+        const progress = after.parts?.length
+          ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}`).join(", ")}`
+          : after.target
+            ? `, ${after.current ?? 0}/${after.target}`
+            : "";
         return {
           state: next,
-          result: `${g.title}: ${after.done ? "done" : "open"}${after.target ? `, ${after.current ?? 0}/${after.target}` : ""}.`,
+          result: `${g.title}: ${after.done ? "done" : "open"}${progress}.`,
         };
       })
     )

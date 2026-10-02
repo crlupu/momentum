@@ -479,6 +479,14 @@ export function useTracker() {
         ),
       })),
 
+    /** Replaces a goal's parts; an empty list removes them. */
+    setGoalParts: (id: string, parts: Parameters<typeof O.setGoalParts>[2]) =>
+      commit((s) => O.setGoalParts(s, id, parts)),
+
+    /** Moves one part's count by a step. */
+    stepPart: (goalId: string, partId: string, delta: number) =>
+      commit((s) => O.stepPart(s, goalId, partId, delta)),
+
     updateGoal: (id: string, patch: { title?: string; catId?: string }) =>
       commit((s) => ({
         ...s,
