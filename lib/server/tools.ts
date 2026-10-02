@@ -33,6 +33,17 @@ function pick<T extends { id: string }>(items: T[], ref: string, name: (t: T) =>
   throw new Error(`"${ref}" matches several ${what}s: ${partial.map(name).join("; ")}. Say which.`);
 }
 
+/** An array, also accepted as JSON text (see update_goal). */
+const jsonArray = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((v) => {
+    if (typeof v !== "string") return v;
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
+  }, schema);
+
 const text = (v: unknown) => ({ content: [{ type: "text" as const, text: typeof v === "string" ? v : JSON.stringify(v, null, 1) }] });
 
 /** Runs a tool, turning a thrown error into a message Claude can act on. */
@@ -82,6 +93,8 @@ function overview(s: TrackerState, section: string) {
       phases: g.phaseIds?.map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean),
       progress: g.parts?.length ? undefined : g.target ? `${g.current ?? 0}/${g.target}` : undefined,
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
+      description: g.note,
+      link: g.link,
     }));
   }
   if (section === "all" || section === "projects") {
@@ -300,33 +313,60 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
         target: z.number().min(0).optional().describe("0 removes the count"),
         done: z.boolean().optional(),
-        // Also taken as JSON text: clients holding the tool list from before
-        // parts existed send an array they don't know the type of as a string.
-        parts: z
-          .preprocess(
-            (v) => {
-              if (typeof v !== "string") return v;
-              try {
-                return JSON.parse(v);
-              } catch {
-                return v;
-              }
-            },
-            z.array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
-          )
-          .optional(),
+        status: z.enum(["queued", "active", "done", "dropped"]).optional(),
+        title: z.string().min(1).optional().describe("A new name"),
+        description: z.string().optional().describe("Its description; empty clears"),
+        link: z.string().optional().describe("Where it lives, e.g. the course page; empty clears"),
+        topic: z
+          .string()
+          .optional()
+          .describe("Moves it to this topic, by name or id, made if it doesn't exist; empty takes it out of every topic"),
+        // Arrays are also taken as JSON text: clients holding the tool list
+        // from before a field existed send an array they don't know the type
+        // of as a string.
+        phases: jsonArray(z.array(z.string()).max(2)).optional().describe("Up to two phase names or ids; [] clears"),
+        parts: jsonArray(
+          z.array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
+        ).optional(),
       },
     },
-    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; status?: GoalStatus; phases?: string[]; parts?: { title: string; target: number; current?: number }[] }) =>
+    safe(async (a: {
+      goal: string;
+      current?: number;
+      target?: number;
+      done?: boolean;
+      status?: GoalStatus;
+      title?: string;
+      description?: string;
+      link?: string;
+      topic?: string;
+      phases?: string[];
+      parts?: { title: string; target: number; current?: number }[];
+    }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
         let next = s;
+        if (a.title !== undefined || a.description !== undefined || a.link !== undefined)
+          next = O.editGoal(next, g.id, { title: a.title, description: a.description, link: a.link });
+        if (a.topic !== undefined) {
+          let topicId: string | null = null;
+          if (a.topic.trim()) {
+            const found = next.paths.find((p) => p.id === a.topic || norm(p.title) === norm(a.topic!));
+            if (found) topicId = found.id;
+            else {
+              const made = O.addTopic(next, a.topic);
+              next = made.state;
+              topicId = made.id;
+            }
+          }
+          next = O.moveGoalToTopic(next, g.id, topicId);
+        }
         if (a.current !== undefined || a.target !== undefined) next = O.setGoalCount(next, g.id, a);
         if (a.parts !== undefined) {
           const had = g.parts ?? [];
@@ -349,10 +389,53 @@ export function registerTools(server: McpServer) {
           : after.target
             ? `, ${after.current ?? 0}/${after.target}`
             : "";
+        const topic = goalTopic(g.id, next.paths)?.title;
         return {
           state: next,
-          result: `${g.title}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
+          result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
         };
+      })
+    )
+  );
+
+  server.registerTool(
+    "remove_goal",
+    {
+      title: "Delete a goal",
+      description: "Deletes one learning goal for good, with its progress and parts, and takes it out of its topic.",
+      inputSchema: { goal: z.string().describe("Title or id") },
+    },
+    safe(async (a: { goal: string }) =>
+      change((s) => {
+        const g = pick(s.goals, a.goal, (x) => x.title, "goal");
+        const topic = goalTopic(g.id, s.paths)?.title;
+        return { state: O.removeGoal(s, g.id), result: `Deleted "${g.title}"${topic ? ` from ${topic}` : ""}.` };
+      })
+    )
+  );
+
+  server.registerTool(
+    "update_topic",
+    {
+      title: "Rename or delete a topic",
+      description:
+        "Renames a learning topic, or deletes it. Only an empty topic can be deleted: move or delete its goals first.",
+      inputSchema: {
+        topic: z.string().describe("Name or id"),
+        name: z.string().min(1).optional().describe("Its new name"),
+        delete: z.boolean().optional(),
+      },
+    },
+    safe(async (a: { topic: string; name?: string; delete?: boolean }) =>
+      change((s) => {
+        const p = pick(s.paths, a.topic, (x) => x.title, "topic");
+        if (a.delete) {
+          const n = O.topicGoalCount(s, p.id);
+          if (n > 0) throw new Error(`"${p.title}" still holds ${n} goal${n === 1 ? "" : "s"}; move or delete them first.`);
+          return { state: O.removeTopic(s, p.id), result: `Deleted the topic "${p.title}".` };
+        }
+        if (!a.name?.trim()) throw new Error("Give a new name, or delete: true.");
+        return { state: O.renameTopic(s, p.id, a.name), result: `Renamed "${p.title}" to "${a.name.trim()}".` };
       })
     )
   );

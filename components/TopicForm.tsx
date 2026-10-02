@@ -9,7 +9,7 @@ import { Path, Tracker } from "@/lib/tracker";
 
 /**
  * A topic's name, what it's for and its category, which every goal in it
- * shares. Deleting a topic keeps its goals: they move to "Not in a topic".
+ * shares. Only an empty topic can be deleted.
  */
 export function TopicForm({
   tracker,
@@ -54,8 +54,10 @@ export function TopicForm({
       <DialogActions
         primary={{ label: topic ? "Save" : "Add", disabled: pending || !title.trim() }}
         del={
-          topic && {
-            what: `the topic "${topic.title}" (its goals stay, outside any topic)`,
+          // Only an empty topic can be deleted.
+          topic &&
+          !topic.goalIds.some((id) => tracker.state!.goals.some((g) => g.id === id)) && {
+            what: `the topic "${topic.title}"`,
             onDelete: async () => {
               onDone();
               return tracker.removePath(topic.id);

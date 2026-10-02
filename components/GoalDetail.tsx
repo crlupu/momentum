@@ -241,8 +241,12 @@ export function GoalDetail({
         </ul>
       </section>
 
-      <PhasesRow tracker={tracker} goal={g} />
-      <LinkRow tracker={tracker} goal={g} />
+      {/* Where it belongs and where it lives, as one grouped list. */}
+      <div className="step-list">
+        <TopicRow tracker={tracker} goal={g} />
+        <PhasesRow tracker={tracker} goal={g} />
+        <LinkRow tracker={tracker} goal={g} />
+      </div>
 
       <DialogActions
         del={{
@@ -380,6 +384,64 @@ function StepRow({
 }
 
 /**
+ * The goal's topic, picked from a menu, as iOS shows a choice in a list
+ * row. Moving keeps everything the goal has. "New Topic…" names one in
+ * place and moves the goal into it.
+ */
+function TopicRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const s = tracker.state!;
+  const current = s.paths.find((p) => p.goalIds.includes(g.id));
+  const [naming, setNaming] = useState(false);
+  const [name, setName] = useState("");
+  const create = () => {
+    setNaming(false);
+    if (name.trim()) void tracker.addTopic(name, [g.id]);
+    setName("");
+  };
+  return (
+    <div className="step-row">
+      <span className="step-row__name flex-none">Topic</span>
+      {naming ? (
+        <input
+          autoFocus
+          aria-label="New topic name"
+          placeholder="New topic name"
+          className="inline-field min-w-0 flex-1 text-end"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={create}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              setName("");
+              setNaming(false);
+            }
+          }}
+        />
+      ) : (
+        <select
+          aria-label="Topic"
+          className="row-select"
+          value={current?.id ?? ""}
+          onChange={(e) => {
+            if (e.target.value === "__new") setNaming(true);
+            else void tracker.setGoalTopic(g.id, e.target.value || null);
+          }}
+        >
+          <option value="">None</option>
+          {s.paths.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+          <option value="__new">New Topic…</option>
+        </select>
+      )}
+    </div>
+  );
+}
+
+/**
  * The reading phases the goal belongs to, as chips: tap to add or take one
  * away, up to two. Phases are made in Library → Phases, shared with books.
  */
@@ -390,7 +452,6 @@ function PhasesRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   const toggle = (id: string) =>
     void tracker.setGoalPhases(g.id, chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id]);
   return (
-    <div className="step-list">
       <div className="step-row phase-row">
         <span className="step-row__name flex-none">Phases</span>
         <span className="phase-row__chips" role="group" aria-label="Phases, up to two">
@@ -411,7 +472,6 @@ function PhasesRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           })}
         </span>
       </div>
-    </div>
   );
 }
 
@@ -422,7 +482,6 @@ function LinkRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   });
   const href = /^https?:\/\//i.test(field.value.trim()) ? field.value.trim() : null;
   return (
-    <div className="step-list">
       <div className="step-row">
       <span className="step-row__name flex-none">Link</span>
       <input
@@ -438,6 +497,5 @@ function LinkRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
         </a>
       )}
       </div>
-    </div>
   );
 }

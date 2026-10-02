@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { dateKey, goalStarted, goalStatus, uid, type Goal, type GoalStatus, type Part, type TrackerState } from "./model";
+import { dateKey, goalStarted, goalStatus, uid, withTopicCategory, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -64,6 +64,91 @@ export function setGoalStatus(s: TrackerState, id: string, status: GoalStatus): 
       };
     }),
   };
+}
+
+/** Renames a goal, or changes its link or description. Empty clears a link or description. */
+export function editGoal(
+  s: TrackerState,
+  id: string,
+  e: { title?: string; link?: string; description?: string }
+): TrackerState {
+  return {
+    ...s,
+    goals: s.goals.map((g) =>
+      g.id === id
+        ? {
+            ...g,
+            ...(e.title?.trim() ? { title: e.title.trim() } : {}),
+            ...(e.link !== undefined ? { link: e.link.trim() || undefined } : {}),
+            ...(e.description !== undefined ? { note: e.description.trim() || undefined } : {}),
+          }
+        : g
+    ),
+  };
+}
+
+/** Adds an empty topic; returns the state and the new topic's id. */
+export function addTopic(s: TrackerState, title: string, catId?: string): { state: TrackerState; id: string } {
+  const id = uid();
+  const topic: Path = { id, title: title.trim(), goalIds: [], ...(catId ? { catId } : {}) };
+  return { state: { ...s, paths: [...s.paths, topic] }, id };
+}
+
+/**
+ * Moves a goal into a topic, at its end, or out of every topic (null). It
+ * keeps its progress, parts, status and phases; it takes the new topic's
+ * category, as every goal in a topic does.
+ */
+export function moveGoalToTopic(s: TrackerState, goalId: string, topicId: string | null): TrackerState {
+  const topic = topicId ? s.paths.find((p) => p.id === topicId) : undefined;
+  return {
+    ...s,
+    goals: withTopicCategory(s.goals, topic, [goalId]),
+    paths: s.paths.map((p) => {
+      const has = p.goalIds.includes(goalId);
+      if (p.id === topicId) return has ? p : { ...p, goalIds: [...p.goalIds, goalId] };
+      return has ? { ...p, goalIds: p.goalIds.filter((g) => g !== goalId) } : p;
+    }),
+  };
+}
+
+/** Puts a topic's goals in the given order; any it holds but the list leaves out keep their place at the end. */
+export function reorderTopic(s: TrackerState, topicId: string, ids: string[]): TrackerState {
+  return {
+    ...s,
+    paths: s.paths.map((p) => {
+      if (p.id !== topicId) return p;
+      const kept = ids.filter((id) => p.goalIds.includes(id));
+      return { ...p, goalIds: [...kept, ...p.goalIds.filter((id) => !kept.includes(id))] };
+    }),
+  };
+}
+
+/** Deletes a goal, taking it out of its topic too. */
+export function removeGoal(s: TrackerState, id: string): TrackerState {
+  return {
+    ...s,
+    goals: s.goals.filter((g) => g.id !== id),
+    paths: s.paths.map((p) => (p.goalIds.includes(id) ? { ...p, goalIds: p.goalIds.filter((g) => g !== id) } : p)),
+  };
+}
+
+/** A topic's goals that still exist. Only an empty topic can be deleted. */
+export function topicGoalCount(s: TrackerState, topicId: string): number {
+  const p = s.paths.find((x) => x.id === topicId);
+  return p ? p.goalIds.filter((id) => s.goals.some((g) => g.id === id)).length : 0;
+}
+
+/** Renames a topic. */
+export function renameTopic(s: TrackerState, topicId: string, title: string): TrackerState {
+  const t = title.trim();
+  return t ? { ...s, paths: s.paths.map((p) => (p.id === topicId ? { ...p, title: t } : p)) } : s;
+}
+
+/** Deletes a topic, but only an empty one: a topic with goals is left as it is. */
+export function removeTopic(s: TrackerState, topicId: string): TrackerState {
+  if (topicGoalCount(s, topicId) > 0) return s;
+  return { ...s, paths: s.paths.filter((p) => p.id !== topicId) };
 }
 
 /** Puts a goal in up to two phases ([] for none). Unknown phases are skipped. */

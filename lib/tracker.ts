@@ -432,16 +432,7 @@ export function useTracker() {
      * belongs to one topic on this page.
      */
     /** Moves a goal into a topic (or out of any), taking the topic's category. */
-    setGoalTopic: (goalId: string, pathId: string | null) =>
-      commit((s) => ({
-        ...s,
-        goals: withTopicCategory(s.goals, s.paths.find((p) => p.id === pathId), [goalId]),
-        paths: s.paths.map((p) => {
-          const has = p.goalIds.includes(goalId);
-          if (p.id === pathId) return has ? p : { ...p, goalIds: [...p.goalIds, goalId] };
-          return has ? { ...p, goalIds: p.goalIds.filter((g) => g !== goalId) } : p;
-        }),
-      })),
+    setGoalTopic: (goalId: string, pathId: string | null) => commit((s) => O.moveGoalToTopic(s, goalId, pathId)),
 
     /** Moves a goal's own count by a step, clamped to 0 and its target. */
     stepGoal: (id: string, delta: number) =>
@@ -528,9 +519,19 @@ export function useTracker() {
         };
       }),
 
-    /** Removes the path only. Its goals are goals in their own right and stay. */
-    removePath: (id: string) =>
-      commit((s) => ({ ...s, paths: s.paths.filter((p) => p.id !== id) })),
+    /** A new topic, with these goals moved into it. */
+    addTopic: (title: string, goalIds: string[] = []) =>
+      commit((s) => {
+        if (!title.trim()) return s;
+        const { state, id } = O.addTopic(s, title);
+        return goalIds.reduce((acc, gid) => O.moveGoalToTopic(acc, gid, id), state);
+      }),
+
+    /** Deletes a topic, only once it's empty. */
+    removePath: (id: string) => commit((s) => O.removeTopic(s, id)),
+
+    /** Puts a topic's goals in this order. */
+    reorderTopic: (id: string, goalIds: string[]) => commit((s) => O.reorderTopic(s, id, goalIds)),
 
     /** Puts an existing goal on a path, at the end. Ignores one already on it. */
     addGoalToPath: (pathId: string, goalId: string) =>
@@ -600,17 +601,7 @@ export function useTracker() {
         }),
       })),
 
-    deleteGoal: (id: string) =>
-      commit((s) => ({
-        ...s,
-        goals: s.goals.filter((g) => g.id !== id),
-        // Taken off any path too. pathGoals skips a missing id either way, but
-        // leaving it would keep a dead step in the path's stored order and
-        // bring it back if the id were ever reused.
-        paths: s.paths.map((p) =>
-          p.goalIds.includes(id) ? { ...p, goalIds: p.goalIds.filter((g) => g !== id) } : p
-        ),
-      })),
+    deleteGoal: (id: string) => commit((s) => O.removeGoal(s, id)),
 
     toggleGoalPin: (id: string) =>
       commit((s) => ({

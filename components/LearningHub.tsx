@@ -8,9 +8,28 @@ import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
-import { TopicForm } from "./TopicForm";
+import { CatPicker } from "./Forms";
+import { DeleteButton } from "./DeleteButton";
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ProgressRing } from "./ProgressRing";
-import { CalendarDays, ChevronDown, ChevronRight, Clock } from "./icons";
+import { CalendarDays, ChevronDown, ChevronRight, Clock, ReorderLines } from "./icons";
 import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
@@ -407,6 +426,9 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
           )}
         </div>
       )}
+      {editing ? (
+        <TopicEditor tracker={tracker} topic={path} onDone={() => setEditing(false)} />
+      ) : (
       <Panel title="Goals" onEdit={() => setEditing(true)} onAdd={() => setAdding(true)} addLabel="Add a goal" bare>
         <div className="card goal-list">
           {shown.length === 0 ? (
@@ -423,12 +445,10 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
           <DroppedToggle shown={showDropped} count={droppedHere.length} onToggle={() => setShowDropped((v) => !v)} />
         )}
       </Panel>
+      )}
 
       <Modal open={adding} onClose={() => setAdding(false)} title="New goal">
         {adding && <GoalForm tracker={tracker} pathId={path.id} onDone={() => setAdding(false)} />}
-      </Modal>
-      <Modal open={editing} onClose={() => setEditing(false)} title="Edit topic">
-        {editing && <TopicForm tracker={tracker} topic={path} onDone={() => setEditing(false)} />}
       </Modal>
       <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
@@ -509,6 +529,133 @@ function PhaseGroups({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * A topic in Edit, as an iOS list in Edit: its name and category at the
+ * top, its goals with grips to drag into order (the order queued goals are
+ * taken in), and Delete Topic once it holds no goals.
+ */
+function TopicEditor({ tracker, topic, onDone }: { tracker: Tracker; topic: Path; onDone: () => void }) {
+  const s = tracker.state!;
+  const goals = pathGoals(topic, s.goals);
+  const [name, setName] = useState(topic.title);
+  const saveName = () => {
+    if (name.trim() && name.trim() !== topic.title) void tracker.updatePath(topic.id, name, topic.catId, topic.note);
+    else setName(topic.title);
+  };
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = goals.map((g) => g.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    void tracker.reorderTopic(topic.id, arrayMove(ids, from, to));
+  };
+
+  return (
+    <section className="flex flex-col gap-4" aria-label="Edit topic">
+      <div className="goal-steps__head">
+        <h2 className="panel-head__title">Edit Topic</h2>
+        <button
+          type="button"
+          className="text-action"
+          aria-pressed
+          onClick={() => {
+            saveName();
+            onDone();
+          }}
+        >
+          Done
+        </button>
+      </div>
+      <div className="card flex flex-col gap-3 p-4">
+        <input
+          aria-label="Topic name"
+          className="step-field step-field--name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={saveName}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+        />
+        <CatPicker
+          tracker={tracker}
+          catId={topic.catId ?? ""}
+          setCatId={(id) => void tracker.updatePath(topic.id, topic.title, id, topic.note)}
+        />
+      </div>
+
+      {goals.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="group-label" style={{ paddingInline: "0.25rem" }}>Drag to set the order</p>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={goals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+              <ul className="step-list step-list--on-page">
+                {goals.map((g) => (
+                  <SortableGoal key={g.id} goal={g} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+        </div>
+      )}
+
+      {goals.length === 0 ? (
+        <div className="self-start">
+          <DeleteButton
+            what={`the topic "${topic.title}"`}
+            label="Delete Topic"
+            onDelete={async () => {
+              onDone();
+              return tracker.removePath(topic.id);
+            }}
+          />
+        </div>
+      ) : (
+        <p className="px-1 text-sm text-[var(--muted)]">
+          To delete this topic, move its goals elsewhere or delete them first.
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** A goal in a topic being edited: its name and status, and a grip to drag it by. */
+function SortableGoal({ goal: g }: { goal: Goal }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: g.id,
+  });
+  const st = goalStatus(g);
+  return (
+    <li
+      ref={setNodeRef}
+      className={"step-row" + (isDragging ? " step-row--dragging" : "")}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <span className="step-row__name">
+        {g.title}
+        <span className="block text-[0.8125rem] text-[var(--muted)]">{st[0].toUpperCase() + st.slice(1)}</span>
+      </span>
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="rd-grip"
+        aria-label={`Move ${g.title}`}
+        {...attributes}
+        {...listeners}
+      >
+        <ReorderLines className="h-6 w-6" />
+      </button>
+    </li>
   );
 }
 

@@ -3842,3 +3842,29 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .phase-head__sub { font-size: 0.8125rem; color: var(--muted); }
 .phase-head__count { font-size: 0.875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .phase-head[aria-expanded="true"] { border-block-end: 0.5px solid var(--separator); }
+
+/* Rows of the goal's grouped details list: hairlines between them. */
+.step-list > div + div { border-top: 0.5px solid var(--separator); }
+
+/* A choice in a list row: the value on the right, as an iOS menu shows it. */
+select.row-select {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  block-size: auto;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  text-align: end;
+  text-align-last: end;
+  direction: ltr;
+  cursor: pointer;
+}
+select.row-select:hover { border-color: transparent; }
+select.row-select:focus { outline: none; color: var(--accent); }
+.step-row--dragging { position: relative; z-index: 1; background: var(--pane-bg); box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
+/* On a card, a field is a shade darker than the card; a list on the page
+   is a card itself. */
+.card input.step-field { background: var(--default); }
+.step-list.step-list--on-page, .light .step-list.step-list--on-page { background: var(--pane-bg); }
