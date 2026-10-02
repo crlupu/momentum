@@ -18,9 +18,12 @@ function Learning() {
   const params = useSearchParams();
   const trackId = params.get("track");
   const view = params.get("view");
+  const groupId = params.get("goal");
   const s = tracker.state;
 
-  const title = trackId
+  const title = groupId
+    ? s?.paths.find((p) => p.id === groupId)?.title
+    : trackId
     ? trackId === "none"
       ? "No track"
       : s?.readingTracks.find((t) => t.id === trackId)?.name
@@ -43,7 +46,7 @@ function Learning() {
         ) : undefined
       }
     >
-      <LearningHub tracker={tracker} trackId={trackId} view={view} />
+      <LearningHub tracker={tracker} trackId={trackId} view={view} groupId={groupId} />
     </SectionPage>
   );
 }

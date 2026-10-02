@@ -136,16 +136,18 @@ function TrackToday({
  * since the last update are logged as read. A number with a plus in front,
  * "+25", is taken as pages read instead.
  */
-function OpenBook({
+export function OpenBook({
   tracker,
   book,
-  track,
   today,
+  minimal,
 }: {
   tracker: Tracker;
   book: Book;
-  track: R.ReadingTrack;
+  track?: R.ReadingTrack;
   today: string;
+  /** Just the book and its page box: no details button, no stalled nudge. */
+  minimal?: boolean;
 }) {
   const s = tracker.state!;
   const flow = useFlow();
@@ -234,14 +236,16 @@ function OpenBook({
         <Button type="submit" variant="primary" isDisabled={pending || !parsed}>
           Update
         </Button>
-        <Button
-          variant="ghost"
-          isIconOnly
-          aria-label="Update with details"
-          onPress={() => flow.open({ kind: "log", bookId: book.id })}
-        >
-          <Tune className="h-5 w-5" />
-        </Button>
+        {!minimal && (
+          <Button
+            variant="ghost"
+            isIconOnly
+            aria-label="Update with details"
+            onPress={() => flow.open({ kind: "log", bookId: book.id })}
+          >
+            <Tune className="h-5 w-5" />
+          </Button>
+        )}
       </form>
       {error ? (
         <p className="mt-1 text-xs" style={{ color: "var(--danger)" }}>
@@ -251,7 +255,7 @@ function OpenBook({
         preview && <p className="rd-derived rd-derived--quick is-counted">{preview}</p>
       )}
 
-      {stalled && (
+      {stalled && !minimal && (
         <div className="rd-stall" role="status">
           <p className="flex items-center gap-1.5 text-sm">
             <Warning className="h-4 w-4 shrink-0" />

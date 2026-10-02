@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button, Input } from "./ui";
 import { usePending } from "./ActionButton";
@@ -195,6 +195,24 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
     });
   };
 
+  // Saved as it's typed, a moment after the last key, and on closing: there
+  // is no Save to find, and closing with ✕ never loses an edit. A name
+  // cleared to nothing waits until it has one again.
+  const latest = useRef({ dirty, save, named: !!name.trim() });
+  latest.current = { dirty, save, named: !!name.trim() };
+  useEffect(() => {
+    if (!dirty || !name.trim()) return;
+    const t = setTimeout(() => void save(), 600);
+    return () => clearTimeout(t);
+  }, [name, current, target, link, note]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () => () => {
+      const l = latest.current;
+      if (l.dirty && l.named) void l.save();
+    },
+    []
+  );
+
   const href = link.trim() && /^https?:\/\//i.test(link.trim()) ? link.trim() : null;
 
   return (
@@ -258,13 +276,6 @@ function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
         </label>
 
 
-        {dirty && (
-          <div>
-            <Button variant="primary" onPress={() => void save()} isDisabled={pending || !name.trim()}>
-              Save changes
-            </Button>
-          </div>
-        )}
       </div>
     </section>
   );

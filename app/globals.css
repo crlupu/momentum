@@ -2126,7 +2126,8 @@ html.dark {
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
-.rd-open { padding-block: 0.75rem 0.25rem; }
+/* A column, so the book row spans the card whatever its title's length. */
+.rd-open { display: flex; flex-direction: column; padding-block: 0.75rem 0.25rem; }
 .rd-open + .rd-open { border-top: 1px solid var(--separator); }
 /* The card's own padding is the space above the first book. */
 .rd-open:first-child { padding-block-start: 0; }

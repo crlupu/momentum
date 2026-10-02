@@ -26,8 +26,9 @@ export function GoalImportForm({
 }) {
   const s = tracker.state!;
   const [text, setText] = useState("");
-  // Topics are set aside for now: imported goals go in none.
-  const into = topicId ?? "none";
+  // A file's topics become goals with steps; goals it lists on their own
+  // stay on their own.
+  const into = topicId ?? "file";
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -104,13 +105,14 @@ export function GoalImportForm({
               <ul className="flex flex-col gap-1 text-sm">
                 {preview.topicsNew.length > 0 && (
                   <li>
-                    Add {preview.topicsNew.length === 1 ? "the topic" : `${preview.topicsNew.length} topics`}{" "}
+                    Add {preview.topicsNew.length === 1 ? "the goal" : `${preview.topicsNew.length} goals`}{" "}
                     {list(preview.topicsNew)}
                   </li>
                 )}
                 {preview.goalsNew > 0 && (
                   <li>
-                    Add {preview.goalsNew} goal{preview.goalsNew === 1 ? "" : "s"}
+                    Add {preview.goalsNew} {preview.topicsNew.length || preview.topicsMatched.length ? "step" : "goal"}
+                    {preview.goalsNew === 1 ? "" : "s"}
                     {preview.topicsMatched.length > 0 && ` (into ${list(preview.topicsMatched)} too)`}
                   </li>
                 )}
