@@ -4,9 +4,9 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { ExternalLink, Minus, Plus } from "./icons";
+import { ExternalLink, Minus, Plus, X } from "./icons";
 import { Segmented } from "./books/bits";
-import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
+import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { NOTE_MAX, type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
@@ -281,6 +281,7 @@ export function GoalDetail({
       {/* Where it belongs and where it lives, as one grouped list. */}
       <div className="step-list">
         <TopicRow tracker={tracker} goal={g} />
+        <DateRow tracker={tracker} goal={g} />
         <PhasesRow tracker={tracker} goal={g} />
         <LinkRow tracker={tracker} goal={g} />
       </div>
@@ -600,6 +601,37 @@ function TopicRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           <option value="__new">New Topic…</option>
         </select>
       )}
+    </div>
+  );
+}
+
+/** A date it's aimed at, such as an exam, with how far off it is. */
+function DateRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  return (
+    <div className="step-row">
+      <span className="step-row__name flex-none">
+        Target date
+        {g.targetDate && <span className="date-row__count">{countdown(g.targetDate)}</span>}
+      </span>
+      <span className="date-row__value">
+        <input
+          type="date"
+          aria-label="Target date"
+          className="row-date"
+          value={g.targetDate ?? ""}
+          onChange={(e) => void tracker.setGoalTargetDate(g.id, e.target.value || null)}
+        />
+        {g.targetDate && (
+          <button
+            type="button"
+            className="row-clear"
+            aria-label="Clear the target date"
+            onClick={() => void tracker.setGoalTargetDate(g.id, null)}
+          >
+            <X aria-hidden />
+          </button>
+        )}
+      </span>
     </div>
   );
 }

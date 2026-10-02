@@ -3913,3 +3913,28 @@ select.row-select:focus { outline: none; color: var(--accent); }
 .min-badge--row { margin: 0; }
 /* The name gives way so the figures stay on its line; only the minimum wraps. */
 .step-row--editing input.step-field--name { flex: 1 1 0; }
+
+/* A goal's target date: the countdown, then the date to change it, as a row value. */
+.date-row__value { display: flex; flex: 1 1 auto; align-items: center; justify-content: flex-end; gap: 0.5rem; min-inline-size: 0; }
+.date-row__count { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+input.row-date {
+  block-size: 2rem;
+  padding-inline: 0.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--default);
+  font-size: 16px;
+  color: var(--foreground);
+}
+input.row-date:hover { border-color: transparent; }
+.row-clear {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 999px;
+  color: var(--muted);
+}
+.row-clear svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.goal-row__due { color: var(--accent); font-weight: 600; }

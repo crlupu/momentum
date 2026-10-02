@@ -581,6 +581,9 @@ export function useTracker() {
         ),
       })),
 
+    /** Sets or clears (null) a goal's target date. */
+    setGoalTargetDate: (id: string, date: string | null) => commit((s) => O.setGoalTargetDate(s, id, date)),
+
     /** Sets or clears the minimum on a goal's own count. */
     setGoalMinimum: (id: string, minimum: number | null) => commit((s) => O.setGoalMinimum(s, id, minimum)),
 

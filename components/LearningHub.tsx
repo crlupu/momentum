@@ -78,12 +78,34 @@ function itemStatus(i: Item): GoalStatus {
   return st.every((x) => x === "dropped") ? "dropped" : "done";
 }
 
-/** A topic's goals in status order (active, queued, done), each keeping the topic's own order. */
+/**
+ * A topic's goals in status order (active, queued, done), each keeping the
+ * topic's own order, except that active goals with a target date come
+ * first, soonest first.
+ */
 function byStatus(goals: Goal[]): Goal[] {
   return goals
     .map((g, i) => ({ g, i }))
-    .sort((a, b) => STATUS_RANK[goalStatus(a.g)] - STATUS_RANK[goalStatus(b.g)] || a.i - b.i)
+    .sort((a, b) => STATUS_RANK[goalStatus(a.g)] - STATUS_RANK[goalStatus(b.g)] || datedFirst(a.g, b.g) || a.i - b.i)
     .map((x) => x.g);
+}
+
+/** Among active goals, those with a date go first, soonest first; otherwise no preference. */
+function datedFirst(a: Goal, b: Goal): number {
+  if (goalStatus(a) !== "active" || goalStatus(b) !== "active") return 0;
+  if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
+  return a.targetDate ? -1 : b.targetDate ? 1 : 0;
+}
+
+/** Active rows: topics as they stand, then goals in no topic, dated ones first. */
+function activeOrder(list: Item[]): Item[] {
+  const groups = list.filter((i) => i.kind === "group");
+  const loose = list
+    .filter((i): i is Extract<Item, { kind: "goal" }> => i.kind === "goal")
+    .map((i, n) => ({ i, n }))
+    .sort((a, b) => datedFirst(a.i.goal, b.i.goal) || a.n - b.n)
+    .map((x) => x.i);
+  return [...groups, ...loose];
 }
 
 /**
@@ -171,7 +193,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
   };
 
   const all = items(s);
-  const started = all.filter((i) => itemStatus(i) === "active");
+  const started = activeOrder(all.filter((i) => itemStatus(i) === "active"));
   const notStarted = all.filter((i) => itemStatus(i) === "queued");
   const dropped = all.filter((i) => itemStatus(i) === "dropped");
   // By phase, goals are listed one by one, wherever their topic is.
@@ -219,7 +241,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
           </Panel>
           <Panel title="Learning" actions={switcher} bare>
             {grouping === "phase" ? (
-              <PhaseGroups tracker={tracker} goals={goalsWith("active")} onOpen={setOpenId} empty="Nothing active." />
+              <PhaseGroups tracker={tracker} goals={byStatus(goalsWith("active"))} onOpen={setOpenId} empty="Nothing active." />
             ) : (
               <ItemList
                 tracker={tracker}

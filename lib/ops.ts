@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
+import { NOTE_MAX, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -74,6 +74,12 @@ export function setGoalMinimum(s: TrackerState, id: string, minimum: number | nu
       g.id === id ? { ...g, minimum: minimum != null && validMinimum(minimum, g.target) ? minimum : undefined } : g
     ),
   };
+}
+
+/** Sets a goal's target date (YYYY-MM-DD), or clears it with null or "". */
+export function setGoalTargetDate(s: TrackerState, id: string, date: string | null): TrackerState {
+  const d = date && isDateKey(date) ? date : undefined;
+  return { ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, targetDate: d } : g)) };
 }
 
 /** Renames a goal, or changes its link or description. Empty clears a link or description. */

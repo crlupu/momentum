@@ -55,6 +55,8 @@ export type Goal = {
    * app. Absent on goals saved before statuses: see goalStatus.
    */
   status?: GoalStatus;
+  /** A date it's aimed at (an exam), YYYY-MM-DD. Optional. */
+  targetDate?: string;
   /** For a goal's own count: enough to count as covered, at most its target. */
   minimum?: number;
   /** Up to two reading phases it belongs to: the same phases books use. */
@@ -958,6 +960,26 @@ export function pathPct(p: Path, goals: Goal[]): number {
   return Math.max(0, Math.min(100, Math.floor(total / list.length)));
 }
 
+/** A real calendar date as YYYY-MM-DD. */
+export function isDateKey(v: unknown): v is string {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
+}
+
+/** "in 23 days", "today" or "5 days ago", from today to a YYYY-MM-DD date. */
+export function countdown(date: string, today: string = dateKey()): string {
+  const utc = (k: string) => {
+    const [y, m, d] = k.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  const n = Math.round((utc(date) - utc(today)) / 86_400_000);
+  if (n === 0) return "today";
+  const days = `${Math.abs(n)} day${Math.abs(n) === 1 ? "" : "s"}`;
+  return n > 0 ? `in ${days}` : `${days} ago`;
+}
+
 /** A minimum is a number from 0 up to the target. */
 export function validMinimum(m: unknown, target: number | undefined): m is number {
   return typeof m === "number" && Number.isFinite(m) && m > 0 && (!target || m <= target);
@@ -1028,6 +1050,7 @@ export function migrate(raw: unknown): TrackerState {
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
+    targetDate: isDateKey(g.targetDate) ? g.targetDate : undefined,
     minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
     phaseIds: Array.isArray(g.phaseIds)
       ? [...new Set((g.phaseIds as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, 2)

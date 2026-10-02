@@ -20,6 +20,7 @@ import {
   goalSummary,
   goalStatus,
   minimumReached,
+  countdown,
   goalPct,
   pathGoals,
   pathPct,
@@ -265,6 +266,7 @@ export function GoalRow({
           ? ["Active", goalSummary(g)].filter(Boolean).join(" · ")
           : goalSummary(g) ?? "Queued";
   const covered = (status === "active" || status === "queued") && minimumReached(g);
+  const due = g.targetDate && (status === "active" || status === "queued") ? countdown(g.targetDate) : null;
 
   return (
     <li>
@@ -291,6 +293,12 @@ export function GoalRow({
               </>
             )}
             {meta}
+            {due && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="goal-row__due">{due}</span>
+              </>
+            )}
             {covered && <span className="min-badge min-badge--row">Minimum reached</span>}
           </span>
         </span>
