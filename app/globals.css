@@ -3527,3 +3527,16 @@ button.rd-link:active { background: var(--default); }
 .panel > .card > .rd-sub:first-child,
 .panel > .card > .rd-track__bar:first-child { margin-top: 0; }
 .panel > .card > .rd-track__bar:first-child { margin-bottom: 0.5rem; }
+
+/* A chip in a line of small text (a book's category beside its length):
+   the same chip, scaled to sit on that line without raising it. */
+.cat-chip--sm {
+  gap: 0.25rem;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
