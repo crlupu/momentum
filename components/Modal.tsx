@@ -8,12 +8,15 @@ export function Modal({
   open,
   onClose,
   title,
+  titleNode,
   children,
   wide,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** Shown in the title's place, e.g. a field to rename in place; `title` still names the dialog. */
+  titleNode?: React.ReactNode;
   children: React.ReactNode;
   /** For dialogs that hold a whole view rather than a short form. */
   wide?: boolean;
@@ -51,7 +54,14 @@ export function Modal({
       >
         <div className="sheet__grabber md:hidden" aria-hidden />
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id={titleId} className="text-xl font-bold">{title}</h2>
+          {titleNode ? (
+            <div className="min-w-0 flex-1">
+              <span id={titleId} className="sr-only">{title}</span>
+              {titleNode}
+            </div>
+          ) : (
+            <h2 id={titleId} className="text-xl font-bold">{title}</h2>
+          )}
           <button onClick={onClose} aria-label="Close" className="icon-circle">
             <X aria-hidden />
           </button>

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AddButton, Button } from "./ui";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
-import { GoalDetail } from "./GoalDetail";
+import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { TopicForm } from "./TopicForm";
 import { GoalImportForm } from "./GoalImport";
 import { ProgressRing } from "./ProgressRing";
@@ -160,7 +160,7 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
         />
       </Modal>
 
-      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} wide>
+      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && (
           <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />
         )}

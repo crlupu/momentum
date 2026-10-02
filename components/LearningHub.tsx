@@ -6,7 +6,7 @@ import { Panel } from "./Panel";
 import { Button } from "./ui";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
-import { GoalDetail } from "./GoalDetail";
+import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalImportForm } from "./GoalImport";
 import { GoalRow } from "./GoalsView";
 import { TopicForm } from "./TopicForm";
@@ -252,7 +252,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
       <Modal open={importing} onClose={() => setImporting(false)} title="Import goals">
         {importing && <GoalImportForm tracker={tracker} onClose={() => setImporting(false)} />}
       </Modal>
-      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} wide>
+      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
       </Modal>
     </div>
@@ -390,7 +390,7 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
       <Modal open={editing} onClose={() => setEditing(false)} title="Edit goal">
         {editing && <TopicForm tracker={tracker} topic={path} onDone={() => setEditing(false)} />}
       </Modal>
-      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} wide>
+      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
       </Modal>
     </div>
@@ -502,7 +502,7 @@ function HistoryPage({ tracker }: { tracker: Tracker }) {
       <Panel title="Goals done" bare>
         <GoalList tracker={tracker} goals={done} onOpen={setOpenId} empty="Goals you mark as done land here." />
       </Panel>
-      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} wide>
+      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
       </Modal>
     </div>

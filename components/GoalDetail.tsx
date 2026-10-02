@@ -1,12 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
-import { Button, Input } from "./ui";
-import { usePending } from "./ActionButton";
-import { CatPicker } from "./Forms";
+import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Minus, Plus, RotateCcw, Trash2 } from "./icons";
+import { Check, ExternalLink, Minus, Plus, RotateCcw } from "./icons";
 import { Goal, Part, Tracker, goalPct, goalSummary, uid } from "@/lib/tracker";
 
 /** A number field's value, or null when empty or not a number. */
@@ -17,10 +15,80 @@ function num(v: string): number | null {
 }
 
 /**
- * One goal, opened: how far it is, its details, and what can be done with it.
- *
- * A goal with a count (videos, pages, modules) is moved along with − and +;
- * one without is simply done or not, with Mark as done.
+ * Text edited where it's shown: it looks like the text until tapped, and is
+ * saved when the field is left (or Return is pressed), and on closing the
+ * sheet with the field still open.
+ */
+function useInline<T>(value: T, show: (v: T) => string, commit: (text: string) => void) {
+  const [text, setText] = useState(show(value));
+  const editing = useRef(false);
+  // Follows the value while not being edited, so − and + show through.
+  useEffect(() => {
+    if (!editing.current) setText(show(value));
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  const latest = useRef({ text, commit, changed: false });
+  latest.current = { text, commit, changed: text !== show(value) };
+  useEffect(
+    () => () => {
+      if (editing.current && latest.current.changed) latest.current.commit(latest.current.text);
+    },
+    []
+  );
+  return {
+    value: text,
+    onChange: (e: { target: { value: string } }) => setText(e.target.value),
+    onFocus: () => {
+      editing.current = true;
+    },
+    onBlur: () => {
+      editing.current = false;
+      if (text !== show(value)) commit(text);
+      else setText(show(value));
+    },
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (e.key === "Enter") e.currentTarget.blur();
+    },
+    reset: () => setText(show(value)),
+  };
+}
+
+/** The goal's name, as the sheet's title, renamed by typing over it. */
+export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const { reset, ...field } = useInline(g.title, (v) => v, (text) => {
+    if (text.trim()) void tracker.updateGoal(g.id, { title: text });
+    else reset();
+  });
+  // A text area that grows with the name, so a long one wraps as a title
+  // does rather than scrolling out of sight. Return still finishes.
+  const area = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [field.value]);
+  return (
+    <textarea
+      ref={area}
+      rows={1}
+      aria-label="Goal name"
+      className="inline-title"
+      {...field}
+      onChange={(e) => field.onChange({ target: { value: e.target.value.replace(/\n/g, " ") } })}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
+/**
+ * One goal, opened: how far it is, and its count, or its parts, each edited
+ * where it stands. Names, totals and counts are all typed over in place;
+ * − and + move a count by one.
  */
 export function GoalDetail({
   tracker,
@@ -31,57 +99,80 @@ export function GoalDetail({
   goal: Goal;
   onClose: () => void;
 }) {
-  const s = tracker.state!;
   const pct = g.done ? 100 : goalPct(g);
-  const hasParts = !!g.parts?.length;
-  const summary = g.done
-    ? "Done"
-    : goalSummary(g) ?? "No count yet. Add one in Details to track how far along it is.";
+  const parts = g.parts ?? [];
+  const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
+  const widest = Math.max(1, g.target ?? 0, ...parts.map((p) => p.target));
+  // A part being added: kept here until it has a name and a total.
+  const [adding, setAdding] = useState(false);
+
+  /** Rewrites the parts from the latest saved ones, so quick edits don't undo each other. */
+  const writeParts = (fn: (list: Part[]) => Part[]) => {
+    const now = tracker.state!.goals.find((x) => x.id === g.id)?.parts ?? [];
+    return tracker.setGoalParts(g.id, fn(now));
+  };
+  const setOwnCount = (c: { current?: number | null; target?: number | null }) => {
+    const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
+    return tracker.saveGoal(g.id, {
+      title: now.title,
+      catId: now.catId,
+      current: c.current !== undefined ? c.current : now.current ?? null,
+      target: c.target !== undefined ? c.target : now.target ?? null,
+    });
+  };
 
   return (
     <div className="goal-detail">
       <div className="goal-detail__summary">
         <ProgressRing pct={pct} color="var(--accent)" size={64} />
         <div className="min-w-0">
-          <p className="goal-detail__pct">{g.target || hasParts || g.done ? `${pct}% complete` : "Open"}</p>
+          <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
           <p className="goal-detail__sub">{summary}</p>
         </div>
       </div>
 
-      {/* The count is the control, with − and + beside it. */}
-      {/* With parts, each has its own count to move. */}
-      {hasParts && !g.done && (
-        <div className="goal-parts">
-          {g.parts!.map((p) => (
-            <div key={p.id} className="goal-counter">
-              <span className="goal-counter__label">{p.title}</span>
-              <Stepper
-                value={p.current}
-                total={p.target}
-                onStep={(d) => tracker.stepPart(g.id, p.id, d)}
-                what={p.title}
-                widest={Math.max(...g.parts!.map((x) => x.target))}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!hasParts && !!g.target && !g.done && (
-        <div className="goal-counter">
-          <span className="goal-counter__label">Progress</span>
-          <Stepper
-            value={g.current ?? 0}
-            total={g.target}
-            onStep={(d) => tracker.stepGoal(g.id, d)}
-            what={g.title}
+      <ul className="goal-parts">
+        {parts.length === 0 ? (
+          <li className="goal-counter">
+            <span className="goal-counter__label">Progress</span>
+            <Counter
+              current={g.current ?? 0}
+              total={g.target ?? null}
+              widest={widest}
+              what={g.title}
+              onStep={(d) => tracker.stepGoal(g.id, d)}
+              onCurrent={(n) => setOwnCount({ current: n })}
+              onTotal={(n) => setOwnCount({ target: n })}
+            />
+          </li>
+        ) : (
+          parts.map((p) => (
+            <PartRow
+              key={p.id}
+              part={p}
+              widest={widest}
+              onStep={(d) => tracker.stepPart(g.id, p.id, d)}
+              onChange={(patch) => writeParts((list) => list.map((x) => (x.id === p.id ? { ...x, ...patch } : x)))}
+              onRemove={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
+            />
+          ))
+        )}
+        {adding && (
+          <NewPart
+            onDone={(part) => {
+              setAdding(false);
+              if (part) void writeParts((list) => [...list, part]);
+            }}
           />
-        </div>
+        )}
+      </ul>
+      {!adding && (
+        <button type="button" className="text-action self-start" onClick={() => setAdding(true)}>
+          <Plus className="h-4 w-4" aria-hidden /> Add a part
+        </button>
       )}
 
-      <AfterFirstFrame>
-        <Details tracker={tracker} goal={g} />
-      </AfterFirstFrame>
+      <LinkRow tracker={tracker} goal={g} />
 
       <DialogActions
         del={{
@@ -112,31 +203,125 @@ export function GoalDetail({
 }
 
 /**
- * "3 of 10" between a − and a +.
- *
- * Presses are never held back while a save is in flight: the change is on
- * screen at once and each write starts from the one before, so tapping + five
- * times quickly counts five. Locking the buttons until the round trip ended
- * made + ignore taps and − flash to disabled and back on every press.
- *
- * The figure is as wide as the largest it can be, so the buttons don't shift
- * as the count gains a digit.
+ * A part: its name, typed over in place, and its count. Clearing the name
+ * and leaving the field removes the part, as an emptied item does in
+ * Reminders.
  */
-function Stepper({
-  value,
-  total,
+function PartRow({
+  part: p,
+  widest,
   onStep,
-  what,
-  widest = total,
+  onChange,
+  onRemove,
 }: {
-  value: number;
-  total: number;
+  part: Part;
+  widest: number;
   onStep: (delta: number) => Promise<unknown>;
-  what: string;
-  /** The largest total in a column of steppers, so they all line up. */
-  widest?: number;
+  onChange: (patch: Partial<Part>) => Promise<unknown>;
+  onRemove: () => Promise<unknown>;
 }) {
-  const digits = widest.toLocaleString().length;
+  const { reset: _reset, ...name } = useInline(p.title, (v) => v, (text) => {
+    if (text.trim()) void onChange({ title: text.trim() });
+    else void onRemove();
+  });
+  return (
+    <li className="goal-counter">
+      <input aria-label="Part name" placeholder="Name" className="inline-field goal-counter__label" {...name} />
+      <Counter
+        current={p.current}
+        total={p.target}
+        widest={widest}
+        what={p.title}
+        onStep={onStep}
+        onCurrent={(n) => onChange({ current: Math.min(p.target, Math.max(0, n ?? 0)) })}
+        onTotal={(n) => (n && n > 0 ? onChange({ target: n, current: Math.min(p.current, n) }) : Promise.resolve())}
+        totalRequired
+      />
+    </li>
+  );
+}
+
+/** A part being added: a name and a total, saved once both are there. */
+function NewPart({ onDone }: { onDone: (part: Part | null) => void }) {
+  const [title, setTitle] = useState("");
+  const [total, setTotal] = useState("");
+  const row = useRef<HTMLLIElement>(null);
+  const finish = () => {
+    const t = num(total);
+    onDone(title.trim() && t && t > 0 ? { id: uid(), title: title.trim(), current: 0, target: t } : null);
+  };
+  // Done when focus leaves the row altogether, not when it moves from the
+  // name to the total.
+  const onBlur = (e: React.FocusEvent) => {
+    if (!row.current?.contains(e.relatedTarget as Node)) finish();
+  };
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") finish();
+  };
+  return (
+    <li ref={row} className="goal-counter" onBlur={onBlur}>
+      <input
+        autoFocus
+        aria-label="New part name"
+        placeholder="Name, e.g. Readings"
+        className="inline-field goal-counter__label"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={onKeyDown}
+      />
+      <input
+        type="number"
+        inputMode="numeric"
+        aria-label="New part total"
+        placeholder="Total"
+        className="inline-field inline-number"
+        style={{ inlineSize: "5ch" }}
+        value={total}
+        onChange={(e) => setTotal(e.target.value)}
+        onKeyDown={onKeyDown}
+      />
+    </li>
+  );
+}
+
+/**
+ * "− 4 of 30 +": − and + move the count by one, and both figures can be
+ * typed over. Presses are never held back while a save is in flight, so
+ * five quick taps count five. The figures are as wide as the widest total
+ * on the sheet, so a column of counters lines up.
+ */
+function Counter({
+  current,
+  total,
+  widest,
+  what,
+  onStep,
+  onCurrent,
+  onTotal,
+  totalRequired,
+}: {
+  current: number;
+  total: number | null;
+  widest: number;
+  what: string;
+  onStep: (delta: number) => Promise<unknown>;
+  onCurrent: (n: number | null) => Promise<unknown>;
+  onTotal: (n: number | null) => Promise<unknown>;
+  /** A part always has a total; a goal's own count can be cleared. */
+  totalRequired?: boolean;
+}) {
+  const ch = `${Math.max(1, widest.toLocaleString().length) + 1}ch`;
+  const { reset: resetCur, ...cur } = useInline(current, String, (text) => {
+    const n = num(text);
+    if (n != null && n >= 0) void onCurrent(total ? Math.min(n, total) : n);
+    else resetCur();
+  });
+  const { reset: resetTot, ...tot } = useInline(total, (v) => (v == null ? "" : String(v)), (text) => {
+    const n = num(text);
+    if (n != null && n > 0) void onTotal(n);
+    else if (!totalRequired && text.trim() === "") void onTotal(null);
+    else resetTot();
+  });
   return (
     <span className="stepper">
       <Button
@@ -144,21 +329,37 @@ function Stepper({
         variant="ghost"
         isIconOnly
         aria-label={`One less, ${what}`}
-        isDisabled={value <= 0}
+        isDisabled={current <= 0}
         onPress={() => void onStep(-1)}
       >
         <Minus className="h-4 w-4" />
       </Button>
-      <span className="stepper__value font-mono-n" style={{ minInlineSize: `${digits * 2 + 3.5}ch` }}>
-        {value.toLocaleString()}
-        <span className="stepper__total"> of {total.toLocaleString()}</span>
+      <span className="stepper__value font-mono-n">
+        <input
+          type="number"
+          inputMode="decimal"
+          aria-label={`Done, ${what}`}
+          className="inline-field inline-number"
+          style={{ inlineSize: ch }}
+          {...cur}
+        />
+        <span className="stepper__total">of</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          aria-label={`Total, ${what}`}
+          placeholder="—"
+          className="inline-field inline-number stepper__total"
+          style={{ inlineSize: ch }}
+          {...tot}
+        />
       </span>
       <Button
         size="sm"
         variant="ghost"
         isIconOnly
         aria-label={`One more, ${what}`}
-        isDisabled={value >= total}
+        isDisabled={total != null && current >= total}
         onPress={() => void onStep(1)}
       >
         <Plus className="h-4 w-4" />
@@ -167,233 +368,27 @@ function Stepper({
   );
 }
 
-/**
- * Renders its children one frame after the sheet opens. The details form is
- * the heaviest part of the sheet and sits below the fold on a phone; drawn
- * with the rest, it held back the frame that shows the sheet at all. The
- * slide-in covers the gap.
- */
-function AfterFirstFrame({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setReady(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-  return ready ? <>{children}</> : <div className="goal-section goal-section--pending" aria-hidden />;
-}
-
-/** Name, description, category, count and link. */
-function Details({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
-  const s = tracker.state!;
-  const [name, setName] = useState(g.title);
-  const [current, setCurrent] = useState(g.current != null ? String(g.current) : "");
-  const [target, setTarget] = useState(g.target != null ? String(g.target) : "");
-  // − and + change the count from above; the fields follow, so they never
-  // hold a figure that Save would write back over the newer one.
-  useEffect(() => setCurrent(g.current != null ? String(g.current) : ""), [g.current]);
-  useEffect(() => setTarget(g.target != null ? String(g.target) : ""), [g.target]);
-  const [link, setLink] = useState(g.link ?? "");
-  const [note, setNote] = useState(g.note ?? "");
-  const { pending, run } = usePending();
-
-  const dirty =
-    name.trim() !== g.title ||
-    (!g.parts?.length && (num(current) !== (g.current ?? null) || num(target) !== (g.target ?? null))) ||
-    link.trim() !== (g.link ?? "") ||
-    note.trim() !== (g.note ?? "");
-
-  const save = async () => {
-    await run(async () => {
-      await tracker.saveGoal(g.id, {
-        title: name,
-        catId: g.catId,
-        current: num(current),
-        target: num(target),
-      });
-      return tracker.setGoalDetails(g.id, { link, note });
-    });
-  };
-
-  // Saved as it's typed, a moment after the last key, and on closing: there
-  // is no Save to find, and closing with ✕ never loses an edit. A name
-  // cleared to nothing waits until it has one again.
-  const latest = useRef({ dirty, save, named: !!name.trim() });
-  latest.current = { dirty, save, named: !!name.trim() };
-  useEffect(() => {
-    if (!dirty || !name.trim()) return;
-    const t = setTimeout(() => void save(), 600);
-    return () => clearTimeout(t);
-  }, [name, current, target, link, note]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(
-    () => () => {
-      const l = latest.current;
-      if (l.dirty && l.named) void l.save();
-    },
-    []
-  );
-
-  const href = link.trim() && /^https?:\/\//i.test(link.trim()) ? link.trim() : null;
-
+/** Where the goal lives, typed in place, with a button to open it. */
+function LinkRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const { reset: _reset, ...field } = useInline(g.link ?? "", (v) => v, (text) => {
+    void tracker.setGoalDetails(g.id, { link: text });
+  });
+  const href = /^https?:\/\//i.test(field.value.trim()) ? field.value.trim() : null;
   return (
-    <section className="goal-section" aria-labelledby="goal-details">
-      <h3 id="goal-details" className="group-label" style={{ paddingInline: 0 }}>Details</h3>
-      <div className="goal-fields">
-        <label className="goal-field">
-          <span>Name</span>
-          <Input aria-label="Goal name" value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-
-        <label className="goal-field">
-          <span>Description</span>
-          <textarea
-            aria-label="Description"
-            rows={4}
-            placeholder="Details: what it covers, why, where you left off…"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </label>
-
-        <CatPicker tracker={tracker} catId={g.catId} setCatId={(id) => void tracker.updateGoal(g.id, { catId: id })} />
-
-        {/* Each number labelled: once filled, a placeholder no longer says
-            which is which. A goal with parts counts by them instead. */}
-        {!g.parts?.length && (
-        <div className="grid grid-cols-2 gap-2">
-          <label className="goal-field">
-            <span>Done so far</span>
-            <Input type="number" inputMode="decimal" placeholder="e.g. 3" value={current} onChange={(e) => setCurrent(e.target.value)} />
-          </label>
-          <label className="goal-field">
-            <span>Total (pages, videos…)</span>
-            <Input type="number" inputMode="decimal" placeholder="e.g. 12" value={target} onChange={(e) => setTarget(e.target.value)} />
-          </label>
-        </div>
-        )}
-
-        <PartsEditor tracker={tracker} goal={g} />
-
-        <label className="goal-field">
-          <span>Link</span>
-          <span className="flex gap-2">
-            <Input
-              type="url"
-              aria-label="Link"
-              placeholder="https://… the course or repository"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              className="flex-1"
-            />
-            {href && (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="goal-link"
-                aria-label="Open link"
-              >
-                <ExternalLink className="h-4 w-4" aria-hidden />
-              </a>
-            )}
-          </span>
-        </label>
-
-
-      </div>
-    </section>
-  );
-}
-
-type DraftPart = { id: string; title: string; target: string };
-
-/**
- * A goal's parts: a name and a total each — Readings, 30. Saved as they're
- * typed, like the rest of the details. How far each is moves with its own
- * − and + at the top of the sheet, so the counts are never edited here.
- */
-function PartsEditor({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
-  const toDraft = (parts: Part[] | undefined): DraftPart[] =>
-    (parts ?? []).map((p) => ({ id: p.id, title: p.title, target: String(p.target) }));
-  const [draft, setDraft] = useState<DraftPart[]>(() => toDraft(g.parts));
-
-  const valid = (d: DraftPart) => !!d.title.trim() && (num(d.target) ?? 0) > 0;
-  const key = (list: { id: string; title: string; target: number | string }[]) =>
-    JSON.stringify(list.map((p) => [p.id, p.title.trim(), Number(p.target)]));
-  const dirty = key(draft.filter(valid)) !== key(g.parts ?? []);
-
-  const save = () => {
-    const now = tracker.state!.goals.find((x) => x.id === g.id)?.parts ?? [];
-    return tracker.setGoalParts(
-      g.id,
-      draft.filter(valid).map((d) => ({
-        id: d.id,
-        title: d.title,
-        target: num(d.target)!,
-        current: now.find((p) => p.id === d.id)?.current ?? 0,
-      }))
-    );
-  };
-
-  const latest = useRef({ dirty, save });
-  latest.current = { dirty, save };
-  useEffect(() => {
-    if (!dirty) return;
-    const t = setTimeout(() => void save(), 600);
-    return () => clearTimeout(t);
-  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(
-    () => () => {
-      if (latest.current.dirty) void latest.current.save();
-    },
-    []
-  );
-
-  const set = (id: string, patch: Partial<DraftPart>) =>
-    setDraft((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-
-  return (
-    <div className="goal-field">
-      <span>Parts</span>
-      {draft.length > 0 && (
-        <ul className="part-list">
-          {draft.map((d) => (
-            <li key={d.id} className="part-row">
-              <Input
-                aria-label="Part name"
-                placeholder="e.g. Readings"
-                value={d.title}
-                onChange={(e) => set(d.id, { title: e.target.value })}
-                className="min-w-0 flex-1"
-              />
-              <Input
-                type="number"
-                inputMode="numeric"
-                aria-label={`${d.title || "Part"} total`}
-                placeholder="Total"
-                value={d.target}
-                onChange={(e) => set(d.id, { target: e.target.value })}
-                className="part-row__total"
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                aria-label={`Remove ${d.title || "part"}`}
-                onPress={() => setDraft((list) => list.filter((x) => x.id !== d.id))}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
+    <div className="goal-counter">
+      <span className="goal-counter__label shrink-0">Link</span>
+      <input
+        type="url"
+        aria-label="Link"
+        placeholder="https://… the course"
+        className="inline-field min-w-0 flex-1 text-end"
+        {...field}
+      />
+      {href && (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="goal-link" aria-label="Open link">
+          <ExternalLink className="h-4 w-4" aria-hidden />
+        </a>
       )}
-      <button
-        type="button"
-        className="text-action self-start"
-        onClick={() => setDraft((list) => [...list, { id: uid(), title: "", target: "" }])}
-      >
-        Add a part
-      </button>
     </div>
   );
 }
