@@ -148,11 +148,11 @@ function Hub({ tracker }: { tracker: Tracker }) {
 
       {tab === "active" ? (
         <>
-          <Panel title="Reading">
+          <Panel title="Reading" bare>
             {reading.length === 0 ? (
-              <p className="text-[15px] text-[var(--muted)]">Nothing being read. Start a book from Library.</p>
+              <p className="card p-4 text-[15px] text-[var(--muted)]">Nothing being read. Start a book from Library.</p>
             ) : (
-              <ul className="flex flex-col">
+              <ul className="rd-cards">
                 {reading.map((b) => (
                   <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
                 ))}

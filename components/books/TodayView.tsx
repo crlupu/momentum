@@ -192,6 +192,58 @@ export function OpenBook({
     flow.checkEnd(book.id);
   };
 
+  // On its own card: the book, which opens it, and under it a slim line
+  // with how far it is and a small page box.
+  if (minimal) {
+    return (
+      <li className="card rd-card">
+        <button
+          type="button"
+          className="rd-link"
+          onClick={() => flow.open({ kind: "detail", bookId: book.id })}
+        >
+          <Cover book={book} size="sm" />
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="flex min-w-0 flex-col">
+              <span className="book-card__title">{book.title}</span>
+              {book.author && <span className="book-card__author">{book.author}</span>}
+            </span>
+            <Meter book={book} />
+          </span>
+          <ChevronRight className="rd-link__chevron" aria-hidden />
+        </button>
+        <div className="rd-card__foot">
+          <span className="min-w-0">
+            {error ? (
+              <span className="text-xs" style={{ color: "var(--danger)" }}>{error}</span>
+            ) : preview ? (
+              <span className="rd-derived is-counted">{preview}</span>
+            ) : (
+              <ProgressText book={book} />
+            )}
+          </span>
+          <form onSubmit={submit} className="rd-mini">
+            <input
+              type="text"
+              inputMode="numeric"
+              enterKeyHint="done"
+              aria-label={`${book.title}: the page you're on (or +pages read)`}
+              placeholder="Page"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError(null);
+              }}
+            />
+            <Button type="submit" size="sm" variant="primary" isIconOnly aria-label={`Update ${book.title}`} isDisabled={pending || !parsed}>
+              <Check className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="rd-open">
       {/* The whole book is one row that opens it, marked with a chevron. */}
