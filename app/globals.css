@@ -3790,3 +3790,14 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 }
 .step-add__icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
 .step-add:active { opacity: 0.6; }
+
+/* A book being read, as a row of the goal list: the row opens the book,
+   and the page box sits where a goal row has its chevron. The cover takes
+   the ring's 44px slot, so book and goal titles line up. */
+.book-row { display: flex; align-items: center; gap: 0.5rem; }
+.goal-row.book-row__open { flex: 1 1 auto; inline-size: auto; min-inline-size: 0; margin-inline-end: 0; }
+.book-row__cover { display: flex; flex: none; justify-content: center; inline-size: 44px; }
+.book-row__cover .book-cover--sm { flex: none; width: 32px; height: 46px; }
+.goal-row__meta.book-row__meta { flex-wrap: nowrap; min-inline-size: 0; }
+.book-row__author { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-row .rd-mini input { inline-size: 4rem; }

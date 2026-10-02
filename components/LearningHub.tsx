@@ -7,11 +7,10 @@ import { Button } from "./ui";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { GoalDetail, GoalTitle } from "./GoalDetail";
-import { GoalImportForm } from "./GoalImport";
 import { GoalRow } from "./GoalsView";
 import { TopicForm } from "./TopicForm";
 import { ProgressRing } from "./ProgressRing";
-import { CalendarDays, ChevronRight, Clock, ListPlus, Upload } from "./icons";
+import { CalendarDays, ChevronRight, Clock } from "./icons";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
 import { useCoverLookup } from "./books/Cover";
@@ -103,7 +102,6 @@ function Hub({ tracker }: { tracker: Tracker }) {
   const [tab, setTab] = useState<Tab>("active");
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [importing, setImporting] = useState(false);
 
   // The view last looked at, per device. Only a convenience.
   useEffect(() => {
@@ -152,11 +150,13 @@ function Hub({ tracker }: { tracker: Tracker }) {
             {reading.length === 0 ? (
               <p className="card p-4 text-[15px] text-[var(--muted)]">Nothing being read. Start a book from Library.</p>
             ) : (
-              <ul className="rd-cards">
-                {reading.map((b) => (
-                  <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
-                ))}
-              </ul>
+              <div className="card goal-list">
+                <ul className="goal-list__rows">
+                  {reading.map((b) => (
+                    <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
+                  ))}
+                </ul>
+              </div>
             )}
           </Panel>
           <Panel title="Goals" bare>
@@ -220,37 +220,11 @@ function Hub({ tracker }: { tracker: Tracker }) {
             <HubRow icon={<CalendarDays aria-hidden />} title="Phases" sub={phasesLine(s)} onPress={() => go("view=phases")} />
             <HubRow icon={<Clock aria-hidden />} title="History" sub="Finished books and goals" onPress={() => go("view=history")} />
           </ul>
-
-          {/* Adding in bulk: rows like the rest of the list, rather than a
-              cluster of buttons that wraps unevenly on a phone. */}
-          <ul className="card hub-list">
-            <HubRow
-              icon={<ListPlus aria-hidden />}
-              title="Add several books"
-              sub="A list, one title a line"
-              onPress={() => flow.open({ kind: "bulk" })}
-            />
-            <HubRow
-              icon={<Upload aria-hidden />}
-              title="Import reading plan"
-              sub="Tracks, phases and books from Markdown"
-              onPress={() => flow.open({ kind: "import" })}
-            />
-            <HubRow
-              icon={<Upload aria-hidden />}
-              title="Import goals"
-              sub="From JSON or Markdown, steps and all"
-              onPress={() => setImporting(true)}
-            />
-          </ul>
         </>
       )}
 
       <Modal open={adding} onClose={() => setAdding(false)} title="New goal">
         {adding && <GoalForm tracker={tracker} onDone={() => setAdding(false)} />}
-      </Modal>
-      <Modal open={importing} onClose={() => setImporting(false)} title="Import goals">
-        {importing && <GoalImportForm tracker={tracker} onClose={() => setImporting(false)} />}
       </Modal>
       <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
