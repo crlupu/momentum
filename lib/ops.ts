@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
+import { NOTE_MAX, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -63,6 +63,16 @@ export function setGoalStatus(s: TrackerState, id: string, status: GoalStatus): 
         doneAt: done ? Date.now() : null,
       };
     }),
+  };
+}
+
+/** Sets or clears (null) the minimum on a goal's own count; it must not pass the target. */
+export function setGoalMinimum(s: TrackerState, id: string, minimum: number | null): TrackerState {
+  return {
+    ...s,
+    goals: s.goals.map((g) =>
+      g.id === id ? { ...g, minimum: minimum != null && validMinimum(minimum, g.target) ? minimum : undefined } : g
+    ),
   };
 }
 
@@ -195,7 +205,7 @@ export function setGoalCount(
 export function setGoalParts(
   s: TrackerState,
   id: string,
-  parts: Array<{ id?: string; title: string; current?: number; target: number }>
+  parts: Array<{ id?: string; title: string; current?: number; target: number; minimum?: number | null }>
 ): TrackerState {
   const clean: Part[] = parts
     .filter((p) => p.title.trim() && Number.isFinite(p.target) && p.target > 0)
@@ -204,6 +214,7 @@ export function setGoalParts(
       title: p.title.trim(),
       target: p.target,
       current: Math.min(p.target, Math.max(0, p.current ?? 0)),
+      ...(validMinimum(p.minimum, p.target) ? { minimum: p.minimum } : {}),
     }));
   return {
     ...s,

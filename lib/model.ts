@@ -55,6 +55,8 @@ export type Goal = {
    * app. Absent on goals saved before statuses: see goalStatus.
    */
   status?: GoalStatus;
+  /** For a goal's own count: enough to count as covered, at most its target. */
+  minimum?: number;
   /** Up to two reading phases it belongs to: the same phases books use. */
   phaseIds?: string[];
   doneDate?: string | null;
@@ -88,6 +90,8 @@ export type Part = {
   title: string;
   current: number;
   target: number;
+  /** Enough to count as covered, at most the target: Projects 2 of 4. Optional. */
+  minimum?: number;
 };
 
 /**
@@ -851,6 +855,19 @@ export function goalStatus(g: Goal): GoalStatus {
   return goalStarted(g) ? "active" : "queued";
 }
 
+/**
+ * Whether every count that has a minimum has reached it: true or false, or
+ * null when none has one (nothing to say).
+ */
+export function minimumReached(g: Goal): boolean | null {
+  const counts = g.parts?.length
+    ? g.parts.map((p) => ({ current: p.current, minimum: p.minimum }))
+    : [{ current: g.current ?? 0, minimum: g.minimum }];
+  const withMin = counts.filter((c) => c.minimum != null);
+  if (!withMin.length) return null;
+  return withMin.every((c) => c.current >= c.minimum!);
+}
+
 /** Status order in a topic: active, then queued, then done, then dropped. */
 export const STATUS_RANK: Record<GoalStatus, number> = { active: 0, queued: 1, done: 2, dropped: 3 };
 
@@ -941,6 +958,11 @@ export function pathPct(p: Path, goals: Goal[]): number {
   return Math.max(0, Math.min(100, Math.floor(total / list.length)));
 }
 
+/** A minimum is a number from 0 up to the target. */
+export function validMinimum(m: unknown, target: number | undefined): m is number {
+  return typeof m === "number" && Number.isFinite(m) && m > 0 && (!target || m <= target);
+}
+
 function migrateParts(raw: unknown): Part[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const parts = (raw as Array<Record<string, unknown>>)
@@ -950,6 +972,7 @@ function migrateParts(raw: unknown): Part[] | undefined {
       title: (p.title as string).trim(),
       target: p.target as number,
       current: Math.min(p.target as number, Math.max(0, typeof p.current === "number" ? p.current : 0)),
+      ...(validMinimum(p.minimum, p.target as number) ? { minimum: p.minimum as number } : {}),
     }));
   return parts.length ? parts : undefined;
 }
@@ -1005,6 +1028,7 @@ export function migrate(raw: unknown): TrackerState {
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
+    minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
     phaseIds: Array.isArray(g.phaseIds)
       ? [...new Set((g.phaseIds as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, 2)
       : undefined,

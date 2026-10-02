@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { dateKey, goalStatus, goalTopic, uid, type GoalStatus, type TrackerState } from "../model";
+import { dateKey, goalStatus, goalTopic, minimumReached, uid, type GoalStatus, type TrackerState } from "../model";
 import * as R from "../reading";
 import * as O from "../ops";
 import { projectFinished, type CardStatus } from "../projects";
@@ -91,8 +91,13 @@ function overview(s: TrackerState, section: string) {
       topic: goalTopic(g.id, s.paths)?.title,
       status: goalStatus(g),
       phases: g.phaseIds?.map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean),
-      progress: g.parts?.length ? undefined : g.target ? `${g.current ?? 0}/${g.target}` : undefined,
-      parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
+      progress: g.parts?.length
+        ? undefined
+        : g.target
+          ? `${g.current ?? 0}/${g.target}${g.minimum != null ? ` (min ${g.minimum})` : ""}`
+          : undefined,
+      parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}${p.minimum != null ? ` (min ${p.minimum})` : ""}`),
+      ...(minimumReached(g) ? { minimum_reached: true } : {}),
       description: g.note,
       link: g.link,
       ...sessionsOf(s, g.id),
@@ -322,7 +327,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -341,8 +346,20 @@ export function registerTools(server: McpServer) {
         // of as a string.
         phases: jsonArray(z.array(z.string()).max(2)).optional().describe("Up to two phase names or ids; [] clears"),
         parts: jsonArray(
-          z.array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
+          z.array(
+            z.object({
+              title: z.string().min(1),
+              target: z.number().positive(),
+              current: z.number().min(0).optional(),
+              minimum: z.number().min(0).optional().describe("Enough to count as covered, at most target; 0 clears"),
+            })
+          )
         ).optional(),
+        minimum: z
+          .number()
+          .min(0)
+          .optional()
+          .describe("For a goal without parts: enough to count as covered, at most its target; 0 clears"),
         note: z.string().max(200).optional().describe("A line about the session, kept with the count change it logs"),
       },
     },
@@ -357,7 +374,8 @@ export function registerTools(server: McpServer) {
       link?: string;
       topic?: string;
       phases?: string[];
-      parts?: { title: string; target: number; current?: number }[];
+      parts?: { title: string; target: number; current?: number; minimum?: number }[];
+      minimum?: number;
       note?: string;
     }) =>
       change((s) => {
@@ -386,9 +404,22 @@ export function registerTools(server: McpServer) {
             g.id,
             a.parts.map((p) => {
               const old = had.find((x) => x.title.toLowerCase() === p.title.trim().toLowerCase());
-              return { id: old?.id, title: p.title, target: p.target, current: p.current ?? old?.current ?? 0 };
+              if (p.minimum && p.minimum > p.target)
+                throw new Error(`${p.title}: a minimum can't pass its total (${p.target}).`);
+              return {
+                id: old?.id,
+                title: p.title,
+                target: p.target,
+                current: p.current ?? old?.current ?? 0,
+                minimum: p.minimum === 0 ? null : p.minimum ?? old?.minimum,
+              };
             })
           );
+        }
+        if (a.minimum !== undefined) {
+          const total = next.goals.find((x) => x.id === g.id)?.target;
+          if (a.minimum && total && a.minimum > total) throw new Error(`A minimum can't pass the total (${total}).`);
+          next = O.setGoalMinimum(next, g.id, a.minimum || null);
         }
         // Count changes are sessions: logged like a +1 in the app.
         next = O.logChanges(s, next, g.id, a.note);
@@ -397,11 +428,14 @@ export function registerTools(server: McpServer) {
         if (a.phases !== undefined)
           next = O.setGoalPhases(next, g.id, a.phases.map((x) => pick(next.readingPhases, x, (p) => p.name, "phase").id));
         const after = next.goals.find((x) => x.id === g.id)!;
-        const progress = after.parts?.length
-          ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}`).join(", ")}`
-          : after.target
-            ? `, ${after.current ?? 0}/${after.target}`
-            : "";
+        const min = (m?: number) => (m != null ? ` (min ${m})` : "");
+        const reached = minimumReached(after);
+        const progress =
+          (after.parts?.length
+            ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}${min(p.minimum)}`).join(", ")}`
+            : after.target
+              ? `, ${after.current ?? 0}/${after.target}${min(after.minimum)}`
+              : "") + (reached ? ", minimum reached" : "");
         const topic = goalTopic(g.id, next.paths)?.title;
         return {
           state: next,

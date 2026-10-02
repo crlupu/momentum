@@ -3879,3 +3879,37 @@ select.row-select:focus { outline: none; color: var(--accent); }
 .session-row__head { font-size: 0.875rem; color: var(--muted); }
 .session-row__amount { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
 .session-row__note { font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
+
+/* A count's bar under its name, with the minimum as a tick across it. */
+.step-row__label { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.375rem; }
+.step-bar { position: relative; display: block; block-size: 4px; border-radius: 999px; background: var(--progress-track, var(--default)); }
+.step-bar__fill { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; background: var(--accent); }
+.step-bar__min {
+  position: absolute;
+  inset-block: -3px;
+  inline-size: 2px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--foreground);
+  opacity: 0.55;
+}
+.step-bar__min.is-met { background: var(--accent); opacity: 1; }
+
+/* In Edit, the minimum on a line of its own under the figures. */
+.step-row--editing { flex-wrap: wrap; }
+.step-row__min { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; inline-size: 100%; font-size: 0.875rem; color: var(--muted); }
+
+/* "Minimum reached": a quiet capsule in the progress colour. */
+.min-badge {
+  display: inline-block;
+  margin: 0.25rem 0 0;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.min-badge--row { margin: 0; }
+/* The name gives way so the figures stay on its line; only the minimum wraps. */
+.step-row--editing input.step-field--name { flex: 1 1 0; }

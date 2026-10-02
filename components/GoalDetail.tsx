@@ -6,7 +6,7 @@ import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
 import { ExternalLink, Minus, Plus } from "./icons";
 import { Segmented } from "./books/bits";
-import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, uid } from "@/lib/tracker";
+import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { NOTE_MAX, type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
@@ -164,6 +164,7 @@ export function GoalDetail({
         <ProgressRing pct={pct} color="var(--accent)" size={64} />
         <div className="min-w-0">
           <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
+          {minimumReached(g) && <p className="min-badge">Minimum reached</p>}
           <p className="goal-detail__sub">{summary}</p>
           {last && <p className="goal-detail__sub">Last session: {fmtDateAuto(last.date)}</p>}
         </div>
@@ -219,6 +220,8 @@ export function GoalDetail({
               onStep={(d) => step(d)}
               onCurrent={(n) => setOwnCount({ current: n })}
               onTotal={(n) => setOwnCount({ target: n })}
+              minimum={g.minimum}
+              onMinimum={(n) => tracker.setGoalMinimum(g.id, n)}
             />
             {noteFor?.row === "" && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
             </>
@@ -247,6 +250,16 @@ export function GoalDetail({
                     : Promise.resolve()
                 }
                 onDelete={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
+                minimum={p.minimum}
+                onMinimum={(n) =>
+                  writeParts((list) =>
+                    list.map((x) => {
+                      if (x.id !== p.id) return x;
+                      const { minimum: _m, ...rest } = x;
+                      return n != null ? { ...rest, minimum: n } : rest;
+                    })
+                  )
+                }
               />
               {noteFor?.row === p.id && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
               </Fragment>
@@ -301,10 +314,15 @@ function StepRow({
   onCurrent,
   onTotal,
   onDelete,
+  minimum,
+  onMinimum,
 }: {
   name: string;
   current: number;
   total: number | null;
+  /** Enough to count as covered: a marker on the bar, set in Edit. */
+  minimum?: number;
+  onMinimum: (n: number | null) => Promise<unknown>;
   widest: number;
   editing: boolean;
   focus?: boolean;
@@ -329,6 +347,12 @@ function StepRow({
     if (n != null && n > 0) void onTotal(n);
     else if (!onDelete && text.trim() === "") void onTotal(null);
     else resetTot();
+  });
+  const { reset: resetMin, ...minField } = useInline(minimum ?? null, (v) => (v == null ? "" : String(v)), (text) => {
+    const n = num(text);
+    if (text.trim() === "" || n === 0) void onMinimum(null);
+    else if (n != null && n > 0 && (total == null || n <= total)) void onMinimum(n);
+    else resetMin();
   });
   const nameRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -369,6 +393,19 @@ function StepRow({
             {...totField}
           />
         </span>
+        {total != null && (
+          <label className="step-row__min">
+            <span>Minimum</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              aria-label={`Minimum, ${name}`}
+              placeholder="None"
+              className="step-field step-field--num"
+              {...minField}
+            />
+          </label>
+        )}
       </li>
     );
   }
@@ -376,7 +413,27 @@ function StepRow({
   const digits = Math.max(1, widest.toLocaleString().length);
   return (
     <li className="step-row">
-      <span className="step-row__name">{name}</span>
+      <span className="step-row__label">
+        <span className="step-row__name">{name}</span>
+        {/* How far, with the minimum marked when there is one. */}
+        {total != null && total > 0 && (
+          <span className="step-bar" aria-hidden>
+            <span className="step-bar__fill" style={{ width: `${Math.min(100, (current / total) * 100)}%` }} />
+            {minimum != null && minimum < total && (
+              <span
+                className={"step-bar__min" + (current >= minimum ? " is-met" : "")}
+                style={{ left: `${(minimum / total) * 100}%` }}
+              />
+            )}
+          </span>
+        )}
+        {minimum != null && (
+          <span className="sr-only">
+            Minimum {minimum}
+            {current >= minimum ? ", reached" : ""}
+          </span>
+        )}
+      </span>
       <span className="stepper">
         <Button
           size="sm"

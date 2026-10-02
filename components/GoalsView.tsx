@@ -19,6 +19,7 @@ import {
   goalHasProgress,
   goalSummary,
   goalStatus,
+  minimumReached,
   goalPct,
   pathGoals,
   pathPct,
@@ -263,6 +264,7 @@ export function GoalRow({
         : status === "active"
           ? ["Active", goalSummary(g)].filter(Boolean).join(" · ")
           : goalSummary(g) ?? "Queued";
+  const covered = (status === "active" || status === "queued") && minimumReached(g);
 
   return (
     <li>
@@ -289,6 +291,7 @@ export function GoalRow({
               </>
             )}
             {meta}
+            {covered && <span className="min-badge min-badge--row">Minimum reached</span>}
           </span>
         </span>
         <ChevronRight className="rd-link__chevron" aria-hidden />

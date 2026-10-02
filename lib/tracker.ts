@@ -581,6 +581,9 @@ export function useTracker() {
         ),
       })),
 
+    /** Sets or clears the minimum on a goal's own count. */
+    setGoalMinimum: (id: string, minimum: number | null) => commit((s) => O.setGoalMinimum(s, id, minimum)),
+
     /** +1 on a goal's count, or a part's, logged as a session. */
     logSession: (goalId: string, partId?: string, id?: string) =>
       commit((s) => O.logSession(s, { id, goalId, partId })),
