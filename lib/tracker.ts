@@ -581,6 +581,18 @@ export function useTracker() {
         ),
       })),
 
+    /** +1 on a goal's count, or a part's, logged as a session. */
+    logSession: (goalId: string, partId?: string, id?: string) =>
+      commit((s) => O.logSession(s, { id, goalId, partId })),
+
+    /** − on a count: undoes today's last plain +1, else just lowers it. */
+    stepBack: (goalId: string, partId?: string) => commit((s) => O.stepBack(s, goalId, partId)),
+
+    setLogNote: (id: string, note: string) => commit((s) => O.setLogNote(s, id, note)),
+
+    /** Deletes a session, taking its amount back off the count. */
+    deleteLogEntry: (id: string) => commit((s) => O.deleteLogEntry(s, id)),
+
     /** Up to two phases, shared with books; [] for none. */
     setGoalPhases: (id: string, phaseIds: string[]) => commit((s) => O.setGoalPhases(s, id, phaseIds)),
 

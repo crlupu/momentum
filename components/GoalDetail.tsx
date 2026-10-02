@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
 import { ExternalLink, Minus, Plus } from "./icons";
 import { Segmented } from "./books/bits";
 import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, uid } from "@/lib/tracker";
-import { otherActiveInTopic } from "@/lib/ops";
+import { goalLog, otherActiveInTopic } from "@/lib/ops";
+import { NOTE_MAX, type LearningEntry } from "@/lib/model";
+import { fmtDateAuto } from "@/lib/dates";
 
 /** A number field's value, or null when empty or not a number. */
 function num(v: string): number | null {
@@ -108,7 +110,21 @@ export function GoalDetail({
   const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
   const widest = Math.max(1, g.target ?? 0, ...parts.map((p) => p.target));
   const [editing, setEditing] = useState(false);
-  // The step just added, whose name is selected to be typed over.
+  // The session just logged, offered a note under its row until the next tap.
+  const [noteFor, setNoteFor] = useState<{ row: string; entry: string } | null>(null);
+  const log = goalLog(tracker.state!, g.id);
+  const last = log[log.length - 1];
+  /** + logs a session and offers a note (skipping it takes no tap); − takes a mistaken + back. */
+  const step = (d: number, partId?: string) => {
+    if (d > 0) {
+      const id = uid();
+      setNoteFor({ row: partId ?? "", entry: id });
+      return tracker.logSession(g.id, partId, id);
+    }
+    setNoteFor(null);
+    return tracker.stepBack(g.id, partId);
+  };
+  // The part just added, whose name is selected to be typed over.
   const [focusId, setFocusId] = useState<string | null>(null);
 
   /** Rewrites the parts from the latest saved ones, so quick edits don't undo each other. */
@@ -149,6 +165,7 @@ export function GoalDetail({
         <div className="min-w-0">
           <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
           <p className="goal-detail__sub">{summary}</p>
+          {last && <p className="goal-detail__sub">Last session: {fmtDateAuto(last.date)}</p>}
         </div>
       </div>
 
@@ -192,27 +209,30 @@ export function GoalDetail({
         </div>
         <ul className="step-list">
           {parts.length === 0 ? (
+            <>
             <StepRow
               name="Completed"
               current={g.current ?? 0}
               total={g.target ?? null}
               widest={widest}
               editing={editing}
-              onStep={(d) => tracker.stepGoal(g.id, d)}
+              onStep={(d) => step(d)}
               onCurrent={(n) => setOwnCount({ current: n })}
               onTotal={(n) => setOwnCount({ target: n })}
             />
+            {noteFor?.row === "" && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
+            </>
           ) : (
             parts.map((p) => (
+              <Fragment key={p.id}>
               <StepRow
-                key={p.id}
                 name={p.title}
                 current={p.current}
                 total={p.target}
                 widest={widest}
                 editing={editing}
                 focus={focusId === p.id}
-                onStep={(d) => tracker.stepPart(g.id, p.id, d)}
+                onStep={(d) => step(d, p.id)}
                 onName={(title) => writeParts((list) => list.map((x) => (x.id === p.id ? { ...x, title } : x)))}
                 onCurrent={(n) =>
                   writeParts((list) =>
@@ -228,6 +248,8 @@ export function GoalDetail({
                 }
                 onDelete={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
               />
+              {noteFor?.row === p.id && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
+              </Fragment>
             ))
           )}
           <li>
@@ -240,6 +262,8 @@ export function GoalDetail({
           </li>
         </ul>
       </section>
+
+      <Sessions tracker={tracker} goal={g} log={log} />
 
       {/* Where it belongs and where it lives, as one grouped list. */}
       <div className="step-list">
@@ -380,6 +404,88 @@ function StepRow({
         </Button>
       </span>
     </li>
+  );
+}
+
+/**
+ * A line to say what the session was, offered under the count just moved.
+ * Return or leaving the field keeps it; ignoring it costs nothing.
+ */
+function NoteRow({ tracker, entryId, onDone }: { tracker: Tracker; entryId: string; onDone: () => void }) {
+  const [text, setText] = useState("");
+  const save = () => {
+    if (text.trim()) void tracker.setLogNote(entryId, text);
+    onDone();
+  };
+  return (
+    <li className="step-row note-row">
+      <input
+        aria-label="Note for this session"
+        placeholder="Add a note (optional)"
+        maxLength={NOTE_MAX}
+        className="step-field step-field--name"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => text.trim() && save()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save();
+          if (e.key === "Escape") onDone();
+        }}
+      />
+    </li>
+  );
+}
+
+/**
+ * The goal's sessions, oldest first, each with its date, what moved and its
+ * note. In Edit, a session can be deleted, which takes its amount back off.
+ */
+function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log: LearningEntry[] }) {
+  const [editing, setEditing] = useState(false);
+  const [all, setAll] = useState(false);
+  if (log.length === 0) return null;
+  const shown = all ? log : log.slice(-10);
+  const partName = (id?: string) => (id ? g.parts?.find((p) => p.id === id)?.title ?? "Removed part" : null);
+  return (
+    <section className="goal-steps" aria-label="Sessions">
+      <div className="goal-steps__head">
+        <h3 className="group-label">Sessions</h3>
+        <button type="button" className="text-action" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
+          {editing ? "Done" : "Edit"}
+        </button>
+      </div>
+      <ul className="step-list">
+        {log.length > shown.length && (
+          <li>
+            <button type="button" className="step-add" onClick={() => setAll(true)}>
+              Show all {log.length}
+            </button>
+          </li>
+        )}
+        {shown.map((e) => (
+          <li key={e.id} className="step-row session-row">
+            {editing && (
+              <button
+                type="button"
+                className="step-delete"
+                aria-label={`Delete the session of ${fmtDateAuto(e.date)}`}
+                onClick={() => void tracker.deleteLogEntry(e.id)}
+              >
+                <Minus aria-hidden />
+              </button>
+            )}
+            <span className="session-row__text">
+              <span className="session-row__head">
+                {fmtDateAuto(e.date)}
+                {partName(e.partId) && <> · {partName(e.partId)}</>}
+                <span className="session-row__amount"> {e.amount > 0 ? `+${e.amount}` : e.amount}</span>
+              </span>
+              {e.note && <span className="session-row__note">{e.note}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

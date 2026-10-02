@@ -524,7 +524,27 @@ export type TrackerState = {
   proteinTarget?: number;
   /** Daily fibre target, in grams. */
   fiberTarget?: number;
+  /** Learning sessions: each +1 on a goal or one of its parts, with an optional note. */
+  learningLog: LearningEntry[];
 };
+
+/** One learning session: a count moved on, on a day, perhaps with a line about it. */
+export type LearningEntry = {
+  id: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** When, as epoch milliseconds, to keep a day's entries in order. */
+  at: number;
+  goalId: string;
+  /** The part counted, when the goal has parts. */
+  partId?: string;
+  /** How much the count moved: 1 for a tap. */
+  amount: number;
+  /** At most 200 characters. */
+  note?: string;
+};
+
+export const NOTE_MAX = 200;
 
 /* The full chromatic range of the palette, plus its one usable neutral. */
 /**
@@ -723,6 +743,7 @@ export const DEFAULT_STATE: TrackerState = {
   workouts: [],
   workoutSessions: [],
   activeWorkout: null,
+  learningLog: [],
 };
 
 /** Monday-based start of the current week, as a YYYY-MM-DD key. */
@@ -1089,6 +1110,19 @@ export function migrate(raw: unknown): TrackerState {
     activeWorkout,
     proteinTarget: positive(s.proteinTarget),
     fiberTarget: positive(s.fiberTarget),
+    learningLog: Array.isArray(s.learningLog)
+      ? (s.learningLog as Array<Record<string, unknown>>)
+          .filter((e) => typeof e.goalId === "string" && typeof e.date === "string" && typeof e.amount === "number")
+          .map((e) => ({
+            id: (e.id as string) ?? uid(),
+            date: e.date as string,
+            at: typeof e.at === "number" ? e.at : 0,
+            goalId: e.goalId as string,
+            ...(typeof e.partId === "string" ? { partId: e.partId } : {}),
+            amount: e.amount as number,
+            ...(typeof e.note === "string" && e.note.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
+          }))
+      : [],
   };
 }
 

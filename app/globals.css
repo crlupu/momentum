@@ -3868,3 +3868,14 @@ select.row-select:focus { outline: none; color: var(--accent); }
    is a card itself. */
 .card input.step-field { background: var(--default); }
 .step-list.step-list--on-page, .light .step-list.step-list--on-page { background: var(--pane-bg); }
+
+/* The note offered under a count just moved on. */
+.note-row { padding-block: 0.25rem 0.625rem; }
+
+/* A goal's sessions: date, what moved, and the note under it. */
+.session-row { align-items: flex-start; }
+.session-row .step-delete { margin-block-start: 0.125rem; }
+.session-row__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.125rem; }
+.session-row__head { font-size: 0.875rem; color: var(--muted); }
+.session-row__amount { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+.session-row__note { font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }

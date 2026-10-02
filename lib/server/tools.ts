@@ -95,6 +95,7 @@ function overview(s: TrackerState, section: string) {
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
       description: g.note,
       link: g.link,
+      ...sessionsOf(s, g.id),
     }));
   }
   if (section === "all" || section === "projects") {
@@ -110,6 +111,14 @@ function overview(s: TrackerState, section: string) {
 
 const COLUMN = z.enum(["todo", "doing", "done"]);
 
+
+/** A goal's last session date and its notes, oldest first (the last ten). */
+function sessionsOf(s: TrackerState, goalId: string) {
+  const log = O.goalLog(s, goalId);
+  if (!log.length) return {};
+  const notes = log.filter((e) => e.note).slice(-10).map((e) => `${e.date}: ${e.note}`);
+  return { last_session: log[log.length - 1].date, ...(notes.length ? { notes } : {}) };
+}
 
 /** ", in Phase 1 — Foundations" for a goal's phases, or nothing. */
 function phaseList(s: TrackerState, ids: string[] | undefined): string {
@@ -313,7 +322,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -334,6 +343,7 @@ export function registerTools(server: McpServer) {
         parts: jsonArray(
           z.array(z.object({ title: z.string().min(1), target: z.number().positive(), current: z.number().min(0).optional() }))
         ).optional(),
+        note: z.string().max(200).optional().describe("A line about the session, kept with the count change it logs"),
       },
     },
     safe(async (a: {
@@ -348,6 +358,7 @@ export function registerTools(server: McpServer) {
       topic?: string;
       phases?: string[];
       parts?: { title: string; target: number; current?: number }[];
+      note?: string;
     }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
@@ -379,6 +390,8 @@ export function registerTools(server: McpServer) {
             })
           );
         }
+        // Count changes are sessions: logged like a +1 in the app.
+        next = O.logChanges(s, next, g.id, a.note);
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
         if (a.phases !== undefined)

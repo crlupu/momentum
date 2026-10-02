@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { dateKey, goalStarted, goalStatus, uid, withTopicCategory, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
+import { NOTE_MAX, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -130,6 +130,7 @@ export function removeGoal(s: TrackerState, id: string): TrackerState {
     ...s,
     goals: s.goals.filter((g) => g.id !== id),
     paths: s.paths.map((p) => (p.goalIds.includes(id) ? { ...p, goalIds: p.goalIds.filter((g) => g !== id) } : p)),
+    learningLog: (s.learningLog ?? []).filter((e) => e.goalId !== id),
   };
 }
 
@@ -290,4 +291,127 @@ export function moveCard(s: TrackerState, projectId: string, cardId: string, sta
       return { ...p, cards: [...p.cards.filter((c) => c.id !== cardId), withStatus(card, status)] };
     }),
   };
+}
+
+/* ---- the learning log ---- */
+
+/**
+ * Moves a count (the goal's own, or one part's) by `amount`, kept within 0
+ * and its total. Returns the state and how far it really moved.
+ */
+function moveCount(s: TrackerState, goalId: string, partId: string | undefined, amount: number): { state: TrackerState; moved: number } {
+  let moved = 0;
+  const goals = s.goals.map((g) => {
+    if (g.id !== goalId) return g;
+    if (partId) {
+      return {
+        ...g,
+        parts: g.parts?.map((p) => {
+          if (p.id !== partId) return p;
+          const next = Math.min(p.target, Math.max(0, p.current + amount));
+          moved = next - p.current;
+          return { ...p, current: next };
+        }),
+      };
+    }
+    const cur = g.current ?? 0;
+    let next = Math.max(0, cur + amount);
+    if (g.target) next = Math.min(next, g.target);
+    moved = next - cur;
+    return { ...g, current: next };
+  });
+  return { state: { ...s, goals }, moved };
+}
+
+/**
+ * A session: moves the count on and logs it, with an optional note. Nothing
+ * is logged when the count can't move (already at its total).
+ */
+export function logSession(
+  s: TrackerState,
+  e: { id?: string; goalId: string; partId?: string; amount?: number; note?: string; date?: string }
+): TrackerState {
+  const { state, moved } = moveCount(s, e.goalId, e.partId, e.amount ?? 1);
+  if (moved === 0) return s;
+  const entry: LearningEntry = {
+    id: e.id ?? uid(),
+    date: e.date ?? dateKey(),
+    at: Date.now(),
+    goalId: e.goalId,
+    ...(e.partId ? { partId: e.partId } : {}),
+    amount: moved,
+    ...(e.note?.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
+  };
+  return { ...state, learningLog: [...(state.learningLog ?? []), entry] };
+}
+
+/** Sets or clears an entry's note. */
+export function setLogNote(s: TrackerState, id: string, note: string): TrackerState {
+  const n = note.trim().slice(0, NOTE_MAX);
+  return {
+    ...s,
+    learningLog: (s.learningLog ?? []).map((e) => {
+      if (e.id !== id) return e;
+      const { note: _old, ...rest } = e;
+      return n ? { ...rest, note: n } : rest;
+    }),
+  };
+}
+
+/** Deletes an entry, and takes its amount back off the count it moved. */
+export function deleteLogEntry(s: TrackerState, id: string): TrackerState {
+  const e = (s.learningLog ?? []).find((x) => x.id === id);
+  if (!e) return s;
+  const { state } = moveCount(s, e.goalId, e.partId, -e.amount);
+  return { ...state, learningLog: (state.learningLog ?? []).filter((x) => x.id !== id) };
+}
+
+/**
+ * − on a count: takes back the latest entry for that count when it was
+ * logged today and has no note (a tap made by mistake); otherwise just
+ * lowers the count, as a correction, leaving the log as it is.
+ */
+export function stepBack(s: TrackerState, goalId: string, partId?: string): TrackerState {
+  const last = [...(s.learningLog ?? [])]
+    .reverse()
+    .find((e) => e.goalId === goalId && (e.partId ?? undefined) === (partId ?? undefined));
+  if (last && last.date === dateKey() && !last.note && last.amount === 1) return deleteLogEntry(s, last.id);
+  return moveCount(s, goalId, partId, -1).state;
+}
+
+/** A goal's sessions, oldest first. */
+export function goalLog(s: TrackerState, goalId: string): LearningEntry[] {
+  return (s.learningLog ?? []).filter((e) => e.goalId === goalId).sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at);
+}
+
+/**
+ * Logs how a goal's counts changed between two states, without moving them
+ * again: one entry per count that moved, the note on the first. For changes
+ * made elsewhere (the connector), so they read back like any session.
+ */
+export function logChanges(before: TrackerState, after: TrackerState, goalId: string, note?: string): TrackerState {
+  const a = before.goals.find((g) => g.id === goalId);
+  const b = after.goals.find((g) => g.id === goalId);
+  if (!a || !b) return after;
+  const moves: { partId?: string; amount: number }[] = [];
+  if (b.parts?.length) {
+    for (const p of b.parts) {
+      const was = a.parts?.find((x) => x.id === p.id)?.current ?? 0;
+      if (p.current !== was) moves.push({ partId: p.id, amount: p.current - was });
+    }
+  } else if ((b.current ?? 0) !== (a.current ?? 0)) {
+    moves.push({ amount: (b.current ?? 0) - (a.current ?? 0) });
+  }
+  if (!moves.length) return after;
+  const now = Date.now();
+  const entries: LearningEntry[] = moves.map((m, i) => ({
+    id: uid(),
+    date: dateKey(),
+    at: now + i,
+    goalId,
+    ...(m.partId ? { partId: m.partId } : {}),
+    amount: m.amount,
+    ...(i === 0 && note?.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
+  }));
+  return { ...after, learningLog: [...(after.learningLog ?? []), ...entries] };
 }
