@@ -66,6 +66,15 @@ export function setGoalStatus(s: TrackerState, id: string, status: GoalStatus): 
   };
 }
 
+/** Puts a goal in up to two phases ([] for none). Unknown phases are skipped. */
+export function setGoalPhases(s: TrackerState, id: string, phaseIds: string[]): TrackerState {
+  const valid = [...new Set(phaseIds)].filter((p) => s.readingPhases.some((x) => x.id === p)).slice(0, 2);
+  return {
+    ...s,
+    goals: s.goals.map((g) => (g.id === id ? { ...g, phaseIds: valid.length ? valid : undefined } : g)),
+  };
+}
+
 /** The other active goals in the goal's topic, for a gentle "already active" note. */
 export function otherActiveInTopic(s: TrackerState, id: string): Goal[] {
   const topic = s.paths.find((p) => p.goalIds.includes(id));

@@ -10,7 +10,8 @@ import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
 import { TopicForm } from "./TopicForm";
 import { ProgressRing } from "./ProgressRing";
-import { CalendarDays, ChevronRight, Clock } from "./icons";
+import { CalendarDays, ChevronDown, ChevronRight, Clock } from "./icons";
+import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
 import { useCoverLookup } from "./books/Cover";
@@ -24,6 +25,8 @@ import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
 const TAB_KEY = "momentum:learning-tab";
+type Grouping = "topic" | "phase";
+const GROUP_KEY = "momentum:learning-group";
 
 /**
  * A topic and its goals (Rust ramp up: The Rust Book, Rustlings…), or a goal
@@ -113,13 +116,34 @@ function Hub({ tracker }: { tracker: Tracker }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
-  // The view last looked at, per device. Only a convenience.
+  const [grouping, setGrouping] = useState<Grouping>("topic");
+
+  // The view last looked at, and how goals were grouped, per device. Only a
+  // convenience.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(TAB_KEY);
-      if (saved === "library") setTab("library");
+      if (localStorage.getItem(TAB_KEY) === "library") setTab("library");
+      if (localStorage.getItem(GROUP_KEY) === "phase") setGrouping("phase");
     } catch {}
   }, []);
+  const group = (g: Grouping) => {
+    setGrouping(g);
+    try {
+      localStorage.setItem(GROUP_KEY, g);
+    } catch {}
+  };
+  const switcher = (
+    <Segmented
+      size="sm"
+      label="Group goals by"
+      value={grouping}
+      onChange={group}
+      options={[
+        { value: "topic", label: "Topic" },
+        { value: "phase", label: "Phase" },
+      ]}
+    />
+  );
   const choose = (t: Tab) => {
     setTab(t);
     try {
@@ -131,6 +155,9 @@ function Hub({ tracker }: { tracker: Tracker }) {
   const started = all.filter((i) => itemStatus(i) === "active");
   const notStarted = all.filter((i) => itemStatus(i) === "queued");
   const dropped = all.filter((i) => itemStatus(i) === "dropped");
+  // By phase, goals are listed one by one, wherever their topic is.
+  const goalsWith = (st: GoalStatus) => s.goals.filter((g) => goalStatus(g) === st);
+  const droppedGoals = goalsWith("dropped");
   const [showDropped, setShowDropped] = useState(false);
   const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
   const today = dateKey();
@@ -171,14 +198,18 @@ function Hub({ tracker }: { tracker: Tracker }) {
               </div>
             )}
           </Panel>
-          <Panel title="Learning" bare>
-            <ItemList
-              tracker={tracker}
-              items={started}
-              onOpen={setOpenId}
-              onGroup={(id) => go(`goal=${id}`)}
-              empty="Nothing active. Set a goal to Active from Library."
-            />
+          <Panel title="Learning" actions={switcher} bare>
+            {grouping === "phase" ? (
+              <PhaseGroups tracker={tracker} goals={goalsWith("active")} onOpen={setOpenId} empty="Nothing active." />
+            ) : (
+              <ItemList
+                tracker={tracker}
+                items={started}
+                onOpen={setOpenId}
+                onGroup={(id) => go(`goal=${id}`)}
+                empty="Nothing active. Set a goal to Active from Library."
+              />
+            )}
           </Panel>
         </>
       ) : (
@@ -216,16 +247,29 @@ function Hub({ tracker }: { tracker: Tracker }) {
             </ul>
           </Panel>
 
-          <Panel title="Queued" onAdd={() => setAdding(true)} addLabel="New goal" bare>
-            <ItemList
-              tracker={tracker}
-              items={showDropped ? [...notStarted, ...dropped] : notStarted}
-              onOpen={setOpenId}
-              onGroup={(id) => go(`goal=${id}`)}
-              empty="Nothing queued. Add a goal with +."
-            />
-            {dropped.length > 0 && (
-              <DroppedToggle shown={showDropped} count={dropped.length} onToggle={() => setShowDropped((v) => !v)} />
+          <Panel title="Queued" actions={switcher} onAdd={() => setAdding(true)} addLabel="New goal" bare>
+            {grouping === "phase" ? (
+              <PhaseGroups
+                tracker={tracker}
+                goals={showDropped ? [...goalsWith("queued"), ...droppedGoals] : goalsWith("queued")}
+                onOpen={setOpenId}
+                empty="Nothing queued. Add a goal with +."
+              />
+            ) : (
+              <ItemList
+                tracker={tracker}
+                items={showDropped ? [...notStarted, ...dropped] : notStarted}
+                onOpen={setOpenId}
+                onGroup={(id) => go(`goal=${id}`)}
+                empty="Nothing queued. Add a goal with +."
+              />
+            )}
+            {(grouping === "phase" ? droppedGoals.length : dropped.length) > 0 && (
+              <DroppedToggle
+                shown={showDropped}
+                count={grouping === "phase" ? droppedGoals.length : dropped.length}
+                onToggle={() => setShowDropped((v) => !v)}
+              />
             )}
           </Panel>
 
@@ -389,6 +433,81 @@ function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) 
       <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
         {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
       </Modal>
+    </div>
+  );
+}
+
+/**
+ * Goals by reading phase, the same phases books use: one disclosure per
+ * phase in date order, the phase holding today open and the rest closed,
+ * then "No phase". A goal in two phases is under both.
+ */
+function PhaseGroups({
+  tracker,
+  goals,
+  onOpen,
+  empty,
+}: {
+  tracker: Tracker;
+  goals: Goal[];
+  onOpen: (id: string) => void;
+  empty: string;
+}) {
+  const s = tracker.state!;
+  const today = dateKey();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const phases = [...s.readingPhases].sort((a, b) => a.start.localeCompare(b.start));
+  const known = new Set(phases.map((p) => p.id));
+  const groups = phases
+    .map((p) => ({
+      key: p.id,
+      title: p.name,
+      sub: `${fmtDateAuto(p.start)} – ${fmtDateAuto(p.end)}`,
+      now: p.start <= today && today <= p.end,
+      goals: goals.filter((g) => g.phaseIds?.includes(p.id)),
+    }))
+    .filter((x) => x.goals.length > 0 || x.now);
+  const none = goals.filter((g) => !(g.phaseIds ?? []).some((id) => known.has(id)));
+  if (none.length) groups.push({ key: "none", title: "No phase", sub: "", now: false, goals: none });
+  // With no phase running today, the list would open on nothing at all.
+  const anyNow = groups.some((x) => x.now);
+
+  if (goals.length === 0) return <p className="card goal-list goal-list__empty">{empty}</p>;
+  return (
+    <div className="flex flex-col gap-2">
+      {groups.map((x) => {
+        const isOpen = open[x.key] ?? (x.now || (!anyNow && x.key === "none"));
+        return (
+          <section key={x.key} className="card goal-list">
+            <button
+              type="button"
+              className="phase-head"
+              aria-expanded={isOpen}
+              onClick={() => setOpen((o) => ({ ...o, [x.key]: !isOpen }))}
+            >
+              {isOpen ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
+              <span className="phase-head__text">
+                <span className="phase-head__title">
+                  {x.title}
+                  {x.now && <span className="phase-head__now">Now</span>}
+                </span>
+                {x.sub && <span className="phase-head__sub">{x.sub}</span>}
+              </span>
+              <span className="phase-head__count">{x.goals.length}</span>
+            </button>
+            {isOpen &&
+              (x.goals.length === 0 ? (
+                <p className="goal-list__empty">No goals in this phase yet.</p>
+              ) : (
+                <ul className="goal-list__rows">
+                  {x.goals.map((g) => (
+                    <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} />
+                  ))}
+                </ul>
+              ))}
+          </section>
+        );
+      })}
     </div>
   );
 }

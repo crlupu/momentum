@@ -241,6 +241,7 @@ export function GoalDetail({
         </ul>
       </section>
 
+      <PhasesRow tracker={tracker} goal={g} />
       <LinkRow tracker={tracker} goal={g} />
 
       <DialogActions
@@ -375,6 +376,42 @@ function StepRow({
         </Button>
       </span>
     </li>
+  );
+}
+
+/**
+ * The reading phases the goal belongs to, as chips: tap to add or take one
+ * away, up to two. Phases are made in Library → Phases, shared with books.
+ */
+function PhasesRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const phases = [...tracker.state!.readingPhases].sort((a, b) => a.start.localeCompare(b.start));
+  if (phases.length === 0) return null;
+  const chosen = g.phaseIds ?? [];
+  const toggle = (id: string) =>
+    void tracker.setGoalPhases(g.id, chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id]);
+  return (
+    <div className="step-list">
+      <div className="step-row phase-row">
+        <span className="step-row__name flex-none">Phases</span>
+        <span className="phase-row__chips" role="group" aria-label="Phases, up to two">
+          {phases.map((p) => {
+            const on = chosen.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className="cat-chip phase-chip"
+                aria-pressed={on}
+                disabled={!on && chosen.length >= 2}
+                onClick={() => toggle(p.id)}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+        </span>
+      </div>
+    </div>
   );
 }
 

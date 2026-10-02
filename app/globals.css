@@ -3808,3 +3808,37 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .goal-status .seg { inline-size: 100%; }
 .goal-status .seg__btn { flex: 1 1 0; }
 .goal-status__note { margin: 0; padding-inline: 0.25rem; font-size: 0.875rem; color: var(--warning); }
+
+/* A goal's phases: chips that wrap beside the label; chosen ones filled. */
+.phase-row { align-items: flex-start; flex-wrap: wrap; row-gap: 0.5rem; }
+.phase-row .step-row__name { padding-block: 0.375rem; }
+.phase-row__chips { display: flex; flex: 1 1 12rem; flex-wrap: wrap; justify-content: flex-end; gap: 0.375rem; }
+.phase-chip { min-block-size: 2rem; }
+.phase-chip[aria-pressed="true"] { background-color: var(--accent); color: #fff; }
+.phase-chip:disabled { opacity: 0.4; }
+
+/* A reading phase's heading over its goals: a disclosure row. */
+.phase-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: 0.5rem 0.25rem;
+  text-align: start;
+  color: var(--foreground);
+}
+.phase-head > svg { flex: none; inline-size: 1.25rem; block-size: 1.25rem; fill: var(--muted); }
+.phase-head__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; }
+.phase-head__title { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; }
+.phase-head__now {
+  padding: 0.0625rem 0.4375rem;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.phase-head__sub { font-size: 0.8125rem; color: var(--muted); }
+.phase-head__count { font-size: 0.875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.phase-head[aria-expanded="true"] { border-block-end: 0.5px solid var(--separator); }

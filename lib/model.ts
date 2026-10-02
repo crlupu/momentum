@@ -55,6 +55,8 @@ export type Goal = {
    * app. Absent on goals saved before statuses: see goalStatus.
    */
   status?: GoalStatus;
+  /** Up to two reading phases it belongs to: the same phases books use. */
+  phaseIds?: string[];
   doneDate?: string | null;
   /**
    * When it was ticked, as epoch milliseconds. The date alone puts everything
@@ -982,6 +984,9 @@ export function migrate(raw: unknown): TrackerState {
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
+    phaseIds: Array.isArray(g.phaseIds)
+      ? [...new Set((g.phaseIds as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, 2)
+      : undefined,
   })).map((g, i) => {
     const raw = rawGoals[i].status;
     const status = typeof raw === "string" && (GOAL_STATUSES as string[]).includes(raw) ? (raw as GoalStatus) : undefined;

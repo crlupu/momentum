@@ -970,12 +970,17 @@ export function updatePhase(s: TrackerState, id: string, p: PhaseInput): Tracker
   };
 }
 
-/** Removes a phase. Its books stay, unassigned. */
+/** Removes a phase. Its books and goals stay, just without it. */
 export function removePhase(s: TrackerState, id: string): TrackerState {
   return {
     ...s,
     readingPhases: s.readingPhases.filter((p) => p.id !== id),
     books: s.books.map((b) => (b.phaseId === id ? { ...b, phaseId: undefined } : b)),
+    goals: s.goals.map((g) =>
+      g.phaseIds?.includes(id)
+        ? { ...g, phaseIds: g.phaseIds.filter((x) => x !== id).length ? g.phaseIds.filter((x) => x !== id) : undefined }
+        : g
+    ),
   };
 }
 

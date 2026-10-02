@@ -580,6 +580,9 @@ export function useTracker() {
         ),
       })),
 
+    /** Up to two phases, shared with books; [] for none. */
+    setGoalPhases: (id: string, phaseIds: string[]) => commit((s) => O.setGoalPhases(s, id, phaseIds)),
+
     /** Queued, active, done or dropped. */
     setGoalStatus: (id: string, status: GoalStatus) => commit((s) => O.setGoalStatus(s, id, status)),
 

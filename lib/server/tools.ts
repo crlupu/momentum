@@ -79,6 +79,7 @@ function overview(s: TrackerState, section: string) {
       title: g.title,
       topic: goalTopic(g.id, s.paths)?.title,
       status: goalStatus(g),
+      phases: g.phaseIds?.map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean),
       progress: g.parts?.length ? undefined : g.target ? `${g.current ?? 0}/${g.target}` : undefined,
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}`),
     }));
@@ -96,6 +97,12 @@ function overview(s: TrackerState, section: string) {
 
 const COLUMN = z.enum(["todo", "doing", "done"]);
 
+
+/** ", in Phase 1 — Foundations" for a goal's phases, or nothing. */
+function phaseList(s: TrackerState, ids: string[] | undefined): string {
+  const names = (ids ?? []).map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean);
+  return names.length ? `, in ${names.join(" and ")}` : "";
+}
 
 /** " Also active in Rust ramp up: The Rust Book." when the goal shares its topic with other active goals. */
 function alsoActive(s: TrackerState, id: string): string {
@@ -293,7 +300,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
+        "Updates one learning goal: its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -316,7 +323,7 @@ export function registerTools(server: McpServer) {
           .optional(),
       },
     },
-    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; status?: GoalStatus; parts?: { title: string; target: number; current?: number }[] }) =>
+    safe(async (a: { goal: string; current?: number; target?: number; done?: boolean; status?: GoalStatus; phases?: string[]; parts?: { title: string; target: number; current?: number }[] }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
         let next = s;
@@ -334,6 +341,8 @@ export function registerTools(server: McpServer) {
         }
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
+        if (a.phases !== undefined)
+          next = O.setGoalPhases(next, g.id, a.phases.map((x) => pick(next.readingPhases, x, (p) => p.name, "phase").id));
         const after = next.goals.find((x) => x.id === g.id)!;
         const progress = after.parts?.length
           ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}`).join(", ")}`
@@ -342,7 +351,7 @@ export function registerTools(server: McpServer) {
             : "";
         return {
           state: next,
-          result: `${g.title}: ${goalStatus(after)}${progress}.${alsoActive(next, g.id)}`,
+          result: `${g.title}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
         };
       })
     )
