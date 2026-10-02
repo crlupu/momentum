@@ -103,13 +103,30 @@ export function GoalDetail({
   const parts = g.parts ?? [];
   const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
   const widest = Math.max(1, g.target ?? 0, ...parts.map((p) => p.target));
-  // A part being added: kept here until it has a name and a total.
-  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
+  // The step just added, whose name is selected to be typed over.
+  const [focusId, setFocusId] = useState<string | null>(null);
 
   /** Rewrites the parts from the latest saved ones, so quick edits don't undo each other. */
   const writeParts = (fn: (list: Part[]) => Part[]) => {
     const now = tracker.state!.goals.find((x) => x.id === g.id)?.parts ?? [];
     return tracker.setGoalParts(g.id, fn(now));
+  };
+  // Saved at once, so it's there the moment it's tapped; Edit opens on its
+  // name, ready to be typed over. A goal's own count becomes its first step,
+  // so nothing counted so far is lost.
+  const addStep = () => {
+    const id = uid();
+    const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
+    void writeParts((list) => {
+      const first =
+        list.length === 0 && now.target
+          ? [{ id: uid(), title: "Progress", current: now.current ?? 0, target: now.target }]
+          : [];
+      return [...list, ...first, { id, title: `Step ${list.length + first.length + 1}`, current: 0, target: 1 }];
+    });
+    setEditing(true);
+    setFocusId(id);
   };
   const setOwnCount = (c: { current?: number | null; target?: number | null }) => {
     const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
@@ -131,46 +148,73 @@ export function GoalDetail({
         </div>
       </div>
 
-      <ul className="goal-parts">
-        {parts.length === 0 ? (
-          <li className="goal-counter">
-            <span className="goal-counter__label">Progress</span>
-            <Counter
+      {/* The steps, as an iOS list: counted with − and + as they stand,
+          and renamed, resized or deleted in Edit, which a new step opens. */}
+      <section className="goal-steps" aria-label="Steps">
+        <div className="goal-steps__head">
+          <h3 className="group-label">{parts.length ? "Steps" : "Progress"}</h3>
+          <button
+            type="button"
+            className="text-action"
+            aria-pressed={editing}
+            onClick={() => {
+              setEditing((v) => !v);
+              setFocusId(null);
+            }}
+          >
+            {editing ? "Done" : "Edit"}
+          </button>
+        </div>
+        <ul className="step-list">
+          {parts.length === 0 ? (
+            <StepRow
+              name="Completed"
               current={g.current ?? 0}
               total={g.target ?? null}
               widest={widest}
-              what={g.title}
+              editing={editing}
               onStep={(d) => tracker.stepGoal(g.id, d)}
               onCurrent={(n) => setOwnCount({ current: n })}
               onTotal={(n) => setOwnCount({ target: n })}
             />
+          ) : (
+            parts.map((p) => (
+              <StepRow
+                key={p.id}
+                name={p.title}
+                current={p.current}
+                total={p.target}
+                widest={widest}
+                editing={editing}
+                focus={focusId === p.id}
+                onStep={(d) => tracker.stepPart(g.id, p.id, d)}
+                onName={(title) => writeParts((list) => list.map((x) => (x.id === p.id ? { ...x, title } : x)))}
+                onCurrent={(n) =>
+                  writeParts((list) =>
+                    list.map((x) => (x.id === p.id ? { ...x, current: Math.min(x.target, Math.max(0, n ?? 0)) } : x))
+                  )
+                }
+                onTotal={(n) =>
+                  n && n > 0
+                    ? writeParts((list) =>
+                        list.map((x) => (x.id === p.id ? { ...x, target: n, current: Math.min(x.current, n) } : x))
+                      )
+                    : Promise.resolve()
+                }
+                onDelete={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
+              />
+            ))
+          )}
+          <li>
+            <button type="button" className="step-add" onClick={addStep}>
+              <span className="step-add__icon" aria-hidden>
+                <Plus />
+              </span>
+              Add Step
+            </button>
           </li>
-        ) : (
-          parts.map((p) => (
-            <PartRow
-              key={p.id}
-              part={p}
-              widest={widest}
-              onStep={(d) => tracker.stepPart(g.id, p.id, d)}
-              onChange={(patch) => writeParts((list) => list.map((x) => (x.id === p.id ? { ...x, ...patch } : x)))}
-              onRemove={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
-            />
-          ))
-        )}
-        {adding && (
-          <NewPart
-            onDone={(part) => {
-              setAdding(false);
-              if (part) void writeParts((list) => [...list, part]);
-            }}
-          />
-        )}
-      </ul>
-      {!adding && (
-        <button type="button" className="text-action self-start" onClick={() => setAdding(true)}>
-          <Plus className="h-4 w-4" aria-hidden /> Add a step
-        </button>
-      )}
+        </ul>
+      </section>
 
       <LinkRow tracker={tracker} goal={g} />
 
@@ -203,168 +247,124 @@ export function GoalDetail({
 }
 
 /**
- * A part: its name, typed over in place, and its count. Clearing the name
- * and leaving the field removes the part, as an emptied item does in
- * Reminders.
+ * One step. As it stands: its name and "− 4 of 30 +". In Edit: a red delete
+ * button, and its name, done count and total as text fields.
  */
-function PartRow({
-  part: p,
-  widest,
-  onStep,
-  onChange,
-  onRemove,
-}: {
-  part: Part;
-  widest: number;
-  onStep: (delta: number) => Promise<unknown>;
-  onChange: (patch: Partial<Part>) => Promise<unknown>;
-  onRemove: () => Promise<unknown>;
-}) {
-  const { reset: _reset, ...name } = useInline(p.title, (v) => v, (text) => {
-    if (text.trim()) void onChange({ title: text.trim() });
-    else void onRemove();
-  });
-  return (
-    <li className="goal-counter">
-      <input aria-label="Step name" placeholder="Name" className="inline-field goal-counter__label" {...name} />
-      <Counter
-        current={p.current}
-        total={p.target}
-        widest={widest}
-        what={p.title}
-        onStep={onStep}
-        onCurrent={(n) => onChange({ current: Math.min(p.target, Math.max(0, n ?? 0)) })}
-        onTotal={(n) => (n && n > 0 ? onChange({ target: n, current: Math.min(p.current, n) }) : Promise.resolve())}
-        totalRequired
-      />
-    </li>
-  );
-}
-
-/** A part being added: a name and a total, saved once both are there. */
-function NewPart({ onDone }: { onDone: (part: Part | null) => void }) {
-  const [title, setTitle] = useState("");
-  const [total, setTotal] = useState("");
-  const row = useRef<HTMLLIElement>(null);
-  const finish = () => {
-    const t = num(total);
-    onDone(title.trim() && t && t > 0 ? { id: uid(), title: title.trim(), current: 0, target: t } : null);
-  };
-  // Done when focus leaves the row altogether, not when it moves from the
-  // name to the total.
-  const onBlur = (e: React.FocusEvent) => {
-    if (!row.current?.contains(e.relatedTarget as Node)) finish();
-  };
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") finish();
-  };
-  return (
-    <li ref={row} className="goal-counter" onBlur={onBlur}>
-      <input
-        autoFocus
-        aria-label="New step name"
-        placeholder="Name, e.g. Readings"
-        className="inline-field goal-counter__label"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
-      <input
-        type="number"
-        inputMode="numeric"
-        aria-label="New step total"
-        placeholder="Total"
-        className="inline-field inline-number"
-        style={{ inlineSize: "5ch" }}
-        value={total}
-        onChange={(e) => setTotal(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
-    </li>
-  );
-}
-
-/**
- * "− 4 of 30 +": − and + move the count by one, and both figures can be
- * typed over. Presses are never held back while a save is in flight, so
- * five quick taps count five. The figures are as wide as the widest total
- * on the sheet, so a column of counters lines up.
- */
-function Counter({
+function StepRow({
+  name,
   current,
   total,
   widest,
-  what,
+  editing,
+  focus,
   onStep,
+  onName,
   onCurrent,
   onTotal,
-  totalRequired,
+  onDelete,
 }: {
+  name: string;
   current: number;
   total: number | null;
   widest: number;
-  what: string;
+  editing: boolean;
+  focus?: boolean;
   onStep: (delta: number) => Promise<unknown>;
+  /** Absent for a goal's own count, whose row is always "Progress". */
+  onName?: (title: string) => Promise<unknown>;
   onCurrent: (n: number | null) => Promise<unknown>;
   onTotal: (n: number | null) => Promise<unknown>;
-  /** A part always has a total; a goal's own count can be cleared. */
-  totalRequired?: boolean;
+  onDelete?: () => Promise<unknown>;
 }) {
-  const ch = `${Math.max(1, widest.toLocaleString().length) + 1}ch`;
-  const { reset: resetCur, ...cur } = useInline(current, String, (text) => {
+  const { reset: resetName, ...nameField } = useInline(name, (v) => v, (text) => {
+    if (text.trim() && onName) void onName(text.trim());
+    else resetName();
+  });
+  const { reset: resetCur, ...curField } = useInline(current, String, (text) => {
     const n = num(text);
     if (n != null && n >= 0) void onCurrent(total ? Math.min(n, total) : n);
     else resetCur();
   });
-  const { reset: resetTot, ...tot } = useInline(total, (v) => (v == null ? "" : String(v)), (text) => {
+  const { reset: resetTot, ...totField } = useInline(total, (v) => (v == null ? "" : String(v)), (text) => {
     const n = num(text);
     if (n != null && n > 0) void onTotal(n);
-    else if (!totalRequired && text.trim() === "") void onTotal(null);
+    else if (!onDelete && text.trim() === "") void onTotal(null);
     else resetTot();
   });
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focus && editing) {
+      nameRef.current?.focus();
+      nameRef.current?.select();
+    }
+  }, [focus, editing]);
+
+  if (editing) {
+    return (
+      <li className="step-row step-row--editing">
+        {onDelete && (
+          <button type="button" className="step-delete" aria-label={`Delete ${name}`} onClick={() => void onDelete()}>
+            <Minus aria-hidden />
+          </button>
+        )}
+        {onName ? (
+          <input ref={nameRef} aria-label="Step name" placeholder="Name" className="step-field step-field--name" {...nameField} />
+        ) : (
+          <span className="step-row__name">{name}</span>
+        )}
+        <span className="step-row__figures">
+          <input
+            type="number"
+            inputMode="decimal"
+            aria-label={`Done, ${name}`}
+            className="step-field step-field--num"
+            {...curField}
+          />
+          <span className="step-row__of">of</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            aria-label={`Total, ${name}`}
+            placeholder="—"
+            className="step-field step-field--num"
+            {...totField}
+          />
+        </span>
+      </li>
+    );
+  }
+
+  const digits = Math.max(1, widest.toLocaleString().length);
   return (
-    <span className="stepper">
-      <Button
-        size="sm"
-        variant="ghost"
-        isIconOnly
-        aria-label={`One less, ${what}`}
-        isDisabled={current <= 0}
-        onPress={() => void onStep(-1)}
-      >
-        <Minus className="h-4 w-4" />
-      </Button>
-      <span className="stepper__value font-mono-n">
-        <input
-          type="number"
-          inputMode="decimal"
-          aria-label={`Done, ${what}`}
-          className="inline-field inline-number"
-          style={{ inlineSize: ch }}
-          {...cur}
-        />
-        <span className="stepper__total">of</span>
-        <input
-          type="number"
-          inputMode="decimal"
-          aria-label={`Total, ${what}`}
-          placeholder="—"
-          className="inline-field inline-number stepper__total"
-          style={{ inlineSize: ch }}
-          {...tot}
-        />
+    <li className="step-row">
+      <span className="step-row__name">{name}</span>
+      <span className="stepper">
+        <Button
+          size="sm"
+          variant="ghost"
+          isIconOnly
+          aria-label={`One less, ${name}`}
+          isDisabled={current <= 0}
+          onPress={() => void onStep(-1)}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="stepper__value font-mono-n" style={{ minInlineSize: `${digits * 2 + 3.5}ch` }}>
+          {current.toLocaleString()}
+          {total != null && <span className="stepper__total"> of {total.toLocaleString()}</span>}
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          isIconOnly
+          aria-label={`One more, ${name}`}
+          isDisabled={total != null && current >= total}
+          onPress={() => void onStep(1)}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </span>
-      <Button
-        size="sm"
-        variant="ghost"
-        isIconOnly
-        aria-label={`One more, ${what}`}
-        isDisabled={total != null && current >= total}
-        onPress={() => void onStep(1)}
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
-    </span>
+    </li>
   );
 }
 
@@ -375,12 +375,13 @@ function LinkRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   });
   const href = /^https?:\/\//i.test(field.value.trim()) ? field.value.trim() : null;
   return (
-    <div className="goal-counter">
-      <span className="goal-counter__label shrink-0">Link</span>
+    <div className="step-list">
+      <div className="step-row">
+      <span className="step-row__name flex-none">Link</span>
       <input
         type="url"
         aria-label="Link"
-        placeholder="https://… the course"
+        placeholder="Add a link"
         className="inline-field min-w-0 flex-1 text-end"
         {...field}
       />
@@ -389,6 +390,7 @@ function LinkRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
           <ExternalLink className="h-4 w-4" aria-hidden />
         </a>
       )}
+      </div>
     </div>
   );
 }
