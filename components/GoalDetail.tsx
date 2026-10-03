@@ -160,6 +160,7 @@ export function GoalDetail({
 
   return (
     <div className="goal-detail">
+      {g.note && <Description text={g.note} />}
       <div className="goal-detail__summary">
         <ProgressRing pct={pct} color="var(--accent)" size={64} />
         <div className="min-w-0">
@@ -462,6 +463,26 @@ function StepRow({
         </Button>
       </span>
     </li>
+  );
+}
+
+/**
+ * The goal's description, under its name, line breaks kept. Set through
+ * Claude; read here. A long one (a chapter list) folds to a few lines with
+ * More, as App Store text does.
+ */
+function Description({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 280 || text.split("\n").length > 6;
+  return (
+    <div className="goal-desc">
+      <p className={"goal-desc__text" + (long && !open ? " is-folded" : "")}>{text}</p>
+      {long && (
+        <button type="button" className="goal-desc__more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          {open ? "Less" : "More"}
+        </button>
+      )}
+    </div>
   );
 }
 

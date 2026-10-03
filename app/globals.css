@@ -3938,3 +3938,9 @@ input.row-date:hover { border-color: transparent; }
 }
 .row-clear svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
 .goal-row__due { color: var(--accent); font-weight: 600; }
+
+/* A goal's description under its name: line breaks kept, a long one folded. */
+.goal-desc { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; margin-block-start: -0.5rem; }
+.goal-desc__text { margin: 0; font-size: 0.9375rem; line-height: 1.45; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
+.goal-desc__text.is-folded { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.goal-desc__more { color: var(--accent); font-size: 0.9375rem; font-weight: 600; }
