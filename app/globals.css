@@ -3944,3 +3944,14 @@ input.row-date:hover { border-color: transparent; }
 .goal-desc__text { margin: 0; font-size: 0.9375rem; line-height: 1.45; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
 .goal-desc__text.is-folded { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
 .goal-desc__more { color: var(--accent); font-size: 0.9375rem; font-weight: 600; }
+
+/* A phase's tracks against its plan: name and figures, and ahead/behind. */
+.pace-list { display: flex; flex-direction: column; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.pace-row { display: flex; align-items: center; gap: 0.625rem; padding-block: 0.5rem; }
+.pace-row + .pace-row { border-top: 0.5px solid var(--separator); }
+.pace-row__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; }
+.pace-row__name { font-size: 0.9375rem; font-weight: 600; }
+.pace-row__sub { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pace-row__verdict { flex: none; font-size: 0.875rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pace-row__verdict.is-ahead { color: var(--accent); }
+.pace-row__verdict.is-behind { color: var(--danger); }

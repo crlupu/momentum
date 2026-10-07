@@ -79,6 +79,8 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
                   : ` · page counts needed for a projection (${st.unsized} missing)`)}
             </p>
 
+            <PaceRows tracker={tracker} phase={p} today={today} />
+
             {st.books.length > 0 && (
               <div className="rd-phase__tracks">
                 {s.readingTracks
@@ -114,5 +116,43 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Each track's standing in the phase: pages ahead of or behind reading the
+ * phase's books at an even pace, with the figures it comes from.
+ */
+function PaceRows({ tracker, phase, today }: { tracker: Tracker; phase: R.ReadingPhase; today: string }) {
+  const rows = R.phaseTrackPace(tracker.state!, phase, today);
+  if (rows.length === 0) return null;
+  const started = today >= phase.start;
+  const n = (v: number) => v.toLocaleString();
+  return (
+    <ul className="pace-list" aria-label="Pages ahead or behind, by track">
+      {rows.map((r) => {
+        const verdict = !started
+          ? `${n(r.planned)} pages planned`
+          : r.delta === 0
+            ? "On pace"
+            : `${n(Math.abs(r.delta))} page${Math.abs(r.delta) === 1 ? "" : "s"} ${r.delta > 0 ? "ahead" : "behind"}`;
+        const tone = !started || r.delta === 0 ? "" : r.delta > 0 ? " is-ahead" : " is-behind";
+        return (
+          <li key={r.track.id} className="pace-row">
+            <TrackDot color={r.track.color} />
+            <span className="pace-row__text">
+              <span className="pace-row__name">{r.track.name}</span>
+              <span className="pace-row__sub">
+                {started
+                  ? `${n(r.actual)} of ${n(r.planned)} · plan ${n(r.expected)}`
+                  : `${n(r.actual)} of ${n(r.planned)} read so far`}
+                {r.unsized > 0 && ` · ${r.unsized} without a page count`}
+              </span>
+            </span>
+            <span className={"pace-row__verdict" + tone}>{verdict}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

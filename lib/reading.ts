@@ -477,6 +477,44 @@ function bookFraction(b: Book): number {
   return Math.min(1, b.read / b.pages);
 }
 
+/** Where one track stands in a phase against reading its books at an even pace. */
+export type TrackPace = {
+  track: ReadingTrack;
+  /** Pages in the track's books for the phase (those with a page count). */
+  planned: number;
+  /** Pages the even pace would have reached by today. */
+  expected: number;
+  /** Pages read of those books so far. */
+  actual: number;
+  /** actual − expected: above 0 ahead, below 0 behind. */
+  delta: number;
+  /** Books left out for want of a page count. */
+  unsized: number;
+};
+
+/**
+ * Per track, how many pages ahead or behind the phase's plan it is: the
+ * plan being to read all of the track's books in the phase, at an even pace
+ * from the phase's first day to its last. Before it starts nothing is
+ * expected yet; once it's over, everything is. Dropped books aren't planned.
+ */
+export function phaseTrackPace(s: TrackerState, phase: ReadingPhase, today: string = dateKey()): TrackPace[] {
+  const total = daysBetween(phase.start, phase.end) + 1;
+  const elapsed = Math.min(total, Math.max(0, daysBetween(phase.start, today) + 1));
+  const share = total > 0 ? elapsed / total : 1;
+  const books = s.books.filter((b) => b.phaseId === phase.id && b.status !== "dropped");
+  return s.readingTracks
+    .map((track) => {
+      const mine = books.filter((b) => b.trackId === track.id);
+      const sized = mine.filter((b) => b.pages > 0);
+      const planned = sized.reduce((a, b) => a + b.pages, 0);
+      const actual = sized.reduce((a, b) => a + Math.round(b.pages * bookFraction(b)), 0);
+      const expected = Math.round(planned * share);
+      return { track, planned, expected, actual, delta: actual - expected, unsized: mine.length - sized.length };
+    })
+    .filter((x) => x.planned > 0 || x.unsized > 0);
+}
+
 /**
  * Completion and a projected end date for every phase.
  *
