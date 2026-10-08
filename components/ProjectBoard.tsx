@@ -27,7 +27,7 @@ import { AddButton } from "./ui";
 import { Modal } from "./Modal";
 import { CardSheet, NewCardForm } from "./CardSheet";
 import { TagChip } from "./TagPicker";
-import { CalendarEvent, Notes } from "./icons";
+import { CalendarEvent } from "./icons";
 import { dateKey, Tracker } from "@/lib/tracker";
 import { fmtDateAuto } from "@/lib/dates";
 import { COLUMNS, cardTags, type CardStatus, type Project, type ProjectCard } from "@/lib/projects";
@@ -258,7 +258,10 @@ function CardBody({ project, card: c }: { project: Project; card: ProjectCard })
         </span>
       )}
       <span className={"board-card__title" + (c.status === "done" ? " is-done" : "")}>{c.title}</span>
-      {(c.due || c.note) && (
+      {/* The description's first lines, as Reminders shows a note: an icon
+          made of lines read as a drag grip, which only some cards had. */}
+      {c.note && <span className="board-card__excerpt">{c.note}</span>}
+      {c.due && (
         <span className="board-card__meta">
           {c.due && (
             <span className={"board-card__due" + (late ? " is-late" : soon ? " is-today" : "")}>
@@ -266,7 +269,6 @@ function CardBody({ project, card: c }: { project: Project; card: ProjectCard })
               {c.due === today ? "Today" : fmtDateAuto(c.due)}
             </span>
           )}
-          {c.note && <Notes className="board-card__note" aria-label="Has a description" />}
         </span>
       )}
     </>

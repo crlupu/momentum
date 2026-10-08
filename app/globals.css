@@ -3955,3 +3955,16 @@ input.row-date:hover { border-color: transparent; }
 .pace-row__verdict { flex: none; font-size: 0.875rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pace-row__verdict.is-ahead { color: var(--accent); }
 .pace-row__verdict.is-behind { color: var(--danger); }
+
+/* A card's description: its first two lines, muted, under the title. */
+.board-card__excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
