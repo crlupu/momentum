@@ -122,6 +122,16 @@ export function addDays(key: string, n: number): string {
 }
 
 /** Whole days from a to b; positive when b is later. */
+/**
+ * A time slot with something in it. A plan's table marks "no slot" with a
+ * dash, which was saved as if it were the slot and shown as "· —".
+ */
+export function realSlot(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  return s && !/^[-–—]+$/.test(s) ? s : undefined;
+}
+
 export function daysBetween(a: string, b: string): number {
   return dayNumber(b) - dayNumber(a);
 }
@@ -166,7 +176,7 @@ export function migrateReading(
         color: currentColor(t.color as string | undefined) ?? BOOK_COLORS[0],
         wipLimit: Math.max(1, Math.round(num(t.wipLimit, 1))),
         dailyTarget: Math.max(0, Math.round(num(t.dailyTarget, 0))),
-        slot: (t.slot as string) || undefined,
+        slot: realSlot(t.slot),
         restDays: Math.min(6, Math.max(0, Math.round(num(t.restDays, 1)))),
         archived: t.archived === true ? true : undefined,
       }))
@@ -931,7 +941,7 @@ function normaliseTrack(t: TrackInput): TrackInput {
     color: t.color,
     wipLimit: Math.max(1, Math.round(t.wipLimit || 1)),
     dailyTarget: Math.max(0, Math.round(t.dailyTarget || 0)),
-    slot: clean(t.slot),
+    slot: realSlot(clean(t.slot)),
     restDays: Math.min(6, Math.max(0, Math.round(t.restDays || 0))),
     archived: t.archived ? true : undefined,
   };

@@ -162,7 +162,7 @@ export function parsePlan(md: string): Plan {
         plan.tracks.push({
           name,
           dailyTarget: n ? Number(n[0]) : undefined,
-          slot: slotAt >= 0 && cells[slotAt] ? cells[slotAt] : undefined,
+          slot: slotAt >= 0 ? R.realSlot(cells[slotAt]) : undefined,
         });
       }
       continue;
