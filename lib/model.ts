@@ -704,7 +704,6 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
     color: "#635fd9",
     wipLimit: 1,
     dailyTarget: 20,
-    slot: "12:15 iPad block",
     restDays: 1,
   },
   {
@@ -713,7 +712,6 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
     color: "#b75014",
     wipLimit: 1,
     dailyTarget: 30,
-    slot: "Evening",
     restDays: 1,
   },
   {
@@ -722,7 +720,6 @@ export const DEFAULT_TRACKS: ReadingTrack[] = [
     color: "#8c4ed3",
     wipLimit: 1,
     dailyTarget: 10,
-    slot: "Morning coffee",
     restDays: 1,
   },
 ];

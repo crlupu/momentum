@@ -35,7 +35,7 @@ export type PlanBook = {
 };
 
 export type Plan = {
-  tracks: { name: string; dailyTarget?: number; slot?: string }[];
+  tracks: { name: string; dailyTarget?: number }[];
   phases: { name: string; start: string; end: string; goal?: string }[];
   books: PlanBook[];
   wipLimit?: number;
@@ -155,14 +155,12 @@ export function parsePlan(md: string): Plan {
       const col = (re: RegExp) => tableCols!.findIndex((c) => re.test(c));
       const nameAt = Math.max(0, col(/track|lane|name/));
       const targetAt = col(/target|pages|daily/);
-      const slotAt = col(/slot|time|when/);
       const name = cells[nameAt];
       if (name) {
         const n = targetAt >= 0 ? cells[targetAt]?.match(/\d+/) : null;
         plan.tracks.push({
           name,
           dailyTarget: n ? Number(n[0]) : undefined,
-          slot: slotAt >= 0 ? R.realSlot(cells[slotAt]) : undefined,
         });
       }
       continue;
@@ -301,7 +299,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
               ...x,
               archived: undefined,
               dailyTarget: t.dailyTarget ?? x.dailyTarget,
-              slot: t.slot ?? x.slot,
               wipLimit: plan.wipLimit ?? x.wipLimit,
             }
           : x
@@ -316,7 +313,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
         color: BOOK_COLORS.find((c) => !used.has(c)) ?? BOOK_COLORS[tracks.length % BOOK_COLORS.length],
         wipLimit: plan.wipLimit ?? 1,
         dailyTarget: t.dailyTarget ?? 0,
-        slot: t.slot,
         restDays: 1,
       });
       preview.tracksNew.push(t.name);

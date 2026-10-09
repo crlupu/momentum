@@ -29,7 +29,7 @@ export function TrackForm({
   );
   const [wip, setWip] = useState(String(track?.wipLimit ?? 1));
   const [target, setTarget] = useState(String(track?.dailyTarget ?? 20));
-  const [slot, setSlot] = useState(track?.slot ?? "");
+  const [note, setNote] = useState(track?.note ?? "");
   const [rest, setRest] = useState(String(track?.restDays ?? 1));
   const { pending, run } = usePending();
 
@@ -38,7 +38,7 @@ export function TrackForm({
     color,
     wipLimit: Number(wip) || 1,
     dailyTarget: Number(target) || 0,
-    slot,
+    note,
     restDays: Number(rest) || 0,
     archived,
   });
@@ -117,8 +117,13 @@ export function TrackForm({
           />
         </Field>
       </div>
-      <Field label="Time slot (optional)">
-        <input value={slot} onChange={(e) => setSlot(e.target.value)} placeholder="e.g. Evening" />
+      <Field label="Description (optional)">
+        <textarea
+          rows={3}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="What this track is for, and how to read it"
+        />
       </Field>
       <p className="text-xs text-[var(--muted)]">
         Rest days can be missed without breaking the streak. Each track&apos;s limit is its own, so a

@@ -270,6 +270,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
                     key={t.id}
                     dot={t.color}
                     title={t.name}
+                    note={t.note}
                     sub={`${open} reading · ${next} up next${t.dailyTarget > 0 ? ` · ${t.dailyTarget} pages a day` : ""}`}
                     onPress={() => go(`track=${t.id}`)}
                   />
@@ -703,12 +704,15 @@ function HubRow({
   icon,
   title,
   sub,
+  note,
   onPress,
 }: {
   dot?: string;
   icon?: ReactNode;
   title: string;
   sub?: string;
+  /** A line or two about it, under the figures. */
+  note?: string;
   onPress: () => void;
 }) {
   return (
@@ -719,6 +723,7 @@ function HubRow({
         <span className="hub-row__text">
           <span className="hub-row__title">{title}</span>
           {sub && <span className="hub-row__sub">{sub}</span>}
+          {note && <span className="hub-row__note">{note}</span>}
         </span>
         <ChevronRight className="rd-link__chevron" aria-hidden />
       </button>
@@ -769,6 +774,7 @@ function TrackPage({ tracker, trackId }: { tracker: Tracker; trackId: string }) 
   if (!track) return null;
   return (
     <div className="flex flex-col gap-4">
+      {track.note && <p className="goal-desc__text">{track.note}</p>}
       <TrackQueue tracker={tracker} track={track} asPage />
       {track.archived && (
         <div>

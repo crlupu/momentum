@@ -60,7 +60,7 @@ const safe =
 function overview(s: TrackerState, section: string) {
   const out: Record<string, unknown> = {};
   if (section === "all" || section === "books") {
-    out.tracks = s.readingTracks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.name, pagesPerDay: t.dailyTarget }));
+    out.tracks = s.readingTracks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.name, pagesPerDay: t.dailyTarget, ...(t.note ? { description: t.note } : {}) }));
     out.phases = [...s.readingPhases]
       .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.name.localeCompare(b.name)))
       .map((p) => ({
@@ -450,6 +450,37 @@ export function registerTools(server: McpServer) {
         return {
           state: next,
           result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
+        };
+      })
+    )
+  );
+
+  server.registerTool(
+    "update_track",
+    {
+      title: "Update a reading track",
+      description:
+        "Changes a reading track's description (what it's for and how to read it, shown under its name), its name, or its pages-a-day target. Empty description clears it.",
+      inputSchema: {
+        track: z.string().describe("Name or id"),
+        description: z.string().max(400).optional(),
+        name: z.string().min(1).optional(),
+        pages_per_day: z.number().int().min(0).optional(),
+      },
+    },
+    safe(async (a: { track: string; description?: string; name?: string; pages_per_day?: number }) =>
+      change((s) => {
+        const tr = pick(s.readingTracks, a.track, (x) => x.name, "track");
+        const next = R.updateTrack(s, tr.id, {
+          ...tr,
+          ...(a.name !== undefined ? { name: a.name } : {}),
+          ...(a.description !== undefined ? { note: a.description } : {}),
+          ...(a.pages_per_day !== undefined ? { dailyTarget: a.pages_per_day } : {}),
+        });
+        const after = next.readingTracks.find((x) => x.id === tr.id)!;
+        return {
+          state: next,
+          result: `${after.name}: ${after.dailyTarget} pages a day${after.note ? `. ${after.note}` : ""}`,
         };
       })
     )

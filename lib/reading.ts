@@ -53,8 +53,8 @@ export type ReadingTrack = {
   wipLimit: number;
   /** Pages a day. Zero means the track sets no target. */
   dailyTarget: number;
-  /** When in the day this track is read, e.g. "Evening". Shown on Today. */
-  slot?: string;
+  /** What the track is for, and how to read it, in a line or two. */
+  note?: string;
   /** Days a week the target can be missed without breaking the streak. */
   restDays: number;
   /** Hidden everywhere but the track list, with its books left alone. */
@@ -122,16 +122,6 @@ export function addDays(key: string, n: number): string {
 }
 
 /** Whole days from a to b; positive when b is later. */
-/**
- * A time slot with something in it. A plan's table marks "no slot" with a
- * dash, which was saved as if it were the slot and shown as "· —".
- */
-export function realSlot(v: unknown): string | undefined {
-  if (typeof v !== "string") return undefined;
-  const s = v.trim();
-  return s && !/^[-–—]+$/.test(s) ? s : undefined;
-}
-
 export function daysBetween(a: string, b: string): number {
   return dayNumber(b) - dayNumber(a);
 }
@@ -176,7 +166,7 @@ export function migrateReading(
         color: currentColor(t.color as string | undefined) ?? BOOK_COLORS[0],
         wipLimit: Math.max(1, Math.round(num(t.wipLimit, 1))),
         dailyTarget: Math.max(0, Math.round(num(t.dailyTarget, 0))),
-        slot: realSlot(t.slot),
+        note: typeof t.note === "string" && t.note.trim() ? t.note.trim() : undefined,
         restDays: Math.min(6, Math.max(0, Math.round(num(t.restDays, 1)))),
         archived: t.archived === true ? true : undefined,
       }))
@@ -941,7 +931,7 @@ function normaliseTrack(t: TrackInput): TrackInput {
     color: t.color,
     wipLimit: Math.max(1, Math.round(t.wipLimit || 1)),
     dailyTarget: Math.max(0, Math.round(t.dailyTarget || 0)),
-    slot: realSlot(clean(t.slot)),
+    note: clean(t.note),
     restDays: Math.min(6, Math.max(0, Math.round(t.restDays || 0))),
     archived: t.archived ? true : undefined,
   };

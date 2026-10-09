@@ -126,7 +126,6 @@ export function TrackQueue({
         <span>
           {open.length} of {track.wipLimit} open
           {track.dailyTarget > 0 ? ` · ${track.dailyTarget} pages a day` : ""}
-          {track.slot ? ` · ${track.slot}` : ""}
         </span>
       }
       onEdit={() => flow.open({ kind: "track", trackId: track.id })}

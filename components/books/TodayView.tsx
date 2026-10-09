@@ -3,7 +3,7 @@
 import { Panel } from "../Panel";
 import { FormEvent, useState } from "react";
 import { Button } from "../ui";
-import { Check, ChevronRight, Clock, Flame, Play, Tune, Warning } from "../icons";
+import { Check, ChevronRight, Flame, Play, Tune, Warning } from "../icons";
 import { usePending } from "../ActionButton";
 import { Tracker, Book, dateKey, uid } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -83,13 +83,8 @@ function TrackToday({
       dot={track.color}
       style={{ ["--track" as string]: track.color }}
       subtitle={
-        (track.slot || streak > 0) && (
+        streak > 0 && (
           <>
-            {track.slot && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> {track.slot}
-              </span>
-            )}
             {streak > 0 && (
               <span className="flex items-center gap-1" title="Days in a row the target was met">
                 <Flame className="h-3.5 w-3.5" /> {streak} day{streak === 1 ? "" : "s"}
