@@ -359,7 +359,17 @@ export function logSession(
     amount: moved,
     ...(e.note?.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
   };
-  return { ...state, learningLog: [...(state.learningLog ?? []), entry] };
+  return activateIfQueued({ ...state, learningLog: [...(state.learningLog ?? []), entry] }, e.goalId, moved);
+}
+
+/**
+ * Working on a queued goal starts it: a session that moves its count on
+ * makes it active, so it shows under Active without a separate tap. Done,
+ * dropped and already-active goals are left as they are.
+ */
+function activateIfQueued(s: TrackerState, goalId: string, moved: number): TrackerState {
+  const g = s.goals.find((x) => x.id === goalId);
+  return g && moved > 0 && goalStatus(g) === "queued" ? setGoalStatus(s, goalId, "active") : s;
 }
 
 /** Sets or clears an entry's note. */
@@ -430,5 +440,9 @@ export function logChanges(before: TrackerState, after: TrackerState, goalId: st
     amount: m.amount,
     ...(i === 0 && note?.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
   }));
-  return { ...after, learningLog: [...(after.learningLog ?? []), ...entries] };
+  return activateIfQueued(
+    { ...after, learningLog: [...(after.learningLog ?? []), ...entries] },
+    goalId,
+    Math.max(0, ...moves.map((m) => m.amount))
+  );
 }
