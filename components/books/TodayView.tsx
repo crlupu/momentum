@@ -189,27 +189,6 @@ export function OpenBook({
 
   // On its own card: the book, which opens it, and under it a slim line
   // with how far it is and a small page box.
-  // Where the book's track stands against its phase's plan, in place of
-  // the page count: within one day's target either way is on track.
-  const standing = (() => {
-    const phase = book.phaseId ? s.readingPhases.find((p) => p.id === book.phaseId) : undefined;
-    const track = s.readingTracks.find((x) => x.id === book.trackId);
-    if (!phase || !track) return null;
-    const row = R.phaseTrackPace(s, phase, today).find((x) => x.track.id === track.id);
-    if (!row || row.planned === 0) return null;
-    // Nothing is due before the phase begins: say when it does.
-    if (today < phase.start) {
-      const days = R.daysBetween(today, phase.start);
-      return { label: days === 1 ? "Phase starts tomorrow" : `Phase starts in ${days} days`, tone: " is-on" };
-    }
-    const slack = Math.max(1, track.dailyTarget);
-    if (Math.abs(row.delta) <= slack) return { label: "On track", tone: " is-on" };
-    const n = Math.abs(row.delta).toLocaleString();
-    return row.delta > 0
-      ? { label: `${n} pages ahead`, tone: " is-ahead" }
-      : { label: `${n} pages behind`, tone: " is-behind" };
-  })();
-
   if (minimal) {
     // A row like a goal's, in the shared list card: cover, title, a line of
     // detail, and the page box where a goal row has its chevron.
@@ -232,13 +211,11 @@ export function OpenBook({
                 <span className="rd-derived is-counted">{preview}</span>
               ) : (
                 <>
-                  {standing ? (
-                    <span className={"shrink-0 book-row__standing" + standing.tone}>{standing.label}</span>
-                  ) : (
-                    <span className="font-mono-n shrink-0">
-                      {book.pages > 0 ? `${book.read} of ${book.pages}` : `page ${book.read}`}
-                    </span>
-                  )}
+                  {/* The page, not the pace: how far ahead or behind the
+                      plan a track is belongs to Phases. */}
+                  <span className="font-mono-n shrink-0">
+                    {book.pages > 0 ? `${book.read} of ${book.pages}` : `page ${book.read}`}
+                  </span>
                   {book.author && (
                     <>
                       <span aria-hidden>·</span>

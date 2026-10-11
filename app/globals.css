@@ -3982,7 +3982,3 @@ input.row-date:hover { border-color: transparent; }
 }
 
 /* A book's track against its phase's plan, in the book's row. */
-.book-row__standing { font-weight: 600; }
-.book-row__standing.is-on { color: var(--muted); }
-.book-row__standing.is-ahead { color: var(--accent); }
-.book-row__standing.is-behind { color: var(--danger); }
