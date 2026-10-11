@@ -1044,6 +1044,8 @@ export function useTracker() {
     removeReadingSession: (id: string) => commit((s) => R.removeSession(s, id)),
     reorderQueue: (trackId: string, ids: string[]) =>
       commit((s) => R.reorderQueue(s, trackId, ids)),
+    /** Rearranges some books among themselves, e.g. one phase's in a track. */
+    reorderAmong: (ids: string[]) => commit((s) => R.reorderAmong(s, ids)),
     placeInQueue: (id: string, place: "top" | "end") =>
       commit((s) => R.placeInQueue(s, id, place)),
     dismissStall: (id: string) => commit((s) => R.dismissStall(s, id)),

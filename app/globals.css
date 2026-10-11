@@ -3999,3 +3999,7 @@ input.row-date:hover { border-color: transparent; }
 }
 
 /* A book's track against its phase's plan, in the book's row. */
+
+/* A phase's book lifted while reordering: on the card's own surface, so
+   the rows it passes over don't show through it. */
+.rd-phase__tracks .rd-row--dragging { background: var(--pane-bg); }

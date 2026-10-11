@@ -1,9 +1,28 @@
 "use client";
 
+import { useState } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Panel } from "../Panel";
 import { Button, AddButton } from "../ui";
-import { ChevronRight } from "../icons";
-import { Tracker, dateKey } from "@/lib/tracker";
+import { ChevronRight, ReorderLines } from "../icons";
+import { Tracker, dateKey, type Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
 import { useFlow } from "./flowContext";
@@ -81,37 +100,7 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
 
             <PaceRows tracker={tracker} phase={p} today={today} />
 
-            {st.books.length > 0 && (
-              <div className="rd-phase__tracks">
-                {s.readingTracks
-                  .map((t) => ({ t, books: st.books.filter((b) => b.trackId === t.id) }))
-                  .filter((x) => x.books.length > 0)
-                  .map(({ t, books }) => (
-                    <div key={t.id}>
-                      <h5 className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground/70">
-                        <TrackDot color={t.color} /> {t.name}
-                      </h5>
-                      <ul className="flex flex-col">
-                        {books
-                          .sort((a, b) => a.queueOrder - b.queueOrder)
-                          .map((b) => (
-                            <li key={b.id}>
-                              <button
-                                type="button"
-                                className="rd-phase__book"
-                                onClick={() => flow.open({ kind: "detail", bookId: b.id })}
-                              >
-                                <span className="min-w-0 flex-1 truncate">{b.title}</span>
-                                <StatusBadge status={b.status} />
-                                <ChevronRight className="rd-link__chevron" aria-hidden />
-                              </button>
-                            </li>
-                          ))}
-                      </ul>
-                    </div>
-                  ))}
-              </div>
-            )}
+            {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} />}
           </Panel>
         );
       })}
@@ -154,5 +143,118 @@ function PaceRows({ tracker, phase, today }: { tracker: Tracker; phase: R.Readin
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * A phase's books, by track, in reading order. "Reorder" turns the rows into
+ * handles, as on Tracks: drag a book up or down within its track. Only this
+ * phase's books trade places, so the rest of the track's queue stays put.
+ */
+function PhaseBooks({ tracker, books }: { tracker: Tracker; books: Book[] }) {
+  const s = tracker.state!;
+  const [reordering, setReordering] = useState(false);
+  const groups = s.readingTracks
+    .map((t) => ({ t, books: books.filter((b) => b.trackId === t.id).sort((a, b) => a.queueOrder - b.queueOrder) }))
+    .filter((x) => x.books.length > 0);
+  const canReorder = groups.some((g) => g.books.length > 1);
+
+  return (
+    <div className="mt-3">
+      {canReorder && (
+        <div className="rd-sub-row">
+          <span className="text-xs text-[var(--muted)]">{reordering ? "Drag a book to its new place" : ""}</span>
+          <button
+            type="button"
+            className="text-action"
+            aria-pressed={reordering}
+            onClick={() => setReordering((v) => !v)}
+          >
+            {reordering ? "Done" : "Reorder"}
+          </button>
+        </div>
+      )}
+      <div className="rd-phase__tracks">
+        {groups.map(({ t, books: list }) => (
+          <div key={t.id}>
+            <h5 className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground/70">
+              <TrackDot color={t.color} /> {t.name}
+            </h5>
+            <TrackList tracker={tracker} books={list} reordering={reordering} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TrackList({ tracker, books, reordering }: { tracker: Tracker; books: Book[]; reordering: boolean }) {
+  // Touch waits a moment before lifting a row, so scrolling past a handle
+  // doesn't pick it up.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const ids = books.map((b) => b.id);
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    void tracker.reorderAmong(arrayMove(ids, from, to));
+  };
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <ul className="flex flex-col">
+          {books.map((b) => (
+            <PhaseBookRow key={b.id} book={b} reordering={reordering} />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function PhaseBookRow({ book, reordering }: { book: Book; reordering: boolean }) {
+  const flow = useFlow();
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({ id: book.id, disabled: !reordering });
+  return (
+    <li
+      ref={setNodeRef}
+      className={isDragging ? "rd-row--dragging" : undefined}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      {reordering ? (
+        <div className="rd-phase__book">
+          <span className="min-w-0 flex-1 truncate">{book.title}</span>
+          <StatusBadge status={book.status} />
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            className="rd-grip"
+            aria-label={`Move ${book.title}`}
+            {...attributes}
+            {...listeners}
+          >
+            <ReorderLines className="h-5 w-5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="rd-phase__book"
+          onClick={() => flow.open({ kind: "detail", bookId: book.id })}
+        >
+          <span className="min-w-0 flex-1 truncate">{book.title}</span>
+          <StatusBadge status={book.status} />
+          <ChevronRight className="rd-link__chevron" aria-hidden />
+        </button>
+      )}
+    </li>
   );
 }

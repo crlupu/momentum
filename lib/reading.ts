@@ -909,6 +909,25 @@ export function reorderQueue(s: TrackerState, trackId: string, ids: string[]): T
   };
 }
 
+/**
+ * Reorders some books among themselves, leaving every other book where it is.
+ *
+ * The books keep the queue positions they held between them, handed out in
+ * the new order: so a phase's books can be rearranged without moving the
+ * books of earlier or later phases in the same track.
+ */
+export function reorderAmong(s: TrackerState, ids: string[]): TrackerState {
+  const books = ids
+    .map((id) => s.books.find((b) => b.id === id))
+    .filter((b): b is Book => !!b);
+  const slots = books.map((b) => b.queueOrder).sort((a, b) => a - b);
+  const next = new Map(books.map((b, i) => [b.id, slots[i]]));
+  return {
+    ...s,
+    books: s.books.map((b) => (next.has(b.id) ? { ...b, queueOrder: next.get(b.id)! } : b)),
+  };
+}
+
 /** Moves a waiting book to the front or the back of its track's queue. */
 export function placeInQueue(s: TrackerState, id: string, place: "top" | "end"): TrackerState {
   const book = s.books.find((b) => b.id === id);
