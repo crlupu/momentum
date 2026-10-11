@@ -196,7 +196,12 @@ export function OpenBook({
     const track = s.readingTracks.find((x) => x.id === book.trackId);
     if (!phase || !track) return null;
     const row = R.phaseTrackPace(s, phase, today).find((x) => x.track.id === track.id);
-    if (!row || row.planned === 0 || today < phase.start) return null;
+    if (!row || row.planned === 0) return null;
+    // Nothing is due before the phase begins: say when it does.
+    if (today < phase.start) {
+      const days = R.daysBetween(today, phase.start);
+      return { label: days === 1 ? "Phase starts tomorrow" : `Phase starts in ${days} days`, tone: " is-on" };
+    }
     const slack = Math.max(1, track.dailyTarget);
     if (Math.abs(row.delta) <= slack) return { label: "On track", tone: " is-on" };
     const n = Math.abs(row.delta).toLocaleString();
