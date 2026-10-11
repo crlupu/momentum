@@ -1008,6 +1008,25 @@ export function updatePhase(s: TrackerState, id: string, p: PhaseInput): Tracker
   };
 }
 
+/**
+ * Moves the whole plan so its first phase starts on `start`: every phase
+ * shifts by the same number of days, keeping its length and the gaps
+ * between phases. Books and goals keep their phases.
+ */
+export function shiftPlan(s: TrackerState, start: string): { state: TrackerState; days: number } {
+  if (!isDateKey(start) || s.readingPhases.length === 0) return { state: s, days: 0 };
+  const first = [...s.readingPhases].sort((a, b) => a.start.localeCompare(b.start))[0];
+  const days = daysBetween(first.start, start);
+  if (days === 0) return { state: s, days };
+  return {
+    state: {
+      ...s,
+      readingPhases: s.readingPhases.map((p) => ({ ...p, start: addDays(p.start, days), end: addDays(p.end, days) })),
+    },
+    days,
+  };
+}
+
 /** Removes a phase. Its books and goals stay, just without it. */
 export function removePhase(s: TrackerState, id: string): TrackerState {
   return {

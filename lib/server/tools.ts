@@ -290,6 +290,35 @@ export function registerTools(server: McpServer) {
   );
 
   server.registerTool(
+    "shift_plan",
+    {
+      title: "Move the reading plan's dates",
+      description:
+        "Moves every reading phase by the same number of days so the first phase starts on the given date, keeping each phase's length and the gaps between them. Books and goals keep their phases.",
+      inputSchema: {
+        start: z.string().describe("The first phase's new start date, YYYY-MM-DD"),
+      },
+    },
+    safe(async (a: { start: string }) =>
+      change((s) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(a.start)) throw new Error(`"${a.start}" isn't a date: use YYYY-MM-DD.`);
+        if (!s.readingPhases.length) throw new Error("There are no phases to move.");
+        const { state, days } = R.shiftPlan(s, a.start);
+        const phases = [...state.readingPhases].sort((x, y) => x.start.localeCompare(y.start));
+        return {
+          state,
+          result:
+            days === 0
+              ? "The plan already starts on that date."
+              : `Moved ${phases.length} phases ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ${days < 0 ? "earlier" : "later"}: ${phases
+                  .map((p) => `${p.name} ${p.start} to ${p.end}`)
+                  .join("; ")}.`,
+        };
+      })
+    )
+  );
+
+  server.registerTool(
     "add_goals",
     {
       title: "Add learning goals",
