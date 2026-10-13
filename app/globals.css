@@ -3887,7 +3887,6 @@ select.row-select:focus { outline: none; color: var(--accent); }
 .step-list.step-list--on-page, .light .step-list.step-list--on-page { background: var(--pane-bg); }
 
 /* The note offered under a count just moved on. */
-.note-row { padding-block: 0.25rem 0.625rem; }
 
 /* A goal's sessions: date, what moved, and the note under it. */
 .session-row { align-items: flex-start; }

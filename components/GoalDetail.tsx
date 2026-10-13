@@ -8,7 +8,7 @@ import { ExternalLink, Minus, Plus, X } from "./icons";
 import { Segmented } from "./books/bits";
 import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
-import { NOTE_MAX, type LearningEntry } from "@/lib/model";
+import { type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
 
 /** A number field's value, or null when empty or not a number. */
@@ -110,20 +110,11 @@ export function GoalDetail({
   const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
   const widest = Math.max(1, g.target ?? 0, ...parts.map((p) => p.target));
   const [editing, setEditing] = useState(false);
-  // The session just logged, offered a note under its row until the next tap.
-  const [noteFor, setNoteFor] = useState<{ row: string; entry: string } | null>(null);
   const log = goalLog(tracker.state!, g.id);
   const last = log[log.length - 1];
-  /** + logs a session and offers a note (skipping it takes no tap); − takes a mistaken + back. */
-  const step = (d: number, partId?: string) => {
-    if (d > 0) {
-      const id = uid();
-      setNoteFor({ row: partId ?? "", entry: id });
-      return tracker.logSession(g.id, partId, id);
-    }
-    setNoteFor(null);
-    return tracker.stepBack(g.id, partId);
-  };
+  /** + logs a session; − takes a mistaken + back. */
+  const step = (d: number, partId?: string) =>
+    d > 0 ? tracker.logSession(g.id, partId, uid()) : tracker.stepBack(g.id, partId);
   // The part just added, whose name is selected to be typed over.
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -224,7 +215,6 @@ export function GoalDetail({
               minimum={g.minimum}
               onMinimum={(n) => tracker.setGoalMinimum(g.id, n)}
             />
-            {noteFor?.row === "" && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
             </>
           ) : (
             parts.map((p) => (
@@ -262,7 +252,6 @@ export function GoalDetail({
                   )
                 }
               />
-              {noteFor?.row === p.id && <NoteRow key={noteFor.entry} tracker={tracker} entryId={noteFor.entry} onDone={() => setNoteFor(null)} />}
               </Fragment>
             ))
           )}
@@ -483,35 +472,6 @@ function Description({ text }: { text: string }) {
         </button>
       )}
     </div>
-  );
-}
-
-/**
- * A line to say what the session was, offered under the count just moved.
- * Return or leaving the field keeps it; ignoring it costs nothing.
- */
-function NoteRow({ tracker, entryId, onDone }: { tracker: Tracker; entryId: string; onDone: () => void }) {
-  const [text, setText] = useState("");
-  const save = () => {
-    if (text.trim()) void tracker.setLogNote(entryId, text);
-    onDone();
-  };
-  return (
-    <li className="step-row note-row">
-      <input
-        aria-label="Note for this session"
-        placeholder="Add a note (optional)"
-        maxLength={NOTE_MAX}
-        className="step-field step-field--name"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => text.trim() && save()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") save();
-          if (e.key === "Escape") onDone();
-        }}
-      />
-    </li>
   );
 }
 
