@@ -104,6 +104,19 @@ function overview(s: TrackerState, section: string) {
       ...sessionsOf(s, g.id),
     }));
   }
+  if (section === "all" || section === "todos") {
+    out.todos = s.todos
+      .filter((t) => !t.done)
+      .map((t) => {
+        const g = t.goalId ? s.goals.find((x) => x.id === t.goalId) : undefined;
+        return {
+          id: t.id,
+          title: t.title,
+          ...(t.date ? { date: t.date } : {}),
+          ...(g ? { ticks_with: g.title + (t.partId ? ` · ${g.parts?.find((p) => p.id === t.partId)?.title ?? ""}` : "") } : {}),
+        };
+      });
+  }
   if (section === "all" || section === "projects") {
     out.projects = s.projects.map((p) => ({
       id: p.id,
@@ -146,8 +159,8 @@ export function registerTools(server: McpServer) {
     {
       title: "Momentum overview",
       description:
-        "Reads the user's Momentum data: reading tracks and books (with status and current page), learning topics and goals, and projects with their cards. Call this first to find the names and ids the other tools take.",
-      inputSchema: { section: z.enum(["all", "books", "learning", "projects"]).default("all") },
+        "Reads the user's Momentum data: reading tracks and books (with status and current page), learning topics and goals, open to-dos (with the day they're planned for and the goal step that ticks them), and projects with their cards. Call this first to find the names and ids the other tools take.",
+      inputSchema: { section: z.enum(["all", "books", "learning", "todos", "projects"]).default("all") },
       annotations: { readOnlyHint: true },
     },
     safe(async ({ section }: { section: string }) => overview(await readState(), section))
@@ -610,6 +623,66 @@ export function registerTools(server: McpServer) {
         const p = pick(s.projects, a.project, (x) => x.title, "project");
         const c = pick(p.cards, a.card, (x) => x.title, "card");
         return { state: O.moveCard(s, p.id, c.id, a.column), result: `${c.title} → ${a.column}.` };
+      })
+    )
+  );
+
+  server.registerTool(
+    "add_todos",
+    {
+      title: "Add to-dos",
+      description:
+        "Adds to-dos to the Today page. Each can be planned for a day (YYYY-MM-DD; it shows on Today from that day, under Later before it) and tied to a learning goal, optionally one of its parts: logging a step on that goal (or part) then ticks it, one to-do per step, earliest planned first.",
+      inputSchema: {
+        todos: jsonArray(
+          z
+            .array(
+              z.object({
+                title: z.string().min(1),
+                date: z.string().optional().describe("YYYY-MM-DD"),
+                goal: z.string().optional().describe("Goal title or id whose step ticks it"),
+                part: z.string().optional().describe("Part title or id, when the goal has parts"),
+              })
+            )
+            .min(1)
+        ),
+      },
+    },
+    safe(async (a: { todos: { title: string; date?: string; goal?: string; part?: string }[] }) =>
+      change((s) => {
+        const items = a.todos.map((t) => {
+          if (t.date && !isDateKey(t.date)) throw new Error(`"${t.date}" isn't a YYYY-MM-DD date.`);
+          if (!t.goal) {
+            if (t.part) throw new Error(`"${t.title}": a part needs its goal.`);
+            return { title: t.title, date: t.date };
+          }
+          const g = pick(s.goals, t.goal, (x) => x.title, "goal");
+          const part = t.part ? pick(g.parts ?? [], t.part, (x) => x.title, `part of ${g.title}`) : undefined;
+          return { title: t.title, date: t.date, goalId: g.id, partId: part?.id };
+        });
+        return {
+          state: O.addTodos(s, items),
+          result: `Added ${items.length} to-do${items.length === 1 ? "" : "s"}.`,
+        };
+      })
+    )
+  );
+
+  server.registerTool(
+    "remove_todos",
+    {
+      title: "Remove to-dos",
+      description: "Deletes open to-dos, by title or id. Done ones stay in the log.",
+      inputSchema: { todos: jsonArray(z.array(z.string()).min(1)) },
+    },
+    safe(async (a: { todos: string[] }) =>
+      change((s) => {
+        const open = s.todos.filter((t) => !t.done);
+        const ids = new Set(a.todos.map((r) => pick(open, r, (x) => x.title, "open to-do").id));
+        return {
+          state: { ...s, todos: s.todos.filter((t) => !ids.has(t.id)) },
+          result: `Removed ${ids.size} to-do${ids.size === 1 ? "" : "s"}.`,
+        };
       })
     )
   );

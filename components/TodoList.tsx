@@ -2,9 +2,47 @@
 
 import { FormEvent, useState } from "react";
 import { Button, Card, Input, PanelHeader, AddButton } from "./ui";
-import { Check } from "./icons";
+import { Check, ChevronDown, ChevronRight } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";
+import { dateKey, todoDueBy, type TodoItem, type TrackerState } from "@/lib/model";
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** "Mon", from a YYYY-MM-DD key. */
+const weekday = (key: string) => {
+  const [y, m, d] = key.split("-").map(Number);
+  return WEEKDAYS[new Date(y, m - 1, d).getDay()];
+};
+
+/** Planned days first, earliest first, then the undated, each by title. */
+const byPlan = (a: TodoItem, b: TodoItem) =>
+  (a.date ?? "9999").localeCompare(b.date ?? "9999") ||
+  a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+
+/** "Kafka 101 · Readings": what a tied to-do waits for, or nothing. */
+function stepOf(s: TrackerState, t: TodoItem): string | null {
+  if (!t.goalId) return null;
+  const g = s.goals.find((x) => x.id === t.goalId);
+  if (!g) return null;
+  const part = t.partId ? g.parts?.find((p) => p.id === t.partId) : undefined;
+  return part ? `${g.title} · ${part.title}` : g.title;
+}
+
+function TodoRow({ tracker, t, day, today }: { tracker: Tracker; t: TodoItem; day?: boolean; today: string }) {
+  const s = tracker.state!;
+  const step = stepOf(s, t);
+  const late = t.date && t.date < today ? `from ${weekday(t.date)}` : null;
+  const meta = [day && t.date ? weekday(t.date) : late, step ? `ticks with ${step}` : null].filter(Boolean);
+  return (
+    <li className="task-row">
+      <TodoCheckbox tracker={tracker} id={t.id} done={t.done} label={t.title} />
+      <span className="task-row__title">
+        {t.title}
+        {meta.length > 0 && <span className="task-row__meta">{meta.join(" · ")}</span>}
+      </span>
+    </li>
+  );
+}
 
 function TodoCheckbox({ tracker, id, done, label }: { tracker: Tracker; id: string; done: boolean; label: string }) {
   const { pending, run } = usePending();
@@ -30,10 +68,14 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
   const [title, setTitle] = useState("");
   const { pending, run } = usePending();
 
-  // Finished items move to the log, so this stays a list of what's left.
-  const open = [...s.todos]
-    .filter((t) => !t.done)
-    .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+  const [showLater, setShowLater] = useState(false);
+  const today = dateKey();
+
+  // Finished items move to the log, so this stays a list of what's left:
+  // today's, anything left over from earlier days, and the undated.
+  const left = s.todos.filter((t) => !t.done);
+  const open = left.filter((t) => todoDueBy(t, today)).sort(byPlan);
+  const later = left.filter((t) => !todoDueBy(t, today)).sort(byPlan);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,7 +103,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
           </form>
 
           {open.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do. Add a to-do above.</p>
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do today. Add a to-do above.</p>
           ) : (
             <ul
               className={
@@ -70,12 +112,30 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
               }
             >
               {open.map((t) => (
-                <li key={t.id} className="task-row">
-                  <TodoCheckbox tracker={tracker} id={t.id} done={t.done} label={t.title} />
-                  <span className="task-row__title">{t.title}</span>
-                </li>
+                <TodoRow key={t.id} tracker={tracker} t={t} today={today} />
               ))}
             </ul>
+          )}
+
+          {later.length > 0 && (
+            <div className="mt-2">
+              <button
+                type="button"
+                className="todo-later"
+                aria-expanded={showLater}
+                onClick={() => setShowLater((v) => !v)}
+              >
+                {showLater ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
+                Later · {later.length}
+              </button>
+              {showLater && (
+                <ul className="list-none p-0">
+                  {later.map((t) => (
+                    <TodoRow key={t.id} tracker={tracker} t={t} day today={today} />
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
 
         </Card.Content>

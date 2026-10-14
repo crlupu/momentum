@@ -944,16 +944,17 @@ export function useTracker() {
     toggleTodo: (id: string) =>
       commit((s) => ({
         ...s,
-        todos: s.todos.map((t) =>
-          t.id === id
-            ? {
-                ...t,
-                done: !t.done,
-                doneDate: !t.done ? dateKey() : null,
-                doneAt: !t.done ? Date.now() : null,
-              }
-            : t
-        ),
+        todos: s.todos.map((t) => {
+          if (t.id !== id) return t;
+          // Ticked by hand now, or reopened: either way no longer the work of a logged step.
+          const { doneBy: _by, ...rest } = t;
+          return {
+            ...rest,
+            done: !t.done,
+            doneDate: !t.done ? dateKey() : null,
+            doneAt: !t.done ? Date.now() : null,
+          };
+        }),
       })),
 
     deleteTodo: (id: string) =>

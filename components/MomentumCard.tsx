@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
 import { readingUnits } from "@/lib/reading";
+import { todoDueBy } from "@/lib/model";
 
 const RING = 88;
 const STROKE = 10;
@@ -26,7 +27,7 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const pct = total ? done / total : 0;
   const left = total - done;
 
-  const openTodos = st.todos.filter((t) => !t.done).length;
+  const openTodos = st.todos.filter((t) => !t.done && todoDueBy(t, today)).length;
   const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
   const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);

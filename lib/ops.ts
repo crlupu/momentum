@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TrackerState } from "./model";
+import { NOTE_MAX, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -147,6 +147,11 @@ export function removeGoal(s: TrackerState, id: string): TrackerState {
     goals: s.goals.filter((g) => g.id !== id),
     paths: s.paths.map((p) => (p.goalIds.includes(id) ? { ...p, goalIds: p.goalIds.filter((g) => g !== id) } : p)),
     learningLog: (s.learningLog ?? []).filter((e) => e.goalId !== id),
+    todos: s.todos.map((t) => {
+      if (t.goalId !== id) return t;
+      const { goalId: _g, partId: _p, ...rest } = t;
+      return rest;
+    }),
   };
 }
 
@@ -359,7 +364,8 @@ export function logSession(
     amount: moved,
     ...(e.note?.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
   };
-  return activateIfQueued({ ...state, learningLog: [...(state.learningLog ?? []), entry] }, e.goalId, moved);
+  const logged = activateIfQueued({ ...state, learningLog: [...(state.learningLog ?? []), entry] }, e.goalId, moved);
+  return tickLinkedTodos(logged, e.goalId, e.partId, moved, entry.id);
 }
 
 /**
@@ -390,7 +396,7 @@ export function deleteLogEntry(s: TrackerState, id: string): TrackerState {
   const e = (s.learningLog ?? []).find((x) => x.id === id);
   if (!e) return s;
   const { state } = moveCount(s, e.goalId, e.partId, -e.amount);
-  return { ...state, learningLog: (state.learningLog ?? []).filter((x) => x.id !== id) };
+  return reopenTodos({ ...state, learningLog: (state.learningLog ?? []).filter((x) => x.id !== id) }, id);
 }
 
 /**
@@ -440,9 +446,77 @@ export function logChanges(before: TrackerState, after: TrackerState, goalId: st
     amount: m.amount,
     ...(i === 0 && note?.trim() ? { note: note.trim().slice(0, NOTE_MAX) } : {}),
   }));
-  return activateIfQueued(
+  let next = activateIfQueued(
     { ...after, learningLog: [...(after.learningLog ?? []), ...entries] },
     goalId,
     Math.max(0, ...moves.map((m) => m.amount))
   );
+  entries.forEach((e) => (next = tickLinkedTodos(next, goalId, e.partId, e.amount, e.id)));
+  return next;
+}
+
+/* ---- to-dos ---- */
+
+/**
+ * A step logged on a goal ticks the to-dos planned for it: one per step, the
+ * earliest planned first. A to-do tied to a part waits for that part; one
+ * tied to the goal alone takes a step on any of its parts.
+ */
+export function tickLinkedTodos(
+  s: TrackerState,
+  goalId: string,
+  partId: string | undefined,
+  steps: number,
+  entryId: string
+): TrackerState {
+  let left = Math.floor(steps);
+  if (left <= 0) return s;
+  const order = (t: TodoItem) => t.date ?? "9999-99-99";
+  const due = s.todos
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => !t.done && t.goalId === goalId && (!t.partId || t.partId === partId))
+    .sort((a, b) => order(a.t).localeCompare(order(b.t)) || a.i - b.i);
+  if (!due.length) return s;
+  const ids = new Set<string>();
+  for (const { t } of due) {
+    if (left-- <= 0) break;
+    ids.add(t.id);
+  }
+  const now = Date.now();
+  return {
+    ...s,
+    todos: s.todos.map((t) => (ids.has(t.id) ? { ...t, done: true, doneDate: dateKey(), doneAt: now, doneBy: entryId } : t)),
+  };
+}
+
+/** Reopens the to-dos a learning entry ticked, when that entry is taken back. */
+function reopenTodos(s: TrackerState, entryId: string): TrackerState {
+  if (!s.todos.some((t) => t.doneBy === entryId)) return s;
+  return {
+    ...s,
+    todos: s.todos.map((t) => {
+      if (t.doneBy !== entryId) return t;
+      const { doneBy: _by, ...rest } = t;
+      return { ...rest, done: false, doneDate: null, doneAt: null };
+    }),
+  };
+}
+
+/** Adds to-dos, each perhaps planned for a day and tied to a goal (and one of its parts). */
+export function addTodos(
+  s: TrackerState,
+  items: { title: string; date?: string; goalId?: string; partId?: string }[]
+): TrackerState {
+  const fresh: TodoItem[] = items
+    .filter((i) => i.title.trim())
+    .map((i) => ({
+      id: uid(),
+      title: i.title.trim(),
+      done: false,
+      doneDate: null,
+      ...(i.date && isDateKey(i.date) ? { date: i.date } : {}),
+      ...(i.goalId ? { goalId: i.goalId } : {}),
+      ...(i.goalId && i.partId ? { partId: i.partId } : {}),
+    }));
+  return { ...s, todos: [...s.todos, ...fresh] };
 }

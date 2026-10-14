@@ -116,7 +116,10 @@ export type Path = {
   goalIds: string[];
 };
 
-/** A one-off task: just a title and a tick. */
+/**
+ * A one-off task: a title and a tick. It can be tied to a learning goal (and
+ * one of its parts), and then it ticks itself when a step is logged there.
+ */
 export type TodoItem = {
   id: string;
   title: string;
@@ -124,7 +127,18 @@ export type TodoItem = {
   doneDate?: string | null;
   /** When it was ticked. See Goal.doneAt. */
   doneAt?: number | null;
+  /** The day it's planned for, YYYY-MM-DD. Undated ones are for whenever. */
+  date?: string;
+  /** The goal whose next step this is: logging a step there ticks it. */
+  goalId?: string;
+  /** The part of that goal, when it has parts. Absent means any part. */
+  partId?: string;
+  /** The learning entry that ticked it, so taking that entry back reopens it. */
+  doneBy?: string;
 };
+
+/** Whether a to-do belongs on a given day's list: undated, or planned for then or earlier. */
+export const todoDueBy = (t: TodoItem, day: string) => !t.date || t.date <= day;
 
 export type Completion = {
   date: string;
@@ -1065,6 +1079,10 @@ export function migrate(raw: unknown): TrackerState {
         done: !!t.done,
         doneDate: (t.doneDate as string) ?? null,
         doneAt: typeof t.doneAt === "number" ? t.doneAt : null,
+        ...(isDateKey(t.date) ? { date: t.date as string } : {}),
+        ...(typeof t.goalId === "string" ? { goalId: t.goalId } : {}),
+        ...(typeof t.partId === "string" ? { partId: t.partId } : {}),
+        ...(typeof t.doneBy === "string" ? { doneBy: t.doneBy } : {}),
       }))
     : [];
 
