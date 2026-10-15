@@ -475,6 +475,14 @@ export function useTracker() {
     setGoalParts: (id: string, parts: Parameters<typeof O.setGoalParts>[2]) =>
       commit((s) => O.setGoalParts(s, id, parts)),
 
+    /** Replaces a goal's checklist; an empty list removes it. */
+    setGoalItems: (id: string, items: Parameters<typeof O.setGoalItems>[2]) =>
+      commit((s) => O.setGoalItems(s, id, items)),
+
+    /** Ticks or unticks a checklist entry: a tick is logged as a session. */
+    setItemDone: (goalId: string, itemId: string, done: boolean) =>
+      commit((s) => O.setItemDone(s, goalId, itemId, done)),
+
     /** Moves one part's count by a step. */
     stepPart: (goalId: string, partId: string, delta: number) =>
       commit((s) => O.stepPart(s, goalId, partId, delta)),

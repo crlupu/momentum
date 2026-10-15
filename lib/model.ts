@@ -81,7 +81,42 @@ export type Goal = {
    * own count is set aside.
    */
   parts?: Part[];
+  /**
+   * A checklist: the videos of a playlist, the talks to watch, each ticked
+   * when finished. A goal with a checklist counts it: its count is how many
+   * are ticked, of how many there are, kept in step by every change (see
+   * withItemCount). A goal has parts or a checklist, not both.
+   */
+  items?: GoalItem[];
 };
+
+/** One entry on a goal's checklist: "Kafka 101: Topics", with where to watch it. */
+export type GoalItem = {
+  id: string;
+  title: string;
+  /** Where it lives: the video, the talk. Optional. */
+  url?: string;
+  done: boolean;
+  /** The day it was ticked, YYYY-MM-DD. */
+  doneDate?: string | null;
+};
+
+/**
+ * A goal's own count, set from its checklist when it has one: ticked of
+ * total. Every change to a checklist goes through here, so the count, the
+ * percentage and everything that reads them agree with the ticks.
+ */
+export function withItemCount(g: Goal): Goal {
+  if (!g.items?.length) return g;
+  const target = g.items.length;
+  const current = g.items.filter((i) => i.done).length;
+  return {
+    ...g,
+    target,
+    current,
+    ...(g.minimum != null && g.minimum > target ? { minimum: undefined } : {}),
+  };
+}
 
 export type GoalStatus = "queued" | "active" | "done" | "dropped";
 export const GOAL_STATUSES: GoalStatus[] = ["queued", "active", "done", "dropped"];
@@ -558,6 +593,8 @@ export type LearningEntry = {
   goalId: string;
   /** The part counted, when the goal has parts. */
   partId?: string;
+  /** The checklist entry ticked, when the goal has a checklist. */
+  itemId?: string;
   /** How much the count moved: 1 for a tap. */
   amount: number;
   /** At most 200 characters. */
@@ -909,6 +946,10 @@ export function goalSummary(g: Goal): string | null {
       "part"
     );
   }
+  if (g.items?.length) {
+    const done = g.items.filter((i) => i.done).length;
+    return countLine(g.items.length, done, done, "item");
+  }
   if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;
   return null;
 }
@@ -1010,6 +1051,31 @@ function migrateParts(raw: unknown): Part[] | undefined {
   return parts.length ? parts : undefined;
 }
 
+/** A link worth keeping: http(s) only, so nothing else ends up behind a tap. */
+export function cleanUrl(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim();
+  return /^https?:\/\/\S+$/i.test(t) ? t : undefined;
+}
+
+function migrateItems(raw: unknown): GoalItem[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const items = (raw as Array<Record<string, unknown>>)
+    .filter((i) => typeof i.title === "string" && i.title.trim())
+    .map((i) => {
+      const url = cleanUrl(i.url);
+      const done = i.done === true;
+      return {
+        id: typeof i.id === "string" ? i.id : uid(),
+        title: (i.title as string).trim(),
+        ...(url ? { url } : {}),
+        done,
+        doneDate: done && isDateKey(i.doneDate) ? (i.doneDate as string) : null,
+      };
+    });
+  return items.length ? items : undefined;
+}
+
 export function migrate(raw: unknown): TrackerState {
   const s = (raw ?? {}) as Record<string, unknown>;
   const categories = Array.isArray(s.categories)
@@ -1061,6 +1127,7 @@ export function migrate(raw: unknown): TrackerState {
     link: typeof g.link === "string" && g.link.trim() ? g.link.trim() : undefined,
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
+    items: migrateParts(g.parts) ? undefined : migrateItems(g.items),
     targetDate: isDateKey(g.targetDate) ? g.targetDate : undefined,
     minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
     phaseIds: Array.isArray(g.phaseIds)
@@ -1069,7 +1136,7 @@ export function migrate(raw: unknown): TrackerState {
   })).map((g, i) => {
     const raw = rawGoals[i].status;
     const status = typeof raw === "string" && (GOAL_STATUSES as string[]).includes(raw) ? (raw as GoalStatus) : undefined;
-    return { ...g, status: goalStatus({ ...g, status }) };
+    return withItemCount({ ...g, status: goalStatus({ ...g, status }) });
   });
 
   const todos: TodoItem[] = Array.isArray(s.todos)
@@ -1181,6 +1248,7 @@ export function migrate(raw: unknown): TrackerState {
             at: typeof e.at === "number" ? e.at : 0,
             goalId: e.goalId as string,
             ...(typeof e.partId === "string" ? { partId: e.partId } : {}),
+            ...(typeof e.itemId === "string" ? { itemId: e.itemId } : {}),
             amount: e.amount as number,
             ...(typeof e.note === "string" && e.note.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
           }))

@@ -111,6 +111,7 @@ function overview(s: TrackerState, section: string) {
           ? `${g.current ?? 0}/${g.target}${g.minimum != null ? ` (min ${g.minimum})` : ""}`
           : undefined,
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}${p.minimum != null ? ` (min ${p.minimum})` : ""}`),
+      checklist: g.items?.map((i) => `[${i.done ? "x" : " "}] ${i.title}${i.url ? ` <${i.url}>` : ""}`),
       ...(minimumReached(g) ? { minimum_reached: true } : {}),
       ...(g.targetDate ? { target_date: g.targetDate, due: countdown(g.targetDate) } : {}),
       description: g.note,
@@ -156,6 +157,58 @@ function overview(s: TrackerState, section: string) {
 
 const COLUMN = z.enum(["todo", "doing", "done"]);
 
+
+/**
+ * Writes a goal's whole checklist. Entries already there are matched by link,
+ * then by title, and keep their id and tick; ticks that change are logged as
+ * sessions, as in the app. A goal's first checklist carries its progress
+ * over without logging it again: ticks as given, or the first entries up to
+ * its count when none is given.
+ */
+function writeChecklist(
+  s: TrackerState,
+  goalId: string,
+  list: { title: string; url?: string; done?: boolean }[],
+  note?: string
+): TrackerState {
+  const g = s.goals.find((x) => x.id === goalId)!;
+  const had = g.items ?? [];
+  if (!list.length) return O.setGoalItems(s, goalId, []);
+  if (!had.length) {
+    const given = list.some((i) => i.done !== undefined);
+    const carry = given ? 0 : Math.min(g.current ?? 0, list.length);
+    return O.setGoalItems(
+      s,
+      goalId,
+      list.map((i, n) => ({ title: i.title, url: i.url, done: given ? i.done === true : n < carry }))
+    );
+  }
+  const used = new Set<string>();
+  const key = (u?: string) => (u ?? "").trim().toLowerCase().replace(/\/+$/, "");
+  const match = (i: { title: string; url?: string }) => {
+    const free = had.filter((h) => !used.has(h.id));
+    const found =
+      (i.url && free.find((h) => h.url && key(h.url) === key(i.url))) ||
+      free.find((h) => norm(h.title) === norm(i.title));
+    if (found) used.add(found.id);
+    return found;
+  };
+  const rows = list.map((i) => ({ i, old: match(i) }));
+  // The list as written, ticks as they were; then each tick that changes, as a session.
+  let next = O.setGoalItems(
+    s,
+    goalId,
+    rows.map(({ i, old }) => ({ id: old?.id ?? uid(), title: i.title, url: i.url, done: old?.done ?? false, doneDate: old?.doneDate }))
+  );
+  const items = next.goals.find((x) => x.id === goalId)!.items ?? [];
+  let first = true;
+  rows.forEach(({ i }, n) => {
+    if (i.done === undefined || items[n].done === i.done) return;
+    next = O.setItemDone(next, goalId, items[n].id, i.done, first ? note : undefined);
+    first = false;
+  });
+  return next;
+}
 
 /** A goal's last session date and its notes, oldest first (the last ten). */
 function sessionsOf(s: TrackerState, goalId: string) {
@@ -396,7 +449,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. To tick entries one at a time, use check_items.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -424,6 +477,17 @@ export function registerTools(server: McpServer) {
             })
           )
         ).optional(),
+        checklist: jsonArray(
+          z.array(
+            z.object({
+              title: z.string().min(1),
+              url: z.string().optional().describe("Where it lives: an http(s) link"),
+              done: z.boolean().optional(),
+            })
+          )
+        )
+          .optional()
+          .describe("The whole checklist, in order; [] removes it"),
         minimum: z
           .number()
           .min(0)
@@ -448,6 +512,7 @@ export function registerTools(server: McpServer) {
       topic?: string;
       phases?: string[];
       parts?: { title: string; target: number; current?: number; minimum?: number }[];
+      checklist?: { title: string; url?: string; done?: boolean }[];
       minimum?: number;
       note?: string;
       target_date?: string;
@@ -470,6 +535,11 @@ export function registerTools(server: McpServer) {
           }
           next = O.moveGoalToTopic(next, g.id, topicId);
         }
+        const listed = a.checklist !== undefined ? a.checklist.length > 0 : !!g.items?.length;
+        if ((a.current !== undefined || a.target !== undefined) && listed)
+          throw new Error(`${g.title} counts its checklist: tick entries with check_items, or change the list.`);
+        if (a.checklist?.length && g.parts?.length && !(a.parts && a.parts.length === 0))
+          throw new Error(`${g.title} has parts. Pass parts: [] with the checklist to replace them.`);
         if (a.current !== undefined || a.target !== undefined) next = O.setGoalCount(next, g.id, a);
         if (a.parts !== undefined) {
           const had = g.parts ?? [];
@@ -501,6 +571,7 @@ export function registerTools(server: McpServer) {
         }
         // Count changes are sessions: logged like a +1 in the app.
         next = O.logChanges(s, next, g.id, a.note);
+        if (a.checklist !== undefined) next = writeChecklist(next, g.id, a.checklist, a.note);
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
         if (a.phases !== undefined)
@@ -509,7 +580,9 @@ export function registerTools(server: McpServer) {
         const min = (m?: number) => (m != null ? ` (min ${m})` : "");
         const reached = minimumReached(after);
         const progress =
-          (after.parts?.length
+          (after.items?.length
+            ? `, checklist ${after.current ?? 0}/${after.items.length}`
+            : after.parts?.length
             ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}${min(p.minimum)}`).join(", ")}`
             : after.target
               ? `, ${after.current ?? 0}/${after.target}${min(after.minimum)}`
@@ -518,6 +591,37 @@ export function registerTools(server: McpServer) {
         return {
           state: next,
           result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
+        };
+      })
+    )
+  );
+
+  server.registerTool(
+    "check_items",
+    {
+      title: "Tick checklist entries",
+      description:
+        "Ticks (or, with done: false, unticks) entries on a goal's checklist, by title or id; a unique part of a title is enough. Each tick is logged as a session for today, like a tick in the app, with note on the first; unticking takes its session back. The goal's progress follows its ticks.",
+      inputSchema: {
+        goal: z.string().describe("Title or id"),
+        items: jsonArray(z.array(z.string()).min(1)).describe("Entry titles or ids"),
+        done: z.boolean().optional().describe("false unticks; default true"),
+        note: z.string().max(200).optional().describe("A line about the session"),
+      },
+    },
+    safe(async (a: { goal: string; items: string[]; done?: boolean; note?: string }) =>
+      change((s) => {
+        const g = pick(s.goals, a.goal, (x) => x.title, "goal");
+        if (!g.items?.length) throw new Error(`${g.title} has no checklist. Give it one with update_goal's checklist.`);
+        const done = a.done ?? true;
+        const ids = [...new Set(a.items.map((ref) => pick(g.items!, ref, (x) => x.title, `entry of ${g.title}`).id))];
+        let next = s;
+        ids.forEach((id, n) => (next = O.setItemDone(next, g.id, id, done, n === 0 ? a.note : undefined)));
+        const after = next.goals.find((x) => x.id === g.id)!;
+        const names = ids.map((id) => after.items!.find((i) => i.id === id)!.title);
+        return {
+          state: next,
+          result: `${done ? "Ticked" : "Unticked"} ${names.join("; ")}. ${after.title}: ${goalStatus(after)}, ${after.current ?? 0}/${after.items!.length}.`,
         };
       })
     )

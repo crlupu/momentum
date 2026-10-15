@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withTopicCategory, type LearningEntry, type Goal, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
+import { NOTE_MAX, cleanUrl, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withItemCount, withTopicCategory, type LearningEntry, type Goal, type GoalItem, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -204,6 +204,8 @@ export function setGoalCount(
       if (g.id !== id) return g;
       const target = c.target !== undefined ? (c.target > 0 ? c.target : undefined) : g.target;
       const current = c.current !== undefined ? Math.max(0, c.current) : g.current;
+      // A checklist goal counts its ticks; its count isn't set by hand.
+      if (g.items?.length) return withItemCount(g);
       return { ...g, target, current: target && current != null ? Math.min(current, target) : current };
     }),
   };
@@ -229,7 +231,80 @@ export function setGoalParts(
     }));
   return {
     ...s,
-    goals: s.goals.map((g) => (g.id === id ? { ...g, parts: clean.length ? clean : undefined } : g)),
+    // Parts and a checklist don't mix: parts, once there, replace it.
+    goals: s.goals.map((g) =>
+      g.id === id ? { ...g, parts: clean.length ? clean : undefined, ...(clean.length ? { items: undefined } : {}) } : g
+    ),
+  };
+}
+
+/**
+ * Replaces a goal's checklist. Each entry needs a name; a link is kept when
+ * it's an http(s) address. Ticks are set as given, without logging sessions:
+ * this is the list being written, not work being done (see setItemDone).
+ * The goal's count follows the ticks. An empty list removes the checklist
+ * and leaves the count where it stood.
+ */
+export function setGoalItems(
+  s: TrackerState,
+  id: string,
+  items: Array<{ id?: string; title: string; url?: string; done?: boolean; doneDate?: string | null }>
+): TrackerState {
+  const today = dateKey();
+  const clean: GoalItem[] = items
+    .filter((i) => i.title.trim())
+    .map((i) => {
+      const url = cleanUrl(i.url);
+      const done = i.done === true;
+      return {
+        id: i.id ?? uid(),
+        title: i.title.trim(),
+        ...(url ? { url } : {}),
+        done,
+        doneDate: done ? (i.doneDate && isDateKey(i.doneDate) ? i.doneDate : today) : null,
+      };
+    });
+  return {
+    ...s,
+    goals: s.goals.map((g) =>
+      g.id === id ? withItemCount({ ...g, items: clean.length ? clean : undefined, ...(clean.length ? { parts: undefined } : {}) }) : g
+    ),
+  };
+}
+
+/**
+ * Ticks or unticks one checklist entry. A tick is a session, logged like a
+ * +1 (and ticking the to-dos planned for the goal); unticking takes that
+ * session back, or, for an entry ticked before sessions were linked to
+ * entries, just lowers the count.
+ */
+export function setItemDone(s: TrackerState, goalId: string, itemId: string, done: boolean, note?: string): TrackerState {
+  const g = s.goals.find((x) => x.id === goalId);
+  const item = g?.items?.find((i) => i.id === itemId);
+  if (!g || !item || item.done === done) return s;
+  if (done) {
+    const ticked = markItem(s, goalId, itemId, true);
+    // The count is ticks less this one until the session moves it on.
+    const back = { ...ticked, goals: ticked.goals.map((x) => (x.id === goalId ? { ...x, current: (x.current ?? 1) - 1 } : x)) };
+    return logSession(back, { goalId, itemId, note });
+  }
+  const entry = [...(s.learningLog ?? [])].reverse().find((e) => e.goalId === goalId && e.itemId === itemId);
+  if (entry) return deleteLogEntry(s, entry.id);
+  return markItem(s, goalId, itemId, false);
+}
+
+/** Sets one entry's tick and recounts the goal. */
+function markItem(s: TrackerState, goalId: string, itemId: string, done: boolean): TrackerState {
+  return {
+    ...s,
+    goals: s.goals.map((g) =>
+      g.id === goalId && g.items
+        ? withItemCount({
+            ...g,
+            items: g.items.map((i) => (i.id === itemId ? { ...i, done, doneDate: done ? dateKey() : null } : i)),
+          })
+        : g
+    ),
   };
 }
 
@@ -351,7 +426,7 @@ function moveCount(s: TrackerState, goalId: string, partId: string | undefined, 
  */
 export function logSession(
   s: TrackerState,
-  e: { id?: string; goalId: string; partId?: string; amount?: number; note?: string; date?: string }
+  e: { id?: string; goalId: string; partId?: string; itemId?: string; amount?: number; note?: string; date?: string }
 ): TrackerState {
   const { state, moved } = moveCount(s, e.goalId, e.partId, e.amount ?? 1);
   if (moved === 0) return s;
@@ -361,6 +436,7 @@ export function logSession(
     at: Date.now(),
     goalId: e.goalId,
     ...(e.partId ? { partId: e.partId } : {}),
+    ...(e.itemId ? { itemId: e.itemId } : {}),
     amount: moved,
     ...(e.note?.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
   };
@@ -396,7 +472,15 @@ export function deleteLogEntry(s: TrackerState, id: string): TrackerState {
   const e = (s.learningLog ?? []).find((x) => x.id === id);
   if (!e) return s;
   const { state } = moveCount(s, e.goalId, e.partId, -e.amount);
-  return reopenTodos({ ...state, learningLog: (state.learningLog ?? []).filter((x) => x.id !== id) }, id);
+  // On a checklist goal the ticks are the count: taking back a tick's
+  // session unticks it, and any other session leaves the count to the ticks.
+  const g = state.goals.find((x) => x.id === e.goalId);
+  const counted = g?.items?.length
+    ? e.itemId && g.items.some((i) => i.id === e.itemId && i.done)
+      ? markItem(state, e.goalId, e.itemId, false)
+      : { ...state, goals: state.goals.map((x) => (x.id === e.goalId ? withItemCount(x) : x)) }
+    : state;
+  return reopenTodos({ ...counted, learningLog: (counted.learningLog ?? []).filter((x) => x.id !== id) }, id);
 }
 
 /**

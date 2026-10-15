@@ -4,9 +4,9 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { ExternalLink, Minus, Plus, X } from "./icons";
+import { Check, ExternalLink, Minus, Plus, X } from "./icons";
 import { Segmented } from "./books/bits";
-import { Goal, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
+import { Goal, GoalItem, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
@@ -117,6 +117,8 @@ export function GoalDetail({
     d > 0 ? tracker.logSession(g.id, partId, uid()) : tracker.stepBack(g.id, partId);
   // The part just added, whose name is selected to be typed over.
   const [focusId, setFocusId] = useState<string | null>(null);
+  // A checklist just started: its first entry opens ready to be named.
+  const pendingFocus = useRef<string | null>(null);
 
   /** Rewrites the parts from the latest saved ones, so quick edits don't undo each other. */
   const writeParts = (fn: (list: Part[]) => Part[]) => {
@@ -138,6 +140,12 @@ export function GoalDetail({
     });
     setEditing(true);
     setFocusId(id);
+  };
+  // The first entry, saved at once; the checklist opens in Edit on its name.
+  const startChecklist = () => {
+    const id = uid();
+    void tracker.setGoalItems(g.id, [{ id, title: "Item 1" }]);
+    pendingFocus.current = id;
   };
   const setOwnCount = (c: { current?: number | null; target?: number | null }) => {
     const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
@@ -183,8 +191,12 @@ export function GoalDetail({
         )}
       </div>
 
-      {/* The parts, as an iOS list: counted with − and + as they stand,
-          and renamed, resized or deleted in Edit, which a new part opens. */}
+      {/* A checklist counts itself: ticks instead of − and +. */}
+      {g.items?.length ? (
+        <Checklist tracker={tracker} goal={g} startOn={pendingFocus} />
+      ) : (
+      /* The parts, as an iOS list: counted with − and + as they stand,
+          and renamed, resized or deleted in Edit, which a new part opens. */
       <section className="goal-steps" aria-label="Parts">
         <div className="goal-steps__head">
           <h3 className="group-label">{parts.length ? "Parts" : "Progress"}</h3>
@@ -263,8 +275,21 @@ export function GoalDetail({
               Add Part
             </button>
           </li>
+          {/* A goal without parts can be a checklist instead: videos,
+              talks, each ticked when finished. */}
+          {parts.length === 0 && (
+            <li>
+              <button type="button" className="step-add" onClick={startChecklist}>
+                <span className="step-add__icon" aria-hidden>
+                  <Plus />
+                </span>
+                Add Checklist
+              </button>
+            </li>
+          )}
         </ul>
       </section>
+      )}
 
       <Sessions tracker={tracker} goal={g} log={log} />
 
@@ -456,6 +481,160 @@ function StepRow({
 }
 
 /**
+ * A goal's checklist: each entry ticked when finished, its name opening
+ * where it lives. A tick is a session; unticking takes it back. In Edit,
+ * entries are renamed, given a link, deleted or added.
+ */
+function Checklist({
+  tracker,
+  goal: g,
+  startOn,
+}: {
+  tracker: Tracker;
+  goal: Goal;
+  startOn: React.MutableRefObject<string | null>;
+}) {
+  const items = g.items ?? [];
+  const done = items.filter((i) => i.done).length;
+  const [editing, setEditing] = useState(() => !!startOn.current);
+  const [focusId, setFocusId] = useState<string | null>(() => startOn.current);
+  useEffect(() => {
+    startOn.current = null;
+  }, [startOn]);
+  /** Rewrites the list from the latest saved one, so quick edits don't undo each other. */
+  const write = (fn: (list: GoalItem[]) => GoalItem[]) => {
+    const now = tracker.state!.goals.find((x) => x.id === g.id)?.items ?? [];
+    return tracker.setGoalItems(g.id, fn(now));
+  };
+  const add = () => {
+    const id = uid();
+    void write((list) => [...list, { id, title: `Item ${list.length + 1}`, done: false }]);
+    setFocusId(id);
+  };
+  return (
+    <section className="goal-steps" aria-label="Checklist">
+      <div className="goal-steps__head">
+        <h3 className="group-label">
+          Checklist <span className="checklist__count">{done} of {items.length}</span>
+        </h3>
+        <button
+          type="button"
+          className="text-action"
+          aria-pressed={editing}
+          onClick={() => {
+            setEditing((v) => !v);
+            setFocusId(null);
+          }}
+        >
+          {editing ? "Done" : "Edit"}
+        </button>
+      </div>
+      <ul className="step-list">
+        {items.map((i) => (
+          <ItemRow
+            key={i.id}
+            item={i}
+            editing={editing}
+            focus={focusId === i.id}
+            onToggle={() => tracker.setItemDone(g.id, i.id, !i.done)}
+            onChange={(patch) => write((list) => list.map((x) => (x.id === i.id ? { ...x, ...patch } : x)))}
+            onDelete={() => write((list) => list.filter((x) => x.id !== i.id))}
+          />
+        ))}
+        {editing && (
+          <li>
+            <button type="button" className="step-add" onClick={add}>
+              <span className="step-add__icon" aria-hidden>
+                <Plus />
+              </span>
+              Add Item
+            </button>
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
+/** One checklist entry: its tick and its name, or, in Edit, its name and link as fields. */
+function ItemRow({
+  item: i,
+  editing,
+  focus,
+  onToggle,
+  onChange,
+  onDelete,
+}: {
+  item: GoalItem;
+  editing: boolean;
+  focus: boolean;
+  onToggle: () => Promise<unknown>;
+  onChange: (patch: { title?: string; url?: string }) => Promise<unknown>;
+  onDelete: () => Promise<unknown>;
+}) {
+  const { reset: resetName, ...nameField } = useInline(i.title, (v) => v, (text) => {
+    if (text.trim()) void onChange({ title: text.trim() });
+    else resetName();
+  });
+  const { reset: _resetUrl, ...urlField } = useInline(i.url ?? "", (v) => v, (text) => {
+    // "youtu.be/…" typed without its scheme is still a link.
+    const t = text.trim();
+    void onChange({ url: t && !/^https?:\/\//i.test(t) ? `https://${t}` : t });
+  });
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focus && editing) {
+      nameRef.current?.focus();
+      nameRef.current?.select();
+    }
+  }, [focus, editing]);
+
+  if (editing) {
+    return (
+      <li className="step-row step-row--editing item-row--editing">
+        <button type="button" className="step-delete" aria-label={`Delete ${i.title}`} onClick={() => void onDelete()}>
+          <Minus aria-hidden />
+        </button>
+        <span className="item-row__fields">
+          <input ref={nameRef} aria-label="Item name" placeholder="Name" className="step-field step-field--name" {...nameField} />
+          <input
+            type="url"
+            inputMode="url"
+            aria-label={`Link, ${i.title}`}
+            placeholder="Link"
+            className="step-field step-field--name"
+            {...urlField}
+          />
+        </span>
+      </li>
+    );
+  }
+
+  return (
+    <li className={"step-row item-row" + (i.done ? " is-done" : "")}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={i.done}
+        aria-label={i.title}
+        onClick={() => void onToggle()}
+        className={"check" + (i.done ? " check--on" : "")}
+      >
+        <span className="check__ring">{i.done && <Check className="h-4 w-4" aria-hidden />}</span>
+      </button>
+      {i.url ? (
+        <a href={i.url} target="_blank" rel="noopener noreferrer" className="item-row__name item-row__link">
+          {i.title}
+          <ExternalLink className="item-row__open" aria-hidden />
+        </a>
+      ) : (
+        <span className="item-row__name">{i.title}</span>
+      )}
+    </li>
+  );
+}
+
+/**
  * The goal's description, under its name, line breaks kept. Set through
  * Claude; read here. A long one (a chapter list) folds to a few lines with
  * More, as App Store text does.
@@ -485,6 +664,7 @@ function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log
   if (log.length === 0) return null;
   const shown = all ? log : log.slice(-10);
   const partName = (id?: string) => (id ? g.parts?.find((p) => p.id === id)?.title ?? "Removed part" : null);
+  const itemName = (id?: string) => (id ? g.items?.find((i) => i.id === id)?.title ?? "Removed item" : null);
   return (
     <section className="goal-steps" aria-label="Sessions">
       <div className="goal-steps__head">
@@ -517,6 +697,7 @@ function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log
               <span className="session-row__head">
                 {fmtDateAuto(e.date)}
                 {partName(e.partId) && <> · {partName(e.partId)}</>}
+                {itemName(e.itemId) && <> · {itemName(e.itemId)}</>}
                 <span className="session-row__amount"> {e.amount > 0 ? `+${e.amount}` : e.amount}</span>
               </span>
               {e.note && <span className="session-row__note">{e.note}</span>}

@@ -4002,3 +4002,21 @@ input.row-date:hover { border-color: transparent; }
 /* A phase's book lifted while reordering: on the card's own surface, so
    the rows it passes over don't show through it. */
 .rd-phase__tracks .rd-row--dragging { background: var(--pane-bg); }
+
+/* A goal's checklist: a tick, then the name, which opens the video or talk
+   when it has a link. Ticked entries step back to the muted text colour. */
+.checklist__count { margin-inline-start: 0.375rem; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.item-row { gap: 0.875rem; padding-inline-start: 0; }
+.item-row .check { margin-inline: -0.625rem -0.25rem; }
+.item-row__name { flex: 1 1 auto; min-inline-size: 0; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; color: var(--foreground); }
+.item-row.is-done .item-row__name { color: var(--muted); }
+a.item-row__link { text-decoration: none; }
+.item-row__open { display: inline-block; inline-size: 0.875rem; block-size: 0.875rem; margin-inline-start: 0.375rem; vertical-align: -0.0625rem; fill: currentColor; color: var(--accent); opacity: 0.85; }
+@media (hover: hover) {
+  a.item-row__link:hover { color: var(--accent); }
+}
+/* In Edit: the name, and the link under it. */
+.item-row--editing { flex-wrap: nowrap; align-items: flex-start; }
+.item-row--editing .step-delete { margin-block-start: 0.375rem; }
+.item-row__fields { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.375rem; }
+.item-row__fields input.step-field--name { inline-size: 100%; flex: none; }
