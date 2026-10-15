@@ -4020,3 +4020,25 @@ a.item-row__link { text-decoration: none; }
 .item-row--editing .step-delete { margin-block-start: 0.375rem; }
 .item-row__fields { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.375rem; }
 .item-row__fields input.step-field--name { inline-size: 100%; flex: none; }
+
+/* A part counted by its checklist: the whole row shows or hides the list,
+   whose entries sit in under it. */
+.part-row { padding-block: 0; }
+.part-row__open {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding-block: 0.375rem;
+  text-align: start;
+  color: inherit;
+}
+.part-row__count { flex: none; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.part-row__chevron { flex: none; inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; color: var(--muted); transition: transform var(--duration-fast-02) var(--easing-standard-productive); }
+.part-row__chevron.is-open { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .part-row__chevron { transition: none; }
+}
+.item-row--nested { padding-inline-start: 1.5rem; }
+li.item-row--nested .step-add { padding-inline-start: 1.5rem; }

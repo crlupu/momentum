@@ -107,15 +107,32 @@ export type GoalItem = {
  * percentage and everything that reads them agree with the ticks.
  */
 export function withItemCount(g: Goal): Goal {
-  if (!g.items?.length) return g;
-  const target = g.items.length;
-  const current = g.items.filter((i) => i.done).length;
+  const counted = countItems(g);
+  return counted.parts?.some((p) => p.items?.length) ? { ...counted, parts: counted.parts.map(countItems) } : counted;
+}
+
+/** A goal's or a part's count, from its checklist when it has one. */
+function countItems<T extends { items?: GoalItem[]; current?: number; target?: number; minimum?: number }>(x: T): T {
+  if (!x.items?.length) return x;
+  const target = x.items.length;
+  const current = x.items.filter((i) => i.done).length;
   return {
-    ...g,
+    ...x,
     target,
     current,
-    ...(g.minimum != null && g.minimum > target ? { minimum: undefined } : {}),
+    ...(x.minimum != null && x.minimum > target ? { minimum: undefined } : {}),
   };
+}
+
+/** Where a checklist entry is: the goal's own list, or one of its parts'. */
+export function findItem(g: Goal, itemId: string): { item: GoalItem; partId?: string } | undefined {
+  const own = g.items?.find((i) => i.id === itemId);
+  if (own) return { item: own };
+  for (const p of g.parts ?? []) {
+    const item = p.items?.find((i) => i.id === itemId);
+    if (item) return { item, partId: p.id };
+  }
+  return undefined;
 }
 
 export type GoalStatus = "queued" | "active" | "done" | "dropped";
@@ -129,6 +146,11 @@ export type Part = {
   target: number;
   /** Enough to count as covered, at most the target: Projects 2 of 4. Optional. */
   minimum?: number;
+  /**
+   * A checklist of its own: the lectures of "Lectures", the projects of
+   * "Projects". A part with one counts it, as a goal does (see withItemCount).
+   */
+  items?: GoalItem[];
 };
 
 /**
@@ -1047,6 +1069,7 @@ function migrateParts(raw: unknown): Part[] | undefined {
       target: p.target as number,
       current: Math.min(p.target as number, Math.max(0, typeof p.current === "number" ? p.current : 0)),
       ...(validMinimum(p.minimum, p.target as number) ? { minimum: p.minimum as number } : {}),
+      ...(migrateItems(p.items) ? { items: migrateItems(p.items) } : {}),
     }));
   return parts.length ? parts : undefined;
 }

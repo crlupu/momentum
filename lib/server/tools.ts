@@ -9,6 +9,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   countdown,
   dateKey,
+  findItem,
   goalStatus,
   goalTopic,
   isDateKey,
@@ -17,6 +18,7 @@ import {
   nextCategoryColor,
   uid,
   type Frequency,
+  type GoalItem,
   type GoalStatus,
   type RecurringTask,
   type TrackerState,
@@ -71,6 +73,9 @@ const safe =
     }
   };
 
+/** "[x] Lecture 1 <https://…>": an entry as the overview lists it. */
+const itemLine = (i: GoalItem) => `[${i.done ? "x" : " "}] ${i.title}${i.url ? ` <${i.url}>` : ""}`;
+
 function overview(s: TrackerState, section: string) {
   const out: Record<string, unknown> = {};
   if (section === "all" || section === "books") {
@@ -111,7 +116,10 @@ function overview(s: TrackerState, section: string) {
           ? `${g.current ?? 0}/${g.target}${g.minimum != null ? ` (min ${g.minimum})` : ""}`
           : undefined,
       parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}${p.minimum != null ? ` (min ${p.minimum})` : ""}`),
-      checklist: g.items?.map((i) => `[${i.done ? "x" : " "}] ${i.title}${i.url ? ` <${i.url}>` : ""}`),
+      checklist: g.items?.map(itemLine),
+      ...(g.parts?.some((p) => p.items?.length)
+        ? { part_checklists: Object.fromEntries(g.parts.filter((p) => p.items?.length).map((p) => [p.title, p.items!.map(itemLine)])) }
+        : {}),
       ...(minimumReached(g) ? { minimum_reached: true } : {}),
       ...(g.targetDate ? { target_date: g.targetDate, due: countdown(g.targetDate) } : {}),
       description: g.note,
@@ -169,18 +177,21 @@ function writeChecklist(
   s: TrackerState,
   goalId: string,
   list: { title: string; url?: string; done?: boolean }[],
-  note?: string
+  note?: string,
+  partId?: string
 ): TrackerState {
   const g = s.goals.find((x) => x.id === goalId)!;
-  const had = g.items ?? [];
-  if (!list.length) return O.setGoalItems(s, goalId, []);
+  const owner = partId ? g.parts?.find((p) => p.id === partId) : g;
+  const had = owner?.items ?? [];
+  if (!list.length) return O.setGoalItems(s, goalId, [], partId);
   if (!had.length) {
     const given = list.some((i) => i.done !== undefined);
-    const carry = given ? 0 : Math.min(g.current ?? 0, list.length);
+    const carry = given ? 0 : Math.min(owner?.current ?? 0, list.length);
     return O.setGoalItems(
       s,
       goalId,
-      list.map((i, n) => ({ title: i.title, url: i.url, done: given ? i.done === true : n < carry }))
+      list.map((i, n) => ({ title: i.title, url: i.url, done: given ? i.done === true : n < carry })),
+      partId
     );
   }
   const used = new Set<string>();
@@ -198,9 +209,11 @@ function writeChecklist(
   let next = O.setGoalItems(
     s,
     goalId,
-    rows.map(({ i, old }) => ({ id: old?.id ?? uid(), title: i.title, url: i.url, done: old?.done ?? false, doneDate: old?.doneDate }))
+    rows.map(({ i, old }) => ({ id: old?.id ?? uid(), title: i.title, url: i.url, done: old?.done ?? false, doneDate: old?.doneDate })),
+    partId
   );
-  const items = next.goals.find((x) => x.id === goalId)!.items ?? [];
+  const after = next.goals.find((x) => x.id === goalId)!;
+  const items = (partId ? after.parts?.find((p) => p.id === partId)?.items : after.items) ?? [];
   let first = true;
   rows.forEach(({ i }, n) => {
     if (i.done === undefined || items[n].done === i.done) return;
@@ -449,7 +462,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. To tick entries one at a time, use check_items.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. A part can have a checklist of its own (parts[].checklist), which works the same way and counts that part; its target then comes from the list. To tick entries one at a time, use check_items.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -471,9 +484,13 @@ export function registerTools(server: McpServer) {
           z.array(
             z.object({
               title: z.string().min(1),
-              target: z.number().positive(),
+              target: z.number().positive().optional().describe("Its total; not needed with a checklist"),
               current: z.number().min(0).optional(),
               minimum: z.number().min(0).optional().describe("Enough to count as covered, at most target; 0 clears"),
+              checklist: z
+                .array(z.object({ title: z.string().min(1), url: z.string().optional(), done: z.boolean().optional() }))
+                .optional()
+                .describe("The part's own checklist, as the goal's checklist works; [] removes it"),
             })
           )
         ).optional(),
@@ -511,7 +528,13 @@ export function registerTools(server: McpServer) {
       link?: string;
       topic?: string;
       phases?: string[];
-      parts?: { title: string; target: number; current?: number; minimum?: number }[];
+      parts?: {
+        title: string;
+        target?: number;
+        current?: number;
+        minimum?: number;
+        checklist?: { title: string; url?: string; done?: boolean }[];
+      }[];
       checklist?: { title: string; url?: string; done?: boolean }[];
       minimum?: number;
       note?: string;
@@ -541,6 +564,7 @@ export function registerTools(server: McpServer) {
         if (a.checklist?.length && g.parts?.length && !(a.parts && a.parts.length === 0))
           throw new Error(`${g.title} has parts. Pass parts: [] with the checklist to replace them.`);
         if (a.current !== undefined || a.target !== undefined) next = O.setGoalCount(next, g.id, a);
+        let partLists: { partId: string; list: { title: string; url?: string; done?: boolean }[] }[] = [];
         if (a.parts !== undefined) {
           const had = g.parts ?? [];
           next = O.setGoalParts(
@@ -548,17 +572,29 @@ export function registerTools(server: McpServer) {
             g.id,
             a.parts.map((p) => {
               const old = had.find((x) => x.title.toLowerCase() === p.title.trim().toLowerCase());
-              if (p.minimum && p.minimum > p.target)
-                throw new Error(`${p.title}: a minimum can't pass its total (${p.target}).`);
+              const listed = p.checklist !== undefined ? p.checklist.length > 0 : !!old?.items?.length;
+              // A part with a checklist is counted by it; its own total only matters without one.
+              const target = listed ? p.checklist?.length || old?.items?.length || 1 : p.target ?? old?.target;
+              if (!target) throw new Error(`${p.title}: give it a target or a checklist.`);
+              if (p.minimum && p.minimum > target) throw new Error(`${p.title}: a minimum can't pass its total (${target}).`);
+              if (listed && p.current !== undefined)
+                throw new Error(`${p.title} counts its checklist: tick entries with check_items.`);
               return {
-                id: old?.id,
+                id: old?.id ?? uid(),
                 title: p.title,
-                target: p.target,
+                target,
                 current: p.current ?? old?.current ?? 0,
                 minimum: p.minimum === 0 ? null : p.minimum ?? old?.minimum,
+                // Its checklist stays unless a new one is given (written below).
+                items: p.checklist === undefined ? old?.items : undefined,
               };
             })
           );
+          partLists = a.parts.flatMap((p) => {
+            if (p.checklist === undefined) return [];
+            const part = next.goals.find((x) => x.id === g.id)?.parts?.find((x) => norm(x.title) === norm(p.title));
+            return part ? [{ partId: part.id, list: p.checklist }] : [];
+          });
         }
         if (a.target_date !== undefined) {
           if (a.target_date && !isDateKey(a.target_date)) throw new Error(`"${a.target_date}" isn't a date: use YYYY-MM-DD.`);
@@ -572,6 +608,7 @@ export function registerTools(server: McpServer) {
         // Count changes are sessions: logged like a +1 in the app.
         next = O.logChanges(s, next, g.id, a.note);
         if (a.checklist !== undefined) next = writeChecklist(next, g.id, a.checklist, a.note);
+        for (const { partId, list } of partLists) next = writeChecklist(next, g.id, list, a.note, partId);
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
         if (a.phases !== undefined)
@@ -583,7 +620,7 @@ export function registerTools(server: McpServer) {
           (after.items?.length
             ? `, checklist ${after.current ?? 0}/${after.items.length}`
             : after.parts?.length
-            ? `, ${after.parts.map((p) => `${p.title} ${p.current}/${p.target}${min(p.minimum)}`).join(", ")}`
+            ? `, ${after.parts.map((p) => `${p.title}${p.items?.length ? " (checklist)" : ""} ${p.current}/${p.target}${min(p.minimum)}`).join(", ")}`
             : after.target
               ? `, ${after.current ?? 0}/${after.target}${min(after.minimum)}`
               : "") + (reached ? ", minimum reached" : "") + (after.targetDate ? `, target ${after.targetDate} (${countdown(after.targetDate)})` : "");
@@ -601,7 +638,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Tick checklist entries",
       description:
-        "Ticks (or, with done: false, unticks) entries on a goal's checklist, by title or id; a unique part of a title is enough. Each tick is logged as a session for today, like a tick in the app, with note on the first; unticking takes its session back. The goal's progress follows its ticks.",
+        "Ticks (or, with done: false, unticks) entries on a goal's checklist or its parts' checklists, by title or id; a unique part of a title is enough. Each tick is logged as a session for today, like a tick in the app, with note on the first; unticking takes its session back. The goal's progress follows its ticks.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         items: jsonArray(z.array(z.string()).min(1)).describe("Entry titles or ids"),
@@ -612,16 +649,20 @@ export function registerTools(server: McpServer) {
     safe(async (a: { goal: string; items: string[]; done?: boolean; note?: string }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
-        if (!g.items?.length) throw new Error(`${g.title} has no checklist. Give it one with update_goal's checklist.`);
+        const all = [...(g.items ?? []), ...(g.parts ?? []).flatMap((p) => p.items ?? [])];
+        if (!all.length) throw new Error(`${g.title} has no checklist. Give it one with update_goal's checklist.`);
         const done = a.done ?? true;
-        const ids = [...new Set(a.items.map((ref) => pick(g.items!, ref, (x) => x.title, `entry of ${g.title}`).id))];
+        const ids = [...new Set(a.items.map((ref) => pick(all, ref, (x) => x.title, `entry of ${g.title}`).id))];
         let next = s;
         ids.forEach((id, n) => (next = O.setItemDone(next, g.id, id, done, n === 0 ? a.note : undefined)));
         const after = next.goals.find((x) => x.id === g.id)!;
-        const names = ids.map((id) => after.items!.find((i) => i.id === id)!.title);
+        const names = ids.map((id) => findItem(after, id)!.item.title);
+        const progress = after.parts?.length
+          ? after.parts.map((p) => `${p.title} ${p.current}/${p.target}`).join(", ")
+          : `${after.current ?? 0}/${after.target ?? 0}`;
         return {
           state: next,
-          result: `${done ? "Ticked" : "Unticked"} ${names.join("; ")}. ${after.title}: ${goalStatus(after)}, ${after.current ?? 0}/${after.items!.length}.`,
+          result: `${done ? "Ticked" : "Unticked"} ${names.join("; ")}. ${after.title}: ${goalStatus(after)}, ${progress}.`,
         };
       })
     )

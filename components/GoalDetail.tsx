@@ -4,9 +4,9 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ExternalLink, Minus, Plus, X } from "./icons";
+import { Check, ChevronDown, ExternalLink, Minus, Plus, X } from "./icons";
 import { Segmented } from "./books/bits";
-import { Goal, GoalItem, GoalStatus, Part, Tracker, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
+import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
@@ -117,6 +117,11 @@ export function GoalDetail({
     d > 0 ? tracker.logSession(g.id, partId, uid()) : tracker.stepBack(g.id, partId);
   // The part just added, whose name is selected to be typed over.
   const [focusId, setFocusId] = useState<string | null>(null);
+  // Parts whose checklists are showing. A part being worked on opens first.
+  const [openParts, setOpenParts] = useState<string[]>(() => {
+    const first = parts.find((p) => p.items?.length && p.current < p.target);
+    return first ? [first.id] : [];
+  });
   // A checklist just started: its first entry opens ready to be named.
   const pendingFocus = useRef<string | null>(null);
 
@@ -232,6 +237,9 @@ export function GoalDetail({
             parts.map((p) => (
               <Fragment key={p.id}>
               <StepRow
+                counted={!!p.items?.length}
+                open={openParts.includes(p.id)}
+                onOpen={() => setOpenParts((o) => (o.includes(p.id) ? o.filter((x) => x !== p.id) : [...o, p.id]))}
                 name={p.title}
                 current={p.current}
                 total={p.target}
@@ -264,6 +272,17 @@ export function GoalDetail({
                   )
                 }
               />
+              {p.items?.length && (openParts.includes(p.id) || editing) ? (
+                <ChecklistRows
+                  tracker={tracker}
+                  goal={g}
+                  partId={p.id}
+                  items={p.items}
+                  editing={editing}
+                  focusId={focusId}
+                  onFocus={setFocusId}
+                />
+              ) : null}
               </Fragment>
             ))
           )}
@@ -319,6 +338,9 @@ export function GoalDetail({
  * button, and its name, done count and total as text fields.
  */
 function StepRow({
+  counted,
+  open,
+  onOpen,
   name,
   current,
   total,
@@ -333,6 +355,11 @@ function StepRow({
   minimum,
   onMinimum,
 }: {
+  /** Counted by its checklist: no − and +, and its figures aren't typed. */
+  counted?: boolean;
+  /** Whether its checklist is showing, and the tap that shows or hides it. */
+  open?: boolean;
+  onOpen?: () => void;
   name: string;
   current: number;
   total: number | null;
@@ -391,6 +418,11 @@ function StepRow({
         ) : (
           <span className="step-row__name">{name}</span>
         )}
+        {counted ? (
+          <span className="step-row__of">
+            {current} of {total}
+          </span>
+        ) : (
         <span className="step-row__figures">
           <input
             type="number"
@@ -409,6 +441,7 @@ function StepRow({
             {...totField}
           />
         </span>
+        )}
         {total != null && (
           <label className="step-row__min">
             <span>Minimum</span>
@@ -427,6 +460,33 @@ function StepRow({
   }
 
   const digits = Math.max(1, widest.toLocaleString().length);
+  if (counted) {
+    return (
+      <li className="step-row part-row">
+        <button type="button" className="part-row__open" aria-expanded={open} onClick={onOpen}>
+          <span className="step-row__label">
+            <span className="step-row__name">{name}</span>
+            {total != null && total > 0 && (
+              <span className="step-bar" aria-hidden>
+                <span className="step-bar__fill" style={{ width: `${Math.min(100, (current / total) * 100)}%` }} />
+                {minimum != null && minimum < total && (
+                  <span
+                    className={"step-bar__min" + (current >= minimum ? " is-met" : "")}
+                    style={{ left: `${(minimum / total) * 100}%` }}
+                  />
+                )}
+              </span>
+            )}
+          </span>
+          <span className="part-row__count font-mono-n">
+            {current.toLocaleString()}
+            <span className="stepper__total"> of {total?.toLocaleString()}</span>
+          </span>
+          <ChevronDown className={"part-row__chevron" + (open ? " is-open" : "")} aria-hidden />
+        </button>
+      </li>
+    );
+  }
   return (
     <li className="step-row">
       <span className="step-row__label">
@@ -501,16 +561,6 @@ function Checklist({
   useEffect(() => {
     startOn.current = null;
   }, [startOn]);
-  /** Rewrites the list from the latest saved one, so quick edits don't undo each other. */
-  const write = (fn: (list: GoalItem[]) => GoalItem[]) => {
-    const now = tracker.state!.goals.find((x) => x.id === g.id)?.items ?? [];
-    return tracker.setGoalItems(g.id, fn(now));
-  };
-  const add = () => {
-    const id = uid();
-    void write((list) => [...list, { id, title: `Item ${list.length + 1}`, done: false }]);
-    setFocusId(id);
-  };
   return (
     <section className="goal-steps" aria-label="Checklist">
       <div className="goal-steps__head">
@@ -530,35 +580,76 @@ function Checklist({
         </button>
       </div>
       <ul className="step-list">
-        {items.map((i) => (
-          <ItemRow
-            key={i.id}
-            item={i}
-            editing={editing}
-            focus={focusId === i.id}
-            onToggle={() => tracker.setItemDone(g.id, i.id, !i.done)}
-            onChange={(patch) => write((list) => list.map((x) => (x.id === i.id ? { ...x, ...patch } : x)))}
-            onDelete={() => write((list) => list.filter((x) => x.id !== i.id))}
-          />
-        ))}
-        {editing && (
-          <li>
-            <button type="button" className="step-add" onClick={add}>
-              <span className="step-add__icon" aria-hidden>
-                <Plus />
-              </span>
-              Add Item
-            </button>
-          </li>
-        )}
+        <ChecklistRows tracker={tracker} goal={g} items={items} editing={editing} focusId={focusId} onFocus={setFocusId} />
       </ul>
     </section>
+  );
+}
+
+/**
+ * A checklist's rows, the goal's or a part's: one per entry, then, in Edit,
+ * Add Item. Changes are written from the latest saved list, so quick edits
+ * don't undo each other.
+ */
+function ChecklistRows({
+  tracker,
+  goal: g,
+  partId,
+  items,
+  editing,
+  focusId,
+  onFocus,
+}: {
+  tracker: Tracker;
+  goal: Goal;
+  partId?: string;
+  items: GoalItem[];
+  editing: boolean;
+  focusId: string | null;
+  onFocus: (id: string | null) => void;
+}) {
+  const write = (fn: (list: GoalItem[]) => GoalItem[]) => {
+    const now = tracker.state!.goals.find((x) => x.id === g.id);
+    const list = (partId ? now?.parts?.find((p) => p.id === partId)?.items : now?.items) ?? [];
+    return tracker.setGoalItems(g.id, fn(list), partId);
+  };
+  const add = () => {
+    const id = uid();
+    void write((list) => [...list, { id, title: `Item ${list.length + 1}`, done: false }]);
+    onFocus(id);
+  };
+  return (
+    <>
+      {items.map((i) => (
+        <ItemRow
+          key={i.id}
+          item={i}
+          nested={!!partId}
+          editing={editing}
+          focus={focusId === i.id}
+          onToggle={() => tracker.setItemDone(g.id, i.id, !i.done)}
+          onChange={(patch) => write((list) => list.map((x) => (x.id === i.id ? { ...x, ...patch } : x)))}
+          onDelete={() => write((list) => list.filter((x) => x.id !== i.id))}
+        />
+      ))}
+      {editing && (
+        <li className={partId ? "item-row--nested" : undefined}>
+          <button type="button" className="step-add" onClick={add}>
+            <span className="step-add__icon" aria-hidden>
+              <Plus />
+            </span>
+            Add Item
+          </button>
+        </li>
+      )}
+    </>
   );
 }
 
 /** One checklist entry: its tick and its name, or, in Edit, its name and link as fields. */
 function ItemRow({
   item: i,
+  nested,
   editing,
   focus,
   onToggle,
@@ -566,6 +657,8 @@ function ItemRow({
   onDelete,
 }: {
   item: GoalItem;
+  /** One of a part's entries, set in under the part. */
+  nested?: boolean;
   editing: boolean;
   focus: boolean;
   onToggle: () => Promise<unknown>;
@@ -591,7 +684,7 @@ function ItemRow({
 
   if (editing) {
     return (
-      <li className="step-row step-row--editing item-row--editing">
+      <li className={"step-row step-row--editing item-row--editing" + (nested ? " item-row--nested" : "")}>
         <button type="button" className="step-delete" aria-label={`Delete ${i.title}`} onClick={() => void onDelete()}>
           <Minus aria-hidden />
         </button>
@@ -611,7 +704,7 @@ function ItemRow({
   }
 
   return (
-    <li className={"step-row item-row" + (i.done ? " is-done" : "")}>
+    <li className={"step-row item-row" + (i.done ? " is-done" : "") + (nested ? " item-row--nested" : "")}>
       <button
         type="button"
         role="checkbox"
@@ -664,7 +757,7 @@ function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log
   if (log.length === 0) return null;
   const shown = all ? log : log.slice(-10);
   const partName = (id?: string) => (id ? g.parts?.find((p) => p.id === id)?.title ?? "Removed part" : null);
-  const itemName = (id?: string) => (id ? g.items?.find((i) => i.id === id)?.title ?? "Removed item" : null);
+  const itemName = (id?: string) => (id ? findItem(g, id)?.item.title ?? "Removed item" : null);
   return (
     <section className="goal-steps" aria-label="Sessions">
       <div className="goal-steps__head">

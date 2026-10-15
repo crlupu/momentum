@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, cleanUrl, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withItemCount, withTopicCategory, type LearningEntry, type Goal, type GoalItem, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
+import { NOTE_MAX, cleanUrl, findItem, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withItemCount, withTopicCategory, type LearningEntry, type Goal, type GoalItem, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -211,47 +211,12 @@ export function setGoalCount(
   };
 }
 
-/**
- * Replaces a goal's parts. Each needs a title and a total above 0; counts are
- * kept within 0 and the total. An empty list removes them.
- */
-export function setGoalParts(
-  s: TrackerState,
-  id: string,
-  parts: Array<{ id?: string; title: string; current?: number; target: number; minimum?: number | null }>
-): TrackerState {
-  const clean: Part[] = parts
-    .filter((p) => p.title.trim() && Number.isFinite(p.target) && p.target > 0)
-    .map((p) => ({
-      id: p.id ?? uid(),
-      title: p.title.trim(),
-      target: p.target,
-      current: Math.min(p.target, Math.max(0, p.current ?? 0)),
-      ...(validMinimum(p.minimum, p.target) ? { minimum: p.minimum } : {}),
-    }));
-  return {
-    ...s,
-    // Parts and a checklist don't mix: parts, once there, replace it.
-    goals: s.goals.map((g) =>
-      g.id === id ? { ...g, parts: clean.length ? clean : undefined, ...(clean.length ? { items: undefined } : {}) } : g
-    ),
-  };
-}
+type ItemInput = { id?: string; title: string; url?: string; done?: boolean; doneDate?: string | null };
 
-/**
- * Replaces a goal's checklist. Each entry needs a name; a link is kept when
- * it's an http(s) address. Ticks are set as given, without logging sessions:
- * this is the list being written, not work being done (see setItemDone).
- * The goal's count follows the ticks. An empty list removes the checklist
- * and leaves the count where it stood.
- */
-export function setGoalItems(
-  s: TrackerState,
-  id: string,
-  items: Array<{ id?: string; title: string; url?: string; done?: boolean; doneDate?: string | null }>
-): TrackerState {
+/** A checklist as written: named entries, http(s) links kept, ticks as given. */
+function cleanItems(items: ItemInput[]): GoalItem[] {
   const today = dateKey();
-  const clean: GoalItem[] = items
+  return items
     .filter((i) => i.title.trim())
     .map((i) => {
       const url = cleanUrl(i.url);
@@ -264,44 +229,109 @@ export function setGoalItems(
         doneDate: done ? (i.doneDate && isDateKey(i.doneDate) ? i.doneDate : today) : null,
       };
     });
+}
+
+/**
+ * Replaces a goal's parts. Each needs a title and a total above 0; counts are
+ * kept within 0 and the total. A part with a checklist keeps it, and its
+ * count comes from it. An empty list removes them.
+ */
+export function setGoalParts(
+  s: TrackerState,
+  id: string,
+  parts: Array<{ id?: string; title: string; current?: number; target: number; minimum?: number | null; items?: ItemInput[] }>
+): TrackerState {
+  const clean: Part[] = parts
+    .map((p) => {
+      const items = p.items?.length ? cleanItems(p.items) : [];
+      return items.length ? { ...p, items, target: items.length } : { ...p, items: undefined };
+    })
+    .filter((p) => p.title.trim() && Number.isFinite(p.target) && p.target > 0)
+    .map((p) => ({
+      id: p.id ?? uid(),
+      title: p.title.trim(),
+      target: p.target,
+      current: Math.min(p.target, Math.max(0, p.current ?? 0)),
+      ...(validMinimum(p.minimum, p.target) ? { minimum: p.minimum } : {}),
+      ...(p.items ? { items: p.items } : {}),
+    }));
   return {
     ...s,
+    // Parts and a goal-wide checklist don't mix: parts, once there, replace it.
     goals: s.goals.map((g) =>
-      g.id === id ? withItemCount({ ...g, items: clean.length ? clean : undefined, ...(clean.length ? { parts: undefined } : {}) }) : g
+      g.id === id
+        ? withItemCount({ ...g, parts: clean.length ? clean : undefined, ...(clean.length ? { items: undefined } : {}) })
+        : g
     ),
   };
 }
 
 /**
- * Ticks or unticks one checklist entry. A tick is a session, logged like a
- * +1 (and ticking the to-dos planned for the goal); unticking takes that
- * session back, or, for an entry ticked before sessions were linked to
- * entries, just lowers the count.
+ * Replaces a checklist: the goal's own, or, with partId, one part's. Ticks
+ * are set as given, without logging sessions: this is the list being
+ * written, not work being done (see setItemDone). The count follows the
+ * ticks. An empty list removes the checklist and leaves the count where it
+ * stood.
+ */
+export function setGoalItems(s: TrackerState, id: string, items: ItemInput[], partId?: string): TrackerState {
+  const clean = cleanItems(items);
+  return {
+    ...s,
+    goals: s.goals.map((g) => {
+      if (g.id !== id) return g;
+      if (partId)
+        return withItemCount({
+          ...g,
+          parts: g.parts?.map((p) => (p.id === partId ? { ...p, items: clean.length ? clean : undefined } : p)),
+        });
+      return withItemCount({ ...g, items: clean.length ? clean : undefined, ...(clean.length ? { parts: undefined } : {}) });
+    }),
+  };
+}
+
+/**
+ * Ticks or unticks one checklist entry, the goal's or a part's. A tick is a
+ * session, logged like a +1 on that count (and ticking the to-dos planned
+ * for it); unticking takes that session back, or, for an entry ticked
+ * before sessions were linked to entries, just lowers the count.
  */
 export function setItemDone(s: TrackerState, goalId: string, itemId: string, done: boolean, note?: string): TrackerState {
   const g = s.goals.find((x) => x.id === goalId);
-  const item = g?.items?.find((i) => i.id === itemId);
-  if (!g || !item || item.done === done) return s;
+  const found = g && findItem(g, itemId);
+  if (!g || !found || found.item.done === done) return s;
+  const { partId } = found;
   if (done) {
     const ticked = markItem(s, goalId, itemId, true);
     // The count is ticks less this one until the session moves it on.
-    const back = { ...ticked, goals: ticked.goals.map((x) => (x.id === goalId ? { ...x, current: (x.current ?? 1) - 1 } : x)) };
-    return logSession(back, { goalId, itemId, note });
+    const back = {
+      ...ticked,
+      goals: ticked.goals.map((x) =>
+        x.id !== goalId
+          ? x
+          : partId
+            ? { ...x, parts: x.parts?.map((p) => (p.id === partId ? { ...p, current: p.current - 1 } : p)) }
+            : { ...x, current: (x.current ?? 1) - 1 }
+      ),
+    };
+    return logSession(back, { goalId, partId, itemId, note });
   }
   const entry = [...(s.learningLog ?? [])].reverse().find((e) => e.goalId === goalId && e.itemId === itemId);
   if (entry) return deleteLogEntry(s, entry.id);
   return markItem(s, goalId, itemId, false);
 }
 
-/** Sets one entry's tick and recounts the goal. */
+/** Sets one entry's tick, wherever it is in the goal, and recounts. */
 function markItem(s: TrackerState, goalId: string, itemId: string, done: boolean): TrackerState {
+  const tick = (list?: GoalItem[]) =>
+    list?.map((i) => (i.id === itemId ? { ...i, done, doneDate: done ? dateKey() : null } : i));
   return {
     ...s,
     goals: s.goals.map((g) =>
-      g.id === goalId && g.items
+      g.id === goalId
         ? withItemCount({
             ...g,
-            items: g.items.map((i) => (i.id === itemId ? { ...i, done, doneDate: done ? dateKey() : null } : i)),
+            ...(g.items ? { items: tick(g.items) } : {}),
+            ...(g.parts ? { parts: g.parts.map((p) => (p.items ? { ...p, items: tick(p.items) } : p)) } : {}),
           })
         : g
     ),
@@ -475,11 +505,10 @@ export function deleteLogEntry(s: TrackerState, id: string): TrackerState {
   // On a checklist goal the ticks are the count: taking back a tick's
   // session unticks it, and any other session leaves the count to the ticks.
   const g = state.goals.find((x) => x.id === e.goalId);
-  const counted = g?.items?.length
-    ? e.itemId && g.items.some((i) => i.id === e.itemId && i.done)
-      ? markItem(state, e.goalId, e.itemId, false)
-      : { ...state, goals: state.goals.map((x) => (x.id === e.goalId ? withItemCount(x) : x)) }
-    : state;
+  const ticked = g && e.itemId ? findItem(g, e.itemId) : undefined;
+  const counted = ticked?.item.done
+    ? markItem(state, e.goalId, e.itemId!, false)
+    : { ...state, goals: state.goals.map((x) => (x.id === e.goalId ? withItemCount(x) : x)) };
   return reopenTodos({ ...counted, learningLog: (counted.learningLog ?? []).filter((x) => x.id !== id) }, id);
 }
 
