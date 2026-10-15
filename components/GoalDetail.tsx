@@ -717,7 +717,7 @@ function ItemRow({
       </button>
       {i.url ? (
         <a href={i.url} target="_blank" rel="noopener noreferrer" className="item-row__name item-row__link">
-          {i.title}
+          <span className="item-row__text">{i.title}</span>
           <ExternalLink className="item-row__open" aria-hidden />
         </a>
       ) : (
