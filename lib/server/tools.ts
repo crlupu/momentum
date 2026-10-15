@@ -6,7 +6,21 @@
  */
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { countdown, dateKey, goalStatus, goalTopic, isDateKey, minimumReached, uid, type GoalStatus, type TrackerState } from "../model";
+import {
+  countdown,
+  dateKey,
+  goalStatus,
+  goalTopic,
+  isDateKey,
+  isRecurringDone,
+  minimumReached,
+  nextCategoryColor,
+  uid,
+  type Frequency,
+  type GoalStatus,
+  type RecurringTask,
+  type TrackerState,
+} from "../model";
 import * as R from "../reading";
 import * as O from "../ops";
 import { projectFinished, type CardStatus } from "../projects";
@@ -117,6 +131,18 @@ function overview(s: TrackerState, section: string) {
         };
       });
   }
+  if (section === "all" || section === "recurring") {
+    const groupName = (id?: string) => (id ? s.recurringGroups.find((g) => g.id === id)?.name : undefined);
+    out.categories = s.categories.map((c) => c.name);
+    out.recurring = s.recurring.map((r) => ({
+      id: r.id,
+      title: r.title,
+      frequency: r.freq,
+      category: s.categories.find((c) => c.id === r.catId)?.name,
+      ...(r.groupId ? { group: groupName(r.groupId) } : {}),
+      done_this_period: isRecurringDone(r),
+    }));
+  }
   if (section === "all" || section === "projects") {
     out.projects = s.projects.map((p) => ({
       id: p.id,
@@ -159,8 +185,8 @@ export function registerTools(server: McpServer) {
     {
       title: "Momentum overview",
       description:
-        "Reads the user's Momentum data: reading tracks and books (with status and current page), learning topics and goals, open to-dos (with the day they're planned for and the goal step that ticks them), and projects with their cards. Call this first to find the names and ids the other tools take.",
-      inputSchema: { section: z.enum(["all", "books", "learning", "todos", "projects"]).default("all") },
+        "Reads the user's Momentum data: reading tracks and books (with status and current page), learning topics and goals, open to-dos (with the day they're planned for and the goal step that ticks them), recurring tasks (with frequency, category and group), and projects with their cards. Call this first to find the names and ids the other tools take.",
+      inputSchema: { section: z.enum(["all", "books", "learning", "todos", "recurring", "projects"]).default("all") },
       annotations: { readOnlyHint: true },
     },
     safe(async ({ section }: { section: string }) => overview(await readState(), section))
@@ -682,6 +708,64 @@ export function registerTools(server: McpServer) {
         return {
           state: { ...s, todos: s.todos.filter((t) => !ids.has(t.id)) },
           result: `Removed ${ids.size} to-do${ids.size === 1 ? "" : "s"}.`,
+        };
+      })
+    )
+  );
+
+  server.registerTool(
+    "set_recurring",
+    {
+      title: "Replace the recurring tasks",
+      description:
+        "Replaces every recurring task with the given list. Each has a frequency (daily, weekly, biweekly or monthly) and a category by name, created if it doesn't exist. Tasks sharing a group are interchangeable: doing any one covers the group for the period. Groups not used by the new list are removed. Past completions stay in the log.",
+      inputSchema: {
+        tasks: jsonArray(
+          z
+            .array(
+              z.object({
+                title: z.string().min(1),
+                frequency: z.enum(["daily", "weekly", "biweekly", "monthly"]),
+                category: z.string().min(1).describe("Category name; created if missing"),
+                group: z.string().optional().describe("Group name; tasks in a group cover each other"),
+              })
+            )
+            .min(1)
+        ),
+      },
+    },
+    safe(async (a: { tasks: { title: string; frequency: Frequency; category: string; group?: string }[] }) =>
+      change((s) => {
+        let categories = [...s.categories];
+        const catId = (name: string) => {
+          const found = categories.find((c) => norm(c.name) === norm(name));
+          if (found) return found.id;
+          const c = { id: uid(), name: name.trim(), color: nextCategoryColor(categories) };
+          categories = [...categories, c];
+          return c.id;
+        };
+        const groups: { id: string; name: string }[] = [];
+        const groupId = (name?: string) => {
+          if (!name?.trim()) return undefined;
+          const kept =
+            groups.find((g) => norm(g.name) === norm(name)) ??
+            s.recurringGroups.find((g) => norm(g.name) === norm(name));
+          const g = kept ?? { id: uid(), name: name.trim() };
+          if (!groups.some((x) => x.id === g.id)) groups.push(g);
+          return g.id;
+        };
+        const recurring: RecurringTask[] = a.tasks.map((t) => ({
+          id: uid(),
+          title: t.title.trim(),
+          catId: catId(t.category),
+          freq: t.frequency,
+          lastDone: null,
+          groupId: groupId(t.group),
+        }));
+        const removed = s.recurring.length;
+        return {
+          state: { ...s, categories, recurring, recurringGroups: groups },
+          result: `Removed ${removed} recurring task${removed === 1 ? "" : "s"} and added ${recurring.length}.`,
         };
       })
     )
