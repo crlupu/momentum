@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
-import { readingUnits } from "@/lib/reading";
 import { todoDueBy } from "@/lib/model";
 
 const RING = 88;
@@ -11,8 +10,8 @@ const STROKE = 10;
 /**
  * The day's momentum: how much of today's routine is done, as one ring.
  *
- * The one large piece of colour in the app. It fills in electric blue as routines
- * and reading targets are ticked off, and closes when the day is done.
+ * The one large piece of colour in the app. It fills in electric blue as
+ * recurring tasks are ticked off, and closes when the day is done.
  * Below it, the figures from the other sections that change daily, each a
  * link to the page that holds them.
  */
@@ -21,7 +20,9 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   if (!st) return null;
 
   const today = dateKey();
-  const units = [...recurringUnits(st.recurring, today), ...readingUnits(st, today)];
+  // Recurring tasks only. Reading tracks used to count too, but books are
+  // recurring tasks of their own now, so each book was counted twice.
+  const units = recurringUnits(st.recurring, today);
   const done = units.filter((u) => u.done).length;
   const total = units.length;
   const pct = total ? done / total : 0;
