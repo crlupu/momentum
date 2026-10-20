@@ -864,10 +864,13 @@ export function periodKey(freq: Frequency, key: string): string {
   switch (freq) {
     case "daily":
       return key;
+    // Weeks run Monday to Sunday. Day 0 of the epoch was a Thursday, so
+    // counting from it put the turn of the week on Thursday; the 3 moves it
+    // back to Monday.
     case "weekly":
-      return "w" + Math.floor(daysSinceEpoch(key) / 7);
+      return "w" + Math.floor((daysSinceEpoch(key) + 3) / 7);
     case "biweekly":
-      return "b" + Math.floor(daysSinceEpoch(key) / 14);
+      return "b" + Math.floor((daysSinceEpoch(key) + 3) / 14);
     case "monthly":
       return key.slice(0, 7);
   }
