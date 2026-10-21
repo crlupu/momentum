@@ -90,11 +90,15 @@ function overview(s: TrackerState, section: string) {
         goal: p.goal,
         books: s.books.filter((b) => b.phaseId === p.id).length,
       }));
+    // A waiting book's place in its track's queue, 1 being next up.
+    const queuePos = new Map<string, number>();
+    for (const t of s.readingTracks) R.trackQueue(s, t.id).forEach((b, i) => queuePos.set(b.id, i + 1));
     out.books = s.books.map((b) => ({
       id: b.id,
       title: b.title,
       author: b.author || undefined,
       status: b.status,
+      queue: queuePos.get(b.id),
       page: b.read,
       pages: b.pages || undefined,
       track: s.readingTracks.find((t) => t.id === b.trackId)?.name,
@@ -695,6 +699,55 @@ export function registerTools(server: McpServer) {
           state: next,
           result: `${after.name}: ${after.dailyTarget} pages a day${after.note ? `. ${after.note}` : ""}`,
         };
+      })
+    )
+  );
+
+  server.registerTool(
+    "reorder_track",
+    {
+      title: "Reorder a reading track",
+      description:
+        "Sets the reading order of one track's queue (queued and paused books), touching no other track. Listed books go first, in the order given; waiting books left out keep their relative order after them. Each entry can also move the book to another phase (phase name or id; an empty string takes it out of every phase). The active book stays open; list it only to change its phase.",
+      inputSchema: {
+        track: z.string().describe("Track name or id"),
+        books: jsonArray(
+          z
+            .array(
+              z.object({
+                book: z.string().describe("Title or id"),
+                phase: z.string().optional().describe("Move it to this phase; empty string for none"),
+              })
+            )
+            .min(1)
+        ),
+      },
+    },
+    safe(async (a: { track: string; books: { book: string; phase?: string }[] }) =>
+      change((s) => {
+        const tr = pick(s.readingTracks, a.track, (x) => x.name, "track");
+        const inTrack = s.books.filter((b) => b.trackId === tr.id && b.status !== "dropped" && b.status !== "finished");
+        const ids: string[] = [];
+        const phaseOf = new Map<string, string | undefined>();
+        for (const e of a.books) {
+          const b = pick(inTrack, e.book, (x) => x.title, `book in ${tr.name}`);
+          if (ids.includes(b.id)) throw new Error(`"${b.title}" is listed twice.`);
+          ids.push(b.id);
+          if (e.phase !== undefined) {
+            phaseOf.set(b.id, e.phase.trim() ? pick(s.readingPhases, e.phase, (p) => p.name, "phase").id : undefined);
+          }
+        }
+        let next: TrackerState = {
+          ...s,
+          books: s.books.map((b) => (phaseOf.has(b.id) ? { ...b, phaseId: phaseOf.get(b.id) } : b)),
+        };
+        const waiting = new Set(R.trackQueue(next, tr.id).map((b) => b.id));
+        next = R.reorderQueue(next, tr.id, ids.filter((id) => waiting.has(id)));
+        const queue = R.trackQueue(next, tr.id).map((b, i) => {
+          const ph = next.readingPhases.find((p) => p.id === b.phaseId)?.name;
+          return `${i + 1}. ${b.title}${ph ? ` (${ph})` : ""}`;
+        });
+        return { state: next, result: `${tr.name} queue:\n${queue.join("\n")}` };
       })
     )
   );
