@@ -17,11 +17,9 @@ import {
   type WeekMedian,
   addDays,
   checkpointStatus,
-  evenCheckpoints,
-  expectedOn,
+  makePlan,
   mondayOf,
   planSummary,
-  round1,
   validPlan,
   weeklyMedians,
 } from "@/lib/weight";
@@ -29,17 +27,16 @@ import {
 const kg1 = (v: number) => v.toFixed(1).replace(/\.0$/, "");
 
 const STATUS: Record<CheckStatus, { label: string; cls: string }> = {
-  ahead: { label: "Ahead", cls: "rd-flag--done" },
-  "on-track": { label: "On track", cls: "rd-flag--on-track" },
+  reached: { label: "Reached", cls: "rd-flag--on-track" },
   behind: { label: "Behind", cls: "rd-flag--behind" },
   pending: { label: "To come", cls: "" },
   missed: { label: "No weigh-in", cls: "rd-flag--at-risk" },
 };
 
 /**
- * The weight-loss plan: the target and how far along it is by the weekly
- * median, the plan drawn against the medians, and its checkpoints, each
- * judged by the median of the week it falls in.
+ * The weight-loss plan: checkpoints, each a weight by a date, the last the
+ * target. How far along it is comes from the weekly median, and each
+ * checkpoint is judged by the median of the week it falls in.
  */
 export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
@@ -51,9 +48,7 @@ export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
     <Panel title="Weight plan" onEdit={plan ? () => setEditing(true) : undefined}>
       {!plan ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[15px] text-[var(--muted)]">
-            No plan yet. Set a target weight and date, with checkpoints on the way.
-          </p>
+          <p className="text-[15px] text-[var(--muted)]">No plan yet. Set the weights to reach, each by a date.</p>
           <Button variant="primary" onPress={() => setEditing(true)}>
             Set a plan
           </Button>
@@ -72,7 +67,6 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
   const weights = tracker.state!.weights.filter((w) => w.date >= mondayOf(plan.startDate));
   const medians = weeklyMedians(weights);
   const sum = planSummary(plan, tracker.state!.weights, today);
-  const thisWeek = medians.find((m) => m.week === mondayOf(today));
   const pace = (v: number | null) => (v == null ? "–" : `${v < 0 ? "+" : ""}${Math.abs(v).toFixed(2)}`);
 
   return (
@@ -89,7 +83,8 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
           <span style={{ width: `${sum.progress * 100}%`, background: "var(--accent)" }} />
         </div>
         <div className="mt-1 text-xs text-[var(--muted)]">
-          {Math.round(sum.progress * 100)}% of the way, by the latest weekly median ({kg1(sum.current)} kg)
+          {Math.round(sum.progress * 100)}% of the way · weekly median {kg1(sum.current)} kg
+          {sum.next && sum.next.date !== plan.targetDate && ` · next: ${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}`}
         </div>
       </div>
 
@@ -100,60 +95,41 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
         <Stat value={pace(sum.actualPace)} label="kg/week so far" />
       </div>
 
-      <p className="text-[13px] text-[var(--muted)]">
-        The plan puts today at <span className="font-mono-n font-semibold text-foreground">{kg1(sum.expectedNow)} kg</span>
-        {thisWeek ? (
-          <>
-            {"; this week's median is "}
-            <span className="font-mono-n font-semibold text-foreground">{kg1(thisWeek.median)} kg</span>
-            {` (${thisWeek.n} weigh-in${thisWeek.n === 1 ? "" : "s"})`}
-          </>
-        ) : (
-          "; no weigh-in this week yet"
-        )}
-        . Average pace planned: {plan.startKg > plan.targetKg ? "~" : ""}
-        {sum.plannedPace.toFixed(2)} kg/week.
-      </p>
-
       <PlanChart plan={plan} medians={medians} today={today} />
 
-      {plan.checkpoints.length > 0 && (
-        <table className="rd-table">
-          <thead>
-            <tr>
-              <th>Checkpoint</th>
-              <th className="text-right">Range</th>
-              <th className="text-right">Week median</th>
-              <th className="text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plan.checkpoints.map((c) => {
-              const st = checkpointStatus(c, medians, today);
-              return (
-                <tr key={c.date}>
-                  <td>{fmtDateAuto(c.date)}</td>
-                  <td className="text-right font-mono-n">
-                    {kg1(c.lo)}–{kg1(c.hi)} kg
-                  </td>
-                  <td className="text-right font-mono-n">{st.median != null ? `${kg1(st.median)} kg` : "–"}</td>
-                  <td className="text-right">
-                    <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <table className="rd-table">
+        <thead>
+          <tr>
+            <th>Checkpoint</th>
+            <th className="text-right">Target</th>
+            <th className="text-right">Week median</th>
+            <th className="text-right">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {plan.checkpoints.map((c) => {
+            const st = checkpointStatus(c, medians, today);
+            return (
+              <tr key={c.date}>
+                <td>{fmtDateAuto(c.date)}</td>
+                <td className="text-right font-mono-n">{kg1(c.kg)} kg</td>
+                <td className="text-right font-mono-n">{st.median != null ? `${kg1(st.median)} kg` : "–"}</td>
+                <td className="text-right">
+                  <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
 
 /**
- * The plan from start to target: its straight line dashed, each checkpoint's
- * range as a band at its date, and the weekly medians on top, each at the
- * middle of its week.
+ * The plan from start to target: dashed lines from the start through each
+ * checkpoint, the checkpoints as rings, and the weekly medians on top, each
+ * at the middle of its week.
  */
 function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMedian[]; today: string }) {
   const [box, measured] = useWidth();
@@ -165,16 +141,12 @@ function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMe
   const pts = medians
     .map((m) => ({ ...m, day: daysSinceEpoch(addDays(m.week, 3)) }))
     .filter((m) => m.day >= d0 - 3 && m.day <= d1 + 3);
+  const line = [{ date: plan.startDate, kg: plan.startKg }, ...plan.checkpoints];
 
-  const all = [
-    plan.startKg,
-    plan.targetKg,
-    ...plan.checkpoints.flatMap((c) => [c.lo, c.hi]),
-    ...pts.map((p) => p.median),
-  ];
+  const all = [...line.map((c) => c.kg), ...pts.map((p) => p.median)];
   const span = Math.max(...all) - Math.min(...all) || 2;
-  const lo = Math.min(...all) - span * 0.08;
-  const hi = Math.max(...all) + span * 0.08;
+  const lo = Math.min(...all) - span * 0.1;
+  const hi = Math.max(...all) + span * 0.1;
   const x = (day: number) => pad.l + ((Math.min(d1, Math.max(d0, day)) - d0) / (d1 - d0)) * (W - pad.l - pad.r);
   const y = (kg: number) => H - pad.b - ((kg - lo) / (hi - lo)) * (H - pad.t - pad.b);
   const ticks = [0, 0.5, 1].map((f) => lo + f * (hi - lo));
@@ -197,25 +169,9 @@ function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMe
             </text>
           </g>
         ))}
-        {plan.checkpoints.map((c) => (
-          <rect
-            key={c.date}
-            x={x(daysSinceEpoch(c.date)) - 5}
-            width={10}
-            y={y(c.hi)}
-            height={Math.max(2, y(c.lo) - y(c.hi))}
-            rx={3}
-            fill="var(--chart-2)"
-            opacity={0.35}
-          >
-            <title>{`${fmtDateAuto(c.date)}: ${kg1(c.lo)}–${kg1(c.hi)} kg`}</title>
-          </rect>
-        ))}
-        <line
-          x1={x(d0)}
-          y1={y(plan.startKg)}
-          x2={x(d1)}
-          y2={y(plan.targetKg)}
+        <polyline
+          points={line.map((c) => `${x(daysSinceEpoch(c.date))},${y(c.kg)}`).join(" ")}
+          fill="none"
           stroke="var(--muted)"
           strokeWidth="1.5"
           strokeDasharray="4 4"
@@ -223,6 +179,19 @@ function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMe
         {t >= d0 && t <= d1 && (
           <line x1={x(t)} x2={x(t)} y1={pad.t} y2={H - pad.b} stroke="var(--border-strong)" strokeWidth="1" />
         )}
+        {plan.checkpoints.map((c) => (
+          <circle
+            key={c.date}
+            cx={x(daysSinceEpoch(c.date))}
+            cy={y(c.kg)}
+            r={5}
+            fill="var(--pane-bg)"
+            stroke="var(--chart-2)"
+            strokeWidth="2"
+          >
+            <title>{`${fmtDateAuto(c.date)}: ${kg1(c.kg)} kg`}</title>
+          </circle>
+        ))}
         {pts.length > 1 && (
           <polyline
             points={pts.map((p) => `${x(p.day)},${y(p.median)}`).join(" ")}
@@ -255,27 +224,26 @@ function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMe
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--chart-1)" }} /> Weekly median
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0 w-3 border-t border-dashed" style={{ borderColor: "var(--muted)" }} /> Plan
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2 rounded-sm opacity-50" style={{ background: "var(--chart-2)" }} /> Checkpoint range
+          <span className="inline-block h-2.5 w-2.5 rounded-full border-2" style={{ borderColor: "var(--chart-2)" }} /> Checkpoint
         </span>
       </div>
     </div>
   );
 }
 
-type Row = { date: string; lo: string; hi: string };
+type Row = { date: string; kg: string };
 
+/**
+ * Just the checkpoints: a date and a weight each. The plan starts from the
+ * latest weigh-in when it's first set, and keeps that start after.
+ */
 function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPlan; onDone: () => void }) {
   const s = tracker.state!;
   const latest = s.weights[s.weights.length - 1];
-  const [startDate, setStartDate] = useState(plan?.startDate ?? dateKey());
-  const [startKg, setStartKg] = useState(plan ? String(plan.startKg) : latest ? String(latest.kg) : "");
-  const [targetDate, setTargetDate] = useState(plan?.targetDate ?? "");
-  const [targetKg, setTargetKg] = useState(plan ? String(plan.targetKg) : "");
+  const startDate = plan?.startDate ?? dateKey();
+  const startKg = plan?.startKg ?? latest?.kg;
   const [rows, setRows] = useState<Row[]>(
-    (plan?.checkpoints ?? []).map((c) => ({ date: c.date, lo: String(c.lo), hi: String(c.hi) }))
+    plan ? plan.checkpoints.map((c) => ({ date: c.date, kg: String(c.kg) })) : [{ date: addDays(startDate, 14), kg: "" }]
   );
   const [error, setError] = useState<string | null>(null);
   const { pending, run } = usePending();
@@ -284,136 +252,70 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  const base = () => {
-    const sk = num(startKg);
-    const tk = num(targetKg);
-    if (!startDate || !targetDate || sk == null || tk == null) return null;
-    if (targetDate <= startDate) return null;
-    return { startDate, startKg: sk, targetDate, targetKg: tk };
-  };
-
-  const fill = () => {
-    const b = base();
-    if (!b) return setError("Fill in the start and target first, with the target after the start.");
-    setError(null);
-    setRows(evenCheckpoints(b).map((c) => ({ date: c.date, lo: String(c.lo), hi: String(c.hi) })));
-  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const b = base();
-    if (!b) return setError("A start and a target, each with a date and a weight; the target after the start.");
+    if (startKg == null) return setError("Log today's weight first: the plan starts from it.");
     const checkpoints: WeightCheckpoint[] = [];
     for (const r of rows) {
-      if (!r.date && !r.lo && !r.hi) continue;
-      const lo = num(r.lo);
-      const hi = num(r.hi) ?? lo;
-      if (!r.date || lo == null || hi == null) return setError("Each checkpoint needs a date and a weight range.");
-      checkpoints.push({ date: r.date, lo: round1(Math.min(lo, hi)), hi: round1(Math.max(lo, hi)) });
+      if (!r.date && !r.kg) continue;
+      const kg = num(r.kg);
+      if (!r.date || kg == null) return setError("Each checkpoint needs a date and a weight.");
+      if (r.date <= startDate) return setError(`Checkpoints come after the start, ${fmtDateAuto(startDate)}.`);
+      checkpoints.push({ date: r.date, kg });
     }
-    checkpoints.sort((a, c) => a.date.localeCompare(c.date));
-    const ok = await run(() => tracker.setWeightPlan({ ...b, checkpoints }));
+    const next = makePlan(startDate, startKg, checkpoints);
+    if (!next) return setError("Add at least one checkpoint.");
+    const ok = await run(() => tracker.setWeightPlan(next));
     if (ok !== false) onDone();
   };
 
   const set = (i: number, patch: Partial<Row>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
-  const b = base();
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-[11px] text-[var(--muted)]">
-          Start date
-          <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-0.5 w-full" />
-        </label>
-        <label className="block text-[11px] text-[var(--muted)]">
-          Start weight (kg)
-          <Input type="number" step="0.1" inputMode="decimal" value={startKg} onChange={(e) => setStartKg(e.target.value)} className="mt-0.5 w-full" />
-        </label>
-        <label className="block text-[11px] text-[var(--muted)]">
-          Target date
-          <Input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="mt-0.5 w-full" />
-        </label>
-        <label className="block text-[11px] text-[var(--muted)]">
-          Target weight (kg)
-          <Input type="number" step="0.1" inputMode="decimal" value={targetKg} onChange={(e) => setTargetKg(e.target.value)} className="mt-0.5 w-full" />
-        </label>
-      </div>
-      {b && (
-        <p className="-mt-2 text-xs text-[var(--muted)]">
-          {kg1(round1(b.startKg - b.targetKg))} kg over {Math.round((daysSinceEpoch(b.targetDate) - daysSinceEpoch(b.startDate)) / 7)} weeks:
-          ~{((b.startKg - b.targetKg) / ((daysSinceEpoch(b.targetDate) - daysSinceEpoch(b.startDate)) / 7)).toFixed(2)} kg/week.
-        </p>
-      )}
-
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <p className="text-[13px] text-[var(--muted)]">
+        {startKg != null
+          ? `From ${kg1(startKg)} kg on ${fmtDateAuto(startDate)}. The last checkpoint is the target.`
+          : "Log today's weight first: the plan starts from it."}
+      </p>
+      <ul className="flex flex-col gap-2">
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <Input
+              type="date"
+              aria-label="Checkpoint date"
+              value={r.date}
+              onChange={(e) => set(i, { date: e.target.value })}
+              className="min-w-0 flex-1"
+            />
+            <Input
+              type="text"
+              inputMode="decimal"
+              aria-label="Checkpoint weight in kg"
+              placeholder="kg"
+              value={r.kg}
+              onChange={(e) => set(i, { kg: e.target.value })}
+              className="w-24 shrink-0"
+            />
+            <Button
+              variant="ghost"
+              isIconOnly
+              className="shrink-0"
+              aria-label="Remove checkpoint"
+              onPress={() => setRows((rs) => rs.filter((_, j) => j !== i))}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </li>
+        ))}
+      </ul>
       <div>
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="text-[13px] font-semibold">Checkpoints</span>
-          <button type="button" className="text-action" onClick={fill}>
-            Fill every 2 weeks
-          </button>
-        </div>
-        {rows.length === 0 && (
-          <p className="text-xs text-[var(--muted)]">
-            Optional: dates with the range to be in by then. Each is checked against that week&apos;s median.
-          </p>
-        )}
-        <ul className="flex flex-col gap-2">
-          {rows.map((r, i) => (
-            <li key={i} className="flex items-center gap-1.5">
-              <Input
-                type="date"
-                aria-label="Checkpoint date"
-                value={r.date}
-                onChange={(e) => set(i, { date: e.target.value })}
-                className="min-w-0 flex-1"
-              />
-              <Input
-                type="text"
-                inputMode="decimal"
-                aria-label="Lowest weight"
-                placeholder="from"
-                value={r.lo}
-                onChange={(e) => set(i, { lo: e.target.value })}
-                className="w-[4.5rem] shrink-0"
-              />
-              <span className="text-[var(--muted)]">–</span>
-              <Input
-                type="text"
-                inputMode="decimal"
-                aria-label="Highest weight"
-                placeholder="to"
-                value={r.hi}
-                onChange={(e) => set(i, { hi: e.target.value })}
-                className="w-[4.5rem] shrink-0"
-              />
-              <Button
-                variant="ghost"
-                isIconOnly
-                className="shrink-0"
-                aria-label="Remove checkpoint"
-                onPress={() => setRows((rs) => rs.filter((_, j) => j !== i))}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-2">
-          <AddButton
-            secondary
-            label="Add checkpoint"
-            onPress={() => {
-              const last = rows[rows.length - 1]?.date || startDate;
-              const date = last ? addDays(last, 14) : "";
-              const e = b && date ? expectedOn({ ...b, checkpoints: [] }, date) : null;
-              setRows((rs) => [
-                ...rs,
-                { date, lo: e != null ? String(round1(e - 0.75)) : "", hi: e != null ? String(round1(e + 0.75)) : "" },
-              ]);
-            }}
-          />
-        </div>
+        <AddButton
+          secondary
+          label="Add checkpoint"
+          onPress={() => setRows((rs) => [...rs, { date: addDays(rs[rs.length - 1]?.date || startDate, 14), kg: "" }])}
+        />
       </div>
 
       {error && (

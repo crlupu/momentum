@@ -23,7 +23,7 @@ import {
 } from "../model";
 import * as R from "../reading";
 import * as O from "../ops";
-import { validPlan } from "../weight";
+import { makePlan, validPlan } from "../weight";
 import { patchRoutineItem, routines, type RepeatSetting, type RoutineKind } from "../routines";
 import { projectFinished, type CardStatus } from "../projects";
 import { applyGoalPlan, type PlanGoal } from "../goalImport";
@@ -1024,33 +1024,25 @@ export function registerTools(server: McpServer) {
     {
       title: "Set the weight-loss plan",
       description:
-        "Sets the weight-loss plan shown under Health: a start (date, kg), a target (date, kg) and optional checkpoints, each a date with the range (lo–hi kg) to be in by then. Progress and checkpoints are judged by the weekly median weigh-in (weeks Monday to Sunday). Replaces any plan there is.",
+        "Sets the weight-loss plan shown under Health: checkpoints, each a date and the weight (kg) to be at by then; the last is the target. It starts from start_kg on start_date, by default the latest weigh-in and today (or the current plan's start). Checkpoints are judged by the weekly median weigh-in (weeks Monday to Sunday). Replaces any plan there is.",
       inputSchema: {
-        start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        start_kg: z.number().positive(),
-        target_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        target_kg: z.number().positive(),
         checkpoints: jsonArray(
-          z.array(
-            z.object({
-              date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-              lo: z.number().positive(),
-              hi: z.number().positive(),
-            })
-          )
-        ).optional(),
+          z
+            .array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), kg: z.number().positive() }))
+            .min(1)
+        ),
+        start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        start_kg: z.number().positive().optional(),
       },
     },
-    safe(async (a: { start_date: string; start_kg: number; target_date: string; target_kg: number; checkpoints?: { date: string; lo: number; hi: number }[] }) =>
+    safe(async (a: { checkpoints: { date: string; kg: number }[]; start_date?: string; start_kg?: number }) =>
       change((s) => {
-        const plan = validPlan({
-          startDate: a.start_date,
-          startKg: a.start_kg,
-          targetDate: a.target_date,
-          targetKg: a.target_kg,
-          checkpoints: a.checkpoints ?? [],
-        });
-        if (!plan || plan.targetDate <= plan.startDate) throw new Error("The target date must come after the start date.");
+        const was = validPlan(s.weightPlan);
+        const startDate = a.start_date ?? was?.startDate ?? dateKey();
+        const startKg = a.start_kg ?? was?.startKg ?? s.weights[s.weights.length - 1]?.kg;
+        if (startKg == null) throw new Error("No weigh-in to start from: pass start_kg.");
+        const plan = makePlan(startDate, startKg, a.checkpoints);
+        if (!plan) throw new Error(`Checkpoints must come after the start, ${startDate}.`);
         return {
           state: { ...s, weightPlan: plan },
           result: `Plan set: ${plan.startKg} kg on ${plan.startDate} to ${plan.targetKg} kg by ${plan.targetDate}, with ${plan.checkpoints.length} checkpoint${plan.checkpoints.length === 1 ? "" : "s"}.`,

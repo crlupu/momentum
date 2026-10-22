@@ -1,18 +1,20 @@
 import { type WeightEntry, daysSinceEpoch, dateKey } from "./model";
 
 /**
- * A weight-loss plan: where it starts, where it's aimed, and checkpoints on
- * the way, each a range rather than a number, since a day's weight swings
- * with water and glycogen. Progress is read off the weekly median, which
- * those swings move far less than any single weigh-in.
+ * A weight-loss plan: checkpoints, each a date and the weight to be at by
+ * then, the last of them the target. It starts from the weight when it was
+ * set. Progress is read off the weekly median, which a day's swings with
+ * water and glycogen move far less than any single weigh-in.
  */
 
-/** A point on the way: by this date, somewhere in lo–hi kg. */
-export type WeightCheckpoint = { date: string; lo: number; hi: number };
+/** A point on the way: this weight by this date. */
+export type WeightCheckpoint = { date: string; kg: number };
 
 export type WeightPlan = {
+  /** When it was set, and the weight then. */
   startDate: string;
   startKg: number;
+  /** The last checkpoint's, kept with the plan. */
   targetDate: string;
   targetKg: number;
   checkpoints: WeightCheckpoint[];
@@ -59,38 +61,33 @@ export function weeklyMedians(weights: WeightEntry[]): WeekMedian[] {
 
 export const round1 = (v: number) => Math.round(v * 10) / 10;
 
-/** Where the plan's straight line puts the weight on a day. */
+/** Where the plan puts the weight on a day: straight lines from the start through each checkpoint. */
 export function expectedOn(plan: WeightPlan, key: string): number {
-  const total = daysSinceEpoch(plan.targetDate) - daysSinceEpoch(plan.startDate);
-  if (total <= 0) return plan.targetKg;
-  const t = Math.min(1, Math.max(0, (daysSinceEpoch(key) - daysSinceEpoch(plan.startDate)) / total));
-  return plan.startKg + (plan.targetKg - plan.startKg) * t;
+  const pts = [{ date: plan.startDate, kg: plan.startKg }, ...plan.checkpoints.filter((c) => c.date > plan.startDate)];
+  const d = daysSinceEpoch(key);
+  if (d <= daysSinceEpoch(pts[0].date)) return pts[0].kg;
+  for (let i = 1; i < pts.length; i++) {
+    const a = daysSinceEpoch(pts[i - 1].date);
+    const b = daysSinceEpoch(pts[i].date);
+    if (d <= b) return pts[i - 1].kg + ((pts[i].kg - pts[i - 1].kg) * (d - a)) / Math.max(1, b - a);
+  }
+  return pts[pts.length - 1].kg;
 }
 
-/** The weekly median for the week a day falls in, if it was weighed that week. */
-export function medianForWeekOf(medians: WeekMedian[], key: string): WeekMedian | undefined {
-  const k = mondayOf(key);
-  return medians.find((m) => m.week === k);
-}
-
-export type CheckStatus = "ahead" | "on-track" | "behind" | "pending" | "missed";
+export type CheckStatus = "reached" | "behind" | "pending" | "missed";
 
 /**
- * How a checkpoint went, by the median of the week it falls in: under its
- * range is ahead, in it on track, over it behind. A checkpoint still to come
- * is pending; one past with no weigh-ins that week is missed.
+ * How a checkpoint went, by the median of the week it falls in: at or under
+ * its weight is reached, over it behind. One still to come is pending; one
+ * past with no weigh-ins that week is missed. This week's median is a
+ * reading so far, shown with its verdict.
  */
 export function checkpointStatus(c: WeightCheckpoint, medians: WeekMedian[], today: string = dateKey()): { status: CheckStatus; median?: number } {
   const week = mondayOf(c.date);
   if (week > mondayOf(today)) return { status: "pending" };
   const m = medians.find((x) => x.week === week);
-  // This week's median is a reading so far, shown with its verdict.
   if (!m) return { status: week === mondayOf(today) ? "pending" : "missed" };
-  return { status: statusOf(c, m.median), median: m.median };
-}
-
-function statusOf(c: WeightCheckpoint, kg: number): CheckStatus {
-  return kg < c.lo ? "ahead" : kg > c.hi ? "behind" : "on-track";
+  return { status: m.median <= c.kg ? "reached" : "behind", median: m.median };
 }
 
 export type PlanSummary = {
@@ -100,15 +97,14 @@ export type PlanSummary = {
   toGo: number;
   /** 0–1: how much of the planned loss is done. */
   progress: number;
-  /** kg a week the plan asks for, start to target. */
-  plannedPace: number;
   /** kg a week still needed from the current median to the target. */
   neededPace: number | null;
   /** kg a week lost so far, from the start to the latest median. */
   actualPace: number | null;
-  /** Where the straight line says today's weight should be. */
+  /** Where the plan says today's weight should be. */
   expectedNow: number;
-  weeksLeft: number;
+  /** The next checkpoint from today on. */
+  next?: WeightCheckpoint;
 };
 
 export function planSummary(plan: WeightPlan, weights: WeightEntry[], today: string = dateKey()): PlanSummary {
@@ -118,7 +114,6 @@ export function planSummary(plan: WeightPlan, weights: WeightEntry[], today: str
   const total = plan.startKg - plan.targetKg;
   const lost = plan.startKg - current;
   const days = (a: string, b: string) => daysSinceEpoch(b) - daysSinceEpoch(a);
-  const planWeeks = days(plan.startDate, plan.targetDate) / 7;
   const weeksLeft = Math.max(0, days(today, plan.targetDate) / 7);
   // The median stands for the middle of its week.
   const elapsed = last ? days(plan.startDate, addDays(last.week, 3)) / 7 : 0;
@@ -127,29 +122,27 @@ export function planSummary(plan: WeightPlan, weights: WeightEntry[], today: str
     lost: round1(lost),
     toGo: round1(Math.max(0, current - plan.targetKg)),
     progress: total > 0 ? Math.min(1, Math.max(0, lost / total)) : 0,
-    plannedPace: planWeeks > 0 ? total / planWeeks : 0,
     neededPace: weeksLeft > 0 ? Math.max(0, current - plan.targetKg) / weeksLeft : null,
     actualPace: last && elapsed >= 1 ? lost / elapsed : null,
     expectedNow: round1(expectedOn(plan, today)),
-    weeksLeft,
+    next: plan.checkpoints.find((c) => c.date >= today),
   };
 }
 
 /**
- * Checkpoints every two weeks from the start to the target, each a band of
- * ±0.75 kg around the straight line, ending on the target date.
+ * A plan from its checkpoints and where it starts. The last checkpoint is the
+ * target. Undefined without a checkpoint after the start.
  */
-export function evenCheckpoints(plan: Omit<WeightPlan, "checkpoints">): WeightCheckpoint[] {
-  const out: WeightCheckpoint[] = [];
-  const p = { ...plan, checkpoints: [] };
-  // The last one lands on the target date itself, so none closer than a
-  // week before it.
-  for (let d = addDays(plan.startDate, 14); addDays(d, 7) <= plan.targetDate; d = addDays(d, 14)) {
-    const e = expectedOn(p, d);
-    out.push({ date: d, lo: round1(e - 0.75), hi: round1(e + 0.75) });
-  }
-  out.push({ date: plan.targetDate, lo: round1(plan.targetKg - 0.5), hi: round1(plan.targetKg + 1) });
-  return out;
+export function makePlan(startDate: string, startKg: number, checkpoints: WeightCheckpoint[]): WeightPlan | undefined {
+  const cs = checkpoints
+    .filter((c) => c.date > startDate)
+    .map((c) => ({ date: c.date, kg: round1(c.kg) }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    // One per date: a later row for the same day wins.
+    .filter((c, i, a) => a[i + 1]?.date !== c.date);
+  const last = cs[cs.length - 1];
+  if (!last) return undefined;
+  return { startDate, startKg: round1(startKg), targetDate: last.date, targetKg: last.kg, checkpoints: cs };
 }
 
 /** A plan read from storage, or undefined when it isn't one. */
@@ -158,12 +151,22 @@ export function validPlan(v: unknown): WeightPlan | undefined {
   const p = v as Record<string, unknown>;
   const isKey = (x: unknown): x is string => typeof x === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x);
   const isKg = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x) && x > 0;
-  if (!isKey(p.startDate) || !isKey(p.targetDate) || !isKg(p.startKg) || !isKg(p.targetKg)) return undefined;
-  const checkpoints = Array.isArray(p.checkpoints)
-    ? (p.checkpoints as Record<string, unknown>[])
-        .filter((c) => isKey(c.date) && isKg(c.lo) && isKg(c.hi))
-        .map((c) => ({ date: c.date as string, lo: Math.min(c.lo as number, c.hi as number), hi: Math.max(c.lo as number, c.hi as number) }))
-        .sort((a, b) => a.date.localeCompare(b.date))
+  if (!isKey(p.startDate) || !isKg(p.startKg)) return undefined;
+  const checkpoints: WeightCheckpoint[] = Array.isArray(p.checkpoints)
+    ? (p.checkpoints as Record<string, unknown>[]).flatMap((c) =>
+        !isKey(c.date)
+          ? []
+          : isKg(c.kg)
+            ? [{ date: c.date, kg: c.kg }]
+            : // Plans saved with a range take its middle.
+              isKg(c.lo) && isKg(c.hi)
+              ? [{ date: c.date, kg: (c.lo + c.hi) / 2 }]
+              : []
+      )
     : [];
-  return { startDate: p.startDate, startKg: p.startKg, targetDate: p.targetDate, targetKg: p.targetKg, checkpoints };
+  // The target as a checkpoint, for plans saved before it was one.
+  if (isKey(p.targetDate) && isKg(p.targetKg) && !checkpoints.some((c) => c.date === p.targetDate)) {
+    checkpoints.push({ date: p.targetDate, kg: p.targetKg });
+  }
+  return makePlan(p.startDate, p.startKg, checkpoints);
 }
