@@ -191,7 +191,9 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
             Log protein or fibre to see both plotted here.
           </p>
         ) : (
-          <div className="relative flex h-[120px] items-end gap-1 pt-3">
+          // In percent, the day columns stop short of a right-hand strip that
+          // holds the line labels, so a day over 100% can't draw over them.
+          <div className={"relative flex h-[120px] items-end gap-1 pt-3" + (asPercent ? " pr-10" : "")}>
             {/* Reference lines at 50% and 100%, drawn at the heights those
                 days reach: halfway is worth seeing at a glance as well. */}
             {asPercent &&
@@ -203,7 +205,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
                   aria-hidden
                 >
                   <span className="h-px flex-1" style={{ background: "var(--border)" }} />
-                  <span className="text-[11px]" style={{ color: LABEL }}>
+                  <span className="w-8 shrink-0 text-right text-[11px]" style={{ color: LABEL }}>
                     {p}%
                   </span>
                 </div>
