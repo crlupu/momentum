@@ -4,6 +4,7 @@ import { usePageTracker } from "@/components/AppShell";
 import { SectionPage } from "@/components/Section";
 import { HealthSwitch } from "@/components/HealthSwitch";
 import WeightTracker from "@/components/WeightTracker";
+import WeightPlanCard from "@/components/WeightPlan";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 
 export default function FitnessPage() {
@@ -12,6 +13,7 @@ export default function FitnessPage() {
     <SectionPage id="fitness" title="Health" header={<HealthSwitch current="fitness" />}>
       <div className="space-y-5">
         <WeightTracker tracker={tracker} />
+        <WeightPlanCard tracker={tracker} />
         <WorkoutVolumeChart tracker={tracker} />
       </div>
     </SectionPage>

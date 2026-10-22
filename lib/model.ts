@@ -7,6 +7,7 @@
 import { contrast } from "./color";
 import * as R from "./reading";
 import * as P from "./projects";
+import type { WeightPlan } from "./weight";
 import type {
   BookStatus,
   BookQuote,
@@ -594,6 +595,8 @@ export type TrackerState = {
   /** Personal projects, each a board of cards. See lib/projects.ts. */
   projects: P.Project[];
   weights: WeightEntry[];
+  /** The weight-loss plan, if one is set. See lib/weight.ts. */
+  weightPlan?: WeightPlan | null;
   cardio: CardioEntry[];
   books: Book[];
   readingTracks: ReadingTrack[];

@@ -4,9 +4,9 @@ import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
 import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
-import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
+import { addDays, mondayOf, weeklyMedians } from "@/lib/weight";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -40,12 +40,13 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
   const byDate = new Map(weights.map((w) => [w.date, w.kg]));
   const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
   const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
+  const medians = weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
 
   // Y range: fit the window, or a neutral placeholder when empty.
   let lo = 0;
   let hi = 1;
   if (present.length) {
-    const kgs = present.map((p) => p.kg);
+    const kgs = [...present.map((p) => p.kg), ...medians.map((m) => m.median)];
     const min = Math.min(...kgs);
     const max = Math.max(...kgs);
     const span = max - min || 2;
@@ -74,6 +75,28 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
             )}
           </g>
         ))}
+
+        {/* Each week's median as a level line across the week's days. */}
+        {medians.map((m) => {
+          const a = series.findIndex((p) => p.date >= m.week);
+          const end = addDays(m.week, 6);
+          let b = -1;
+          series.forEach((p, i) => { if (p.date <= end) b = i; });
+          if (a < 0 || b < a) return null;
+          return (
+            <line
+              key={m.week}
+              x1={x(a) - (a === b ? 4 : 0)}
+              x2={x(b) + (a === b ? 4 : 0)}
+              y1={y(m.median)}
+              y2={y(m.median)}
+              stroke="var(--chart-2)"
+              strokeWidth="2"
+              strokeDasharray="5 3"
+              opacity={0.9}
+            />
+          );
+        })}
 
         {present.length > 1 && (
           <polyline
@@ -188,7 +211,62 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
           Last {DAYS} days
         </div>
         <WeightChart weights={data} />
+        <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
+          <span className="inline-block w-3 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
+          Weekly median
+        </div>
+
+        <WeeklyMedians weights={data} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The median weigh-in of each of the last weeks, newest first, with the change
+ * from the week before. Weeks run Monday to Sunday; the current one is a
+ * median so far.
+ */
+function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
+  const all = weeklyMedians(weights);
+  if (all.length === 0) return null;
+  const thisWeek = mondayOf(dateKey());
+  const rows = all.slice(-8).reverse();
+  return (
+    <div className="mt-4">
+      <div className="mb-1 text-[13px] font-semibold">Weekly median</div>
+      <table className="rd-table">
+        <thead>
+          <tr>
+            <th>Week of</th>
+            <th className="text-right">Weigh-ins</th>
+            <th className="text-right">Median</th>
+            <th className="text-right">Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((m) => {
+            const prev = all[all.indexOf(m) - 1];
+            const d = prev ? Math.round((m.median - prev.median) * 10) / 10 : null;
+            return (
+              <tr key={m.week}>
+                <td>
+                  {fmtDate(m.week)}
+                  {m.week === thisWeek && <span className="ml-1 text-xs text-[var(--muted)]">· so far</span>}
+                </td>
+                <td className="text-right font-mono-n">{m.n}</td>
+                <td className="text-right font-mono-n font-semibold">{m.median.toFixed(1)} kg</td>
+                <td
+                  className="text-right font-mono-n"
+                  style={{ color: d == null || d === 0 ? "var(--muted)" : d < 0 ? "var(--success)" : "var(--danger)" }}
+                >
+                  {d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

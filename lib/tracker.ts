@@ -21,6 +21,7 @@ import * as O from "./ops";
 import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
+import type { WeightPlan } from "./weight";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -998,6 +999,9 @@ export function useTracker() {
       })),
 
     // ---- weight ----
+    /** Sets the weight-loss plan, or clears it. */
+    setWeightPlan: (plan: WeightPlan | null) => commit((s) => ({ ...s, weightPlan: plan })),
+
     addWeight: (kg: number) =>
       commit((s) => {
         if (!Number.isFinite(kg) || kg <= 0) return s;
