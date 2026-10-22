@@ -6,7 +6,7 @@ import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { addDays, mondayOf, weeklyMedians } from "@/lib/weight";
+import { type WeightPlan, addDays, expectedOn, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -29,7 +29,7 @@ function lastNDays(n: number): Date[] {
  * height, so the text stays the same size on a phone and a desktop. Days
  * without an entry are gaps the line passes over.
  */
-function WeightChart({ weights }: { weights: WeightEntry[] }) {
+function WeightChart({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
   const [box, measured] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
   const W = measured || 320;
@@ -41,12 +41,16 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
   const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
   const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
   const medians = weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
+  // Where the plan puts each day of the window it covers.
+  const planPts = plan
+    ? series.filter((p) => p.date >= plan.startDate).map((p) => ({ i: p.i, kg: expectedOn(plan, p.date) }))
+    : [];
 
   // Y range: fit the window, or a neutral placeholder when empty.
   let lo = 0;
   let hi = 1;
   if (present.length) {
-    const kgs = [...present.map((p) => p.kg), ...medians.map((m) => m.median)];
+    const kgs = [...present.map((p) => p.kg), ...medians.map((m) => m.median), ...planPts.map((p) => p.kg)];
     const min = Math.min(...kgs);
     const max = Math.max(...kgs);
     const span = max - min || 2;
@@ -75,6 +79,17 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
             )}
           </g>
         ))}
+
+        {planPts.length > 1 && (
+          <polyline
+            points={planPts.map((p) => `${x(p.i)},${y(p.kg)}`).join(" ")}
+            fill="none"
+            stroke="var(--muted)"
+            strokeWidth="1.5"
+            strokeDasharray="2 4"
+            strokeLinecap="round"
+          />
+        )}
 
         {/* Each week's median as a level line across the week's days. */}
         {medians.map((m) => {
@@ -160,6 +175,15 @@ function WeightChart({ weights }: { weights: WeightEntry[] }) {
             transform: shown.i > DAYS / 2 ? "translateX(-100%)" : undefined }}
         >
           <div className="font-semibold">{shown.kg} kg</div>
+          {plan && shown.date >= plan.startDate && (
+            <div>
+              plan {expectedOn(plan, shown.date).toFixed(1)} ·{" "}
+              {(() => {
+                const d = Math.round((shown.kg - expectedOn(plan, shown.date)) * 10) / 10;
+                return d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`;
+              })()}
+            </div>
+          )}
           <div>{fmtDateAuto(shown.date)}</div>
         </div>
       )}
@@ -171,6 +195,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const data = s.weights;
   const latest = data.length ? data[data.length - 1] : null;
+  const plan = validPlan(s.weightPlan);
   const [kg, setKg] = useState("");
 
   const { pending, run } = usePending();
@@ -210,10 +235,16 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
         <div className="mb-1 text-xs" style={{ color: LABEL }}>
           Last {DAYS} days
         </div>
-        <WeightChart weights={data} />
+        <WeightChart weights={data} plan={plan} />
         <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
           <span className="inline-block w-3 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
           Weekly median
+          {plan && (
+            <>
+              <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
+              Plan
+            </>
+          )}
         </div>
 
         <WeeklyMedians weights={data} />

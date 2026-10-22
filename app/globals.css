@@ -4055,3 +4055,12 @@ a.item-row__link { display: flex; align-items: center; gap: 0.75rem; text-decora
 }
 .item-row--nested { padding-inline-start: 1.5rem; }
 li.item-row--nested .step-add { padding-inline-start: 1.5rem; }
+
+/* A weight plan's standing today: what it's measured by and the figures,
+   with the verdict at the end of the row. */
+.day-standing { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.75rem; border-radius: 12px; background: var(--default); }
+.day-standing__row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.day-standing__text { display: flex; flex-direction: column; min-inline-size: 0; gap: 0.125rem; }
+.day-standing__label { font-size: 12px; color: var(--muted); }
+.day-standing__figs { font-size: 14px; }
+.day-standing__figs strong { font-weight: 700; }

@@ -17,14 +17,27 @@ import {
   type WeekMedian,
   addDays,
   checkpointStatus,
+  checkDay,
+  latestCheck,
   makePlan,
   mondayOf,
   planSummary,
   validPlan,
   weeklyMedians,
+  weightOnOrBefore,
+  type DayStatus,
 } from "@/lib/weight";
 
 const kg1 = (v: number) => v.toFixed(1).replace(/\.0$/, "");
+
+const DAY: Record<DayStatus, { label: string; cls: string }> = {
+  ahead: { label: "Ahead", cls: "rd-flag--done" },
+  "on-track": { label: "On track", cls: "rd-flag--on-track" },
+  close: { label: "Close", cls: "rd-flag--at-risk" },
+  behind: { label: "Behind", cls: "rd-flag--behind" },
+};
+
+const signed = (v: number) => (v === 0 ? "±0" : `${v > 0 ? "+" : "−"}${kg1(Math.abs(v))}`);
 
 const STATUS: Record<CheckStatus, { label: string; cls: string }> = {
   reached: { label: "Reached", cls: "rd-flag--on-track" },
@@ -88,6 +101,8 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
         </div>
       </div>
 
+      <DayStanding plan={plan} tracker={tracker} medians={medians} today={today} />
+
       <div className="stat-grid stat-grid--4">
         <Stat value={`${kg1(Math.max(0, sum.lost))} kg`} label="Lost" />
         <Stat value={`${kg1(sum.toGo)} kg`} label="To go" />
@@ -122,6 +137,62 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/**
+ * Today against the plan: the latest weigh-in beside where the plan puts its
+ * day, and this week's median beside where the plan puts the middle of the
+ * week, so a single day's swing can be read for what it is.
+ */
+function DayStanding({
+  plan,
+  tracker,
+  medians,
+  today,
+}: {
+  plan: WeightPlan;
+  tracker: Tracker;
+  medians: WeekMedian[];
+  today: string;
+}) {
+  const day = latestCheck(plan, tracker.state!.weights);
+  const wk = medians.find((m) => m.week === mondayOf(today));
+  const week = wk ? checkDay(plan, addDays(wk.week, 3) < today ? addDays(wk.week, 3) : today, wk.median) : undefined;
+  if (today < plan.startDate) {
+    return <p className="text-[13px] text-[var(--muted)]">The plan starts {fmtDateAuto(plan.startDate)}.</p>;
+  }
+  return (
+    <div className="day-standing">
+      <div className="day-standing__row">
+        <span className="day-standing__text">
+          <span className="day-standing__label">
+            {day && day.date !== today ? `Last weigh-in, ${fmtDateAuto(day.date)}` : "Today"}
+          </span>
+          {day ? (
+            <span className="day-standing__figs font-mono-n">
+              <strong>{kg1(day.kg)} kg</strong> · plan {kg1(day.expected)} · {signed(day.diff)}
+            </span>
+          ) : (
+            <span className="day-standing__figs text-[var(--muted)]">
+              No weigh-in yet · plan {kg1(checkDay(plan, today, 1).expected)} kg
+            </span>
+          )}
+        </span>
+        {day && <span className={`rd-flag ${DAY[day.status].cls}`}>{DAY[day.status].label}</span>}
+      </div>
+      {week && (
+        <div className="day-standing__row">
+          <span className="day-standing__text">
+            <span className="day-standing__label">This week&apos;s median</span>
+            <span className="day-standing__figs font-mono-n">
+              <strong>{kg1(week.kg)} kg</strong> · plan {kg1(week.expected)} · {signed(week.diff)}
+            </span>
+          </span>
+          <span className={`rd-flag ${DAY[week.status].cls}`}>{DAY[week.status].label}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -240,8 +311,10 @@ type Row = { date: string; kg: string };
 function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPlan; onDone: () => void }) {
   const s = tracker.state!;
   const latest = s.weights[s.weights.length - 1];
-  const startDate = plan?.startDate ?? dateKey();
-  const startKg = plan?.startKg ?? latest?.kg;
+  const [startDate, setStartDate] = useState(plan?.startDate ?? dateKey());
+  const [startKgText, setStartKgText] = useState(
+    plan ? String(plan.startKg) : latest ? String(latest.kg) : ""
+  );
   const [rows, setRows] = useState<Row[]>(
     plan ? plan.checkpoints.map((c) => ({ date: c.date, kg: String(c.kg) })) : [{ date: addDays(startDate, 14), kg: "" }]
   );
@@ -253,9 +326,17 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
     return Number.isFinite(n) && n > 0 ? n : null;
   };
 
+  const startKg = num(startKgText);
+  // A new start date takes the weight logged that day, or the last before it.
+  const moveStart = (date: string) => {
+    setStartDate(date);
+    const w = date ? weightOnOrBefore(s.weights, date) : undefined;
+    if (w) setStartKgText(String(w.kg));
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (startKg == null) return setError("Log today's weight first: the plan starts from it.");
+    if (!startDate || startKg == null) return setError("The plan needs a start date and weight.");
     const checkpoints: WeightCheckpoint[] = [];
     for (const r of rows) {
       if (!r.date && !r.kg) continue;
@@ -274,11 +355,32 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <p className="text-[13px] text-[var(--muted)]">
-        {startKg != null
-          ? `From ${kg1(startKg)} kg on ${fmtDateAuto(startDate)}. The last checkpoint is the target.`
-          : "Log today's weight first: the plan starts from it."}
-      </p>
+      <div>
+        <div className="mb-1 text-[13px] font-semibold">Start</div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            aria-label="Start date"
+            value={startDate}
+            onChange={(e) => moveStart(e.target.value)}
+            className="min-w-0 flex-1"
+          />
+          <Input
+            type="text"
+            inputMode="decimal"
+            aria-label="Start weight in kg"
+            placeholder="kg"
+            value={startKgText}
+            onChange={(e) => setStartKgText(e.target.value)}
+            className="w-24 shrink-0"
+          />
+          {/* Lines up with the checkpoints' remove buttons. */}
+          <span className="w-10 shrink-0" aria-hidden />
+        </div>
+      </div>
+      <div className="-mb-1 text-[13px] font-semibold">
+        Checkpoints <span className="font-normal text-[var(--muted)]">· the last is the target</span>
+      </div>
       <ul className="flex flex-col gap-2">
         {rows.map((r, i) => (
           <li key={i} className="flex items-center gap-2">

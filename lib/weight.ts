@@ -170,3 +170,38 @@ export function validPlan(v: unknown): WeightPlan | undefined {
   }
   return makePlan(p.startDate, p.startKg, checkpoints);
 }
+
+export type DayStatus = "ahead" | "on-track" | "close" | "behind";
+
+export type DayCheck = {
+  date: string;
+  kg: number;
+  /** Where the plan puts that day. */
+  expected: number;
+  /** kg over the plan; under it is negative. */
+  diff: number;
+  status: DayStatus;
+};
+
+/**
+ * A weigh-in against the plan for its day: under the plan by half a kilo or
+ * more is ahead, at or under it on track, up to half a kilo over close, and
+ * more than that behind. A single day swings, so close is close, not behind.
+ */
+export function checkDay(plan: WeightPlan, date: string, kg: number): DayCheck {
+  const expected = expectedOn(plan, date);
+  const diff = round1(kg - expected);
+  const status: DayStatus = diff <= -0.5 ? "ahead" : diff <= 0 ? "on-track" : diff <= 0.5 ? "close" : "behind";
+  return { date, kg, expected: round1(expected), diff, status };
+}
+
+/** The latest weigh-in since the plan started, against the plan for its day. */
+export function latestCheck(plan: WeightPlan, weights: WeightEntry[]): DayCheck | undefined {
+  const w = [...weights].reverse().find((x) => x.date >= plan.startDate);
+  return w ? checkDay(plan, w.date, w.kg) : undefined;
+}
+
+/** The weigh-in on a day, or failing that the last one before it. */
+export function weightOnOrBefore(weights: WeightEntry[], date: string): WeightEntry | undefined {
+  return [...weights].reverse().find((w) => w.date <= date);
+}
