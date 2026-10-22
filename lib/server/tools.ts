@@ -1,6 +1,6 @@
 /**
- * What Claude can do with Momentum through the connector: read an overview,
- * and add or update books, goals and project cards. Every change goes
+ * What Claude can do with Momentum through the connector: read an overview
+ * and the workouts (with sets, reps and weights lifted), and add or update books, goals and project cards. Every change goes
  * through the same functions the app uses (lib/reading.ts, lib/ops.ts, the
  * importers), so the result is what the app itself would have made.
  */
@@ -20,7 +20,9 @@ import {
   type Frequency,
   type GoalItem,
   type GoalStatus,
+  exerciseSeconds,
   type RecurringTask,
+  type SetRecord,
   type TrackerState,
 } from "../model";
 import * as R from "../reading";
@@ -167,6 +169,70 @@ function overview(s: TrackerState, section: string) {
   return out;
 }
 
+/** "3 × 10 @ 60 kg" when every set matches, otherwise each set listed. */
+function setsSummary(sets: SetRecord[], oneArm?: boolean): string {
+  const one = (x: SetRecord) =>
+    `${x.reps ?? "?"}${x.weight != null ? ` @ ${x.weight} kg` : ""}`;
+  const side = oneArm ? " (per side)" : "";
+  if (!sets.length) return "done (timed)";
+  const first = one(sets[0]);
+  if (sets.every((x) => one(x) === first)) return `${sets.length} × ${first}${side}`;
+  return sets.map(one).join(", ") + side;
+}
+
+/**
+ * Workouts as planned plus what was last lifted. A definition carries only
+ * the working weight; sets and reps exist only in logged sessions, so each
+ * exercise also reports its most recent sessions with every set.
+ */
+export function workoutsView(s: TrackerState, ref: string | undefined, history: number) {
+  const list = ref ? [pick(s.workouts, ref, (w) => w.name, "workout")] : s.workouts;
+  return list.map((w) => {
+    const done = s.workoutSessions.filter((x) => x.workoutId === w.id);
+    const last = done[done.length - 1];
+    return {
+      id: w.id,
+      name: w.name,
+      sessions_logged: done.length,
+      ...(last ? { last_session: { date: last.date, minutes: last.minutes, volume_kg: last.total } } : {}),
+      ...(w.blocks?.length
+        ? {
+            blocks: w.blocks.map((b) => ({
+              name: b.name,
+              mode: b.mode,
+              ...(b.mode === "circuit" ? { rounds: b.rounds, work_seconds: b.workSeconds, rest_seconds: b.restSeconds } : {}),
+            })),
+          }
+        : {}),
+      exercises: w.exercises.map((e) => {
+        const block = w.blocks?.find((b) => b.id === e.blockId);
+        const recent: { date: string; sets: SetRecord[] }[] = [];
+        for (let i = s.workoutSessions.length - 1; i >= 0 && recent.length < history; i--) {
+          const le = s.workoutSessions[i].exercises?.find((x) => x.exerciseId === e.id);
+          if (le) recent.push({ date: s.workoutSessions[i].date, sets: le.sets });
+        }
+        return {
+          name: e.name,
+          ...(block ? { block: block.name } : {}),
+          ...(e.weight != null ? { working_weight_kg: e.weight } : { working_weight_kg: "bodyweight" }),
+          ...(e.oneArm ? { one_arm: true } : {}),
+          ...(block?.mode === "circuit" || e.seconds ? { seconds: exerciseSeconds(e, block) } : {}),
+          ...(e.note ? { note: e.note } : {}),
+          ...(recent.length
+            ? {
+                last_performed: recent.map((r) => ({
+                  date: r.date,
+                  summary: setsSummary(r.sets, e.oneArm),
+                  sets: r.sets.map((x) => ({ reps: x.reps, weight_kg: x.weight })),
+                })),
+              }
+            : { last_performed: "never logged" }),
+        };
+      }),
+    };
+  });
+}
+
 const COLUMN = z.enum(["todo", "doing", "done"]);
 
 
@@ -260,6 +326,23 @@ export function registerTools(server: McpServer) {
       annotations: { readOnlyHint: true },
     },
     safe(async ({ section }: { section: string }) => overview(await readState(), section))
+  );
+
+  server.registerTool(
+    "workouts",
+    {
+      title: "Workouts",
+      description:
+        "Reads the user's workout plans (Push, Pull, Legs…): each workout's blocks and exercises with working weight, one-arm flag, timed seconds and notes, plus the most recent logged sessions for every exercise with each set's reps and weight. Sets and reps live only in logged sessions, so last_performed is where they come from.",
+      inputSchema: {
+        workout: z.string().optional().describe("Workout name or id; all workouts when left out"),
+        history: z.number().int().min(1).max(10).default(1).describe("How many recent sessions to show per exercise"),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    safe(async ({ workout, history }: { workout?: string; history: number }) =>
+      workoutsView(await readState(), workout, history)
+    )
   );
 
   server.registerTool(
