@@ -6,6 +6,7 @@ import { memo } from "react";
 
 import { Card, Stat } from "./ui";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
+import { routineCompletions } from "@/lib/routines";
 
 function offsetDate(days: number): Date {
   const d = new Date();
@@ -101,7 +102,8 @@ function barFill(n: number): string {
    this re-renders when the data changes rather than whenever the page does. */
 const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const completions: Completion[] = s.completions;
+  // The old hand-kept ticks, then the routines done since.
+  const completions: Completion[] = [...s.completions, ...routineCompletions(s)];
   const allMap = completionsByDate(completions);
   const cells = buildMonthCells();
 

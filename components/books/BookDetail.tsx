@@ -7,6 +7,7 @@ import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
 import { Meter, ProgressText, StatusBadge, TrackChip, fmtDate, fmtDateAuto, fmtPace } from "./bits";
 import { useFlow } from "./flowContext";
+import { RepeatSelect } from "../RepeatSelect";
 
 /** A book's own page: where it stands, what to do with it, and how it got there. */
 export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) {
@@ -66,6 +67,13 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
             </dd>
           </div>
         )}
+        {/* How often it comes round in Recurring on Today while it's being read. */}
+        <div>
+          <dt>Repeat</dt>
+          <dd>
+            <RepeatSelect tracker={tracker} kind="book" item={book} className="row-select row-select--inline" />
+          </dd>
+        </div>
       </dl>
       {book.dropReason && (
         <p className="text-sm text-foreground/70">Dropped because: {book.dropReason}</p>

@@ -1,6 +1,6 @@
 # Momentum — Progress Tracker
 
-A personal progress system in one page: goals, daily and recurring tasks,
+A personal progress system in one page: goals, automatic recurring routines,
 fitness, nutrition, reading and progress charts. Follows the device's light or
 dark appearance, with a setting to pin either one. Data syncs across devices via Firebase (Firestore + Google or
 email/password sign-in), and falls back to local-only mode until Firebase is
@@ -21,7 +21,7 @@ section's id, title and path, and for the tabs (`NAV`).
 
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
-| Today | `/` | The day's momentum ring and figures, recurring tasks (daily / weekly / biweekly / monthly) and to-dos. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
+| Today | `/` | The day's momentum ring and figures, recurring routines and to-dos. Routines keep themselves: every active goal, book being read and workout comes round daily, weekly or monthly (set on the goal, book or workout; Off leaves it out) and is done for its period as soon as there's activity on it (a goal session, pages read, the workout finished), or when ticked by hand. Logic in `lib/routines.ts`. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
 | Learning | `/learning` | Courses and subjects, each a goal with a description and an optional count (moved with − / +), grouped under topics that set their category. Goals and topics can be imported from JSON or Markdown; the import dialog shows the format to copy (see `lib/goalImport.ts`). A goal can be moved to Projects. `/goals` forwards here | `GoalsView`, `GoalDetail`, `TopicForm`, `GoalImport` |
 | Projects | `/projects` | Personal projects, each a board of cards in To do / Doing / Done, dragged between columns. Each project has its own tags for its cards. `?p=<id>` opens a board | `ProjectsView`, `ProjectBoard`, `CardSheet`, `ProjectForm`, `TagPicker`; logic in `lib/projects.ts` |
 | Health: Fitness | `/fitness` | Workouts built from blocks of exercises, a live workout player (timed circuits included), weight and cardio logs | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WorkoutVolumeChart` |
@@ -29,7 +29,7 @@ section's id, title and path, and for the tabs (`NAV`).
 | Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
 | Progress | `/progress` | Completion charts and a month calendar | `Charts` |
 | Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |
-| Settings | `/configuration` | Categories, groups, recurring tasks, workouts, meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
+| Settings | `/configuration` | Categories, workouts (with their repeat), meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
 
 ### Books (reading tracks)
 The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/books/`.
@@ -98,7 +98,7 @@ sign in with it. Well within the Spark free tier for personal use.
 - `components/AppShell.tsx`: mounted once in the root layout. It holds the
   tracker (`useTracker`), the navigation (`Sidebar.tsx`: sidebar, tab bar and
   More sheet), the sign-in gate, and the
-  New goal / New recurring task dialogs, so they carry over when you change
+  New goal dialog, so they carry over when you change
   page. Pages get what they need from `useShell()` / `usePageTracker()`, and
   each one wraps its content in `SectionPage` (`components/Section.tsx`).
 - `components/`: one file per feature, plus shared UI: `ui.tsx` (wrappers

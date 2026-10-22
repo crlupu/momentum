@@ -21,6 +21,7 @@ import * as O from "./ops";
 import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
+import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
   BookQuote,
@@ -812,6 +813,19 @@ export function useTracker() {
           p.id === projectId ? { ...p, cards: p.cards.filter((c) => c.id !== cardId) } : p
         ),
       })),
+
+    // ---- routines ----
+    /** How often a goal, book or workout comes round as a routine. */
+    setRepeat: (kind: RoutineKind, id: string, repeat: RepeatSetting) =>
+      commit((s) => patchRoutineItem(s, kind, id, () => ({ repeat }))),
+
+    /** Ticks a routine done for its period by hand, or takes the tick back. */
+    toggleRoutine: (kind: RoutineKind, id: string) =>
+      commit((s) => patchRoutineItem(s, kind, id, (x) => ({ routineTicks: toggledTicks(x, kind) }))),
+
+    /** Files a goal under a category. */
+    setGoalCategory: (id: string, catId: string) =>
+      commit((s) => ({ ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, catId } : g)) })),
 
     // ---- recurring ----
     addRecurring: (title: string, catId: string, freq: Frequency, groupId?: string) =>

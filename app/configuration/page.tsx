@@ -5,8 +5,6 @@ import { SectionPage } from "@/components/Section";
 import { ConfigCard } from "@/components/ConfigCard";
 import {
   CategoriesCard,
-  GroupsCard,
-  RecurringManageCard,
   CalorieBudgetCard,
   MacroTargetsCard,
   MealTagsCard,
@@ -21,22 +19,16 @@ export default function ConfigurationPage() {
           without CSS multi-column (which breaks scrollable lists in Safari). */}
       <div className="grid items-start gap-5 md:grid-cols-2">
         <div className="flex flex-col gap-5">
-          <ConfigCard title="Manage recurring">
-            <RecurringManageCard tracker={tracker} />
-          </ConfigCard>
           <ConfigCard title="Categories">
             <CategoriesCard tracker={tracker} />
           </ConfigCard>
-          <ConfigCard title="Groups">
-            <GroupsCard tracker={tracker} />
+          <ConfigCard title="Meal tags">
+            <MealTagsCard tracker={tracker} />
           </ConfigCard>
         </div>
         <div className="flex flex-col gap-5">
           <ConfigCard title="Workouts">
             <WorkoutsView tracker={tracker} />
-          </ConfigCard>
-          <ConfigCard title="Meal tags">
-            <MealTagsCard tracker={tracker} />
           </ConfigCard>
           <ConfigCard title="Calorie budget">
             <CalorieBudgetCard tracker={tracker} />

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Tracker, caloriesLeftThisWeek, dateKey, recurringUnits } from "@/lib/tracker";
+import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
+import { routines } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
 
 const RING = 88;
@@ -11,7 +12,7 @@ const STROKE = 10;
  * The day's momentum: how much of today's routine is done, as one ring.
  *
  * The one large piece of colour in the app. It fills in electric blue as
- * recurring tasks are ticked off, and closes when the day is done.
+ * routines are done, and closes when the day is done.
  * Below it, the figures from the other sections that change daily, each a
  * link to the page that holds them.
  */
@@ -20,9 +21,9 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   if (!st) return null;
 
   const today = dateKey();
-  // Recurring tasks only. Reading tracks used to count too, but books are
-  // recurring tasks of their own now, so each book was counted twice.
-  const units = recurringUnits(st.recurring, today);
+  // The routines: active goals, books being read and workouts, each due
+  // once in its period.
+  const units = routines(st, today);
   const done = units.filter((u) => u.done).length;
   const total = units.length;
   const pct = total ? done / total : 0;
@@ -44,10 +45,10 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
         : `${done} of ${total} done`;
   const detail =
     total === 0
-      ? "Add a recurring task and it will count here."
+      ? "Active goals, books and workouts count here."
       : left === 0
-        ? "Every routine and reading target is ticked off."
-        : `${left} ${left === 1 ? "routine" : "routines"} left today`;
+        ? "Every routine is ticked off."
+        : `${left} ${left === 1 ? "routine" : "routines"} still to do`;
 
   return (
     <section className="momentum card" aria-label="Today's momentum">

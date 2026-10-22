@@ -88,6 +88,10 @@ export type Goal = {
    * withItemCount). A goal has parts or a checklist, not both.
    */
   items?: GoalItem[];
+  /** How often it comes round as a routine (lib/routines.ts). Absent: its kind's default. */
+  repeat?: "daily" | "weekly" | "monthly" | "off";
+  /** Days its routine was ticked by hand. */
+  routineTicks?: string[];
 };
 
 /** One entry on a goal's checklist: "Kafka 101: Topics", with where to watch it. */
@@ -289,6 +293,10 @@ export type Book = {
   touched?: string;
   /** The day a "no progress lately" nudge was waved off. */
   stallDismissed?: string;
+  /** How often it comes round as a routine (lib/routines.ts). Absent: its kind's default. */
+  repeat?: "daily" | "weekly" | "monthly" | "off";
+  /** Days its routine was ticked by hand. */
+  routineTicks?: string[];
 };
 
 
@@ -499,6 +507,10 @@ export type Workout = {
   exercises: Exercise[];
   /** Optional grouping. A workout with none is one unnamed block of sets. */
   blocks?: WorkoutBlock[];
+  /** How often it comes round as a routine (lib/routines.ts). Absent: its kind's default. */
+  repeat?: "daily" | "weekly" | "monthly" | "off";
+  /** Days its routine was ticked by hand. */
+  routineTicks?: string[];
 };
 
 /** The exercises of one block, in the workout's own order. */
@@ -1159,6 +1171,10 @@ export function migrate(raw: unknown): TrackerState {
     phaseIds: Array.isArray(g.phaseIds)
       ? [...new Set((g.phaseIds as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, 2)
       : undefined,
+    repeat: ["daily", "weekly", "monthly", "off"].includes(g.repeat as string) ? (g.repeat as Goal["repeat"]) : undefined,
+    routineTicks: Array.isArray(g.routineTicks)
+      ? (g.routineTicks as unknown[]).filter(isDateKey) as string[]
+      : undefined,
   })).map((g, i) => {
     const raw = rawGoals[i].status;
     const status = typeof raw === "string" && (GOAL_STATUSES as string[]).includes(raw) ? (raw as GoalStatus) : undefined;
@@ -1326,8 +1342,10 @@ export function topicCategories(paths: Path[], goals: Goal[]): { paths: Path[]; 
   const topicOf = new Map<string, Path>();
   for (const p of outPaths) for (const id of p.goalIds) if (!topicOf.has(id)) topicOf.set(id, p);
   const outGoals = goals.map((g) => {
+    // A goal's own category wins: it's picked on the goal now. Only one
+    // without any takes its topic's.
     const c = topicOf.get(g.id)?.catId;
-    return c && g.catId !== c ? { ...g, catId: c } : g;
+    return c && !g.catId ? { ...g, catId: c } : g;
   });
   return { paths: outPaths, goals: outGoals };
 }

@@ -4,9 +4,10 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ExternalLink, Minus, Plus, X } from "./icons";
+import { Check, ChevronDown, ExternalLink, Minus, Plus } from "./icons";
 import { Segmented } from "./books/bits";
-import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, countdown, uid } from "@/lib/tracker";
+import { RepeatSelect } from "./RepeatSelect";
+import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
@@ -312,11 +313,13 @@ export function GoalDetail({
 
       <Sessions tracker={tracker} goal={g} log={log} />
 
-      {/* Where it belongs and where it lives, as one grouped list. */}
+      {/* Its category, how often it comes round in Recurring, and where it lives. */}
       <div className="step-list">
-        <TopicRow tracker={tracker} goal={g} />
-        <DateRow tracker={tracker} goal={g} />
-        <PhasesRow tracker={tracker} goal={g} />
+        <CategoryRow tracker={tracker} goal={g} />
+        <div className="step-row">
+          <span className="step-row__name flex-none">Repeat</span>
+          <RepeatSelect tracker={tracker} kind="goal" item={g} />
+        </div>
         <LinkRow tracker={tracker} goal={g} />
       </div>
 
@@ -802,126 +805,26 @@ function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log
   );
 }
 
-/**
- * The goal's topic, picked from a menu, as iOS shows a choice in a list
- * row. Moving keeps everything the goal has. "New Topic…" names one in
- * place and moves the goal into it.
- */
-function TopicRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
-  const s = tracker.state!;
-  const current = s.paths.find((p) => p.goalIds.includes(g.id));
-  const [naming, setNaming] = useState(false);
-  const [name, setName] = useState("");
-  const create = () => {
-    setNaming(false);
-    if (name.trim()) void tracker.addTopic(name, [g.id]);
-    setName("");
-  };
+/** The goal's category, picked from the ones there are. */
+function CategoryRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const cats = tracker.state!.categories;
   return (
     <div className="step-row">
-      <span className="step-row__name flex-none">Topic</span>
-      {naming ? (
-        <input
-          autoFocus
-          aria-label="New topic name"
-          placeholder="New topic name"
-          className="inline-field min-w-0 flex-1 text-end"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={create}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-            if (e.key === "Escape") {
-              setName("");
-              setNaming(false);
-            }
-          }}
-        />
-      ) : (
-        <select
-          aria-label="Topic"
-          className="row-select"
-          value={current?.id ?? ""}
-          onChange={(e) => {
-            if (e.target.value === "__new") setNaming(true);
-            else void tracker.setGoalTopic(g.id, e.target.value || null);
-          }}
-        >
-          <option value="">None</option>
-          {s.paths.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-          <option value="__new">New Topic…</option>
-        </select>
-      )}
+      <span className="step-row__name flex-none">Category</span>
+      <select
+        aria-label="Category"
+        className="row-select"
+        value={cats.some((c) => c.id === g.catId) ? g.catId : ""}
+        onChange={(e) => e.target.value && void tracker.setGoalCategory(g.id, e.target.value)}
+      >
+        {!cats.some((c) => c.id === g.catId) && <option value="">None</option>}
+        {cats.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
     </div>
-  );
-}
-
-/** A date it's aimed at, such as an exam, with how far off it is. */
-function DateRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
-  return (
-    <div className="step-row">
-      <span className="step-row__name flex-none">
-        Target date
-        {g.targetDate && <span className="date-row__count">{countdown(g.targetDate)}</span>}
-      </span>
-      <span className="date-row__value">
-        <input
-          type="date"
-          aria-label="Target date"
-          className="row-date"
-          value={g.targetDate ?? ""}
-          onChange={(e) => void tracker.setGoalTargetDate(g.id, e.target.value || null)}
-        />
-        {g.targetDate && (
-          <button
-            type="button"
-            className="row-clear"
-            aria-label="Clear the target date"
-            onClick={() => void tracker.setGoalTargetDate(g.id, null)}
-          >
-            <X aria-hidden />
-          </button>
-        )}
-      </span>
-    </div>
-  );
-}
-
-/**
- * The reading phases the goal belongs to, as chips: tap to add or take one
- * away, up to two. Phases are made in Library → Phases, shared with books.
- */
-function PhasesRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
-  const phases = [...tracker.state!.readingPhases].sort((a, b) => a.start.localeCompare(b.start));
-  if (phases.length === 0) return null;
-  const chosen = g.phaseIds ?? [];
-  const toggle = (id: string) =>
-    void tracker.setGoalPhases(g.id, chosen.includes(id) ? chosen.filter((x) => x !== id) : [...chosen, id]);
-  return (
-      <div className="step-row phase-row">
-        <span className="step-row__name flex-none">Phases</span>
-        <span className="phase-row__chips" role="group" aria-label="Phases, up to two">
-          {phases.map((p) => {
-            const on = chosen.includes(p.id);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className="cat-chip phase-chip"
-                aria-pressed={on}
-                disabled={!on && chosen.length >= 2}
-                onClick={() => toggle(p.id)}
-              >
-                {p.name}
-              </button>
-            );
-          })}
-        </span>
-      </div>
   );
 }
 

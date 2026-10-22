@@ -5,12 +5,11 @@ import { Tracker, useTracker } from "@/lib/tracker";
 import { AuthGate } from "./AuthGate";
 import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
 import { Modal } from "./Modal";
-import { GoalForm, RecurringForm } from "./Forms";
+import { GoalForm } from "./Forms";
 
 type Shell = {
   tracker: Tracker;
   openGoal: () => void;
-  openRecurring: () => void;
   /** The phone's More sheet: Progress, Log, Settings, appearance. */
   openMore: () => void;
 };
@@ -51,7 +50,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     else setTimeout(warm, 500);
   }, []);
   const [goalOpen, setGoalOpen] = useState(false);
-  const [recurringOpen, setRecurringOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   // Behind the sign-in screen there is nothing to navigate to yet.
   const gated = tracker.firebaseConfigured && !tracker.user;
@@ -59,7 +57,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const shell: Shell = {
     tracker,
     openGoal: () => setGoalOpen(true),
-    openRecurring: () => setRecurringOpen(true),
     openMore: () => setMoreOpen(true),
   };
 
@@ -90,13 +87,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
           <GoalForm tracker={tracker} onDone={() => setGoalOpen(false)} />
-        </Modal>
-        <Modal
-          open={recurringOpen}
-          onClose={() => setRecurringOpen(false)}
-          title="New recurring task"
-        >
-          <RecurringForm tracker={tracker} onDone={() => setRecurringOpen(false)} />
         </Modal>
       </div>
     </ShellContext.Provider>

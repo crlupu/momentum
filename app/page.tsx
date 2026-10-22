@@ -8,7 +8,7 @@ import TodoList from "@/components/TodoList";
 
 /** Today: the day's momentum, its routines and its to-dos. The home page. */
 export default function TodayPage() {
-  const { tracker, openRecurring } = useShell();
+  const { tracker } = useShell();
   const subtitle = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     day: "numeric",
@@ -20,7 +20,7 @@ export default function TodayPage() {
         <div className="lg:col-span-2">
           <MomentumCard tracker={tracker} />
         </div>
-        <RecurringList tracker={tracker} onAdd={openRecurring} />
+        <RecurringList tracker={tracker} />
         <TodoList tracker={tracker} />
       </div>
     </SectionPage>
