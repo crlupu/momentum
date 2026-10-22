@@ -104,7 +104,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
     protein: s.proteinTarget ? (v.protein / s.proteinTarget) * 100 : 0,
     fiber: s.fiberTarget ? (v.fiber / s.fiberTarget) * 100 : 0 }));
   const plotted = asPercent ? pctSeries : series;
-  // Keep 100% on the scale so a full day always reaches the reference line,
+  // Keep 100% on the scale so a full day always reaches its reference line,
   // and let overshoot extend above it.
   const max = asPercent
     ? Math.max(100, ...pctSeries.map((v) => Math.max(v.protein, v.fiber)))
@@ -192,19 +192,22 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           </p>
         ) : (
           <div className="relative flex h-[120px] items-end gap-1 pt-3">
-            {/* 100% reference line, drawn at the height a full day reaches */}
-            {asPercent && (
-              <div
-                className="pointer-events-none absolute inset-x-0 flex items-center gap-2"
-                style={{ bottom: 17 + (100 / max) * 84 }}
-                aria-hidden
-              >
-                <span className="h-px flex-1" style={{ background: "var(--border)" }} />
-                <span className="text-[11px]" style={{ color: LABEL }}>
-                  100%
-                </span>
-              </div>
-            )}
+            {/* Reference lines at 50% and 100%, drawn at the heights those
+                days reach: halfway is worth seeing at a glance as well. */}
+            {asPercent &&
+              [50, 100].map((p) => (
+                <div
+                  key={p}
+                  className="pointer-events-none absolute inset-x-0 flex items-center gap-2"
+                  style={{ bottom: 17 + (p / max) * 84 }}
+                  aria-hidden
+                >
+                  <span className="h-px flex-1" style={{ background: "var(--border)" }} />
+                  <span className="text-[11px]" style={{ color: LABEL }}>
+                    {p}%
+                  </span>
+                </div>
+              ))}
             {days.map((d, i) => (
               <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                 {/* the two series share a day column, side by side */}
