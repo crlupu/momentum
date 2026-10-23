@@ -19,7 +19,8 @@ import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
 import { ActionMenu } from "./Menu";
-import { ChevronRight, ReorderLines } from "./icons";
+import { ChevronRight, Plus, ReorderLines } from "./icons";
+import { GoalForm } from "./Forms";
 import { Tracker, goalPct, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
 import { GENERAL, PATH_COLORS, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
 
@@ -53,6 +54,7 @@ export function PathsView({
   const s = tracker.state!;
   const [editing, setEditing] = useState(false);
   const [pathForm, setPathForm] = useState<{ id: string | null } | null>(null);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<string[]>([]);
 
   // Which paths are folded, per device. Only a convenience.
@@ -89,11 +91,9 @@ export function PathsView({
     <div className="paths">
       {editable && (
         <div className="paths__bar">
-          {editing && (
-            <button type="button" className="text-action" onClick={() => setPathForm({ id: null })}>
-              New Path
-            </button>
-          )}
+          <button type="button" className="text-action" onClick={() => setPathForm({ id: null })}>
+            <Plus aria-hidden /> New Path
+          </button>
           <button
             type="button"
             className="text-action"
@@ -121,16 +121,28 @@ export function PathsView({
           const prog = pathProgress(sec.all);
           return (
             <section key={sec.id} className="path">
-              <button
-                type="button"
-                className="path__head"
-                aria-expanded={open}
-                onClick={() => toggle(sec.id)}
-              >
-                <span className="path__title">{sec.title}</span>
-                <span className="path__pct font-mono-n">{prog.pct}%</span>
-                <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />
-              </button>
+              <div className="path__headrow">
+                <button
+                  type="button"
+                  className="path__head"
+                  aria-expanded={open}
+                  onClick={() => toggle(sec.id)}
+                >
+                  <span className="path__title">{sec.title}</span>
+                  <span className="path__pct font-mono-n">{prog.pct}%</span>
+                  <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />
+                </button>
+                {editable && (
+                  <button
+                    type="button"
+                    className="text-action text-action--sm path__add"
+                    aria-label={`Add a goal to ${sec.title}`}
+                    onClick={() => setAddingTo(sec.id)}
+                  >
+                    <Plus aria-hidden />
+                  </button>
+                )}
+              </div>
               <div className="card path__card">
                 <div className="path__summary">
                   <div className="progress-track h-1">
@@ -154,6 +166,16 @@ export function PathsView({
         })
       )}
 
+      <Modal open={!!addingTo} onClose={() => setAddingTo(null)} title="New Goal">
+        {addingTo && (
+          <GoalForm
+            key={addingTo}
+            tracker={tracker}
+            pathId={addingTo === GENERAL ? null : addingTo}
+            onDone={() => setAddingTo(null)}
+          />
+        )}
+      </Modal>
       <Modal open={!!pathForm} onClose={() => setPathForm(null)} title={editingPath ? "Edit Path" : "New Path"}>
         {pathForm && (
           <PathForm key={pathForm.id ?? "new"} tracker={tracker} path={editingPath} onDone={() => setPathForm(null)} />

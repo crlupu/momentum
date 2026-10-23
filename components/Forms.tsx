@@ -7,6 +7,7 @@ import { RowActions } from "./RowActions";
 import { DialogActions } from "./DialogActions";
 import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { usePending } from "./ActionButton";
+import { MenuSelect } from "./Menu";
 import { readableText } from "@/lib/color";
 import { Tracker, caloriesLeftThisWeek, CAT_COLORS, nextCategoryColor } from "@/lib/tracker";
 
@@ -58,8 +59,8 @@ export function GoalForm({
   const s = tracker.state!;
   const [title, setTitle] = useState("");
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
-  // Topics are set aside for now: a goal is added on its own.
-  const topic = pathId ?? "";
+  // The path it starts in: the one it was added from, or General.
+  const [topic, setTopic] = useState(pathId ?? "");
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
   const [note, setNote] = useState("");
@@ -98,6 +99,19 @@ export function GoalForm({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           className="mt-1 w-full text-base text-foreground"
+        />
+      </label>
+      <label className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
+        Path
+        <MenuSelect
+          label="Path"
+          className="menu-select--field max-w-[60%]"
+          value={topic}
+          onChange={setTopic}
+          options={[
+            ...s.paths.map((p) => ({ value: p.id, label: p.title, color: p.color })),
+            { value: "", label: "General" },
+          ]}
         />
       </label>
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />

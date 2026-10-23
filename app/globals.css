@@ -4241,3 +4241,16 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 #config .btn-delete-bare.cds--btn { border-radius: 999px !important; }
 /* Round icon buttons beside a delete, so the pair match. */
 .cds--btn.btn-round, #config .cds--btn.btn-round { border-radius: 999px !important; }
+/* A small capsule, for an action on a row rather than a section. */
+.text-action.text-action--sm { min-block-size: 1.75rem; padding: 0 0.625rem; font-size: 0.8125rem; }
+@media (pointer: coarse) { .text-action.text-action--sm { min-block-size: 1.75rem; } }
+.path__headrow { display: flex; align-items: center; gap: 0.5rem; }
+.path__headrow .path__head { flex: 1 1 auto; min-inline-size: 0; }
+.text-action.path__add { inline-size: 1.875rem; padding: 0; margin-block-end: 0.25rem; }
+.text-action.path__add svg, .paths__bar .text-action svg { inline-size: 1.125rem; block-size: 1.125rem; }
+
+/* Add cardio and Start workout: one shape and size, the grey one beside the blue. */
+.cds--btn.btn-pair { border-radius: 999px; min-block-size: 2.25rem; padding-inline: 0.875rem; font-weight: 600; }
+.cds--btn.btn-pair--gray { background: var(--default) !important; color: var(--foreground) !important; border: 0 !important; }
+.cds--btn.btn-pair--gray svg { fill: currentColor !important; }
+@media (hover: hover) { .cds--btn.btn-pair--gray:hover { background: var(--fill-hover) !important; } }

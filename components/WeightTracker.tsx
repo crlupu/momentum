@@ -221,6 +221,8 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
       </PanelHeader>
 
       <div className="card p-4 md:p-5">
+        {/* Weighed in from the summary only: one place to add a weight. */}
+        {summary && (
         <form onSubmit={submit} className="mb-3 flex gap-2">
           <Input
             type="number"
@@ -233,6 +235,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
           />
           <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
         </form>
+        )}
 
         {summary ? (
           <WeightGlance tracker={tracker} />
