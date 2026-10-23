@@ -18,7 +18,6 @@ import { ProgressRing } from "./ProgressRing";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
-import { ActionMenu } from "./Menu";
 import { ChevronRight, Plus, ReorderLines } from "./icons";
 import { GoalForm } from "./Forms";
 import { Tracker, goalPct, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
@@ -33,9 +32,9 @@ type Section = { id: string; title: string; color: string; path?: Path; all: Goa
  * where every goal in no path sits. A section's header folds it; its bar adds
  * up every item of every goal in it.
  *
- * With `editable`, Edit turns the list into iOS edit mode: every section
- * open, a handle on each goal to drag it within its path or into another,
- * a ⋯ on each path for renaming, moving and deleting it.
+ * With `editable` (Library), New Path adds a path, and each path's Edit
+ * opens it for organizing: renaming, moving and deleting it, reordering and
+ * deleting its goals, adding one. Active only shows.
  */
 export function PathsView({
   tracker,
@@ -52,7 +51,8 @@ export function PathsView({
   empty: string;
 }) {
   const s = tracker.state!;
-  const [editing, setEditing] = useState(false);
+  // The path being edited, one at a time.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [pathForm, setPathForm] = useState<{ id: string | null } | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -83,8 +83,9 @@ export function PathsView({
       return { id: GENERAL, title: "General", color: "var(--accent)", all, shown: all.filter(show) };
     })(),
   ];
-  // Browsing, a path with nothing to show here is left out; organizing, every path is there to drop into.
-  const visible = editing ? sections : sections.filter((x) => x.shown.length > 0);
+  // On Active, a path with nothing active is left out; in Library every path
+  // shows, empty ones too, so they can be edited.
+  const visible = editable ? sections : sections.filter((x) => x.shown.length > 0);
   const editingPath = pathForm?.id ? s.paths.find((p) => p.id === pathForm.id) : undefined;
 
   return (
@@ -94,30 +95,15 @@ export function PathsView({
           <button type="button" className="text-action" onClick={() => setPathForm({ id: null })}>
             <Plus aria-hidden /> New Path
           </button>
-          <button
-            type="button"
-            className="text-action"
-            aria-pressed={editing}
-            onClick={() => setEditing((v) => !v)}
-          >
-            {editing ? "Done" : "Edit"}
-          </button>
         </div>
       )}
 
-      {editing ? (
-        <>
-          <p className="paths__hint">
-            Drag a goal by its handle to reorder it, or into another path. Tap ⋯ to rename, move or delete a path;
-            its goals go back to General.
-          </p>
-          <EditList tracker={tracker} sections={sections} onEditPath={(id) => setPathForm({ id })} />
-        </>
-      ) : visible.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="card goal-list__empty p-4">{empty}</p>
       ) : (
         visible.map((sec) => {
-          const open = !collapsed.includes(sec.id);
+          const editing = editingId === sec.id;
+          const open = editing || !collapsed.includes(sec.id);
           const prog = pathProgress(sec.all);
           return (
             <section key={sec.id} className="path">
@@ -126,20 +112,21 @@ export function PathsView({
                   type="button"
                   className="path__head"
                   aria-expanded={open}
-                  onClick={() => toggle(sec.id)}
+                  onClick={() => !editing && toggle(sec.id)}
                 >
                   <span className="path__title">{sec.title}</span>
                   <span className="path__pct font-mono-n">{prog.pct}%</span>
-                  <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />
+                  {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
                 </button>
                 {editable && (
                   <button
                     type="button"
-                    className="text-action text-action--sm path__add"
-                    aria-label={`Add a goal to ${sec.title}`}
-                    onClick={() => setAddingTo(sec.id)}
+                    className="text-action text-action--sm"
+                    aria-pressed={editing}
+                    aria-label={editing ? `Done editing ${sec.title}` : `Edit ${sec.title}`}
+                    onClick={() => setEditingId(editing ? null : sec.id)}
                   >
-                    <Plus aria-hidden />
+                    {editing ? "Done" : "Edit"}
                   </button>
                 )}
               </div>
@@ -153,12 +140,22 @@ export function PathsView({
                     {sec.all.length === 1 ? "goal" : "goals"}
                   </span>
                 </div>
-                {open && (
-                  <ul className="goal-list__rows">
-                    {sec.shown.map((g) => (
-                      <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} inTopic color={sec.color} />
-                    ))}
-                  </ul>
+                {editing ? (
+                  <SectionEdit
+                    tracker={tracker}
+                    section={sec}
+                    onAdd={() => setAddingTo(sec.id)}
+                    onEditPath={() => setPathForm({ id: sec.id })}
+                    onDeleted={() => setEditingId(null)}
+                  />
+                ) : (
+                  open && (
+                    <ul className="goal-list__rows">
+                      {sec.shown.map((g) => (
+                        <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} inTopic color={sec.color} />
+                      ))}
+                    </ul>
+                  )
                 )}
               </div>
             </section>
@@ -186,18 +183,22 @@ export function PathsView({
 }
 
 /**
- * Every path open, as one list a goal can be dragged through: each path's
- * header is a fixed row in it, so where a goal is dropped, under which
- * header, is the path it joins.
+ * One path in Edit: its own actions (rename and colour, move, delete) for a
+ * path you made, its goals with a handle to reorder them and a delete, and a
+ * row to add a goal to it. A goal moves to another path from its Path row.
  */
-function EditList({
+function SectionEdit({
   tracker,
-  sections,
+  section: sec,
+  onAdd,
   onEditPath,
+  onDeleted,
 }: {
   tracker: Tracker;
-  sections: Section[];
-  onEditPath: (id: string) => void;
+  section: Section;
+  onAdd: () => void;
+  onEditPath: () => void;
+  onDeleted: () => void;
 }) {
   const s = tracker.state!;
   // Touch waits a moment before lifting a row, so scrolling past a handle doesn't pick it up.
@@ -206,108 +207,65 @@ function EditList({
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  // Done goals are in History; they keep their path but aren't dragged here.
-  const rows: string[] = sections.flatMap((sec) => [
-    `h:${sec.id}`,
-    ...sec.all.filter((g) => goalStatus(g) !== "done").map((g) => g.id),
-  ]);
-  const byId = new Map(s.goals.map((g) => [g.id, g]));
-
+  // Done goals are in History; they keep their place but aren't dragged here.
+  const goals = sec.all.filter((g) => goalStatus(g) !== "done");
+  const ids = goals.map((g) => g.id);
+  const i = s.paths.findIndex((p) => p.id === sec.id);
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const from = rows.indexOf(String(active.id));
-    let to = rows.indexOf(String(over.id));
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
     if (from < 0 || to < 0) return;
-    // Nothing goes above the first header.
-    if (to === 0) to = 1;
-    const next = arrayMove(rows, from, to);
-    const layout: { pathId: string; goalIds: string[] }[] = [];
-    for (const id of next) {
-      if (id.startsWith("h:")) layout.push({ pathId: id.slice(2), goalIds: [] });
-      else layout[layout.length - 1]?.goalIds.push(id);
-    }
-    void tracker.arrangeLearning(layout);
+    void tracker.arrangeLearning([{ pathId: sec.id, goalIds: arrayMove(ids, from, to) }]);
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={rows} strategy={verticalListSortingStrategy}>
-        <ul className="paths-edit">
-          {rows.map((id) => {
-            if (id.startsWith("h:")) {
-              const sec = sections.find((x) => x.id === id.slice(2))!;
-              const i = s.paths.findIndex((p) => p.id === sec.id);
-              return (
-                <HeaderRow
-                  key={id}
-                  id={id}
-                  title={sec.title}
-                  general={sec.id === GENERAL}
-                  menu={
-                    sec.path && (
-                      <ActionMenu
-                        label={`${sec.title} actions`}
-                        className="path__more"
-                        items={[
-                          { label: "Rename or Recolor…", onSelect: () => onEditPath(sec.id) },
-                          { label: "Move Up", disabled: i <= 0, onSelect: () => void tracker.movePath(sec.id, -1) },
-                          {
-                            label: "Move Down",
-                            disabled: i >= s.paths.length - 1,
-                            onSelect: () => void tracker.movePath(sec.id, 1),
-                          },
-                          "separator",
-                          { label: "Delete Path", danger: true, onSelect: () => void tracker.deletePath(sec.id) },
-                        ]}
-                      >
-                        <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden>
-                          <circle cx="13" cy="13" r="11.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                          <circle cx="8" cy="13" r="1.6" fill="currentColor" />
-                          <circle cx="13" cy="13" r="1.6" fill="currentColor" />
-                          <circle cx="18" cy="13" r="1.6" fill="currentColor" />
-                        </svg>
-                      </ActionMenu>
-                    )
-                  }
-                  empty={sec.all.filter((g) => goalStatus(g) !== "done").length === 0}
-                />
-              );
-            }
-            const g = byId.get(id)!;
-            const sec = sections.find((x) => x.all.some((y) => y.id === id))!;
-            return <EditGoalRow key={id} tracker={tracker} goal={g} color={sec.color} />;
-          })}
-        </ul>
-      </SortableContext>
-    </DndContext>
-  );
-}
-
-function HeaderRow({
-  id,
-  title,
-  general,
-  menu,
-  empty,
-}: {
-  id: string;
-  title: string;
-  general: boolean;
-  menu: React.ReactNode;
-  empty: boolean;
-}) {
-  // A fixed row: it can be dropped beside, never dragged.
-  const { setNodeRef, transform, transition } = useSortable({ id, disabled: true });
-  return (
-    <li ref={setNodeRef} className="paths-edit__head" style={{ transform: CSS.Transform.toString(transform), transition }}>
-      <span className="path__title">
-        {title}
-        {general && <span className="path__badge">Default</span>}
-      </span>
-      {menu}
-      {empty && <span className="paths-edit__empty">Drop goals here</span>}
-    </li>
+    <div className="path-edit">
+      {sec.path && (
+        <div className="path-edit__actions">
+          <button type="button" className="text-action text-action--sm" onClick={onEditPath}>
+            Rename or Recolor
+          </button>
+          <button
+            type="button"
+            className="text-action text-action--sm"
+            disabled={i <= 0}
+            onClick={() => void tracker.movePath(sec.id, -1)}
+          >
+            Move Up
+          </button>
+          <button
+            type="button"
+            className="text-action text-action--sm"
+            disabled={i >= s.paths.length - 1}
+            onClick={() => void tracker.movePath(sec.id, 1)}
+          >
+            Move Down
+          </button>
+          <DeleteButton
+            what={`the path "${sec.title}" (its goals go back to General)`}
+            label="Delete Path"
+            onDelete={async () => {
+              onDeleted();
+              return tracker.deletePath(sec.id);
+            }}
+          />
+        </div>
+      )}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          <ul className="paths-edit">
+            {goals.map((g) => (
+              <EditGoalRow key={g.id} tracker={tracker} goal={g} color={sec.color} />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+      <button type="button" className="path-edit__add" onClick={onAdd}>
+        <Plus aria-hidden /> Add Goal
+      </button>
+    </div>
   );
 }
 

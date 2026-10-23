@@ -61,8 +61,6 @@ export function GoalForm({
   const [catId, setCatId] = useState(s.categories[0]?.id ?? "");
   // The path it starts in: the one it was added from, or General.
   const [topic, setTopic] = useState(pathId ?? "");
-  const [current, setCurrent] = useState("");
-  const [target, setTarget] = useState("");
   const [note, setNote] = useState("");
   const { pending, run } = usePending();
 
@@ -79,8 +77,8 @@ export function GoalForm({
       tracker.addGoal(
         t,
         catId || s.categories[0]?.id,
-        current === "" ? null : Number(current),
-        target === "" ? null : Number(target),
+        null,
+        null,
         topic || null,
         note
       )
@@ -101,11 +99,11 @@ export function GoalForm({
           className="mt-1 w-full text-base text-foreground"
         />
       </label>
-      <label className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
+      <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
         Path
         <MenuSelect
           label="Path"
-          className="menu-select--field max-w-[60%]"
+          className="menu-select--field"
           value={topic}
           onChange={setTopic}
           options={[
@@ -115,15 +113,6 @@ export function GoalForm({
         />
       </label>
       <CatPicker tracker={tracker} catId={catId} setCatId={setCatId} />
-      <div>
-        <div className="mb-1 text-xs text-[var(--muted)]">
-          A count to track, if it has one (pages, videos, modules). Leave it empty to just mark the goal done when it is.
-        </div>
-        <div className="flex gap-3">
-          <Input type="number" step="any" inputMode="decimal" aria-label="Done so far" placeholder="Done so far" value={current} onChange={(e) => setCurrent(e.target.value)} className="flex-1" />
-          <Input type="number" step="any" inputMode="decimal" aria-label="Total" placeholder="Total" value={target} onChange={(e) => setTarget(e.target.value)} className="flex-1" />
-        </div>
-      </div>
       <DialogActions primary={{ label: "Add", disabled: pending }} />
     </form>
   );
