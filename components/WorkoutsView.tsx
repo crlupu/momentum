@@ -13,7 +13,8 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
-  Info } from "./icons";
+  Info,
+  Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
@@ -170,7 +171,7 @@ function BlockSection({
           </div>
         </form>
       ) : (
-        <AddButton secondary label={`Add to ${block.name}`} className="mt-2" onPress={() => setAdding(true)} />
+        <InsertRow label={`Add to ${block.name}`} onPress={() => setAdding(true)} />
       )}
     </div>
   );
@@ -198,7 +199,7 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
   if (!open) {
     return (
-      <AddButton secondary label="Add block" onPress={() => setOpen(true)} />
+      <InsertRow label="Add block" onPress={() => setOpen(true)} />
     );
   }
 
@@ -296,6 +297,22 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
         {field("repsMax", "Most reps", "max", "w-14")}
       </div>
     </div>
+  );
+}
+
+/**
+ * An add in the workout editor, as iOS inserts in an edit list: a white plus
+ * on a green disc, the same size as the move, edit and ⊖ beside it, and
+ * what it adds in words.
+ */
+function InsertRow({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <button type="button" className="insert-row" onClick={onPress}>
+      <span className="icon-disc icon-disc--green">
+        <Plus />
+      </span>
+      {label}
+    </button>
   );
 }
 
@@ -531,7 +548,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
             One arm — counts double
           </label>
         ) : (
-          <AddButton secondary label="Add exercise" onPress={() => setAdding(true)} />
+          <InsertRow label="Add exercise" onPress={() => setAdding(true)} />
         )}
         </div>
 
