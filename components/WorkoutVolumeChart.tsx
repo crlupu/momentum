@@ -113,7 +113,9 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
       colour: LIFT_LINE,
       values: minutes,
       unit: "min",
-      minutes: null,
+      // A line through the days trained: time reads as a trend, not a pile.
+      minutes,
+      line: true,
       lineColour: LIFT_LINE,
       lineLabel: "minutes",
       tooltip: (i) => `Lifting: ${minutes[i]} min on ${keys[i]}` });
@@ -193,6 +195,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
                 minutes={c.minutes}
                 lineColour={c.lineColour}
                 lineLabel={c.lineLabel}
+                line={c.line}
                 tooltip={c.tooltip}
               />
             </div>
@@ -274,6 +277,8 @@ type ChartSpec = {
   minutes: number[] | null;
   lineColour: string;
   lineLabel: string;
+  /** Drawn as a line alone (Duration). */
+  line?: boolean;
   tooltip: (i: number) => string;
 };
 
@@ -292,7 +297,10 @@ function DayChart({
   minutes,
   lineColour,
   lineLabel,
+  line,
   tooltip }: {
+  /** Drawn as a line alone, its figures by its points, no bars. */
+  line?: boolean;
   title: string;
   colour: string;
   days: Date[];
@@ -330,23 +338,23 @@ function DayChart({
             more towards the right-hand end. The bars are separated by their
             own padding instead. */}
         <div className="relative flex h-[104px] items-end">
-          {points.length > 0 && <TimeLine points={points} max={maxMin} color={lineColour} />}
+          {points.length > 0 && <TimeLine points={points} max={line ? maxMin * 1.3 : maxMin} color={lineColour} labels={line} />}
           {days.map((d, i) => (
             <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]">
               <span
                 className="font-mono-n text-[11px] font-semibold"
-                style={{ color: values[i] ? "var(--foreground)" : "transparent" }}
+                style={{ color: values[i] && !line ? "var(--foreground)" : "transparent" }}
               >
                 {values[i] ? values[i].toLocaleString() : ""}
               </span>
               {/* Capped in width, so a desktop-wide chart still reads as
                   bars rather than a row of blocks. */}
               <div
-                className={"w-full max-w-[28px]" + (values[i] ? " rounded-t-[3px]" : "")}
+                className={"w-full max-w-[28px]" + (values[i] && !line ? " rounded-t-[3px]" : "")}
                 title={values[i] ? tooltip(i) : undefined}
                 style={{
-                  height: Math.max(2, (values[i] / max) * 68),
-                  background: values[i] ? colour : TRACK }}
+                  height: line ? 2 : Math.max(2, (values[i] / max) * 68),
+                  background: values[i] && !line ? colour : TRACK }}
               />
               <span className="text-[11px] leading-none tabular-nums" style={{ color: LABEL }}>
                 {d.getDate()}
@@ -355,7 +363,7 @@ function DayChart({
           ))}
         </div>
 
-        {points.length > 0 && (
+        {points.length > 0 && !line && (
           <div className="mt-2 flex items-center gap-1.5 text-[11px]" style={{ color: LABEL }}>
             <span className="inline-block h-[2px] w-4" style={{ background: lineColour }} aria-hidden />
             {lineLabel}
@@ -374,7 +382,10 @@ function DayChart({
 function TimeLine({
   points,
   max,
-  color }: {
+  color,
+  labels }: {
+  /** Each point's figure above it. */
+  labels?: boolean;
   points: { i: number; m: number }[];
   /** Top of the shared scale, in minutes. */
   max: number;
@@ -424,6 +435,16 @@ function TimeLine({
               background: color }}
           />
         ))}
+        {labels &&
+          points.map((p) => (
+            <span
+              key={`l${p.i}`}
+              className="font-mono-n absolute -translate-x-1/2 text-[11px] font-semibold text-foreground"
+              style={{ left: `${((p.i + 0.5) / 14) * 100}%`, bottom: (p.m / max) * 78 + 6 }}
+            >
+              {p.m}
+            </span>
+          ))}
       </div>
     </>
   );
