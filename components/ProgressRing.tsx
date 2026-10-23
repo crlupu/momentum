@@ -15,8 +15,8 @@ export function ProgressRing({
   const cx = size / 2;
   // The label keeps clear of the ring: it fits within 70% of the space
   // inside it, so "100%" steps down a size rather than touching the stroke.
-  // A small ring that has closed shows a check instead, which reads at a
-  // size where "100%" would not.
+  // A small ring carries no figure: at that size it can't be read, and the
+  // row beside it says how far along it is. Closed, it shows a check.
   const label = `${pct}%`;
   const inner = 2 * (r - stroke / 2);
   const fontSize = Math.min(size >= 48 ? 13 : 11, (inner * 0.7) / (label.length * 0.66));
@@ -47,7 +47,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      ) : (
+      ) : size < 48 ? null : (
         <text
           x={cx}
           y={cx}

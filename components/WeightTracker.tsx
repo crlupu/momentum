@@ -2,11 +2,13 @@
 
 import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
-import { Button, Input, PanelHeader, AddButton } from "./ui";
+import { Button, Input, PanelHeader, AddButton, Stat } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { type WeightPlan, addDays, expectedOn, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
+import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
+import Link from "next/link";
+import { ChevronRight } from "./icons";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -136,7 +138,7 @@ function WeightChart({ weights, plan }: { weights: WeightEntry[]; plan?: WeightP
         ))}
 
         {series.map((p, i) =>
-          (DAYS - 1 - i) % every === 0 ? (
+          (DAYS - 1 - i) % every === 0 && (i === DAYS - 1 || x(DAYS - 1) - x(i) >= 72) ? (
             <text
               key={p.date}
               x={x(i)}
@@ -191,7 +193,7 @@ function WeightChart({ weights, plan }: { weights: WeightEntry[]; plan?: WeightP
   );
 }
 
-export default function WeightTracker({ tracker }: { tracker: Tracker }) {
+export default function WeightTracker({ tracker, summary }: { tracker: Tracker; summary?: boolean }) {
   const s = tracker.state!;
   const data = s.weights;
   const latest = data.length ? data[data.length - 1] : null;
@@ -209,7 +211,7 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
 
   return (
     <div>
-      <PanelHeader title="Weight" color="var(--sec-fitness)">
+      <PanelHeader title={summary ? "Weight" : "Weigh-ins"} color="var(--sec-fitness)">
         {latest && (
           <span>
             <span className="font-mono-n font-bold text-foreground">{latest.kg}</span> kg ·{" "}
@@ -232,6 +234,10 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
           <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
         </form>
 
+        {summary ? (
+          <WeightGlance tracker={tracker} />
+        ) : (
+        <>
         <div className="mb-1 text-xs" style={{ color: LABEL }}>
           Last {DAYS} days
         </div>
@@ -248,7 +254,15 @@ export default function WeightTracker({ tracker }: { tracker: Tracker }) {
         </div>
 
         <WeeklyMedians weights={data} />
+        </>
+        )}
       </div>
+      {summary && (
+        <Link href="/fitness?view=weight" className="drill-row card mt-3">
+          <span>Weight, medians and plan</span>
+          <ChevronRight aria-hidden />
+        </Link>
+      )}
     </div>
   );
 }
@@ -298,6 +312,34 @@ function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/**
+ * The weight at a glance, for the Fitness summary: this week's median, the
+ * change from last week's, and where the plan stands, if there is one.
+ */
+function WeightGlance({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const medians = weeklyMedians(s.weights);
+  const now = medians[medians.length - 1];
+  const prev = medians[medians.length - 2];
+  const plan = validPlan(s.weightPlan);
+  const check = plan ? latestCheck(plan, s.weights) : undefined;
+  if (!now) return <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet.</p>;
+  const d = prev ? Math.round((now.median - prev.median) * 10) / 10 : null;
+  return (
+    <div className="stat-grid stat-grid--3">
+      <Stat value={`${now.median.toFixed(1)} kg`} label="this week's median" />
+      <Stat
+        value={d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
+        label="from last week"
+      />
+      <Stat
+        value={check ? { ahead: "Ahead", "on-track": "On track", close: "Close", behind: "Behind" }[check.status] : "–"}
+        label={plan ? `plan, ${plan.targetKg} kg by ${fmtDate(plan.targetDate)}` : "no plan"}
+      />
     </div>
   );
 }

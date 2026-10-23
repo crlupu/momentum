@@ -27,13 +27,6 @@ import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
 import { useFlow } from "./flowContext";
 
-const FLAG_LABEL: Record<R.PhaseFlag, string> = {
-  done: "Done",
-  "on-track": "On track",
-  "at-risk": "At risk",
-  behind: "Behind",
-  unknown: "No projection yet" };
-
 /**
  * The plan in blocks. Each phase shows how far through it is, when it will
  * be finished at the pace of the last fortnight, and its books by track.
@@ -77,7 +70,6 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
             key={p.id}
             title={p.name}
             subtitle={`${fmtDate(p.start, true)} – ${fmtDate(p.end, true)}${current ? " · now" : ""}`}
-            actions={<span className={`rd-flag rd-flag--${st.flag}`}>{FLAG_LABEL[st.flag]}</span>}
             onEdit={() => flow.open({ kind: "phase", phaseId: p.id })}
             bodyClassName={current ? "rd-phase--current" : undefined}
           >

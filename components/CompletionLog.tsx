@@ -1,7 +1,7 @@
 "use client";
 
 import { Panel } from "./Panel";
-import { RotateCcw } from "./icons";
+import { Apple, Check, Dumbbell, Flame, Repeat, RotateCcw, Target } from "./icons";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -54,6 +54,17 @@ const KIND_COLOR: Record<Entry["kind"], string> = {
   Cardio: "#b75014",
   Calories: "#97640c",
   Macros: "#64761c",
+};
+
+/** Each kind's glyph, white on its colour, as iOS lists lead with an icon. */
+const KIND_ICON: Record<Entry["kind"], typeof Check> = {
+  "To-do": Check,
+  Goal: Target,
+  Recurring: Repeat,
+  Workout: Dumbbell,
+  Cardio: Flame,
+  Calories: Apple,
+  Macros: Apple,
 };
 
 function RestoreTodo({ tracker, id }: { tracker: Tracker; id: string }) {
@@ -141,8 +152,8 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     entries.push({
       key: `workout-${w.id}`,
       kind: "Workout",
-      title: `${w.name} — ${summary}`,
-      detail: breakdown || undefined,
+      title: w.name,
+      detail: [summary, breakdown].filter(Boolean).join(" · ") || undefined,
       date: w.date,
       at: w.at,
       color: KIND_COLOR.Workout,
@@ -158,7 +169,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     entries.push({
       key: `kcal-${c.id}`,
       kind: "Calories",
-      title: `${c.kcal.toLocaleString()} kcal${tag ? ` — ${tag.name}` : ""}`,
+      title: `${c.kcal.toLocaleString()} kcal${tag ? ` · ${tag.name}` : ""}`,
       date: c.date,
       at: c.at,
       color: tag?.color || KIND_COLOR.Calories,
@@ -191,7 +202,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     entries.push({
       key: `cardio-${c.id}`,
       kind: "Cardio",
-      title: `Cardio — ${c.minutes} min`,
+      title: `${c.minutes} min`,
       date: c.date,
       at: c.at,
       color: KIND_COLOR.Cardio,
@@ -262,15 +273,20 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                   <ul className="list-none divide-y divide-foreground/10 p-0">
                     {day.items.map((e) => (
                       <li key={e.key} className="flex items-center gap-2.5 py-2.5">
-                        <span className="log-kind">
-                          <span className="cat-dot" style={{ background: e.color }} aria-hidden />
-                          {e.kind}
-                        </span>
+                        {(() => {
+                          const Icon = KIND_ICON[e.kind];
+                          return (
+                            <span className="log-icon" style={{ background: e.color }} title={e.kind}>
+                              <Icon aria-hidden />
+                            </span>
+                          );
+                        })()}
                         <span className="min-w-0 flex-1 break-words text-[15px]">
                           {e.title}
-                          {e.detail && (
-                            <span className="mt-0.5 block text-xs text-[var(--muted)]">{e.detail}</span>
-                          )}
+                          <span className="mt-0.5 block text-[13px] text-[var(--muted)]">
+                            {e.kind}
+                            {e.detail ? ` · ${e.detail}` : ""}
+                          </span>
                         </span>
                         {e.at != null && (
                           <span className="font-mono-n shrink-0 text-xs text-[var(--muted)]">{fmtTime(e.at)}</span>
@@ -283,9 +299,9 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                 </section>
               ))}
               {byDay.length > daysShown && (
-                <Button variant="outline" size="sm" className="self-start" onPress={() => setDaysShown(daysShown + 7)}>
-                  Show earlier
-                </Button>
+                <button type="button" className="text-action self-start" onClick={() => setDaysShown(daysShown + 7)}>
+                  Show Earlier
+                </button>
               )}
             </div>
           )}

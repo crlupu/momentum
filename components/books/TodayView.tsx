@@ -227,23 +227,11 @@ export function OpenBook({
             </span>
           </span>
         </button>
-        <form onSubmit={submit} className="rd-mini">
-          <input
-            type="text"
-            inputMode="numeric"
-            enterKeyHint="done"
-            aria-label={`${book.title}: the page you're on (or +pages read)`}
-            placeholder="Page"
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              setError(null);
-            }}
-          />
-          <Button type="submit" size="sm" variant="primary" isIconOnly aria-label={`Update ${book.title}`} isDisabled={pending || !parsed}>
-            <Check className="h-4 w-4" />
-          </Button>
-        </form>
+        {/* The update opens its own sheet, where the page has room and a
+            number pad, rather than a squeezed box beside the title. */}
+        <button type="button" className="text-action shrink-0" onClick={() => flow.open({ kind: "log", bookId: book.id })}>
+          Update
+        </button>
       </li>
     );
   }

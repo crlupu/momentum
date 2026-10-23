@@ -2,7 +2,7 @@
 
 import { fmtDate } from "@/lib/dates";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 
 import { Card, Stat } from "./ui";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
@@ -120,6 +120,10 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
   );
   const avg = monthEntries.length ? (mTotal / monthEntries.length).toFixed(1) : "0";
 
+  const monthAll: Record<string, number> = {};
+  for (const [k, n] of monthEntries) monthAll[k] = n;
+  const [catPick, setCatPick] = useState<string | null>(null);
+
   const perCat = s.categories
     .map((c) => {
       const full = catCompletionsByDate(completions, c.id);
@@ -183,24 +187,43 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
           <h2 className="mb-1 text-lg font-semibold">
             Completions by category
           </h2>
-          <p className="mb-4 text-[13px] text-[var(--muted)]">This month, one calendar per category</p>
+          <p className="mb-3 text-[13px] text-[var(--muted)]">This month. Pick a category, or see them all.</p>
           {perCat.length === 0 ? (
             <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
               Check off some recurring tasks to see activity.
             </p>
           ) : (
-            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))" }}>
-              {perCat.map(({ c, map, total }) => (
-                <div key={c.id}>
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c.color }} aria-hidden />
-                    <span className="text-sm font-medium">{c.name}</span>
-                    <span className="font-mono-n text-xs text-[var(--muted)]">{total}</span>
+            (() => {
+              // One calendar, as Fitness shows one month: all categories
+              // together, or one picked from the chips above it.
+              const picked = perCat.find((x) => x.c.id === catPick);
+              const map = picked ? picked.map : monthAll;
+              return (
+                <>
+                  <div className="cat-chips" role="radiogroup" aria-label="Category">
+                    <button type="button" role="radio" aria-checked={!picked} className="cat-chip" onClick={() => setCatPick(null)}>
+                      All <span className="font-mono-n text-[var(--muted)]">{mTotal}</span>
+                    </button>
+                    {perCat.map(({ c, total }) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={picked?.c.id === c.id}
+                        className="cat-chip"
+                        onClick={() => setCatPick(c.id)}
+                      >
+                        <span className="cat-dot" style={{ background: c.color }} aria-hidden />
+                        {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
+                      </button>
+                    ))}
                   </div>
-                  <Heatmap cells={cells} map={map} color={c.color} />
-                </div>
-              ))}
-            </div>
+                  <div className="mt-3 max-w-[22rem]">
+                    <Heatmap cells={cells} map={map} color={picked?.c.color ?? "#0A84FF"} />
+                  </div>
+                </>
+              );
+            })()
           )}
         </Card.Content>
       </Card>

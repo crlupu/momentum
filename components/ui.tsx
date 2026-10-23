@@ -129,7 +129,7 @@ export function AddButton({
       isDisabled={isDisabled}
       onPress={onPress}
       aria-label={ariaLabel}
-      className={["btn-add", className].filter(Boolean).join(" ")}
+      className={["btn-add", secondary && "btn-add--plain", className].filter(Boolean).join(" ")}
     >
       {icon ?? <Plus className="h-4 w-4" aria-hidden />}
       {label}

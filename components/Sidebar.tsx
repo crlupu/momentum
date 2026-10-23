@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { X, LogOut, ChevronRight } from "./icons";
+import type { IconType } from "react-icons";
 import {
-  X, Today, BarChart3, ScrollText, Settings, LogOut, ChevronRight, School, Kanban,
-  Health,
-} from "./icons";
+  IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
+  IoDocumentTextOutline, IoHeart, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+} from "react-icons/io5";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker } from "@/lib/tracker";
@@ -15,14 +17,25 @@ import {
   NAV, navHolds, navPath, sectionPath, sectionTitle, trimPath, type NavId, type SectionId,
 } from "./sections";
 
-const ICON: Record<NavId | "charts" | "log" | "config", typeof Today> = {
-  tasks: Today,
-  learning: School,
-  projects: Kanban,
-  health: Health,
-  charts: BarChart3,
-  log: ScrollText,
-  config: Settings,
+// Ionicons: drawn after Apple's SF Symbols. Outlined, and filled for the
+// page you're on, as iOS tab bars mark the current tab.
+const ICON: Record<NavId | "charts" | "log" | "config", IconType> = {
+  tasks: IoCalendarOutline,
+  learning: IoSchoolOutline,
+  projects: IoAlbumsOutline,
+  health: IoHeartOutline,
+  charts: IoBarChartOutline,
+  log: IoDocumentTextOutline,
+  config: IoSettingsOutline,
+};
+const ICON_ON: typeof ICON = {
+  tasks: IoCalendar,
+  learning: IoSchool,
+  projects: IoAlbums,
+  health: IoHeart,
+  charts: IoBarChart,
+  log: IoDocumentText,
+  config: IoSettings,
 };
 
 /**
@@ -40,7 +53,7 @@ function useCurrentPath() {
 
 function NavLink({ id, current }: { id: NavId; current: string }) {
   const active = navHolds(id, current);
-  const Icon = ICON[id];
+  const Icon = (active ? ICON_ON : ICON)[id];
   return (
     <Link
       href={navPath(id)}
@@ -58,7 +71,7 @@ function NavLink({ id, current }: { id: NavId; current: string }) {
 function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current: string }) {
   const href = sectionPath(id);
   const active = trimPath(href) === current;
-  const Icon = ICON[id];
+  const Icon = (active ? ICON_ON : ICON)[id];
   return (
     <Link
       href={href}
@@ -120,7 +133,7 @@ export function TabBar() {
     <nav className="tabbar bar-material" aria-label="Sections">
       {NAV.map(({ id, title }) => {
         const active = navHolds(id, current);
-        const Icon = ICON[id];
+        const Icon = (active ? ICON_ON : ICON)[id];
         return (
           <Link
             key={id}

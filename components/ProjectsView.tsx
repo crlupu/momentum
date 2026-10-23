@@ -39,7 +39,7 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
           ]}
         />
         <span className="goals-toolbar__actions">
-          <AddButton label="New project" onPress={() => setAdding(true)} />
+          <AddButton secondary label="New project" onPress={() => setAdding(true)} />
         </span>
       </div>
 

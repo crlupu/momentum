@@ -203,9 +203,10 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           </div>
         )}
 
-        {s.mealTags.length > 0 && s.calories.length > 0 && (
+        {/* Only the meals the bars actually show; none tagged, no legend. */}
+        {s.mealTags.some((m) => s.calories.some((c) => c.tagId === m.id)) && (
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
-            {s.mealTags.map((m) => (
+            {s.mealTags.filter((m) => s.calories.some((c) => c.tagId === m.id)).map((m) => (
               <span key={m.id} className="flex items-center gap-1.5 text-[11px]" style={{ color: LABEL }}>
                 <span className="inline-block h-2 w-2 rounded-full" style={{ background: m.color }} aria-hidden />
                 {m.name}

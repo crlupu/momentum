@@ -141,20 +141,20 @@
   color-scheme: light;
 
   /* Paper */
-  --background: #f2f3f1;            /* the ground: grey with a breath of green */
+  --background: #f2f2f7;            /* the ground: iOS grouped background */
   --surface: #ffffff;               /* cards */
-  --surface-secondary: #f2f3f1;
+  --surface-secondary: #f2f2f7;
   --surface-tertiary: #e6e8e5;
   --overlay: #ffffff;
 
   /* Ink */
   --foreground: #1d1d1f;            /* 16.8:1 on white */
   --overlay-foreground: #1d1d1f;
-  --muted: #6b6e6c;                 /* 5.2:1 on white, 4.6:1 on the ground */
+  --muted: #6c6c70;                 /* iOS secondary label: 5.2:1 on white */
   --faint: #a4a7a5;                 /* placeholders' neighbours, never body text */
 
   /* Lines */
-  --separator: #e1e3e0;
+  --separator: #e5e5ea;
   --border: #d9dcd8;
   --border-strong: #8b8e8c;         /* 3.3:1 on white: a control's edge */
 
@@ -164,7 +164,7 @@
   --accent-foreground: #ffffff;      /* 4.0:1, see above */
   --accent-soft: rgba(9, 124, 251, 0.12);
   --accent-soft-strong: rgba(9, 124, 251, 0.2);
-  --accent-track: rgba(9, 124, 251, 0.16);
+  --accent-track: rgba(120, 120, 128, 0.2);   /* iOS tertiary fill: a neutral track */
 
   /* Status */
   --warning: #9a5b00;               /* 5.4:1 on white */
@@ -240,7 +240,7 @@
   --accent-foreground: #ffffff;
   --accent-soft: rgba(9, 124, 251, 0.22);
   --accent-soft-strong: rgba(9, 124, 251, 0.32);
-  --accent-track: rgba(9, 124, 251, 0.26);
+  --accent-track: rgba(120, 120, 128, 0.36);
   --warning: #ffc453;
   --warning-soft: rgba(255, 196, 83, 0.14);
   --success: var(--accent);
@@ -2428,7 +2428,8 @@ html.dark {
 }
 .app-content {
   margin-inline: auto;
-  max-inline-size: 80rem;
+  /* A readable measure on a wide screen; a project's board keeps the room. */
+  max-inline-size: 60rem;
   padding-block-start: max(1rem, env(safe-area-inset-top));
   padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
 }
@@ -2934,22 +2935,26 @@ html.dark {
 
 @layer components {
 /* A text button in the section's header row: "Edit", "Done", "New". */
+/* A tinted capsule, as iOS draws a secondary button: the accent on a soft
+   wash of itself. Clearly a button, and the same shape and height as a
+   filled one beside it, which stays the one main action. Done is filled. */
 .text-action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
   min-block-size: 2.25rem;
   padding: 0.25rem 0.875rem;
-  border-radius: var(--r-control);
+  border-radius: 999px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--foreground);
-  background: var(--default);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 .text-action svg { fill: var(--accent); }
 .text-action[aria-pressed="true"] { color: var(--accent-foreground); background: var(--accent); }
 @media (hover: hover) {
-  .text-action:not([aria-pressed="true"]):hover { background: var(--fill-hover); }
+  .text-action:not([aria-pressed="true"]):hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 }
 @media (pointer: coarse) {
   .text-action { min-block-size: 2.75rem; }
@@ -3757,15 +3762,16 @@ textarea.inline-title:focus { outline: none; background: var(--pane-bg); box-sha
   display: grid;
   place-items: center;
   flex: none;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: 2rem;
+  block-size: 2rem;
   border-radius: 999px;
-  background: var(--danger);
-  color: #fff;
+  /* Every delete in the app looks the same: a red bin on a soft red disc. */
+  background: var(--danger-soft);
+  color: var(--danger);
   /* The tap area is the full 44pt, past the circle drawn. */
   box-shadow: 0 0 0 0.625rem transparent;
 }
-.step-delete svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+.step-delete svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
 
 /* Text fields in Edit: filled, borderless, as iOS draws them. */
 input.step-field {
@@ -4151,14 +4157,14 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
   border-radius: 8px;
 }
 .path__head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.path__title { flex: 1 1 auto; min-inline-size: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path__title { flex: 1 1 auto; min-inline-size: 0; font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .path__pct { font-size: 0.9375rem; color: var(--muted); }
 .path__chev { flex: none; inline-size: 18px; block-size: 18px; fill: var(--accent); transition: transform 0.2s ease; }
 .path__chev.is-open { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .path__chev { transition: none; } }
 .path__card { padding: 0; overflow: hidden; }
 .path__summary { display: flex; flex-direction: column; gap: 0.375rem; padding: 0.875rem 1rem 0.75rem; }
-.path__card .goal-list__rows { border-block-start: 0.5px solid var(--separator); }
+.path__summary + .goal-list__rows { border-block-start: 0.5px solid var(--separator); }
 .path__figure { font-size: 13px; color: var(--muted); }
 .path__badge { margin-inline-start: 0.5rem; padding: 0.125rem 0.375rem; border-radius: 6px; background: var(--default); font-size: 12px; font-weight: 600; color: var(--muted); vertical-align: 0.2em; }
 .path__more { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; flex: none; border-radius: 50%; color: var(--accent); }
@@ -4185,3 +4191,53 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 .path-form__swatch { inline-size: 2rem; block-size: 2rem; border-radius: 50%; }
 .path-form__swatch[aria-checked="true"] { box-shadow: 0 0 0 3px var(--pane-bg), 0 0 0 5px var(--muted); }
 .path-form__swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* A secondary add: a tinted capsule, as .text-action. */
+.cds--btn.btn-add.btn-add--plain,
+.btn-add.btn-add--plain {
+  background: color-mix(in srgb, var(--accent) 15%, transparent) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--accent) !important;
+  border-radius: 999px !important;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  min-block-size: 2.25rem;
+  block-size: 2.25rem;
+  padding-inline: 0.875rem;
+}
+.cds--btn.btn-add.btn-add--plain.btn-icon-only, .btn-add.btn-add--plain.btn-icon-only { inline-size: 2.25rem; padding: 0; justify-content: center; }
+.btn-add.btn-add--plain svg { fill: var(--accent) !important; inline-size: 1.125rem; block-size: 1.125rem; }
+@media (hover: hover) { .btn-add.btn-add--plain:hover { background: color-mix(in srgb, var(--accent) 22%, transparent) !important; } }
+
+/* A recurring row: the name, and under it how often and what it is. */
+.task-row__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.125rem; }
+.task-row__text .task-row__title { flex: none; }
+.task-row__sub { display: flex; align-items: center; gap: 0.3rem; font-size: 13px; color: var(--muted); }
+
+
+.value-rows { list-style: none; margin: -0.25rem 0; padding: 0; }
+.value-rows li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-block-size: 2.75rem; font-size: 1rem; }
+.value-rows li + li { border-block-start: 0.5px solid var(--separator); }
+.value-rows__v { color: var(--muted); }
+
+.log-icon { display: inline-grid; place-items: center; inline-size: 1.875rem; block-size: 1.875rem; flex: none; border-radius: 7px; }
+.log-icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: #fff; }
+.app-content:has(#projects .board, #projects [class*="board"]) { max-inline-size: 80rem; }
+
+/* A row that opens a page of its own: its name, a figure, a chevron. */
+.drill-row { display: flex; align-items: center; gap: 0.5rem; min-block-size: 2.75rem; padding: 0.625rem 1rem !important; font-size: 1rem; color: var(--foreground); }
+.drill-row > span:first-child { flex: 1 1 auto; }
+.drill-row__meta { color: var(--muted); font-size: 0.9375rem; }
+.drill-row svg { inline-size: 1.25rem; block-size: 1.25rem; fill: var(--muted); }
+.cat-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.cat-chips .cat-chip { min-block-size: 2rem; padding-inline: 0.75rem; font-size: 0.875rem; }
+.cat-chips .cat-chip[aria-checked="true"] { background-color: var(--accent); color: var(--accent-foreground); }
+.cat-chips .cat-chip[aria-checked="true"] span { color: inherit !important; }
+
+/* One look for every delete: a red bin on a soft red capsule (a disc when
+   it's the icon alone), the same shape as the tinted actions beside it. */
+.btn-delete-bare.cds--btn,
+#config .btn-delete-bare.cds--btn { border-radius: 999px !important; }
+/* Round icon buttons beside a delete, so the pair match. */
+.cds--btn.btn-round, #config .cds--btn.btn-round { border-radius: 999px !important; }

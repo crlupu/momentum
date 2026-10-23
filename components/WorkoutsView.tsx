@@ -12,6 +12,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Info,
+  Trash2,
   Copy } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -790,10 +791,11 @@ function SetRow({
             size="sm"
             variant="ghost"
             isIconOnly
+            className="btn-delete-bare"
             aria-label={`Remove set ${index + 1}`}
             onPress={() => void tracker.removeSet(exerciseId, set.id)}
           >
-            <X className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </span>
       </div>
@@ -1122,7 +1124,7 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
       {s.workouts.length === 0 && !creating ? (
         <p className="cfg-empty">No workouts yet.</p>
       ) : (
-        <div className="mb-3">
+        <div className={editing ? "mb-3" : undefined}>
           {s.workouts.map((w) => (
             <WorkoutRow
               key={w.id}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, memo, useState } from "react";
 
 import { Card, Input, Button, PanelHeader, AddButton, Stat } from "./ui";
@@ -17,6 +18,7 @@ import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
+import { ChevronRight } from "./icons";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
@@ -43,7 +45,14 @@ function offsetDate(days: number): Date {
  */
 /* Memoised: its only prop is the tracker, which is now a stable object, so
    this re-renders when the data changes rather than whenever the page does. */
-const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { tracker: Tracker }) {
+const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
+  tracker,
+  summary,
+}: {
+  tracker: Tracker;
+  /** On the Fitness summary: the week's figures, with the charts a tap away. */
+  summary?: boolean;
+}) {
   const s = tracker.state!;
   const byDate = workoutVolumeByDate(s.workoutSessions);
   const minsByDate = workoutMinutesByDate(s.workoutSessions);
@@ -86,13 +95,28 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
       colour: workoutColor(w.id, order),
       values: vol,
       unit: "kg",
-      minutes: mins,
+      // Time has a chart of its own (Duration, below): one measure per chart.
+      minutes: null,
       lineColour: LIFT_LINE,
       lineLabel: "minutes",
       tooltip: (i) =>
         `${w.name}: ${vol[i].toLocaleString()} kg` +
         (mins[i] ? ` · ${mins[i]} min` : "") +
         ` on ${keys[i]}` });
+  }
+  // How long the lifting took, every workout together, as bars of its own
+  // rather than a line over each workout's weight.
+  if (minutes.some((m) => m > 0)) {
+    charts.push({
+      id: "duration",
+      name: "Duration",
+      colour: LIFT_LINE,
+      values: minutes,
+      unit: "min",
+      minutes: null,
+      lineColour: LIFT_LINE,
+      lineLabel: "minutes",
+      tooltip: (i) => `Lifting: ${minutes[i]} min on ${keys[i]}` });
   }
   // Cardio belongs to no workout, so it gets a chart of its own. Its bars are
   // minutes — there is no weight to plot — so it carries no second line.
@@ -113,7 +137,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
     <div>
       {/* Both controls sit with the chart they feed rather than in a section
           of their own. */}
-      <PanelHeader title="Training" color="var(--sec-fitness)">
+      <PanelHeader title={summary ? "Training" : "This week"} color="var(--sec-fitness)">
         <CardioButton tracker={tracker} />
         <StartWorkoutButton tracker={tracker} />
       </PanelHeader>
@@ -151,7 +175,14 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({ tracker }: { track
               was readable. Each is scaled to its own heaviest day, so a light
               workout still fills its chart — which means heights compare
               within a chart but never between two. */}
-          {charts.map((c) => (
+          {summary && (
+            <Link href="/fitness?view=training" className="drill-row card mt-3">
+              <span>Volume by workout</span>
+              <span className="drill-row__meta">{charts.length} charts</span>
+              <ChevronRight aria-hidden />
+            </Link>
+          )}
+          {!summary && charts.map((c) => (
             <div key={c.id} className="mt-3">
               <DayChart
                 title={c.name}

@@ -25,7 +25,7 @@ export function RowActions({
   return (
     <>
       {onEdit && (
-        <Button size="sm" variant="outline" isIconOnly aria-label={`${editLabel} ${name}`} onPress={onEdit}>
+        <Button size="sm" variant="outline" isIconOnly className="btn-round" aria-label={`${editLabel} ${name}`} onPress={onEdit}>
           <Pencil className="h-4 w-4" />
         </Button>
       )}

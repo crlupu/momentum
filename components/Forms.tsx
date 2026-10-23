@@ -259,33 +259,14 @@ export function MacroTargetsCard({ tracker }: { tracker: Tracker }) {
   };
 
   if (!configuring) {
-    const none = !s.proteinTarget && !s.fiberTarget;
+    if (!s.proteinTarget && !s.fiberTarget) return <p className="text-[15px] text-[var(--muted)]">No daily targets set.</p>;
     return (
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          {none ? (
-            <p className="text-[15px] text-[var(--muted)]">No daily targets set.</p>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <div className="font-mono-n text-2xl font-bold leading-none">
-                  {s.proteinTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">g / day</span>
-                </div>
-                <div className="mt-1.5 text-[13px] text-[var(--muted)]">protein</div>
-              </div>
-              <div>
-                <div className="font-mono-n text-2xl font-bold leading-none">
-                  {s.fiberTarget ?? "–"}
-                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">g / day</span>
-                </div>
-                <div className="mt-1.5 text-[13px] text-[var(--muted)]">fibre</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-      </div>
+      <ValueRows
+        rows={[
+          ["Protein", s.proteinTarget ? `${s.proteinTarget} g a day` : "None"],
+          ["Fibre", s.fiberTarget ? `${s.fiberTarget} g a day` : "None"],
+        ]}
+      />
     );
   }
 
@@ -367,7 +348,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
       {s.mealTags.length === 0 ? (
         <p className="cfg-empty">No meal tags. Calorie entries are logged untagged.</p>
       ) : (
-        <ul className="mb-3 list-none divide-y divide-foreground/10 p-0">
+        <ul className={(editing ? "mb-3 " : "") + "list-none divide-y divide-foreground/10 p-0"}>
           {s.mealTags.map((m) =>
             editId === m.id ? (
               <li key={m.id} className="py-2">
@@ -539,34 +520,15 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
   };
 
   if (!configuring) {
+    if (!budget) return <p className="text-[15px] text-[var(--muted)]">No daily budget set.</p>;
     return (
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            {budget ? (
-              <>
-                <div className="font-mono-n text-2xl font-bold leading-none">
-                  {budget.toLocaleString()}
-                  <span className="ml-1 text-sm font-medium text-[var(--muted)]">kcal / day</span>
-                </div>
-                <div className="mt-1.5 text-[13px] text-[var(--muted)]">
-                  {(budget * 7).toLocaleString()} kcal per week
-                </div>
-              </>
-            ) : (
-              <p className="text-[15px] text-[var(--muted)]">No daily budget set.</p>
-            )}
-          </div>
-
-        </div>
-
-        {left != null && (
-          <div className="mt-3 border-t border-foreground/10 pt-3 text-[13px] text-[var(--muted)]">
-            <span className="font-mono-n font-semibold text-foreground">{left.toLocaleString()}</span> kcal left this
-            week
-          </div>
-        )}
-      </div>
+      <ValueRows
+        rows={[
+          ["Daily budget", `${budget.toLocaleString()} kcal`],
+          ["Per week", `${(budget * 7).toLocaleString()} kcal`],
+          ...(left != null ? ([["Left this week", `${left.toLocaleString()} kcal`]] as [string, string][]) : []),
+        ]}
+      />
     );
   }
 
@@ -598,5 +560,19 @@ export function CalorieBudgetCard({ tracker }: { tracker: Tracker }) {
         Leave empty to remove the budget. The top bar shows what&apos;s left for the week.
       </p>
     </form>
+  );
+}
+
+/** Settings as iOS lists them: a name, and its value on the right. */
+function ValueRows({ rows }: { rows: [string, string][] }) {
+  return (
+    <ul className="value-rows">
+      {rows.map(([k, v]) => (
+        <li key={k}>
+          <span>{k}</span>
+          <span className="value-rows__v font-mono-n">{v}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

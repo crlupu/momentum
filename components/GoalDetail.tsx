@@ -4,7 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus } from "./icons";
+import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus, Trash2 } from "./icons";
 import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
@@ -394,7 +394,7 @@ function StepRow({
       <li className="step-row step-row--editing">
         {onDelete && (
           <button type="button" className="step-delete" aria-label={`Delete ${name}`} onClick={() => void onDelete()}>
-            <Minus aria-hidden />
+            <Trash2 aria-hidden />
           </button>
         )}
         {onName ? (
@@ -670,7 +670,7 @@ function ItemRow({
     return (
       <li className={"step-row step-row--editing item-row--editing" + (nested ? " item-row--nested" : "")}>
         <button type="button" className="step-delete" aria-label={`Delete ${i.title}`} onClick={() => void onDelete()}>
-          <Minus aria-hidden />
+          <Trash2 aria-hidden />
         </button>
         <span className="item-row__fields">
           <input ref={nameRef} aria-label="Item name" placeholder="Name" className="step-field step-field--name" {...nameField} />
@@ -767,7 +767,7 @@ function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log
                 aria-label={`Delete the session of ${fmtDateAuto(e.date)}`}
                 onClick={() => void tracker.deleteLogEntry(e.id)}
               >
-                <Minus aria-hidden />
+                <Trash2 aria-hidden />
               </button>
             )}
             <span className="session-row__text">

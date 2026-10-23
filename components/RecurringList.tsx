@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState } from "react";
 import { Panel } from "./Panel";
 import { Card } from "./ui";
 import { usePending } from "./ActionButton";
@@ -45,6 +46,18 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
       a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
   );
 
+  // Five rows show, the ones still to do first; the rest scroll. The box is
+  // measured to end exactly under the fifth row, so none is cut in half.
+  const ul = useRef<HTMLUListElement>(null);
+  const [maxH, setMaxH] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const rows = ul.current?.children;
+    if (!rows || rows.length <= 5) return setMaxH(undefined);
+    const first = rows[0] as HTMLElement;
+    const fifth = rows[4] as HTMLElement;
+    setMaxH(fifth.offsetTop + fifth.offsetHeight - first.offsetTop);
+  });
+
   return (
     <Panel title="Recurring" bare>
       <Card>
@@ -55,20 +68,21 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
             </p>
           ) : (
             <ul
-              className={
-                "list-none p-0 " + (list.length > 5 ? "max-h-[17rem] overflow-y-auto pr-1 recurring-scroll" : "")
-              }
+              ref={ul}
+              className={"list-none p-0" + (maxH ? " overflow-y-auto pr-1 recurring-scroll" : "")}
+              style={maxH ? { maxHeight: maxH } : undefined}
             >
               {list.map((r) => (
                 <li key={r.key} className="task-row">
                   <RoutineCheckbox tracker={tracker} r={r} />
-                  <span className={"task-row__title " + (r.done ? "is-done" : "")}>
-                    {r.title}
-                    <span className="task-row__group">{REPEAT_LABEL[r.freq]}</span>
-                  </span>
-                  <span className="task-row__cat">
-                    <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
-                    <span className="truncate">{r.cat.name}</span>
+                  <span className="task-row__text">
+                    <span className={"task-row__title " + (r.done ? "is-done" : "")}>{r.title}</span>
+                    <span className="task-row__sub">
+                      {REPEAT_LABEL[r.freq]}
+                      <span aria-hidden> · </span>
+                      <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
+                      {r.cat.name}
+                    </span>
                   </span>
                 </li>
               ))}
