@@ -345,27 +345,20 @@ export const DEFAULT_MEAL_TAGS: MealTag[] = [
 export const UNTAGGED_COLOR = "#8b8e8c";
 
 /** One exercise inside a workout, with the weight it's performed at. */
-/**
- * The recommendation for an exercise: "3 × 8–12 @ 32 kg". Every part is
- * optional but the sets; `extra` says what the weight means when it isn't
- * plain ("assistance", "per side").
- */
+/** The recommendation for an exercise: "3 × 8–12". */
 export type ExerciseTarget = {
   sets: number;
   repsMin?: number;
   repsMax?: number;
-  kg?: number;
-  extra?: string;
 };
 
-/** A target as it reads: "3 × 8–12 @ 32 kg per side". */
+/** A target as it reads: "3 × 8–12", or "3 sets" without reps. */
 export function formatTarget(t: ExerciseTarget): string {
   const reps =
     t.repsMin && t.repsMax && t.repsMax !== t.repsMin
       ? `${t.repsMin}–${t.repsMax}`
       : t.repsMin ?? t.repsMax;
-  const weight = t.kg ? ` @ ${t.kg} kg` : "";
-  return `${t.sets}${reps ? ` × ${reps}` : " sets"}${weight}${t.extra ? `${weight ? " " : " · "}${t.extra}` : ""}`;
+  return reps ? `${t.sets} × ${reps}` : `${t.sets} sets`;
 }
 
 export type Exercise = {
@@ -392,7 +385,7 @@ export type Exercise = {
   seconds?: number;
   /** A cue worth remembering while doing it. Shown while it is running. */
   note?: string;
-  /** What's recommended: sets, a rep range, a weight. Shown while working out. */
+  /** What's recommended: sets and a rep range. Shown while working out. */
   target?: ExerciseTarget;
   /**
    * The block it belongs to, or undefined for the workout's main body. The

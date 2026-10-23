@@ -4086,17 +4086,3 @@ li.item-row--nested .step-add { padding-inline-start: 1.5rem; }
   text-overflow: ellipsis;
 }
 .target-chip svg { inline-size: 14px; block-size: 14px; flex: none; fill: var(--muted); }
-.target-chip--met { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.target-chip--met svg { fill: var(--accent); }
-.target-chip__off { color: var(--warning); }
-.target-chip--pop { padding-inline-start: 0.6rem; }
-.target-info {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 24px;
-  block-size: 24px;
-  flex: none;
-  border-radius: 50%;
-}
-.target-info svg { inline-size: 16px; block-size: 16px; fill: var(--muted); }
-.target-info[aria-expanded="true"] svg { fill: var(--accent); }

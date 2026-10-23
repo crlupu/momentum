@@ -242,15 +242,13 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
 /* ------------------------------ exercise row ----------------------------- */
 
-type TargetDraft = { sets: string; repsMin: string; repsMax: string; kg: string; extra: string };
+type TargetDraft = { sets: string; repsMin: string; repsMax: string };
 
 function targetDraft(t?: ExerciseTarget): TargetDraft {
   return {
     sets: t ? String(t.sets) : "",
     repsMin: t?.repsMin ? String(t.repsMin) : "",
     repsMax: t?.repsMax ? String(t.repsMax) : "",
-    kg: t?.kg ? String(t.kg) : "",
-    extra: t?.extra ?? "",
   };
 }
 
@@ -270,20 +268,15 @@ function readTarget(d: TargetDraft): ExerciseTarget | null {
     sets: Math.round(sets),
     ...(repsMin ? { repsMin: Math.round(repsMin) } : {}),
     ...(repsMax && repsMax !== repsMin ? { repsMax: Math.round(repsMax) } : {}),
-    ...(n(d.kg) ? { kg: n(d.kg) } : {}),
-    ...(d.extra.trim() ? { extra: d.extra.trim() } : {}),
   };
 }
 
-/**
- * The recommendation, written the way it's said: sets × reps–reps @ kg, with
- * a word on what the weight means when it isn't plain.
- */
+/** The recommendation, written the way it's said: sets × reps–reps. */
 function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: TargetDraft) => void }) {
   const field = (key: keyof TargetDraft, label: string, placeholder: string, width: string) => (
     <Input
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
       aria-label={label}
       placeholder={placeholder}
       value={value[key]}
@@ -300,16 +293,6 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
         {field("repsMin", "Fewest reps", "reps", "w-14")}
         <span className="text-[var(--muted)]">–</span>
         {field("repsMax", "Most reps", "max", "w-14")}
-        <span className="text-[var(--muted)]">@</span>
-        {field("kg", "Recommended weight in kg", "kg", "w-16")}
-        <Input
-          type="text"
-          aria-label="What the weight means"
-          placeholder="per side, assistance…"
-          value={value.extra}
-          onChange={(e) => onChange({ ...value, extra: e.target.value })}
-          className="min-w-[8rem] flex-1"
-        />
       </div>
     </div>
   );
@@ -823,33 +806,6 @@ function SetRow({
  * shows an editable row per set; once marked done it collapses to a plain
  * record of what was lifted, a line per set, with nothing left to type into.
  */
-// PREVIEW ONLY: picks the target display from ?tv=a|b|c.
-const VARIANT = () =>
-  typeof window === "undefined" ? "a" : new URLSearchParams(window.location.search).get("tv") ?? "a";
-
-/**
- * Option C: the chip counts the sets done against the target and goes green
- * once they're all in; a set's reps outside the range are flagged.
- */
-function TargetProgress({ target, sets }: { target: ExerciseTarget; sets: ActiveSet[] }) {
-  const done = sets.filter((s) => s.done);
-  const met = done.length >= target.sets;
-  const lo = target.repsMin;
-  const hi = target.repsMax ?? target.repsMin;
-  const off = lo != null ? done.filter((s) => s.reps != null && (s.reps < lo || (hi != null && s.reps > hi))).length : 0;
-  return (
-    <span className={"target-chip mb-2" + (met ? " target-chip--met" : "")}>
-      <Info aria-hidden />
-      <span className="font-mono-n">
-        {done.length}/{target.sets} sets
-      </span>
-      <span aria-hidden>·</span>
-      {formatTarget({ ...target, sets: target.sets }).replace(/^\d+ (× |sets ?)/, "")}
-      {off > 0 && <span className="target-chip__off">· {off} outside range</span>}
-    </span>
-  );
-}
-
 function ExerciseBlock({
   tracker,
   exercise: e,
@@ -859,7 +815,6 @@ function ExerciseBlock({
   history: { date: string; sets: SetRecord[] } | null;
 }) {
   const [tapped, tap] = useTapFeedback();
-  const [showTarget, setShowTarget] = useState(false);
   const done = !!e.done;
   const doneCount = e.sets.filter((s) => s.done).length;
   const empty = e.sets.length === 0;
@@ -876,20 +831,7 @@ function ExerciseBlock({
         .join(" ")}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="min-w-0 truncate text-[15px]">{e.name}</span>
-          {e.target && VARIANT() === "b" && (
-            <button
-              type="button"
-              className="target-info"
-              aria-label="Recommended sets and reps"
-              aria-expanded={showTarget}
-              onClick={() => setShowTarget((v) => !v)}
-            >
-              <Info aria-hidden />
-            </button>
-          )}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
         <span className="shrink-0 text-xs text-[var(--muted)]">
           {empty ? "no sets" : `${doneCount}/${e.sets.length} done`}
         </span>
@@ -913,15 +855,12 @@ function ExerciseBlock({
           ))}
       </div>
 
-      {e.target && VARIANT() === "a" && (
-        <span className="target-chip mb-2">
+      {/* The recommendation, under the name, for the whole time it's worked. */}
+      {e.target && (
+        <span className="target-chip mb-2" aria-label={`Recommended: ${formatTarget(e.target)}`}>
           <Info aria-hidden /> {formatTarget(e.target)}
         </span>
       )}
-      {e.target && VARIANT() === "b" && showTarget && (
-        <span className="target-chip mb-2">{formatTarget(e.target)}</span>
-      )}
-      {e.target && VARIANT() === "c" && <TargetProgress target={e.target} sets={e.sets} />}
 
       {done ? (
         <ul className="exercise__record">

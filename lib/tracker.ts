@@ -1424,7 +1424,7 @@ export function useTracker() {
                 sets: (previous.length
                   ? previous
                   : Array.from({ length: e.target?.sets ?? 0 }, () => ({
-                      weight: e.target?.kg ?? e.weight,
+                      weight: e.weight,
                       reps: e.target?.repsMin ?? e.target?.repsMax,
                     }))
                 ).map((set) => ({
