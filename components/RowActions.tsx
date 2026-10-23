@@ -6,7 +6,7 @@ import { Pencil } from "./icons";
 
 /**
  * The one pair of actions at the end of a list row: a tinted pencil and the
- * iOS ⊖, both bare glyphs of one size (IconButton). Either can be
+ * red trash, both on the same quiet disc (IconButton). Either can be
  * left out. Goes inside the row's own actions group (.cfg-actions).
  */
 export function RowActions({

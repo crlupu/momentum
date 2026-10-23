@@ -1,7 +1,7 @@
 "use client";
 
 import { RepeatSelect } from "./RepeatSelect";
-import { MinusCircle } from "./MinusCircle";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
 import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
@@ -759,7 +759,7 @@ function SetRow({
             <CheckRing on={done} />
           </IconButton>
           <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
-            <MinusCircle />
+            <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
           </IconButton>
         </span>
       </div>

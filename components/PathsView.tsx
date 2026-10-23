@@ -181,7 +181,7 @@ export function PathsView({
 
 /**
  * One path in Edit, as iOS lays out an edit screen: grouped lists. Its name,
- * typed in place; its goals, each with the red ⊖ and
+ * typed in place; its goals, each with a red trash and
  * a handle to reorder; its place among the
  * paths; and, apart at the bottom, Delete Path in red. General has only its
  * goals. A goal moves to another path from its own Path row.

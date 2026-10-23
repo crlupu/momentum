@@ -1016,13 +1016,13 @@ button {
   gap: 0.5rem;
 }
 
-/* A card being edited is marked, so it's clear which one is live. */
-/* A card that is live — being edited, or a workout under way — is ringed
-   in the accent. One treatment for both. */
+/* A card that is live — being edited, or a workout under way — gets a
+   quiet grey ring: enough to tell which one is live without outshouting
+   what is inside it. The Done button carries the state. */
 .config-card--editing,
 .card--live {
   border-color: transparent !important;
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 16%, transparent);
 }
 
 /* Colour swatch: a real target, with the choice marked inside it rather than
@@ -3763,7 +3763,7 @@ textarea.inline-title:focus { outline: none; background: var(--pane-bg); box-sha
   inline-size: 2rem;
   block-size: 2rem;
   border-radius: 999px;
-  /* The iOS ⊖ (MinusCircle) draws itself; the button is just its tap area. */
+  /* The red trash (DeleteGlyph) draws itself; the button is just its tap area. */
   background: transparent;
   /* The tap area is the full 44pt, past the circle drawn. */
   box-shadow: 0 0 0 0.625rem transparent;
@@ -4220,7 +4220,7 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 .cat-chips .cat-chip[aria-checked="true"] span { color: inherit !important; }
 
 /* A labelled delete: the word in red on a soft red capsule. Icon-only
-   deletes are the iOS ⊖ (.minus-delete). */
+   deletes are the red trash on a quiet disc (.minus-delete). */
 .btn-delete-bare.cds--btn,
 #config .btn-delete-bare.cds--btn { border-radius: 999px !important; }
 /* Round icon buttons beside a delete, so the pair match. */
@@ -4256,38 +4256,52 @@ input.path-edit__name:focus { color: var(--foreground); outline: none; }
 .path-edit__link:disabled { color: var(--muted); opacity: 0.5; }
 .path-edit__delete.cds--btn.btn-delete-bare { justify-content: center; min-block-size: 2.75rem; border-radius: 0 !important; background: transparent; color: var(--ios-red); font-size: 1rem; font-weight: 400; }
 
-/* iOS's delete mark on a row: the red ⊖ in a full-size tap area. */
 :root { --ios-red: #ff3b30; }
 .dark { --ios-red: #ff453a; }
 @media (prefers-color-scheme: dark) { :root:not(.light) { --ios-red: #ff453a; } }
-.minus-delete { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; flex: none; border-radius: 50%; background: transparent; }
-.minus-delete:focus-visible { outline: 2px solid var(--accent); }
-@media (hover: hover) { .minus-delete:hover .minus-circle { filter: brightness(1.1); } }
 
-/* Row actions (IconButton, and the ⊖ delete): bare glyphs of one size in a
-   full tap area, so a group of them reads as one set. */
-.icon-btn, .minus-delete { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; flex: none; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent); }
+/* The app's button hierarchy (iOS conventions, the app's own look):
+   - Primary: filled blue. The one action that finishes or confirms (Done,
+     Save, Mark as done, the + beside a field).
+   - Secondary: blue words on a quiet fill or none (.text-action capsules,
+     add rows).
+   - Inline toolbar: a quiet grey disc with the glyph in blue (.icon-disc),
+     in a 44 × 44 tap area. Unavailable ones fade and lose their fill.
+   - Destructive: the glyph or word in red, never a filled red control on a
+     row; deleting asks first.
+   Pressed controls dim, as iOS controls do. */
+.icon-btn, .minus-delete { display: inline-grid; place-items: center; inline-size: 2.75rem; block-size: 2.75rem; flex: none; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--accent); }
 .icon-btn svg { inline-size: 1.375rem; block-size: 1.375rem; fill: currentColor; }
-.icon-btn:disabled { color: var(--muted); opacity: 0.4; }
-.icon-btn:focus-visible, .minus-delete:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-@media (hover: hover) { .icon-btn:not(:disabled):hover, .minus-delete:hover { background: color-mix(in srgb, var(--foreground) 7%, transparent); } }
-.set-row__actions, .cfg-actions { gap: 0.125rem !important; }
+.icon-btn:disabled { color: var(--muted); opacity: 0.4; cursor: not-allowed; }
+.icon-btn:focus-visible, .minus-delete:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.icon-btn:not(:disabled):active, .minus-delete:active { opacity: 0.55; }
+.set-row__actions, .cfg-actions { gap: 0 !important; }
 
-/* A glyph on a filled disc, as the ⊖ delete is drawn: edit and move on a
-   Settings row match it, in the tint colour (grey when unavailable). */
-.icon-disc { display: inline-grid; place-items: center; inline-size: 1.375rem; block-size: 1.375rem; border-radius: 50%; background: var(--accent); }
-.icon-btn .icon-disc svg { inline-size: 0.875rem; block-size: 0.875rem; fill: #fff; }
-.icon-btn:disabled .icon-disc { background: var(--muted); }
-.icon-btn:has(.icon-disc):disabled { opacity: 0.35; }
+.icon-disc { display: inline-grid; place-items: center; inline-size: 2rem; block-size: 2rem; border-radius: 50%; background: var(--default); color: var(--accent); transition: background-color 120ms ease; }
+.icon-disc svg, .icon-btn .icon-disc svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+@media (hover: hover) { .icon-btn:not(:disabled):hover .icon-disc, .minus-delete:hover .icon-disc { background: var(--fill-hover); } }
+/* Unavailable: no fill and an outline instead, so it reads as off without colour. */
+.icon-btn:disabled .icon-disc { background: transparent; box-shadow: inset 0 0 0 1px var(--separator); color: var(--muted); }
+.icon-btn:has(.icon-disc):disabled { opacity: 0.5; }
+.icon-disc--danger, .icon-btn .icon-disc--danger { color: var(--ios-red); }
+svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
+.icon-disc svg.delete-glyph { inline-size: 1.125rem !important; block-size: 1.125rem !important; }
 .path-edit .paths-edit__goal:last-child { border-block-end: 0; }
 
-/* An add at the end of a list (InsertRow): a full-width row of the list,
-   the blue ⊕ disc and its words, a divider above, as iOS edit lists add. */
-.insert-row { display: flex; align-items: center; gap: 0.625rem; inline-size: 100%; min-block-size: 2.75rem; padding: 0.5rem 0.25rem; border-block-start: 0.5px solid var(--separator); color: var(--foreground); font-size: 1rem; text-align: start; }
-.insert-row .icon-disc svg { inline-size: 0.875rem; block-size: 0.875rem; fill: #fff; }
+/* An add at the end of a list (InsertRow): a full-width row of the list
+   with a divider above, a blue + and its words in blue. A secondary action:
+   quieter than the filled primary. */
+.insert-row { display: flex; align-items: center; gap: 0.625rem; inline-size: 100%; min-block-size: 2.75rem; padding: 0.5rem 0.25rem; border-block-start: 0.5px solid var(--separator); color: var(--accent); font-size: 1rem; text-align: start; }
+.insert-row .icon-disc { inline-size: 1.75rem; block-size: 1.75rem; background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.insert-row .icon-disc svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
 .insert-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 8px; }
+.insert-row:active { opacity: 0.55; }
 @media (hover: hover) { .insert-row:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); } }
 .insert-row + .insert-row { border-block-start: 0.5px solid var(--separator); }
+.step-add { color: var(--accent); }
+.step-add__icon { inline-size: 1.75rem; block-size: 1.75rem; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.step-add__icon svg { inline-size: 1.125rem; block-size: 1.125rem; }
+.text-action:active, .cds--btn:active { opacity: 0.7; }
 
 /* The + that submits a typed entry (a to-do, a weight, kcal) is the same
    blue ⊕ disc, drawn larger, beside its field. */

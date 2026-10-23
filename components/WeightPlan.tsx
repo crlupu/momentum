@@ -5,7 +5,7 @@ import { Panel } from "./Panel";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { Button, Input, Stat } from "./ui";
-import { MinusCircle } from "./MinusCircle";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
 import { useWidth } from "./useWidth";
 import { usePending } from "./ActionButton";
@@ -407,7 +407,7 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
               aria-label="Remove checkpoint"
               onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
             >
-              <MinusCircle />
+              <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
             </button>
           </li>
         ))}

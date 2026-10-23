@@ -5,7 +5,7 @@ import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
 import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus } from "./icons";
-import { MinusCircle } from "./MinusCircle";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
@@ -394,7 +394,7 @@ function StepRow({
       <li className="step-row step-row--editing">
         {onDelete && (
           <button type="button" className="step-delete" aria-label={`Delete ${name}`} onClick={() => void onDelete()}>
-            <MinusCircle />
+            <DeleteGlyph />
           </button>
         )}
         {onName ? (
@@ -670,7 +670,7 @@ function ItemRow({
     return (
       <li className={"step-row step-row--editing item-row--editing" + (nested ? " item-row--nested" : "")}>
         <button type="button" className="step-delete" aria-label={`Delete ${i.title}`} onClick={() => void onDelete()}>
-          <MinusCircle />
+          <DeleteGlyph />
         </button>
         <span className="item-row__fields">
           <input ref={nameRef} aria-label="Item name" placeholder="Name" className="step-field step-field--name" {...nameField} />

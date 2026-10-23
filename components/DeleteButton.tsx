@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "./ui";
-import { MinusCircle } from "./MinusCircle";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
 import { DialogActions } from "./DialogActions";
 
 /**
- * The one delete button, as iOS draws it: on a row, the red ⊖; with a label,
+ * The one delete button, as iOS draws it: on a row, the red trash on a quiet disc; with a label,
  * the word in red on a soft red ground. Always asks before deleting. In a pop-up
  * it belongs in DialogActions; on a list row it is icon-only.
  */
@@ -51,7 +51,7 @@ export function DeleteButton({
     <>
       {iconOnly ? (
         <button type="button" className="minus-delete" aria-label={`Delete ${what}`} onClick={() => setOpen(true)}>
-          <MinusCircle />
+          <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
         </button>
       ) : (
         <Button

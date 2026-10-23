@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 /**
  * A bare glyph button, as iOS puts actions on a row: no fill, no border, the
  * glyph in the tint colour in a full-size tap area. Every row action (edit,
- * duplicate, move, complete, and the ⊖ delete) is this size, so a group of
+ * duplicate, move, complete, and the trash delete) is this size, so a group of
  * them reads as one set.
  */
 export function IconButton({
