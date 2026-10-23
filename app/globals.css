@@ -3795,20 +3795,20 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
   inline-size: 100%;
   min-block-size: 3rem;
   padding: 0 0.75rem 0 0;
-  color: var(--accent);
+  color: var(--foreground);
   font-size: 1rem;
   text-align: start;
 }
 .step-add__icon {
   display: grid;
   place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
   border-radius: 999px;
   background: var(--accent);
   color: #fff;
 }
-.step-add__icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+.step-add__icon svg { inline-size: 0.875rem; block-size: 0.875rem; fill: currentColor; }
 .step-add:active { opacity: 0.6; }
 
 /* A book being read, as a row of the goal list: the row opens the book,
@@ -4281,8 +4281,14 @@ input.path-edit__name:focus { color: var(--foreground); outline: none; }
 .icon-btn:has(.icon-disc):disabled { opacity: 0.35; }
 .path-edit .paths-edit__goal:last-child { border-block-end: 0; }
 
-/* An add in the workout editor: the tint ⊕ disc and its words on a grey capsule, as Add cardio. */
-.insert-row { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.25rem; padding: 0.25rem 0.875rem 0.25rem 0.4375rem; border-radius: 999px; color: var(--foreground); background: var(--default); font-size: 0.9375rem; font-weight: 600; }
-
+/* An add at the end of a list (InsertRow): a full-width row of the list,
+   the blue ⊕ disc and its words, a divider above, as iOS edit lists add. */
+.insert-row { display: flex; align-items: center; gap: 0.625rem; inline-size: 100%; min-block-size: 2.75rem; padding: 0.5rem 0.25rem; border-block-start: 0.5px solid var(--separator); color: var(--foreground); font-size: 1rem; text-align: start; }
 .insert-row .icon-disc svg { inline-size: 0.875rem; block-size: 0.875rem; fill: #fff; }
-@media (hover: hover) { .insert-row:hover { background: var(--fill-hover); } }
+.insert-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 8px; }
+@media (hover: hover) { .insert-row:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); } }
+.insert-row + .insert-row { border-block-start: 0.5px solid var(--separator); }
+
+/* The + that submits a typed entry (a to-do, a weight, kcal) is the same
+   blue ⊕ disc, drawn larger, beside its field. */
+.cds--btn.btn-add.btn-icon-only:not(.btn-add--plain) { border-radius: 50% !important; }

@@ -2,9 +2,10 @@
 
 import { RepeatSelect } from "./RepeatSelect";
 import { MinusCircle } from "./MinusCircle";
+import { InsertRow } from "./InsertRow";
 import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
-import { Button, Input, AddButton } from "./ui";
+import { Button, Input } from "./ui";
 import {
   Pencil,
   ArrowUp,
@@ -297,22 +298,6 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
         {field("repsMax", "Most reps", "max", "w-14")}
       </div>
     </div>
-  );
-}
-
-/**
- * An add in the workout editor: a white plus on the tint disc, the same as
- * the move and edit beside it, and what it adds in words, on a grey
- * capsule like Add cardio.
- */
-function InsertRow({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <button type="button" className="insert-row" onClick={onPress}>
-      <span className="icon-disc">
-        <Plus />
-      </span>
-      {label}
-    </button>
   );
 }
 
@@ -866,7 +851,7 @@ function ExerciseBlock({
               />
             ))}
           </div>
-          <AddButton secondary label="Add set" className="mt-2" onPress={() => void tracker.addSet(e.exerciseId)} />
+          <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
         </>
       )}
     </div>
@@ -1139,7 +1124,7 @@ export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
           </Button>
         </form>
       ) : editing ? (
-        <AddButton label="New workout" className="mt-3" onPress={() => setCreating(true)} />
+        <InsertRow label="New workout" onPress={() => setCreating(true)} />
       ) : null}
     </div>
   );

@@ -4,8 +4,9 @@ import { FormEvent, useState } from "react";
 import { Panel } from "./Panel";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
-import { Button, Input, AddButton, Stat } from "./ui";
+import { Button, Input, Stat } from "./ui";
 import { MinusCircle } from "./MinusCircle";
+import { InsertRow } from "./InsertRow";
 import { useWidth } from "./useWidth";
 import { usePending } from "./ActionButton";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
@@ -412,8 +413,7 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
         ))}
       </ul>
       <div>
-        <AddButton
-          secondary
+        <InsertRow
           label="Add checkpoint"
           onPress={() => setRows((rs) => [...rs, { date: addDays(rs[rs.length - 1]?.date || startDate, 14), kg: "" }])}
         />
