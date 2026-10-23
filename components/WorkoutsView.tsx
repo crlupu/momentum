@@ -301,14 +301,14 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
 }
 
 /**
- * An add in the workout editor, as iOS inserts in an edit list: a white plus
- * on a green disc, the same size as the move, edit and ⊖ beside it, and
- * what it adds in words.
+ * An add in the workout editor: a white plus on the tint disc, the same as
+ * the move and edit beside it, and what it adds in words, on a tinted
+ * capsule like the app's other secondary actions.
  */
 function InsertRow({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <button type="button" className="insert-row" onClick={onPress}>
-      <span className="icon-disc icon-disc--green">
+      <span className="icon-disc">
         <Plus />
       </span>
       {label}
