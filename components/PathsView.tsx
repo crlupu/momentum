@@ -90,6 +90,9 @@ export function PathsView({
     <div className="paths">
       {editable && (
         <div className="paths__bar">
+          <button type="button" className="text-action" onClick={() => setAddingTo(GENERAL)}>
+            <Plus aria-hidden /> New Goal
+          </button>
           <button type="button" className="text-action" onClick={() => setNewPath(true)}>
             <Plus aria-hidden /> New Path
           </button>
@@ -132,7 +135,6 @@ export function PathsView({
                 <SectionEdit
                   tracker={tracker}
                   section={sec}
-                  onAdd={() => setAddingTo(sec.id)}
                   onDeleted={() => setEditingId(null)}
                 />
               ) : (
@@ -180,19 +182,17 @@ export function PathsView({
 /**
  * One path in Edit, as iOS lays out an edit screen: grouped lists. Its name,
  * typed in place; its goals, each with the red ⊖ and
- * a handle to reorder, and a green ⊕ row to add one; its place among the
+ * a handle to reorder; its place among the
  * paths; and, apart at the bottom, Delete Path in red. General has only its
  * goals. A goal moves to another path from its own Path row.
  */
 function SectionEdit({
   tracker,
   section: sec,
-  onAdd,
   onDeleted,
 }: {
   tracker: Tracker;
   section: Section;
-  onAdd: () => void;
   onDeleted: () => void;
 }) {
   const s = tracker.state!;
@@ -248,15 +248,10 @@ function SectionEdit({
             </ul>
           </SortableContext>
         </DndContext>
-        <button type="button" className="path-edit__add" onClick={onAdd}>
-          <svg viewBox="0 0 22 22" width="22" height="22" aria-hidden>
-            <circle cx="11" cy="11" r="10" fill="var(--ios-green, #34c759)" />
-            <path d="M11 6.5v9M6.5 11h9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          Add Goal
-        </button>
       </div>
-      <p className="path-edit__footer">Drag ≡ to reorder. To move a goal to another path, open it and change its Path.</p>
+      <p className="path-edit__footer">
+        Drag ≡ to reorder. New goals come from New Goal above; to move one to another path, open it and change its Path.
+      </p>
 
       {sec.path && s.paths.length > 1 && (
         <div className="card path-edit__group">

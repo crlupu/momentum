@@ -13,8 +13,7 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
-  Info,
-  Copy } from "./icons";
+  Info } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
@@ -393,14 +392,14 @@ function ExerciseRow({
           disabled={index === 0}
           onPress={() => void tracker.moveExercise(workout.id, exercise.id, -1)}
         >
-          <ArrowUp />
+          <span className="icon-disc"><ArrowUp /></span>
         </IconButton>
         <IconButton
           label={`Move ${exercise.name} down`}
           disabled={index === count - 1}
           onPress={() => void tracker.moveExercise(workout.id, exercise.id, 1)}
         >
-          <ArrowDown />
+          <span className="icon-disc"><ArrowDown /></span>
         </IconButton>
         <RowActions
                     name={exercise.name}
@@ -748,7 +747,7 @@ function SetRow({
           onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
         />
 
-        {/* Three actions of one kind: bare glyphs, the same size. */}
+        {/* Two actions of one kind: complete and delete, the same size. */}
         <span className="set-row__actions">
           <IconButton
             label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
@@ -756,9 +755,6 @@ function SetRow({
             onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
           >
             <CheckRing on={done} />
-          </IconButton>
-          <IconButton label={`Duplicate set ${index + 1}`} onPress={() => void tracker.duplicateSet(exerciseId, set.id)}>
-            <Copy />
           </IconButton>
           <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
             <MinusCircle />

@@ -26,7 +26,7 @@ export function RowActions({
     <>
       {onEdit && (
         <IconButton label={`${editLabel} ${name}`} onPress={onEdit}>
-          <Pencil />
+          <span className="icon-disc"><Pencil /></span>
         </IconButton>
       )}
       {del && <DeleteButton what={del.what} iconOnly onDelete={del.onDelete} />}
