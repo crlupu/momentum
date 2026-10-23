@@ -1,5 +1,6 @@
 "use client";
 
+import { MenuSelect } from "../Menu";
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "../ui";
 import { X } from "../icons";
@@ -340,24 +341,22 @@ export function BookForm({
       </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Track">
-          <select value={track} onChange={(e) => setTrack(e.target.value)}>
-            {tracks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-            <option value="">No track</option>
-          </select>
+          <MenuSelect
+            label="Track"
+            className="menu-select--field"
+            value={track}
+            onChange={setTrack}
+            options={[...tracks.map((t) => ({ value: t.id, label: t.name, color: t.color })), { value: "", label: "No track" }]}
+          />
         </Field>
         <Field label="Phase">
-          <select value={phase} onChange={(e) => setPhase(e.target.value)}>
-            <option value="">No phase</option>
-            {s.readingPhases.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <MenuSelect
+            label="Phase"
+            className="menu-select--field"
+            value={phase}
+            onChange={setPhase}
+            options={[{ value: "", label: "No phase" }, ...s.readingPhases.map((p) => ({ value: p.id, label: p.name }))]}
+          />
         </Field>
       </div>
       {bumps && (
@@ -391,30 +390,22 @@ export function BookForm({
               })}
             </div>
           )}
-          <select
-            aria-label="Add a book to read first"
+          <MenuSelect
+            label="Add a book to read first"
+            className="menu-select--field"
             value=""
-            onChange={(e) => e.target.value && setAfter([...after, e.target.value])}
-          >
-            <option value="">{after.length ? "Add another…" : "None — add a book to read first…"}</option>
-            {others.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.title}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => v && setAfter([...after, v])}
+            options={[
+              { value: "", label: after.length ? "Add another…" : "None — add a book to read first…" },
+              ...others.map((b) => ({ value: b.id, label: b.title })),
+            ]}
+          />
         </div>
       </Field>
 
       {statusOptions.length > 1 && (
         <Field label="Status">
-          <select value={status} onChange={(e) => setStatus(e.target.value as R.BookStatus)}>
-            {statusOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <MenuSelect<R.BookStatus> label="Status" className="menu-select--field" value={status ?? statusOptions[0].value} onChange={setStatus} options={statusOptions} />
         </Field>
       )}
 

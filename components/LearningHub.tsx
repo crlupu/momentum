@@ -8,28 +8,8 @@ import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
-import { CatPicker } from "./Forms";
-import { DeleteButton } from "./DeleteButton";
-import {
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { ProgressRing } from "./ProgressRing";
-import { CalendarDays, ChevronDown, ChevronRight, Clock, ReorderLines } from "./icons";
+import { PathsView } from "./PathsView";
+import { CalendarDays, ChevronDown, ChevronRight, Clock } from "./icons";
 import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
@@ -39,44 +19,13 @@ import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackQueue } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
-import { STATUS_RANK, Tracker, dateKey, goalStatus, stepsLine, pathGoals, pathPct, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
+import { STATUS_RANK, Tracker, dateKey, goalStatus, type Goal, type GoalStatus } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
 const TAB_KEY = "momentum:learning-tab";
 type Grouping = "topic" | "phase";
 const GROUP_KEY = "momentum:learning-group";
-
-/**
- * A topic and its goals (Rust ramp up: The Rust Book, Rustlings…), or a goal
- * in no topic. A topic shows as one row, whose page lists its goals.
- */
-type Item = { kind: "group"; path: Path; steps: Goal[] } | { kind: "goal"; goal: Goal };
-
-function items(s: NonNullable<Tracker["state"]>): Item[] {
-  // A goal belongs to the first topic that lists it, as before.
-  const seen = new Set<string>();
-  const groups: Item[] = s.paths.map((path) => {
-    const steps = pathGoals(path, s.goals).filter((g) => !seen.has(g.id));
-    steps.forEach((g) => seen.add(g.id));
-    return { kind: "group", path, steps };
-  });
-  const loose: Item[] = s.goals.filter((g) => !seen.has(g.id)).map((goal) => ({ kind: "goal", goal }));
-  return [...groups, ...loose];
-}
-
-/**
- * Where a row belongs. A topic is active while any of its goals is, queued
- * while any is still to do (or it has none yet), and otherwise done, or
- * dropped if every goal in it was.
- */
-function itemStatus(i: Item): GoalStatus {
-  if (i.kind === "goal") return goalStatus(i.goal);
-  const st = i.steps.map(goalStatus);
-  if (st.includes("active")) return "active";
-  if (st.length === 0 || st.includes("queued")) return "queued";
-  return st.every((x) => x === "dropped") ? "dropped" : "done";
-}
 
 /**
  * A topic's goals in status order (active, queued, done), each keeping the
@@ -95,17 +44,6 @@ function datedFirst(a: Goal, b: Goal): number {
   if (goalStatus(a) !== "active" || goalStatus(b) !== "active") return 0;
   if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
   return a.targetDate ? -1 : b.targetDate ? 1 : 0;
-}
-
-/** Active rows: topics as they stand, then goals in no topic, dated ones first. */
-function activeOrder(list: Item[]): Item[] {
-  const groups = list.filter((i) => i.kind === "group");
-  const loose = list
-    .filter((i): i is Extract<Item, { kind: "goal" }> => i.kind === "goal")
-    .map((i, n) => ({ i, n }))
-    .sort((a, b) => datedFirst(a.i.goal, b.i.goal) || a.n - b.n)
-    .map((x) => x.i);
-  return [...groups, ...loose];
 }
 
 /**
@@ -135,7 +73,7 @@ export function LearningHub({
   return (
     <ReadingFlow tracker={tracker}>
       {groupId ? (
-        <GroupPage tracker={tracker} groupId={groupId} />
+        <GroupRedirect />
       ) : trackId ? (
         <TrackPage tracker={tracker} trackId={trackId} />
       ) : view === "phases" ? (
@@ -180,7 +118,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
       value={grouping}
       onChange={group}
       options={[
-        { value: "topic", label: "Topic" },
+        { value: "topic", label: "Path" },
         { value: "phase", label: "Phase" },
       ]}
     />
@@ -192,10 +130,6 @@ function Hub({ tracker }: { tracker: Tracker }) {
     } catch {}
   };
 
-  const all = items(s);
-  const started = activeOrder(all.filter((i) => itemStatus(i) === "active"));
-  const notStarted = all.filter((i) => itemStatus(i) === "queued");
-  const dropped = all.filter((i) => itemStatus(i) === "dropped");
   // By phase, goals are listed one by one, wherever their topic is.
   const goalsWith = (st: GoalStatus) => s.goals.filter((g) => goalStatus(g) === st);
   const droppedGoals = goalsWith("dropped");
@@ -243,11 +177,10 @@ function Hub({ tracker }: { tracker: Tracker }) {
             {grouping === "phase" ? (
               <PhaseGroups tracker={tracker} goals={byStatus(goalsWith("active"))} onOpen={setOpenId} empty="Nothing active." />
             ) : (
-              <ItemList
+              <PathsView
                 tracker={tracker}
-                items={started}
+                statuses={["active"]}
                 onOpen={setOpenId}
-                onGroup={(id) => go(`goal=${id}`)}
                 empty="Nothing active. Set a goal to Active from Library."
               />
             )}
@@ -289,7 +222,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
             </ul>
           </Panel>
 
-          <Panel title="Queued" actions={switcher} onAdd={() => setAdding(true)} addLabel="New goal" bare>
+          <Panel title="Goals" actions={switcher} onAdd={() => setAdding(true)} addLabel="New goal" bare>
             {grouping === "phase" ? (
               <PhaseGroups
                 tracker={tracker}
@@ -298,18 +231,18 @@ function Hub({ tracker }: { tracker: Tracker }) {
                 empty="Nothing queued. Add a goal with +."
               />
             ) : (
-              <ItemList
+              <PathsView
                 tracker={tracker}
-                items={showDropped ? [...notStarted, ...dropped] : notStarted}
+                statuses={showDropped ? ["active", "queued", "dropped"] : ["active", "queued"]}
+                editable
                 onOpen={setOpenId}
-                onGroup={(id) => go(`goal=${id}`)}
-                empty="Nothing queued. Add a goal with +."
+                empty="No goals yet. Add one with +."
               />
             )}
-            {(grouping === "phase" ? droppedGoals.length : dropped.length) > 0 && (
+            {droppedGoals.length > 0 && (
               <DroppedToggle
                 shown={showDropped}
-                count={grouping === "phase" ? droppedGoals.length : dropped.length}
+                count={droppedGoals.length}
                 onToggle={() => setShowDropped((v) => !v)}
               />
             )}
@@ -334,150 +267,13 @@ function Hub({ tracker }: { tracker: Tracker }) {
   );
 }
 
-/** Goals as rows: a goal with steps opens its page, any other its details. */
-function ItemList({
-  tracker,
-  items: list,
-  onOpen,
-  onGroup,
-  empty,
-}: {
-  tracker: Tracker;
-  items: Item[];
-  onOpen: (id: string) => void;
-  onGroup: (id: string) => void;
-  empty: string;
-}) {
-  return (
-    <div className="card goal-list">
-      {list.length === 0 ? (
-        <p className="goal-list__empty">{empty}</p>
-      ) : (
-        <ul className="goal-list__rows">
-          {list.map((i) =>
-            i.kind === "goal" ? (
-              <GoalRow key={i.goal.id} tracker={tracker} goal={i.goal} onOpen={onOpen} />
-            ) : (
-              <GroupRow key={i.path.id} tracker={tracker} path={i.path} steps={i.steps} onOpen={() => onGroup(i.path.id)} />
-            )
-          )}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** A goal with steps, as one row: how far through, how many steps done. */
-function GroupRow({
-  tracker,
-  path,
-  steps,
-  onOpen,
-}: {
-  tracker: Tracker;
-  path: Path;
-  steps: Goal[];
-  onOpen: () => void;
-}) {
-  const s = tracker.state!;
-  const cat = path.catId ? tracker.cat(path.catId) : null;
-  const pct = pathPct({ ...path, goalIds: steps.map((g) => g.id) }, s.goals);
-  return (
-    <li>
-      <button type="button" className="goal-row" onClick={onOpen}>
-        <span className="goal-row__ring" aria-hidden>
-          <ProgressRing pct={pct} color="var(--accent)" size={44} />
-        </span>
-        <span className="goal-row__text">
-          <span className="goal-row__title">{path.title}</span>
-          <span className="goal-row__meta">
-            {cat && (
-              <>
-                <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
-                {cat.name}
-                <span aria-hidden>·</span>
-              </>
-            )}
-            {stepsLine(steps)}
-          </span>
-        </span>
-        <ChevronRight className="rd-link__chevron" aria-hidden />
-      </button>
-    </li>
-  );
-}
-
-/**
- * A goal with steps, opened: what it's for, how far along, and its steps,
- * each opening its own details with the − / + count.
- */
-function GroupPage({ tracker, groupId }: { tracker: Tracker; groupId: string }) {
-  const s = tracker.state!;
+/** Topic pages are gone: Learning shows paths in place. Old links land on it. */
+function GroupRedirect() {
   const router = useRouter();
-  const path = s.paths.find((p) => p.id === groupId);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [showDropped, setShowDropped] = useState(false);
-
   useEffect(() => {
-    if (!path) router.replace("/education");
-  }, [path, router]);
-  if (!path) return null;
-
-  const all = byStatus(pathGoals(path, s.goals));
-  const droppedHere = all.filter((g) => goalStatus(g) === "dropped");
-  const steps = all.filter((g) => goalStatus(g) !== "dropped");
-  const shown = showDropped ? all : steps;
-  const pct = pathPct({ ...path, goalIds: steps.map((g) => g.id) }, s.goals);
-  const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {(path.note || steps.length > 0) && (
-        <div className="goal-topic__summary">
-          {path.note && <p className="goal-topic__note">{path.note}</p>}
-          {steps.length > 0 && (
-            <div className="goal-topic__progress">
-              <div className="progress-track h-1.5 flex-1">
-                <div className="progress-fill" style={{ width: `${pct}%` }} />
-              </div>
-              <span className="goal-topic__figure">
-                <span className="font-mono-n">{pct}%</span> · {stepsLine(steps)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-      {editing ? (
-        <TopicEditor tracker={tracker} topic={path} onDone={() => setEditing(false)} />
-      ) : (
-      <Panel title="Goals" onEdit={() => setEditing(true)} onAdd={() => setAdding(true)} addLabel="Add a goal" bare>
-        <div className="card goal-list">
-          {shown.length === 0 ? (
-            <p className="goal-list__empty">No goals yet. Add one with +.</p>
-          ) : (
-            <ul className="goal-list__rows">
-              {shown.map((g) => (
-                <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={setOpenId} inTopic />
-              ))}
-            </ul>
-          )}
-        </div>
-        {droppedHere.length > 0 && (
-          <DroppedToggle shown={showDropped} count={droppedHere.length} onToggle={() => setShowDropped((v) => !v)} />
-        )}
-      </Panel>
-      )}
-
-      <Modal open={adding} onClose={() => setAdding(false)} title="New goal">
-        {adding && <GoalForm tracker={tracker} pathId={path.id} onDone={() => setAdding(false)} />}
-      </Modal>
-      <Modal open={!!opened} onClose={() => setOpenId(null)} title={opened?.title ?? ""} titleNode={opened && <GoalTitle key={opened.id} tracker={tracker} goal={opened} />} wide>
-        {opened && <GoalDetail key={opened.id} tracker={tracker} goal={opened} onClose={() => setOpenId(null)} />}
-      </Modal>
-    </div>
-  );
+    router.replace("/education");
+  }, [router]);
+  return null;
 }
 
 /**
@@ -560,128 +356,6 @@ function PhaseGroups({
  * top, its goals with grips to drag into order (the order queued goals are
  * taken in), and Delete Topic once it holds no goals.
  */
-function TopicEditor({ tracker, topic, onDone }: { tracker: Tracker; topic: Path; onDone: () => void }) {
-  const s = tracker.state!;
-  const goals = pathGoals(topic, s.goals);
-  const [name, setName] = useState(topic.title);
-  const saveName = () => {
-    if (name.trim() && name.trim() !== topic.title) void tracker.updatePath(topic.id, name, topic.catId, topic.note);
-    else setName(topic.title);
-  };
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-  const onDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const ids = goals.map((g) => g.id);
-    const from = ids.indexOf(String(active.id));
-    const to = ids.indexOf(String(over.id));
-    if (from < 0 || to < 0) return;
-    void tracker.reorderTopic(topic.id, arrayMove(ids, from, to));
-  };
-
-  return (
-    <section className="flex flex-col gap-4" aria-label="Edit topic">
-      <div className="goal-steps__head">
-        <h2 className="panel-head__title">Edit Topic</h2>
-        <button
-          type="button"
-          className="text-action"
-          aria-pressed
-          onClick={() => {
-            saveName();
-            onDone();
-          }}
-        >
-          Done
-        </button>
-      </div>
-      <div className="card flex flex-col gap-3 p-4">
-        <input
-          aria-label="Topic name"
-          className="step-field step-field--name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={saveName}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-          }}
-        />
-        <CatPicker
-          tracker={tracker}
-          catId={topic.catId ?? ""}
-          setCatId={(id) => void tracker.updatePath(topic.id, topic.title, id, topic.note)}
-        />
-      </div>
-
-      {goals.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <p className="group-label" style={{ paddingInline: "0.25rem" }}>Drag to set the order</p>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={goals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-              <ul className="step-list step-list--on-page">
-                {goals.map((g) => (
-                  <SortableGoal key={g.id} goal={g} />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
-        </div>
-      )}
-
-      {goals.length === 0 ? (
-        <div className="self-start">
-          <DeleteButton
-            what={`the topic "${topic.title}"`}
-            label="Delete Topic"
-            onDelete={async () => {
-              onDone();
-              return tracker.removePath(topic.id);
-            }}
-          />
-        </div>
-      ) : (
-        <p className="px-1 text-sm text-[var(--muted)]">
-          To delete this topic, move its goals elsewhere or delete them first.
-        </p>
-      )}
-    </section>
-  );
-}
-
-/** A goal in a topic being edited: its name and status, and a grip to drag it by. */
-function SortableGoal({ goal: g }: { goal: Goal }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: g.id,
-  });
-  const st = goalStatus(g);
-  return (
-    <li
-      ref={setNodeRef}
-      className={"step-row" + (isDragging ? " step-row--dragging" : "")}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-    >
-      <span className="step-row__name">
-        {g.title}
-        <span className="block text-[0.8125rem] text-[var(--muted)]">{st[0].toUpperCase() + st.slice(1)}</span>
-      </span>
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        className="rd-grip"
-        aria-label={`Move ${g.title}`}
-        {...attributes}
-        {...listeners}
-      >
-        <ReorderLines className="h-6 w-6" />
-      </button>
-    </li>
-  );
-}
-
 /** Dropped goals stay out of sight, with everything kept, until asked for. */
 function DroppedToggle({ shown, count, onToggle }: { shown: boolean; count: number; onToggle: () => void }) {
   return (

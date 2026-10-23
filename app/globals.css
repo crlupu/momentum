@@ -3864,32 +3864,6 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .step-list > div + div { border-top: 0.5px solid var(--separator); }
 
 /* A choice in a list row: the value on the right, as an iOS menu shows it. */
-select.row-select {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  block-size: auto;
-  padding: 0.25rem 0;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 1rem;
-  text-align: end;
-  text-align-last: end;
-  direction: ltr;
-  cursor: pointer;
-}
-select.row-select:hover { border-color: transparent; }
-select.row-select:focus { outline: none; color: var(--accent); }
-/* Inline among small figures (a book's facts, a workout's footer): text-sized,
-   in the text colour, starting where it sits. */
-select.row-select.row-select--inline {
-  flex: none;
-  padding: 0;
-  font-size: inherit;
-  color: var(--foreground);
-  text-align: start;
-  text-align-last: start;
-}
 .step-row--dragging { position: relative; z-index: 1; background: var(--pane-bg); box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
 /* On a card, a field is a shade darker than the card; a list on the page
    is a card itself. */
@@ -4086,3 +4060,128 @@ li.item-row--nested .step-add { padding-inline-start: 1.5rem; }
   text-overflow: ellipsis;
 }
 .target-chip svg { inline-size: 14px; block-size: 14px; flex: none; fill: var(--muted); }
+
+/* A pop-up menu in the app's style (components/Menu.tsx). */
+.menu-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-inline-size: 0;
+  max-inline-size: 60%;
+  margin-inline-start: auto;
+  padding: 0.25rem 0.125rem;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 1rem;
+}
+.menu-select:hover { color: var(--foreground); }
+.menu-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.menu-select[aria-expanded="true"] { color: var(--accent); }
+.menu-select__chev { flex: none; opacity: 0.8; }
+.menu-select--inline { margin-inline-start: 0; max-inline-size: none; padding: 0; font-size: inherit; color: var(--foreground); }
+.menu-panel {
+  position: fixed;
+  z-index: 1000;
+  min-inline-size: 13rem;
+  max-inline-size: min(20rem, calc(100vw - 16px));
+  max-block-size: min(26rem, calc(100vh - 16px));
+  overflow-y: auto;
+  padding: 0.25rem 0;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface, var(--pane-bg)) 88%, transparent);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--foreground) 14%, transparent), 0 12px 40px rgb(0 0 0 / 0.28);
+}
+.dark .menu-panel { background: rgb(44 44 46 / 0.92); }
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0.5rem 1rem 0.5rem 0.625rem;
+  color: var(--foreground);
+  font-size: 1rem;
+  text-align: start;
+}
+.menu-item + .menu-item { box-shadow: inset 0 0.5px 0 color-mix(in srgb, var(--foreground) 10%, transparent); }
+.menu-item:hover, .menu-item:focus-visible { background: color-mix(in srgb, var(--foreground) 8%, transparent); outline: none; }
+.menu-item:disabled { opacity: 0.35; }
+.menu-item--danger { color: var(--danger); }
+.menu-item__check { display: inline-flex; inline-size: 1rem; flex: none; color: var(--accent); }
+.menu-item__check svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.menu-item__label { flex: 1 1 auto; min-inline-size: 0; }
+.menu-sep { block-size: 0.5rem; background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.menu-heading { padding: 0.5rem 1rem 0.25rem 2.125rem; font-size: 13px; color: var(--muted); }
+/* As a form field: the box an input has, the chevron at its end. */
+.menu-select.menu-select--field {
+  inline-size: 100%;
+  max-inline-size: none;
+  margin: 0;
+  block-size: 2.5rem;
+  padding: 0 0.75rem;
+  justify-content: flex-start;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--r-control);
+  color: var(--foreground);
+}
+.menu-select--field .menu-select__chev { margin-inline-start: auto; color: var(--muted); }
+@media (pointer: coarse) { .menu-select.menu-select--field { block-size: 2.75rem; } }
+
+/* A goal's name, typed over in place: a hover tint and a pencil say so. */
+.inline-title-wrap { position: relative; display: flex; align-items: flex-start; gap: 0.25rem; inline-size: 100%; }
+textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.inline-title__pencil { flex: none; inline-size: 18px; block-size: 18px; margin-block-start: 0.45rem; fill: var(--muted); cursor: text; transition: opacity 0.15s; }
+.inline-title-wrap:focus-within .inline-title__pencil { opacity: 0; }
+
+/* Learning paths (components/PathsView.tsx): iOS inset grouped sections. */
+.paths { display: flex; flex-direction: column; gap: 0.25rem; }
+.paths__bar { display: flex; justify-content: flex-end; gap: 0.5rem; margin-block-end: 0.25rem; }
+.paths__hint { margin: 0 0 0.5rem; padding-inline: 0.25rem; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.path + .path { margin-block-start: 0.75rem; }
+.path__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  inline-size: 100%;
+  padding: 0.25rem 0.25rem 0.5rem;
+  text-align: start;
+  border-radius: 8px;
+}
+.path__head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.path__title { flex: 1 1 auto; min-inline-size: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path__pct { font-size: 0.9375rem; color: var(--muted); }
+.path__chev { flex: none; inline-size: 18px; block-size: 18px; fill: var(--accent); transition: transform 0.2s ease; }
+.path__chev.is-open { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .path__chev { transition: none; } }
+.path__card { padding: 0; overflow: hidden; }
+.path__summary { display: flex; flex-direction: column; gap: 0.375rem; padding: 0.875rem 1rem 0.75rem; }
+.path__card .goal-list__rows { border-block-start: 0.5px solid var(--separator); }
+.path__figure { font-size: 13px; color: var(--muted); }
+.path__badge { margin-inline-start: 0.5rem; padding: 0.125rem 0.375rem; border-radius: 6px; background: var(--default); font-size: 12px; font-weight: 600; color: var(--muted); vertical-align: 0.2em; }
+.path__more { display: inline-grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; flex: none; border-radius: 50%; color: var(--accent); }
+.path__more:focus-visible { outline: 2px solid var(--accent); }
+.paths-edit { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.paths-edit__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 1rem 0.25rem 0.375rem; }
+.paths-edit__head:first-child { padding-block-start: 0; }
+.paths-edit__empty { inline-size: 100%; padding: 0.875rem 1rem; border: 1.5px dashed var(--separator); border-radius: 12px; font-size: 14px; color: var(--muted); text-align: center; }
+.paths-edit__goal {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: 3.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  background: var(--surface);
+  border-block-end: 0.5px solid var(--separator);
+}
+.paths-edit__head + .paths-edit__goal { border-start-start-radius: 12px; border-start-end-radius: 12px; }
+.paths-edit__goal:has(+ .paths-edit__head), .paths-edit__goal:last-child { border-end-start-radius: 12px; border-end-end-radius: 12px; border-block-end: 0; }
+.paths-edit__goal.is-dragging { position: relative; z-index: 2; border-radius: 12px; box-shadow: 0 12px 30px rgb(0 0 0 / 0.35); }
+.paths-edit__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; }
+.path-form__name { inline-size: 100%; font-size: 1.125rem; font-weight: 600; text-align: center; }
+.path-form__colors { display: flex; justify-content: space-between; gap: 0.5rem; padding-inline: 0.25rem; }
+.path-form__swatch { inline-size: 2rem; block-size: 2rem; border-radius: 50%; }
+.path-form__swatch[aria-checked="true"] { box-shadow: 0 0 0 3px var(--pane-bg), 0 0 0 5px var(--muted); }
+.path-form__swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

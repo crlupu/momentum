@@ -4,9 +4,10 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ExternalLink, Minus, Plus } from "./icons";
+import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus } from "./icons";
 import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
+import { MenuSelect } from "./Menu";
 import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
 import { type LearningEntry } from "@/lib/model";
@@ -72,7 +73,9 @@ export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [field.value]);
+  // A pencil after the name says it can be typed over; it fades while editing.
   return (
+    <span className="inline-title-wrap">
     <textarea
       ref={area}
       rows={1}
@@ -87,6 +90,8 @@ export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }
         }
       }}
     />
+    <Pencil className="inline-title__pencil" aria-hidden onClick={() => area.current?.focus()} />
+    </span>
   );
 }
 
@@ -130,22 +135,6 @@ export function GoalDetail({
   const writeParts = (fn: (list: Part[]) => Part[]) => {
     const now = tracker.state!.goals.find((x) => x.id === g.id)?.parts ?? [];
     return tracker.setGoalParts(g.id, fn(now));
-  };
-  // Saved at once, so it's there the moment it's tapped; Edit opens on its
-  // name, ready to be typed over. A goal's own count becomes its first step,
-  // so nothing counted so far is lost.
-  const addStep = () => {
-    const id = uid();
-    const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
-    void writeParts((list) => {
-      const first =
-        list.length === 0 && now.target
-          ? [{ id: uid(), title: "Progress", current: now.current ?? 0, target: now.target }]
-          : [];
-      return [...list, ...first, { id, title: `Part ${list.length + first.length + 1}`, current: 0, target: 1 }];
-    });
-    setEditing(true);
-    setFocusId(id);
   };
   // The first entry, saved at once; the checklist opens in Edit on its name.
   const startChecklist = () => {
@@ -287,16 +276,8 @@ export function GoalDetail({
               </Fragment>
             ))
           )}
-          <li>
-            <button type="button" className="step-add" onClick={addStep}>
-              <span className="step-add__icon" aria-hidden>
-                <Plus />
-              </span>
-              Add Part
-            </button>
-          </li>
-          {/* A goal without parts can be a checklist instead: videos,
-              talks, each ticked when finished. */}
+          {/* A goal is a count or a checklist: videos, talks, each ticked
+              when finished. Goals don't hold other goals. */}
           {parts.length === 0 && (
             <li>
               <button type="button" className="step-add" onClick={startChecklist}>
@@ -811,19 +792,15 @@ function CategoryRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   return (
     <div className="step-row">
       <span className="step-row__name flex-none">Category</span>
-      <select
-        aria-label="Category"
-        className="row-select"
+      <MenuSelect
+        label="Category"
         value={cats.some((c) => c.id === g.catId) ? g.catId : ""}
-        onChange={(e) => e.target.value && void tracker.setGoalCategory(g.id, e.target.value)}
-      >
-        {!cats.some((c) => c.id === g.catId) && <option value="">None</option>}
-        {cats.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => v && void tracker.setGoalCategory(g.id, v)}
+        options={[
+          ...(cats.some((c) => c.id === g.catId) ? [] : [{ value: "", label: "None" }]),
+          ...cats.map((c) => ({ value: c.id, label: c.name, color: c.color })),
+        ]}
+      />
     </div>
   );
 }

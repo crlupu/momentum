@@ -71,7 +71,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
         <div>
           <dt>Repeat</dt>
           <dd>
-            <RepeatSelect tracker={tracker} kind="book" item={book} className="row-select row-select--inline" />
+            <RepeatSelect tracker={tracker} kind="book" item={book} inline />
           </dd>
         </div>
       </dl>

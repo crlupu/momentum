@@ -18,6 +18,7 @@ import { contrast } from "./color";
 import * as R from "./reading";
 import * as P from "./projects";
 import * as O from "./ops";
+import * as LP from "./paths";
 import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
@@ -815,6 +816,14 @@ export function useTracker() {
           p.id === projectId ? { ...p, cards: p.cards.filter((c) => c.id !== cardId) } : p
         ),
       })),
+
+    // ---- learning paths ----
+    createPath: (title: string, color?: string) => commit((s) => LP.createPath(s, title, color).state),
+    editPath: (id: string, patch: { title?: string; color?: string }) => commit((s) => LP.editPath(s, id, patch)),
+    deletePath: (id: string) => commit((s) => LP.deletePath(s, id)),
+    movePath: (id: string, by: -1 | 1) => commit((s) => LP.movePath(s, id, by)),
+    moveGoalToPath: (goalId: string, pathId: string) => commit((s) => LP.moveGoalToPath(s, goalId, pathId)),
+    arrangeLearning: (layout: { pathId: string; goalIds: string[] }[]) => commit((s) => LP.arrangeLearning(s, layout)),
 
     // ---- routines ----
     /** How often a goal, book or workout comes round as a routine. */

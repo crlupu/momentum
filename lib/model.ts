@@ -174,6 +174,8 @@ export type Path = {
   /** What it is for, in a sentence. Optional; plenty need no explaining. */
   note?: string;
   catId?: string;
+  /** Its colour, for its goals' rings. Optional: the accent otherwise. */
+  color?: string;
   /** Its goals, in the order they are meant to be taken. */
   goalIds: string[];
 };
@@ -638,6 +640,10 @@ export type TrackerState = {
   fiberTarget?: number;
   /** Learning sessions: each +1 on a goal or one of its parts, with an optional note. */
   learningLog: LearningEntry[];
+  /** Set once goals were taken out of their topics into General. See flattenLearning. */
+  learningV2?: boolean;
+  /** The topics as they were before that, kept in case they're wanted back. */
+  archivedTopics?: Path[];
 };
 
 /** One learning session: a count moved on, on a day, perhaps with a line about it. */
@@ -1278,7 +1284,7 @@ export function migrate(raw: unknown): TrackerState {
     return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
   };
 
-  return {
+  return flattenLearning({
     // Anything this build doesn't recognise is carried through untouched.
     // Without this, a device running an older bundle would parse a document
     // containing newer fields, drop them, and then write the pruned state back
@@ -1318,6 +1324,83 @@ export function migrate(raw: unknown): TrackerState {
             ...(typeof e.note === "string" && e.note.trim() ? { note: e.note.trim().slice(0, NOTE_MAX) } : {}),
           }))
       : [],
+  });
+}
+
+/**
+ * Goals hold no other goals: a goal with parts becomes one goal per part,
+ * "Parent · Part", each with the part's count and checklist and the parent's
+ * category, status, phases and description. The ids are made from the
+ * parent's and the part's, so every device makes the same ones. Sessions and
+ * to-dos that counted a part follow it to its goal.
+ *
+ * Once, too, every goal goes back into General, the default path, so paths
+ * start from nothing and are made by hand. The topics they were in are kept
+ * aside in `archivedTopics`.
+ */
+function flattenLearning(s: TrackerState): TrackerState {
+  const split = new Map<string, string>(); // "goalId/partId" → new goal id
+  const goals: Goal[] = [];
+  for (const g of s.goals) {
+    if (!g.parts?.length) {
+      goals.push(g);
+      continue;
+    }
+    for (const part of g.parts) {
+      const id = `${g.id}-${part.id}`;
+      split.set(`${g.id}/${part.id}`, id);
+      const finished = part.target > 0 && part.current >= part.target;
+      const status = goalStatus(g) === "done" || finished ? "done" : goalStatus(g);
+      goals.push(
+        withItemCount({
+          id,
+          title: `${g.title} · ${part.title}`,
+          catId: g.catId,
+          current: part.current,
+          target: part.target,
+          ...(part.minimum ? { minimum: part.minimum } : {}),
+          ...(part.items?.length ? { items: part.items } : {}),
+          status,
+          done: status === "done",
+          doneDate: status === "done" ? g.doneDate ?? null : null,
+          doneAt: status === "done" ? g.doneAt ?? null : null,
+          ...(g.note ? { note: g.note } : {}),
+          ...(g.link ? { link: g.link } : {}),
+          ...(g.phaseIds ? { phaseIds: g.phaseIds } : {}),
+          ...(g.repeat ? { repeat: g.repeat } : {}),
+        })
+      );
+    }
+  }
+  const moved = (goalId: string, partId?: string) => (partId ? split.get(`${goalId}/${partId}`) : undefined);
+  const parents = new Set(s.goals.filter((g) => g.parts?.length).map((g) => g.id));
+  // A parent's place in a path goes to its parts, in their order.
+  const swap = (ids: string[]) =>
+    ids.flatMap((id) => (parents.has(id) ? goals.filter((g) => g.id.startsWith(`${id}-`)).map((g) => g.id) : [id]));
+
+  const first = !s.learningV2;
+  return {
+    ...s,
+    goals,
+    paths: first ? [] : s.paths.map((p) => ({ ...p, goalIds: swap(p.goalIds) })),
+    ...(first && s.paths.length ? { archivedTopics: s.paths.map((p) => ({ ...p, goalIds: swap(p.goalIds) })) } : {}),
+    learningV2: true,
+    learningLog: split.size
+      ? (s.learningLog ?? []).map((e) => {
+          const to = moved(e.goalId, e.partId);
+          if (!to) return e;
+          const { partId: _p, ...rest } = e;
+          return { ...rest, goalId: to };
+        })
+      : s.learningLog,
+    todos: split.size
+      ? s.todos.map((t) => {
+          const to = t.goalId ? moved(t.goalId, t.partId) : undefined;
+          if (!to) return t;
+          const { partId: _p, ...rest } = t;
+          return { ...rest, goalId: to };
+        })
+      : s.todos,
   };
 }
 

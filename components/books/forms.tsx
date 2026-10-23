@@ -1,5 +1,6 @@
 "use client";
 
+import { MenuSelect } from "../Menu";
 import { FormEvent, useMemo, useState } from "react";
 import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
@@ -143,16 +144,17 @@ export function TrackForm({
             </p>
             {books > 0 ? (
               <Field label={`Its ${books} book${books === 1 ? "" : "s"}`}>
-                <select value={then} onChange={(e) => setThen(e.target.value)}>
-                  <option value="keep">Keep them, without a track</option>
-                  {others.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      Move to {t.name}
-                      {t.archived ? " (archived)" : ""}
-                    </option>
-                  ))}
-                  <option value="delete">Delete them too</option>
-                </select>
+                <MenuSelect
+                  label="Its books"
+                  className="menu-select--field"
+                  value={then}
+                  onChange={setThen}
+                  options={[
+                    { value: "keep", label: "Keep them, without a track" },
+                    ...others.map((t) => ({ value: t.id, label: `Move to ${t.name}${t.archived ? " (archived)" : ""}` })),
+                    { value: "delete", label: "Delete them too" },
+                  ]}
+                />
               </Field>
             ) : (
               <p className="text-sm text-[var(--muted)]">It has no books.</p>
@@ -282,23 +284,22 @@ export function BulkAddForm({
       />
       <div className="grid grid-cols-2 gap-2">
         <Field label="Track">
-          <select value={track} onChange={(e) => setTrack(e.target.value)}>
-            {tracks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+          <MenuSelect
+            label="Track"
+            className="menu-select--field"
+            value={track}
+            onChange={setTrack}
+            options={tracks.map((t) => ({ value: t.id, label: t.name, color: t.color }))}
+          />
         </Field>
         <Field label="Phase">
-          <select value={phase} onChange={(e) => setPhase(e.target.value)}>
-            <option value="">No phase</option>
-            {s.readingPhases.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <MenuSelect
+            label="Phase"
+            className="menu-select--field"
+            value={phase}
+            onChange={setPhase}
+            options={[{ value: "", label: "No phase" }, ...s.readingPhases.map((p) => ({ value: p.id, label: p.name }))]}
+          />
         </Field>
       </div>
       {list.length > 0 && (

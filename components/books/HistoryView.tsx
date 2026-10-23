@@ -1,5 +1,6 @@
 "use client";
 
+import { MenuSelect } from "../Menu";
 import { useState } from "react";
 import { useWidth } from "../useWidth";
 import { Tracker, dateKey } from "@/lib/tracker";
@@ -40,22 +41,20 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
         {/* The filters in a row of their own, under the heading, rather than
             wrapping beside it. */}
         <div className="rd-filters">
-          <select aria-label="Track" value={track} onChange={(e) => setTrack(e.target.value)}>
-            <option value="">All tracks</option>
-            {s.readingTracks.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-          <select aria-label="Year" value={year} onChange={(e) => setYear(e.target.value)}>
-            <option value="">All years</option>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          <MenuSelect
+            label="Track"
+            className="menu-select--field"
+            value={track}
+            onChange={setTrack}
+            options={[{ value: "", label: "All tracks" }, ...s.readingTracks.map((t) => ({ value: t.id, label: t.name, color: t.color }))]}
+          />
+          <MenuSelect
+            label="Year"
+            className="menu-select--field"
+            value={year}
+            onChange={setYear}
+            options={[{ value: "", label: "All years" }, ...years.map((y) => ({ value: y, label: y }))]}
+          />
           <label className="flex items-center gap-1.5 text-sm text-foreground/70">
             <input
               type="checkbox"

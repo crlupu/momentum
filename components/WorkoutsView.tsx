@@ -1048,7 +1048,7 @@ function WorkoutRow({
               <span className="truncate text-[15px]">{workout.name}</span>
             </button>
             <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} className="row-select row-select--inline" />
+              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
               <span aria-hidden>·</span>
               {workout.exercises.length}{" "}
               {workout.exercises.length === 1 ? "exercise" : "exercises"}
@@ -1070,7 +1070,7 @@ function WorkoutRow({
           <>
             <span className="cfg-label">{workout.name}</span>
             <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} className="row-select row-select--inline" />
+              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
               <span aria-hidden>·</span>
               {workout.exercises.length}{" "}
               {workout.exercises.length === 1 ? "exercise" : "exercises"}

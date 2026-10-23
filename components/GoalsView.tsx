@@ -246,12 +246,15 @@ export function GoalRow({
   goal: g,
   onOpen,
   inTopic,
+  color = "var(--accent)",
 }: {
   tracker: Tracker;
   goal: Goal;
   onOpen: (id: string) => void;
   /** In a topic, the category is the topic's and shown on it, not per row. */
   inTopic?: boolean;
+  /** The ring's colour: its path's. */
+  color?: string;
 }) {
   const cat = tracker.cat(g.catId);
   const measured = goalHasProgress(g);
@@ -273,7 +276,7 @@ export function GoalRow({
       <button type="button" className="goal-row" onClick={() => onOpen(g.id)}>
         <span className="goal-row__ring" aria-hidden>
           {measured || g.done ? (
-            <ProgressRing pct={g.done ? 100 : goalPct(g)} color="var(--accent)" size={44} />
+            <ProgressRing pct={g.done ? 100 : goalPct(g)} color={color} size={44} />
           ) : (
             <span className="goal-row__blank">
               <Target />
