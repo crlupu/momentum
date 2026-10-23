@@ -107,7 +107,7 @@ export function GoalForm({
           value={topic}
           onChange={setTopic}
           options={[
-            ...s.paths.map((p) => ({ value: p.id, label: p.title, color: p.color })),
+            ...s.paths.map((p) => ({ value: p.id, label: p.title })),
             { value: "", label: "General" },
           ]}
         />

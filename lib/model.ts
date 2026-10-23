@@ -174,8 +174,6 @@ export type Path = {
   /** What it is for, in a sentence. Optional; plenty need no explaining. */
   note?: string;
   catId?: string;
-  /** Its colour, for its goals' rings. Optional: the accent otherwise. */
-  color?: string;
   /** Its goals, in the order they are meant to be taken. */
   goalIds: string[];
 };
@@ -1241,7 +1239,6 @@ export function migrate(raw: unknown): TrackerState {
         title: (x.title as string) ?? "",
         note: (x.note as string) || undefined,
         catId: (x.catId as string) || undefined,
-        color: typeof x.color === "string" && x.color ? x.color : undefined,
         goalIds: Array.isArray(x.goalIds) ? (x.goalIds as string[]).filter((g) => typeof g === "string") : [],
       }))
     : [];

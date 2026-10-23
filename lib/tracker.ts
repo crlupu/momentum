@@ -818,8 +818,8 @@ export function useTracker() {
       })),
 
     // ---- learning paths ----
-    createPath: (title: string, color?: string) => commit((s) => LP.createPath(s, title, color).state),
-    editPath: (id: string, patch: { title?: string; color?: string }) => commit((s) => LP.editPath(s, id, patch)),
+    createPath: (title: string) => commit((s) => LP.createPath(s, title).state),
+    editPath: (id: string, patch: { title?: string }) => commit((s) => LP.editPath(s, id, patch)),
     deletePath: (id: string) => commit((s) => LP.deletePath(s, id)),
     movePath: (id: string, by: -1 | 1) => commit((s) => LP.movePath(s, id, by)),
     moveGoalToPath: (goalId: string, pathId: string) => commit((s) => LP.moveGoalToPath(s, goalId, pathId)),

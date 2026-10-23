@@ -8,9 +8,6 @@ import { type Goal, type Path, type TrackerState, goalStatus, uid } from "./mode
 
 export const GENERAL = "general";
 
-/** The colours a path can take: the iOS system colours. */
-export const PATH_COLORS = ["#FF453A", "#FF9F0A", "#FFD60A", "#30D158", "#64D2FF", "#0A84FF", "#BF5AF2", "#FF375F"];
-
 /** A goal's items done and in all: its checklist or count, or 1 for a goal with neither. */
 export function goalUnits(g: Goal): { done: number; total: number } {
   const total = g.target && g.target > 0 ? g.target : 1;
@@ -50,21 +47,17 @@ export function pathOfGoal(s: TrackerState, goalId: string): string {
   return s.paths.find((p) => p.goalIds.includes(goalId))?.id ?? GENERAL;
 }
 
-export function createPath(s: TrackerState, title: string, color?: string): { state: TrackerState; id: string } {
+export function createPath(s: TrackerState, title: string): { state: TrackerState; id: string } {
   const id = uid();
   const t = title.trim();
   if (!t) return { state: s, id };
-  return { state: { ...s, paths: [...s.paths, { id, title: t, goalIds: [], ...(color ? { color } : {}) }] }, id };
+  return { state: { ...s, paths: [...s.paths, { id, title: t, goalIds: [] }] }, id };
 }
 
-export function editPath(s: TrackerState, id: string, patch: { title?: string; color?: string }): TrackerState {
+export function editPath(s: TrackerState, id: string, patch: { title?: string }): TrackerState {
   return {
     ...s,
-    paths: s.paths.map((p) =>
-      p.id === id
-        ? { ...p, ...(patch.title?.trim() ? { title: patch.title.trim() } : {}), ...(patch.color ? { color: patch.color } : {}) }
-        : p
-    ),
+    paths: s.paths.map((p) => (p.id === id && patch.title?.trim() ? { ...p, title: patch.title.trim() } : p)),
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { RepeatSelect } from "./RepeatSelect";
 import { MinusCircle } from "./MinusCircle";
+import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Input, AddButton } from "./ui";
 import {
@@ -387,26 +388,20 @@ function ExerciseRow({
         )}
       </span>
       <span className="flex shrink-0 items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          isIconOnly
-          aria-label={`Move ${exercise.name} up`}
-          isDisabled={index === 0}
-          onPress={() => tracker.moveExercise(workout.id, exercise.id, -1)}
+        <IconButton
+          label={`Move ${exercise.name} up`}
+          disabled={index === 0}
+          onPress={() => void tracker.moveExercise(workout.id, exercise.id, -1)}
         >
-          <ArrowUp className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          isIconOnly
-          aria-label={`Move ${exercise.name} down`}
-          isDisabled={index === count - 1}
-          onPress={() => tracker.moveExercise(workout.id, exercise.id, 1)}
+          <ArrowUp />
+        </IconButton>
+        <IconButton
+          label={`Move ${exercise.name} down`}
+          disabled={index === count - 1}
+          onPress={() => void tracker.moveExercise(workout.id, exercise.id, 1)}
         >
-          <ArrowDown className="h-3.5 w-3.5" />
-        </Button>
+          <ArrowDown />
+        </IconButton>
         <RowActions
                     name={exercise.name}
                     onEdit={() => setEditing(true)}
@@ -753,48 +748,21 @@ function SetRow({
           onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
         />
 
+        {/* Three actions of one kind: bare glyphs, the same size. */}
         <span className="set-row__actions">
-          <span className="set-row__do">
-            {done ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                isIconOnly
-                className="set-row__undo"
-                aria-label={`Reopen set ${index + 1}`}
-                onPress={() => void tracker.setSetDone(exerciseId, set.id, false)}
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                isIconOnly
-                className="btn-success"
-                aria-label={`Complete set ${index + 1}`}
-                onPress={complete}
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-            )}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            isIconOnly
-            aria-label={`Duplicate set ${index + 1}`}
-            onPress={() => void tracker.duplicateSet(exerciseId, set.id)}
+          <IconButton
+            label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
+            pressed={done}
+            onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
           >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
-          <button
-            type="button"
-            className="minus-delete"
-            aria-label={`Remove set ${index + 1}`}
-            onClick={() => void tracker.removeSet(exerciseId, set.id)}
-          >
+            <CheckRing on={done} />
+          </IconButton>
+          <IconButton label={`Duplicate set ${index + 1}`} onPress={() => void tracker.duplicateSet(exerciseId, set.id)}>
+            <Copy />
+          </IconButton>
+          <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
             <MinusCircle />
-          </button>
+          </IconButton>
         </span>
       </div>
     </div>

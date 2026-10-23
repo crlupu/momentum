@@ -17,10 +17,10 @@ import { GoalRow } from "./GoalsView";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
-import { Check, ChevronRight, Plus, ReorderLines } from "./icons";
+import { ChevronRight, Plus, ReorderLines } from "./icons";
 import { GoalForm } from "./Forms";
 import { Tracker, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
-import { GENERAL, PATH_COLORS, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
+import { GENERAL, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
 
 const COLLAPSED_KEY = "momentum:paths-collapsed";
 
@@ -52,7 +52,7 @@ export function PathsView({
   const s = tracker.state!;
   // The path being edited, one at a time.
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [pathForm, setPathForm] = useState<{ id: string | null } | null>(null);
+  const [newPath, setNewPath] = useState(false);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<string[]>([]);
 
@@ -75,7 +75,7 @@ export function PathsView({
   const sections: Section[] = [
     ...s.paths.map((p) => {
       const all = goalsOf(s, p);
-      return { id: p.id, title: p.title, color: p.color ?? "var(--accent)", path: p, all, shown: all.filter(show) };
+      return { id: p.id, title: p.title, color: "var(--accent)", path: p, all, shown: all.filter(show) };
     }),
     (() => {
       const all = generalGoals(s);
@@ -85,13 +85,12 @@ export function PathsView({
   // On Active, a path with nothing active is left out; in Library every path
   // shows, empty ones too, so they can be edited.
   const visible = editable ? sections : sections.filter((x) => x.shown.length > 0);
-  const editingPath = pathForm?.id ? s.paths.find((p) => p.id === pathForm.id) : undefined;
 
   return (
     <div className="paths">
       {editable && (
         <div className="paths__bar">
-          <button type="button" className="text-action" onClick={() => setPathForm({ id: null })}>
+          <button type="button" className="text-action" onClick={() => setNewPath(true)}>
             <Plus aria-hidden /> New Path
           </button>
         </div>
@@ -171,18 +170,16 @@ export function PathsView({
           />
         )}
       </Modal>
-      <Modal open={!!pathForm} onClose={() => setPathForm(null)} title={editingPath ? "Edit Path" : "New Path"}>
-        {pathForm && (
-          <PathForm key={pathForm.id ?? "new"} tracker={tracker} path={editingPath} onDone={() => setPathForm(null)} />
-        )}
+      <Modal open={newPath} onClose={() => setNewPath(false)} title="New Path">
+        {newPath && <PathForm tracker={tracker} onDone={() => setNewPath(false)} />}
       </Modal>
     </div>
   );
 }
 
 /**
- * One path in Edit, as iOS lays out an edit screen: grouped lists. Its name
- * and colour, typed and tapped in place; its goals, each with the red ⊖ and
+ * One path in Edit, as iOS lays out an edit screen: grouped lists. Its name,
+ * typed in place; its goals, each with the red ⊖ and
  * a handle to reorder, and a green ⊕ row to add one; its place among the
  * paths; and, apart at the bottom, Delete Path in red. General has only its
  * goals. A goal moves to another path from its own Path row.
@@ -238,25 +235,6 @@ function SectionEdit({
               onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             />
           </label>
-          <div className="path-edit__row path-edit__row--colour">
-            <span className="path-edit__label">Colour</span>
-            <span className="path-edit__swatches" role="radiogroup" aria-label="Colour">
-              {PATH_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={c.toLowerCase() === (sec.path?.color ?? "").toLowerCase()}
-                  aria-label={c}
-                  className="path-edit__swatch"
-                  style={{ background: c }}
-                  onClick={() => void tracker.editPath(sec.id, { color: c })}
-                >
-                  {c.toLowerCase() === (sec.path?.color ?? "").toLowerCase() && <Check aria-hidden />}
-                </button>
-              ))}
-            </span>
-          </div>
         </div>
       )}
 
@@ -347,16 +325,14 @@ function EditGoalRow({ tracker, goal: g, color }: { tracker: Tracker; goal: Goal
   );
 }
 
-/** A path's name and colour. */
-function PathForm({ tracker, path, onDone }: { tracker: Tracker; path?: Path; onDone: () => void }) {
-  const [title, setTitle] = useState(path?.title ?? "");
-  const [color, setColor] = useState(path?.color ?? PATH_COLORS[5]);
+/** A new path: its name. */
+function PathForm({ tracker, onDone }: { tracker: Tracker; onDone: () => void }) {
+  const [title, setTitle] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     onDone();
-    if (path) await tracker.editPath(path.id, { title, color });
-    else await tracker.createPath(title, color);
+    await tracker.createPath(title);
   };
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -368,22 +344,8 @@ function PathForm({ tracker, path, onDone }: { tracker: Tracker; path?: Path; on
         className="path-form__name"
         autoFocus
       />
-      <div className="path-form__colors" role="radiogroup" aria-label="Colour">
-        {PATH_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            role="radio"
-            aria-checked={c === color}
-            aria-label={c}
-            className="path-form__swatch"
-            style={{ background: c }}
-            onClick={() => setColor(c)}
-          />
-        ))}
-      </div>
-      {!path && <p className="text-xs text-[var(--muted)]">Then, in Edit, drag goals into it from General.</p>}
-      <DialogActions primary={{ label: path ? "Save" : "Add Path", disabled: !title.trim() }} />
+      <p className="text-xs text-[var(--muted)]">Then open the path&apos;s Edit to add goals to it.</p>
+      <DialogActions primary={{ label: "Add Path", disabled: !title.trim() }} />
     </form>
   );
 }

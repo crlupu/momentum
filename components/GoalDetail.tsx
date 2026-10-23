@@ -742,7 +742,7 @@ function PathRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
         value={pathOfGoal(s, g.id)}
         onChange={(v) => void tracker.moveGoalToPath(g.id, v)}
         options={[
-          ...s.paths.map((p) => ({ value: p.id, label: p.title, color: p.color })),
+          ...s.paths.map((p) => ({ value: p.id, label: p.title })),
           { value: GENERAL, label: "General" },
         ]}
       />

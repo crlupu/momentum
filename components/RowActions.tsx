@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "./ui";
+import { IconButton } from "./IconButton";
 import { DeleteButton } from "./DeleteButton";
 import { Pencil } from "./icons";
 
 /**
- * The one pair of actions at the end of a list row: an outlined pencil and
- * the red bin, both icon-only and the same size everywhere. Either can be
+ * The one pair of actions at the end of a list row: a tinted pencil and the
+ * iOS ⊖, both bare glyphs of one size (IconButton). Either can be
  * left out. Goes inside the row's own actions group (.cfg-actions).
  */
 export function RowActions({
@@ -25,9 +25,9 @@ export function RowActions({
   return (
     <>
       {onEdit && (
-        <Button size="sm" variant="outline" isIconOnly className="btn-round" aria-label={`${editLabel} ${name}`} onPress={onEdit}>
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <IconButton label={`${editLabel} ${name}`} onPress={onEdit}>
+          <Pencil />
+        </IconButton>
       )}
       {del && <DeleteButton what={del.what} iconOnly onDelete={del.onDelete} />}
     </>
