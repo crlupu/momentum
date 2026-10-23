@@ -5,7 +5,7 @@ import { Panel } from "./Panel";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { Button, Input, AddButton, Stat } from "./ui";
-import { Trash2 } from "./icons";
+import { MinusCircle } from "./MinusCircle";
 import { useWidth } from "./useWidth";
 import { usePending } from "./ActionButton";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
@@ -400,15 +400,14 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
               onChange={(e) => set(i, { kg: e.target.value })}
               className="w-24 shrink-0"
             />
-            <Button
-              variant="ghost"
-              isIconOnly
-              className="btn-delete-bare shrink-0"
+            <button
+              type="button"
+              className="minus-delete"
               aria-label="Remove checkpoint"
-              onPress={() => setRows((rs) => rs.filter((_, j) => j !== i))}
+              onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+              <MinusCircle />
+            </button>
           </li>
         ))}
       </ul>

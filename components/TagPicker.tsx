@@ -1,7 +1,8 @@
 "use client";
 
 import { KeyboardEvent, useState } from "react";
-import { Check, Plus, Trash2 } from "./icons";
+import { Check, Plus } from "./icons";
+import { MinusCircle } from "./MinusCircle";
 import { Tracker } from "@/lib/tracker";
 import type { Project, ProjectTag } from "@/lib/projects";
 
@@ -114,7 +115,7 @@ export function TagManager({ tracker, project }: { tracker: Tracker; project: Pr
                 aria-label={`Delete the tag ${t.name}`}
                 onClick={() => void tracker.deleteProjectTag(project.id, t.id)}
               >
-                <Trash2 aria-hidden />
+                <MinusCircle size={18} />
               </button>
             </li>
           ))}

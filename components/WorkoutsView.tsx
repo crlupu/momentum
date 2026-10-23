@@ -1,6 +1,7 @@
 "use client";
 
 import { RepeatSelect } from "./RepeatSelect";
+import { MinusCircle } from "./MinusCircle";
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Input, AddButton } from "./ui";
 import {
@@ -12,7 +13,6 @@ import {
   ChevronRight,
   CheckCircle2,
   Info,
-  Trash2,
   Copy } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -787,16 +787,14 @@ function SetRow({
           >
             <Copy className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            isIconOnly
-            className="btn-delete-bare"
+          <button
+            type="button"
+            className="minus-delete"
             aria-label={`Remove set ${index + 1}`}
-            onPress={() => void tracker.removeSet(exerciseId, set.id)}
+            onClick={() => void tracker.removeSet(exerciseId, set.id)}
           >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+            <MinusCircle />
+          </button>
         </span>
       </div>
     </div>

@@ -14,13 +14,12 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GoalRow } from "./GoalsView";
-import { ProgressRing } from "./ProgressRing";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
-import { ChevronRight, Plus, ReorderLines } from "./icons";
+import { Check, ChevronRight, Plus, ReorderLines } from "./icons";
 import { GoalForm } from "./Forms";
-import { Tracker, goalPct, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
+import { Tracker, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
 import { GENERAL, PATH_COLORS, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
 
 const COLLAPSED_KEY = "momentum:paths-collapsed";
@@ -130,34 +129,33 @@ export function PathsView({
                   </button>
                 )}
               </div>
-              <div className="card path__card">
-                <div className="path__summary">
-                  <div className="progress-track h-1">
-                    <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
+              {editing ? (
+                <SectionEdit
+                  tracker={tracker}
+                  section={sec}
+                  onAdd={() => setAddingTo(sec.id)}
+                  onDeleted={() => setEditingId(null)}
+                />
+              ) : (
+                <div className="card path__card">
+                  <div className="path__summary">
+                    <div className="progress-track h-1">
+                      <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
+                    </div>
+                    <span className="path__figure">
+                      {prog.done} of {prog.total} items · {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
+                      {sec.all.length === 1 ? "goal" : "goals"}
+                    </span>
                   </div>
-                  <span className="path__figure">
-                    {prog.done} of {prog.total} items · {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
-                    {sec.all.length === 1 ? "goal" : "goals"}
-                  </span>
-                </div>
-                {editing ? (
-                  <SectionEdit
-                    tracker={tracker}
-                    section={sec}
-                    onAdd={() => setAddingTo(sec.id)}
-                    onEditPath={() => setPathForm({ id: sec.id })}
-                    onDeleted={() => setEditingId(null)}
-                  />
-                ) : (
-                  open && (
+                  {open && (
                     <ul className="goal-list__rows">
                       {sec.shown.map((g) => (
                         <GoalRow key={g.id} tracker={tracker} goal={g} onOpen={onOpen} inTopic color={sec.color} />
                       ))}
                     </ul>
-                  )
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </section>
           );
         })
@@ -183,24 +181,25 @@ export function PathsView({
 }
 
 /**
- * One path in Edit: its own actions (rename and colour, move, delete) for a
- * path you made, its goals with a handle to reorder them and a delete, and a
- * row to add a goal to it. A goal moves to another path from its Path row.
+ * One path in Edit, as iOS lays out an edit screen: grouped lists. Its name
+ * and colour, typed and tapped in place; its goals, each with the red ⊖ and
+ * a handle to reorder, and a green ⊕ row to add one; its place among the
+ * paths; and, apart at the bottom, Delete Path in red. General has only its
+ * goals. A goal moves to another path from its own Path row.
  */
 function SectionEdit({
   tracker,
   section: sec,
   onAdd,
-  onEditPath,
   onDeleted,
 }: {
   tracker: Tracker;
   section: Section;
   onAdd: () => void;
-  onEditPath: () => void;
   onDeleted: () => void;
 }) {
   const s = tracker.state!;
+  const [name, setName] = useState(sec.title);
   // Touch waits a moment before lifting a row, so scrolling past a handle doesn't pick it up.
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -219,33 +218,91 @@ function SectionEdit({
     if (from < 0 || to < 0) return;
     void tracker.arrangeLearning([{ pathId: sec.id, goalIds: arrayMove(ids, from, to) }]);
   };
+  const saveName = () => {
+    if (name.trim() && name.trim() !== sec.title) void tracker.editPath(sec.id, { title: name });
+    else setName(sec.title);
+  };
 
   return (
     <div className="path-edit">
       {sec.path && (
-        <div className="path-edit__actions">
-          <button type="button" className="text-action text-action--sm" onClick={onEditPath}>
-            Rename or Recolor
+        <div className="card path-edit__group">
+          <label className="path-edit__row">
+            <span className="path-edit__label">Name</span>
+            <input
+              className="path-edit__name"
+              aria-label="Path name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            />
+          </label>
+          <div className="path-edit__row path-edit__row--colour">
+            <span className="path-edit__label">Colour</span>
+            <span className="path-edit__swatches" role="radiogroup" aria-label="Colour">
+              {PATH_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={c.toLowerCase() === (sec.path?.color ?? "").toLowerCase()}
+                  aria-label={c}
+                  className="path-edit__swatch"
+                  style={{ background: c }}
+                  onClick={() => void tracker.editPath(sec.id, { color: c })}
+                >
+                  {c.toLowerCase() === (sec.path?.color ?? "").toLowerCase() && <Check aria-hidden />}
+                </button>
+              ))}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="card path-edit__group">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <ul className="paths-edit">
+              {goals.map((g) => (
+                <EditGoalRow key={g.id} tracker={tracker} goal={g} color={sec.color} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+        <button type="button" className="path-edit__add" onClick={onAdd}>
+          <svg viewBox="0 0 22 22" width="22" height="22" aria-hidden>
+            <circle cx="11" cy="11" r="10" fill="var(--ios-green, #34c759)" />
+            <path d="M11 6.5v9M6.5 11h9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          Add Goal
+        </button>
+      </div>
+      <p className="path-edit__footer">Drag ≡ to reorder. To move a goal to another path, open it and change its Path.</p>
+
+      {sec.path && s.paths.length > 1 && (
+        <div className="card path-edit__group">
+          <button type="button" className="path-edit__link" disabled={i <= 0} onClick={() => void tracker.movePath(sec.id, -1)}>
+            Move Path Up
           </button>
           <button
             type="button"
-            className="text-action text-action--sm"
-            disabled={i <= 0}
-            onClick={() => void tracker.movePath(sec.id, -1)}
-          >
-            Move Up
-          </button>
-          <button
-            type="button"
-            className="text-action text-action--sm"
+            className="path-edit__link"
             disabled={i >= s.paths.length - 1}
             onClick={() => void tracker.movePath(sec.id, 1)}
           >
-            Move Down
+            Move Path Down
           </button>
+        </div>
+      )}
+
+      {sec.path && (
+        <div className="card path-edit__group">
           <DeleteButton
             what={`the path "${sec.title}" (its goals go back to General)`}
             label="Delete Path"
+            fullWidth
+            className="path-edit__delete"
             onDelete={async () => {
               onDeleted();
               return tracker.deletePath(sec.id);
@@ -253,18 +310,6 @@ function SectionEdit({
           />
         </div>
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ul className="paths-edit">
-            {goals.map((g) => (
-              <EditGoalRow key={g.id} tracker={tracker} goal={g} color={sec.color} />
-            ))}
-          </ul>
-        </SortableContext>
-      </DndContext>
-      <button type="button" className="path-edit__add" onClick={onAdd}>
-        <Plus aria-hidden /> Add Goal
-      </button>
     </div>
   );
 }
@@ -281,9 +326,6 @@ function EditGoalRow({ tracker, goal: g, color }: { tracker: Tracker; goal: Goal
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       <DeleteButton iconOnly what={`the goal "${g.title}"`} onDelete={() => tracker.deleteGoal(g.id)} />
-      <span className="flex-none" aria-hidden>
-        <ProgressRing pct={g.done ? 100 : goalPct(g)} color={color} size={36} />
-      </span>
       <span className="paths-edit__text">
         <span className="goal-row__title">{g.title}</span>
         <span className="goal-row__meta">

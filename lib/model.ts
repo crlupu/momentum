@@ -1241,6 +1241,7 @@ export function migrate(raw: unknown): TrackerState {
         title: (x.title as string) ?? "",
         note: (x.note as string) || undefined,
         catId: (x.catId as string) || undefined,
+        color: typeof x.color === "string" && x.color ? x.color : undefined,
         goalIds: Array.isArray(x.goalIds) ? (x.goalIds as string[]).filter((g) => typeof g === "string") : [],
       }))
     : [];
