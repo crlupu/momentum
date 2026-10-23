@@ -4281,8 +4281,8 @@ input.path-edit__name:focus { color: var(--foreground); outline: none; }
 .icon-btn:has(.icon-disc):disabled { opacity: 0.35; }
 .path-edit .paths-edit__goal:last-child { border-block-end: 0; }
 
-/* An add in the workout editor: the tint ⊕ disc and its words on a tinted capsule. */
-.insert-row { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.25rem; padding: 0.25rem 0.875rem 0.25rem 0.4375rem; border-radius: 999px; color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); font-size: 0.9375rem; font-weight: 600; }
+/* An add in the workout editor: the tint ⊕ disc and its words on a grey capsule, as Add cardio. */
+.insert-row { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.25rem; padding: 0.25rem 0.875rem 0.25rem 0.4375rem; border-radius: 999px; color: var(--foreground); background: var(--default); font-size: 0.9375rem; font-weight: 600; }
 
 .insert-row .icon-disc svg { inline-size: 0.875rem; block-size: 0.875rem; fill: #fff; }
-@media (hover: hover) { .insert-row:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); } }
+@media (hover: hover) { .insert-row:hover { background: var(--fill-hover); } }

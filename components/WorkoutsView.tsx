@@ -302,8 +302,8 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
 
 /**
  * An add in the workout editor: a white plus on the tint disc, the same as
- * the move and edit beside it, and what it adds in words, on a tinted
- * capsule like the app's other secondary actions.
+ * the move and edit beside it, and what it adds in words, on a grey
+ * capsule like Add cardio.
  */
 function InsertRow({ label, onPress }: { label: string; onPress: () => void }) {
   return (
