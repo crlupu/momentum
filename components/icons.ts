@@ -21,6 +21,7 @@ export {
   MdRemove as Minus,
   MdOpenInNew as ExternalLink,
   MdCheck as Check,
+  MdInfoOutline as Info,
   MdClose as X,
   MdEdit as Pencil,
   MdDeleteOutline as Trash2,

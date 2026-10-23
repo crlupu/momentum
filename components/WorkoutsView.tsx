@@ -11,6 +11,7 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
+  Info,
   Copy } from "./icons";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -23,6 +24,8 @@ import {
   WorkoutBlock,
   blockExercises,
   Exercise,
+  ExerciseTarget,
+  formatTarget,
   dateKey,
   ActiveWorkout,
   ActiveSet,
@@ -239,6 +242,79 @@ function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout 
 
 /* ------------------------------ exercise row ----------------------------- */
 
+type TargetDraft = { sets: string; repsMin: string; repsMax: string; kg: string; extra: string };
+
+function targetDraft(t?: ExerciseTarget): TargetDraft {
+  return {
+    sets: t ? String(t.sets) : "",
+    repsMin: t?.repsMin ? String(t.repsMin) : "",
+    repsMax: t?.repsMax ? String(t.repsMax) : "",
+    kg: t?.kg ? String(t.kg) : "",
+    extra: t?.extra ?? "",
+  };
+}
+
+/** The draft as a target, or null to clear it: no sets, no target. */
+function readTarget(d: TargetDraft): ExerciseTarget | null {
+  const n = (v: string) => {
+    const x = Number(v.replace(",", "."));
+    return Number.isFinite(x) && x > 0 ? x : undefined;
+  };
+  const sets = n(d.sets);
+  if (!sets) return null;
+  let repsMin = n(d.repsMin);
+  let repsMax = n(d.repsMax);
+  if (repsMin && repsMax && repsMax < repsMin) [repsMin, repsMax] = [repsMax, repsMin];
+  if (!repsMin && repsMax) [repsMin, repsMax] = [repsMax, undefined];
+  return {
+    sets: Math.round(sets),
+    ...(repsMin ? { repsMin: Math.round(repsMin) } : {}),
+    ...(repsMax && repsMax !== repsMin ? { repsMax: Math.round(repsMax) } : {}),
+    ...(n(d.kg) ? { kg: n(d.kg) } : {}),
+    ...(d.extra.trim() ? { extra: d.extra.trim() } : {}),
+  };
+}
+
+/**
+ * The recommendation, written the way it's said: sets × reps–reps @ kg, with
+ * a word on what the weight means when it isn't plain.
+ */
+function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: TargetDraft) => void }) {
+  const field = (key: keyof TargetDraft, label: string, placeholder: string, width: string) => (
+    <Input
+      type="text"
+      inputMode="decimal"
+      aria-label={label}
+      placeholder={placeholder}
+      value={value[key]}
+      onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+      className={`${width} shrink-0 text-center`}
+    />
+  );
+  return (
+    <div className="target-fields">
+      <span className="target-fields__label">Target</span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {field("sets", "Recommended sets", "sets", "w-14")}
+        <span className="text-[var(--muted)]">×</span>
+        {field("repsMin", "Fewest reps", "reps", "w-14")}
+        <span className="text-[var(--muted)]">–</span>
+        {field("repsMax", "Most reps", "max", "w-14")}
+        <span className="text-[var(--muted)]">@</span>
+        {field("kg", "Recommended weight in kg", "kg", "w-16")}
+        <Input
+          type="text"
+          aria-label="What the weight means"
+          placeholder="per side, assistance…"
+          value={value.extra}
+          onChange={(e) => onChange({ ...value, extra: e.target.value })}
+          className="min-w-[8rem] flex-1"
+        />
+      </div>
+    </div>
+  );
+}
+
 function ExerciseRow({
   tracker,
   workout,
@@ -254,6 +330,7 @@ function ExerciseRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(exercise.name);
   const [oneArm, setOneArm] = useState(!!exercise.oneArm);
+  const [target, setTarget] = useState(() => targetDraft(exercise.target));
   const { pending, run } = usePending();
 
   const save = async (e: FormEvent) => {
@@ -263,7 +340,7 @@ function ExerciseRow({
     // was typed, so if the write is refused it reopens with the draft intact.
     setEditing(false);
     const ok = await run(() =>
-      tracker.updateExercise(workout.id, exercise.id, name, null, oneArm)
+      tracker.updateExercise(workout.id, exercise.id, name, null, oneArm, { target: readTarget(target) })
     );
     if (!ok) setEditing(true);
   };
@@ -296,11 +373,13 @@ function ExerciseRow({
           onPress={() => {
             setName(exercise.name);
             setOneArm(!!exercise.oneArm);
+            setTarget(targetDraft(exercise.target));
             setEditing(false);
           }}
         >
           <X className="h-4 w-4" />
         </Button>
+        <TargetFields value={target} onChange={setTarget} />
         {/* Its own line: a label reading "one arm" does not abbreviate into
             the row above. */}
         <label className="exercise-onearm">
@@ -317,7 +396,12 @@ function ExerciseRow({
 
   return (
     <div className="group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0">
-      <span className="min-w-0 flex-1 truncate text-[15px]">{exercise.name}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[15px]">{exercise.name}</span>
+        {exercise.target && (
+          <span className="truncate font-mono-n text-xs text-[var(--muted)]">{formatTarget(exercise.target)}</span>
+        )}
+      </span>
       <span className="flex shrink-0 items-center gap-1">
         <Button
           size="sm"
@@ -739,6 +823,33 @@ function SetRow({
  * shows an editable row per set; once marked done it collapses to a plain
  * record of what was lifted, a line per set, with nothing left to type into.
  */
+// PREVIEW ONLY: picks the target display from ?tv=a|b|c.
+const VARIANT = () =>
+  typeof window === "undefined" ? "a" : new URLSearchParams(window.location.search).get("tv") ?? "a";
+
+/**
+ * Option C: the chip counts the sets done against the target and goes green
+ * once they're all in; a set's reps outside the range are flagged.
+ */
+function TargetProgress({ target, sets }: { target: ExerciseTarget; sets: ActiveSet[] }) {
+  const done = sets.filter((s) => s.done);
+  const met = done.length >= target.sets;
+  const lo = target.repsMin;
+  const hi = target.repsMax ?? target.repsMin;
+  const off = lo != null ? done.filter((s) => s.reps != null && (s.reps < lo || (hi != null && s.reps > hi))).length : 0;
+  return (
+    <span className={"target-chip mb-2" + (met ? " target-chip--met" : "")}>
+      <Info aria-hidden />
+      <span className="font-mono-n">
+        {done.length}/{target.sets} sets
+      </span>
+      <span aria-hidden>·</span>
+      {formatTarget({ ...target, sets: target.sets }).replace(/^\d+ (× |sets ?)/, "")}
+      {off > 0 && <span className="target-chip__off">· {off} outside range</span>}
+    </span>
+  );
+}
+
 function ExerciseBlock({
   tracker,
   exercise: e,
@@ -748,6 +859,7 @@ function ExerciseBlock({
   history: { date: string; sets: SetRecord[] } | null;
 }) {
   const [tapped, tap] = useTapFeedback();
+  const [showTarget, setShowTarget] = useState(false);
   const done = !!e.done;
   const doneCount = e.sets.filter((s) => s.done).length;
   const empty = e.sets.length === 0;
@@ -764,7 +876,20 @@ function ExerciseBlock({
         .join(" ")}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="min-w-0 truncate text-[15px]">{e.name}</span>
+          {e.target && VARIANT() === "b" && (
+            <button
+              type="button"
+              className="target-info"
+              aria-label="Recommended sets and reps"
+              aria-expanded={showTarget}
+              onClick={() => setShowTarget((v) => !v)}
+            >
+              <Info aria-hidden />
+            </button>
+          )}
+        </span>
         <span className="shrink-0 text-xs text-[var(--muted)]">
           {empty ? "no sets" : `${doneCount}/${e.sets.length} done`}
         </span>
@@ -787,6 +912,16 @@ function ExerciseBlock({
             </Button>
           ))}
       </div>
+
+      {e.target && VARIANT() === "a" && (
+        <span className="target-chip mb-2">
+          <Info aria-hidden /> {formatTarget(e.target)}
+        </span>
+      )}
+      {e.target && VARIANT() === "b" && showTarget && (
+        <span className="target-chip mb-2">{formatTarget(e.target)}</span>
+      )}
+      {e.target && VARIANT() === "c" && <TargetProgress target={e.target} sets={e.sets} />}
 
       {done ? (
         <ul className="exercise__record">

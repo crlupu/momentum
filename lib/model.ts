@@ -345,6 +345,29 @@ export const DEFAULT_MEAL_TAGS: MealTag[] = [
 export const UNTAGGED_COLOR = "#8b8e8c";
 
 /** One exercise inside a workout, with the weight it's performed at. */
+/**
+ * The recommendation for an exercise: "3 × 8–12 @ 32 kg". Every part is
+ * optional but the sets; `extra` says what the weight means when it isn't
+ * plain ("assistance", "per side").
+ */
+export type ExerciseTarget = {
+  sets: number;
+  repsMin?: number;
+  repsMax?: number;
+  kg?: number;
+  extra?: string;
+};
+
+/** A target as it reads: "3 × 8–12 @ 32 kg per side". */
+export function formatTarget(t: ExerciseTarget): string {
+  const reps =
+    t.repsMin && t.repsMax && t.repsMax !== t.repsMin
+      ? `${t.repsMin}–${t.repsMax}`
+      : t.repsMin ?? t.repsMax;
+  const weight = t.kg ? ` @ ${t.kg} kg` : "";
+  return `${t.sets}${reps ? ` × ${reps}` : " sets"}${weight}${t.extra ? `${weight ? " " : " · "}${t.extra}` : ""}`;
+}
+
 export type Exercise = {
   id: string;
   name: string;
@@ -369,6 +392,8 @@ export type Exercise = {
   seconds?: number;
   /** A cue worth remembering while doing it. Shown while it is running. */
   note?: string;
+  /** What's recommended: sets, a rep range, a weight. Shown while working out. */
+  target?: ExerciseTarget;
   /**
    * The block it belongs to, or undefined for the workout's main body. The
    * exercise list stays flat and in order — blocks group it rather than own
@@ -423,6 +448,8 @@ export type ActiveExercise = {
   blockId?: string;
   /** Copied from the definition at the start. See Exercise.oneArm. */
   oneArm?: boolean;
+  /** Copied from the definition. See Exercise.target. */
+  target?: ExerciseTarget;
   /** Copied at start, so renaming or deleting mid-session can't break it. */
   name: string;
   /** The exercise's usual weight, used as the default for new sets. */

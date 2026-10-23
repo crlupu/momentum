@@ -57,6 +57,7 @@ import type {
   Category,
   Completion,
   Exercise,
+  ExerciseTarget,
   Frequency,
   GoalStatus,
   LoggedExercise,
@@ -1274,7 +1275,7 @@ export function useTracker() {
       name: string,
       weight: number | null,
       oneArm = false,
-      extra?: { seconds?: number | null; note?: string }
+      extra?: { seconds?: number | null; note?: string; target?: ExerciseTarget | null }
     ) =>
       commit((s) => {
         const clean = name.trim();
@@ -1300,6 +1301,14 @@ export function useTracker() {
                             ? { seconds: Math.round(extra.seconds) }
                             : {}),
                           ...(extra?.note?.trim() ? { note: extra.note.trim() } : {}),
+                          // Left as it was unless the caller says otherwise; null clears it.
+                          ...(extra && "target" in extra
+                            ? extra.target
+                              ? { target: extra.target }
+                              : {}
+                            : e.target
+                              ? { target: e.target }
+                              : {}),
                           ...(e.blockId ? { blockId: e.blockId } : {}),
                         }
                   ),
@@ -1410,7 +1419,15 @@ export function useTracker() {
                 seconds: e.seconds,
                 note: e.note,
                 blockId: e.blockId,
-                sets: previous.map((set) => ({
+                target: e.target,
+                // Never done before: laid out as recommended instead.
+                sets: (previous.length
+                  ? previous
+                  : Array.from({ length: e.target?.sets ?? 0 }, () => ({
+                      weight: e.target?.kg ?? e.weight,
+                      reps: e.target?.repsMin ?? e.target?.repsMax,
+                    }))
+                ).map((set) => ({
                   id: uid(),
                   weight: set.weight,
                   reps: set.reps,
