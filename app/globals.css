@@ -4306,3 +4306,10 @@ svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
 /* The + that submits a typed entry (a to-do, a weight, kcal) is the same
    blue ⊕ disc, drawn larger, beside its field. */
 .cds--btn.btn-add.btn-icon-only:not(.btn-add--plain) { border-radius: 50% !important; }
+
+/* An exercise row in the workout editor, lifted while it is dragged by ≡. */
+.exercise-row { position: relative; background: transparent; }
+.exercise-row.is-dragging { z-index: 1; background: var(--surface); border-radius: 12px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.35); }
+.exercise-row .rd-grip { margin-inline-end: -0.625rem; }
+/* The set row's remove: iOS's dash, red on the quiet disc. */
+.set-row__actions .icon-disc--danger svg { inline-size: 1.375rem; block-size: 1.375rem; }

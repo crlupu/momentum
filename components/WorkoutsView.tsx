@@ -1,15 +1,26 @@
 "use client";
 
 import { RepeatSelect } from "./RepeatSelect";
-import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
 import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button, Input } from "./ui";
 import {
   Pencil,
-  ArrowUp,
-  ArrowDown,
+  Minus,
+  ReorderLines,
   Check,
   X,
   ChevronRight,
@@ -121,16 +132,7 @@ function BlockSection({
         </div>
       )}
 
-      {mine.map((ex) => (
-        <ExerciseRow
-          key={ex.id}
-          tracker={tracker}
-          workout={workout}
-          exercise={ex}
-          index={workout.exercises.indexOf(ex)}
-          count={workout.exercises.length}
-        />
-      ))}
+      <SortableExercises tracker={tracker} workout={workout} exercises={mine} />
 
       {adding ? (
         <form onSubmit={add} className="mt-2 flex flex-col gap-2">
@@ -301,18 +303,57 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
   );
 }
 
+/**
+ * One list of a workout's exercises (the main body, or a block), reordered
+ * by dragging a row's ≡ handle.
+ */
+function SortableExercises({
+  tracker,
+  workout,
+  exercises }: {
+  tracker: Tracker;
+  workout: Workout;
+  exercises: Exercise[];
+}) {
+  // Touch waits a moment before lifting a row, so scrolling past a handle doesn't pick it up.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const ids = exercises.map((e) => e.id);
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    void tracker.reorderExercises(workout.id, arrayMove(ids, from, to));
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <div>
+          {exercises.map((ex) => (
+            <ExerciseRow key={ex.id} tracker={tracker} workout={workout} exercise={ex} />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
 function ExerciseRow({
   tracker,
   workout,
-  exercise,
-  index,
-  count }: {
+  exercise }: {
   tracker: Tracker;
   workout: Workout;
   exercise: Exercise;
-  index: number;
-  count: number;
 }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: exercise.id,
+  });
+  const dragStyle = { transform: CSS.Transform.toString(transform), transition };
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(exercise.name);
   const [oneArm, setOneArm] = useState(!!exercise.oneArm);
@@ -333,7 +374,12 @@ function ExerciseRow({
 
   if (editing) {
     return (
-      <form onSubmit={save} className="flex flex-wrap items-center gap-2 border-b border-foreground/10 py-2 last:border-b-0">
+      <form
+        ref={setNodeRef}
+        style={dragStyle}
+        onSubmit={save}
+        className="flex flex-wrap items-center gap-2 border-b border-foreground/10 py-2 last:border-b-0"
+      >
         <Input
           aria-label="Exercise name"
           value={name}
@@ -381,7 +427,11 @@ function ExerciseRow({
   }
 
   return (
-    <div className="group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0">
+    <div
+      ref={setNodeRef}
+      style={dragStyle}
+      className={"exercise-row group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0" + (isDragging ? " is-dragging" : "")}
+    >
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[15px]">{exercise.name}</span>
         {exercise.target && (
@@ -389,25 +439,21 @@ function ExerciseRow({
         )}
       </span>
       <span className="flex shrink-0 items-center gap-1">
-        <IconButton
-          label={`Move ${exercise.name} up`}
-          disabled={index === 0}
-          onPress={() => void tracker.moveExercise(workout.id, exercise.id, -1)}
-        >
-          <span className="icon-disc"><ArrowUp /></span>
-        </IconButton>
-        <IconButton
-          label={`Move ${exercise.name} down`}
-          disabled={index === count - 1}
-          onPress={() => void tracker.moveExercise(workout.id, exercise.id, 1)}
-        >
-          <span className="icon-disc"><ArrowDown /></span>
-        </IconButton>
         <RowActions
                     name={exercise.name}
                     onEdit={() => setEditing(true)}
                     del={{ what: `the exercise "${exercise.name}"`, onDelete: () => tracker.removeExercise(workout.id, exercise.id) }}
                   />
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          className="rd-grip"
+          aria-label={`Move ${exercise.name}`}
+          {...attributes}
+          {...listeners}
+        >
+          <ReorderLines className="h-6 w-6" />
+        </button>
       </span>
     </div>
   );
@@ -465,16 +511,7 @@ function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workou
           <div>
             {/* The main body first — exercises in no block — then each block
                 under its own heading. */}
-            {blockExercises(workout, undefined).map((ex) => (
-              <ExerciseRow
-                key={ex.id}
-                tracker={tracker}
-                workout={workout}
-                exercise={ex}
-                index={workout.exercises.indexOf(ex)}
-                count={workout.exercises.length}
-              />
-            ))}
+            <SortableExercises tracker={tracker} workout={workout} exercises={blockExercises(workout, undefined)} />
 
             {(workout.blocks ?? []).map((b) => (
               <BlockSection key={b.id} tracker={tracker} workout={workout} block={b} />
@@ -759,7 +796,7 @@ function SetRow({
             <CheckRing on={done} />
           </IconButton>
           <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
-            <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
+            <span className="icon-disc icon-disc--danger"><Minus /></span>
           </IconButton>
         </span>
       </div>
