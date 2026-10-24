@@ -29,7 +29,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
   if (s.activeWorkout) {
     const a = s.activeWorkout;
     return (
-      <section className="up-next">
+      <section className="up-next hero">
         <p className="up-next__label">In progress</p>
         <div className="up-next__head">
           <h2 className="up-next__name">{a.name}</h2>
@@ -69,7 +69,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
   const freq = repeatOf("workout", next);
 
   return (
-    <section className="up-next">
+    <section className="up-next hero">
       <p className="up-next__label">{due.length ? "Up next" : "All done for now"}</p>
       <div className="up-next__head">
         <h2 className="up-next__name">{next.name}</h2>

@@ -8,9 +8,7 @@ import {
   dateKey,
   workoutVolumeByDate,
   workoutMinutesByDate,
-  cardioMinutesByDate,
-  CAT_COLORS,
-  UNTAGGED_COLOR } from "@/lib/tracker";
+  cardioMinutesByDate } from "@/lib/tracker";
 import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
@@ -24,12 +22,6 @@ const TRACK = "var(--default)";
    second (teal). */
 const LIFT_LINE = "var(--chart-1)";
 const CARDIO_LINE = "var(--chart-2)";
-/** Each workout keeps one colour, so a bar says which workout it was. */
-function workoutColor(workoutId: string, order: string[]): string {
-  const i = order.indexOf(workoutId);
-  return i === -1 ? UNTAGGED_COLOR : CAT_COLORS[i % CAT_COLORS.length];
-}
-
 function offsetDate(days: number): Date {
   const d = new Date();
   d.setDate(d.getDate() - days);
@@ -55,9 +47,6 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
   const minsByDate = workoutMinutesByDate(s.workoutSessions);
   const cardioByDate = cardioMinutesByDate(s.cardio);
 
-  // Colours are assigned by the workout's position in the list, so they stay
-  // put as sessions accumulate.
-  const order = s.workouts.map((w) => w.id);
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const keys = days.map(dateKey);
 
@@ -89,7 +78,8 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
     charts.push({
       id: w.id,
       name: w.name,
-      colour: workoutColor(w.id, order),
+      // One colour for every workout: the chart's title names it.
+      colour: LIFT_LINE,
       values: vol,
       unit: "kg",
       // Time has a chart of its own (Duration, below): one measure per chart.
@@ -303,6 +293,7 @@ function DayChart({
   // rather than running along the floor through every rest day.
   const points = overlay.map((m, i) => ({ i, m })).filter((pt) => pt.m > 0);
   const total = values.reduce((a, b) => a + b, 0);
+  const lastDay = values.reduce((a, v, i) => (v ? i : a), -1);
 
   return (
     <Card>
@@ -328,7 +319,8 @@ function DayChart({
             <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1 px-[2px]">
               <span
                 className="font-mono-n text-[11px] font-semibold"
-                style={{ color: values[i] && !line ? "var(--foreground)" : "transparent" }}
+                // Only the highest day and the latest are labelled.
+                style={{ color: values[i] && !line && (values[i] === max || i === lastDay) ? "var(--foreground)" : "transparent" }}
               >
                 {values[i] ? values[i].toLocaleString() : ""}
               </span>
@@ -421,7 +413,10 @@ function TimeLine({
           />
         ))}
         {labels &&
-          points.map((p) => (
+          points
+            .filter((p, _, all) => p === all[all.length - 1] || p.m === Math.max(...all.map((q) => q.m)))
+            .filter((p, i, all) => all.findIndex((q) => q.m === p.m) === i || p === points[points.length - 1])
+            .map((p) => (
             <span
               key={`l${p.i}`}
               className="font-mono-n absolute -translate-x-1/2 text-[11px] font-semibold text-foreground"

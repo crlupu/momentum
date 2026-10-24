@@ -4924,3 +4924,213 @@ body { font-feature-settings: "ss01" 0; }
 /* A phase's books as rows in their own lists. */
 .phase-books .rd-phase__book { min-block-size: 3rem; padding: 0.5rem 0.75rem 0.5rem 1rem; font-size: 1rem; border-bottom: 0; }
 .phase-books .group-list > li + li .rd-phase__book { border-block-start: 1px solid var(--separator); }
+
+/* ============================================================
+   One system.
+   Six rules, so the same element is drawn the same way everywhere:
+   1. Figures are Outfit Light, in four sizes: 52 hero, 44 card, 28 sheet,
+      20 tile. Units are regular and muted. Numbers are never bold.
+   2. Buttons are pills in three sizes: large 52 (the one blue action),
+      medium 40, small 32. Icon actions are 40px circles.
+   3. One row: 56px, a 32px grey leading slot, a 16/500 title, 13px meta,
+      one trailing element.
+   4. One eyebrow (11px tracked capitals, muted), inside cards as on the
+      page. Chips are grey; a status is a 6px dot, never a tinted fill.
+   5. One surface per level; each tab opens with one dark hero card.
+   6. Charts in grey with one blue: today, or the current series.
+   ============================================================ */
+
+/* 1 · Figures */
+.fig,
+.momentum__headline,
+.weight-now__kg,
+.since-set__time,
+.stat-tile__value,
+.momentum__value,
+.goal-detail__pct,
+.book-progress__page,
+.kcal-now__fig {
+  font-family: var(--font-figure);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.momentum__headline { font-size: 3.25rem; }
+.weight-now__kg { font-size: 2.75rem; line-height: 1; }
+.weight-now--compact .weight-now__kg { font-size: 2.75rem; }
+.weight-now__unit { font-weight: 400; color: var(--muted); }
+.stat-tile__value { font-size: 1.5rem; }
+.momentum__value { font-size: 1.25rem; }
+.goal-detail__pct { font-size: 1.75rem; }
+.book-progress__page { font-size: 1.75rem; }
+.kcal-ring__num { font-weight: 300; letter-spacing: -0.02em; }
+
+/* 2 · Buttons */
+.cds--btn { min-block-size: 2.5rem; padding-inline: 1rem; font-weight: 500; }
+.cds--btn--sm { min-block-size: 2rem; padding-inline: 0.75rem; }
+@media (pointer: coarse) {
+  .cds--btn { min-block-size: 2.75rem; }
+  .cds--btn--sm { min-block-size: 2rem; }
+}
+.btn-l.cds--btn,
+.up-next__actions .cds--btn,
+.live-workout__dock .cds--btn,
+.goal-next .cds--btn { min-block-size: 3.25rem; padding-inline: 1.375rem; font-size: 1rem; border-radius: var(--r-pill); }
+.text-action,
+.text-action.text-action--sm { min-block-size: 2rem; padding: 0 0.75rem; border-radius: var(--r-pill); font-size: 0.875rem; font-weight: 500; }
+.cds--btn.btn-add.btn-add--plain,
+.btn-add.btn-add--plain,
+.head-add { border-radius: 50% !important; }
+.cds--btn.btn-add.btn-icon-only:not(.btn-add--plain) { border-radius: 50% !important; }
+.page-btn { inline-size: auto; min-block-size: 2rem; padding: 0 0.75rem; background: var(--default); color: var(--foreground); font-size: 0.875rem; }
+.page-btn svg { inline-size: 0.875rem; block-size: 0.875rem; }
+.icon-circle { inline-size: 2rem; block-size: 2rem; border-radius: 50%; background: var(--default); color: var(--foreground); }
+
+/* 3 · Rows */
+.group-row,
+.task-row,
+.goal-row,
+.next-step { min-block-size: 3.5rem; }
+.goal-row__title,
+.task-row__title,
+.next-step__title,
+.book-row .goal-row__title { font-size: 1rem; font-weight: 500; }
+.goal-row__meta,
+.task-row__sub,
+.next-step__sub { font-size: 0.8125rem; color: var(--muted); }
+.goal-row__blank { inline-size: 2rem; block-size: 2rem; border-radius: 9px; }
+.goal-row__blank svg { inline-size: 1.0625rem; block-size: 1.0625rem; }
+.area-tile,
+.settings-icon,
+.log-icon { inline-size: 2rem !important; block-size: 2rem !important; border-radius: 9px !important; background: var(--default) !important; color: var(--muted) !important; }
+.log-icon svg { fill: var(--muted) !important; }
+.book-row__cover { inline-size: 2rem; }
+.book-row__cover .book-cover--sm { width: 32px; height: 32px; border-radius: 6px; }
+
+/* 4 · Labels and chips */
+.up-next__label,
+.since-set__label,
+.live-next__label,
+.goal-next__label,
+.eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rd-flag,
+.phase-card__now,
+.weight-now__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.625rem;
+  min-block-size: 1.5rem;
+  border-radius: var(--r-pill);
+  background: var(--default) !important;
+  color: var(--foreground) !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.rd-flag::before,
+.phase-card__now::before,
+.weight-now__badge::before { content: ""; inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--rd-f, var(--faint)); }
+.phase-card__now::before { background: var(--accent); }
+.weight-now__badge.is-ahead::before, .weight-now__badge.is-on-track::before { background: var(--success); }
+.weight-now__badge.is-close::before { background: var(--warning); }
+.weight-now__badge.is-behind::before { background: var(--danger); }
+.rd-flag--done, .rd-flag--on-track { --rd-f: var(--success); }
+.cat-chip.meal-chip .cat-chip__dot { display: none; }
+.cat-chip.meal-chip { border-radius: var(--r-pill); }
+
+/* Navigation and folds are grey: blue is for what's next. */
+.back-link { color: var(--muted); font-weight: 400; }
+.back-link svg { inline-size: 1.25rem; block-size: 1.25rem; }
+.next-steps__more,
+.done-fold { color: var(--muted); }
+.live-workout__more { color: var(--foreground); }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+@media (hover: none) {
+  .group-row:hover, .goal-row:hover { background: transparent; }
+}
+
+/* 5 · Surfaces: the hero card, one per tab. */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem;
+  border-radius: 20px;
+  background: var(--hero-bg);
+  color: var(--hero-fg);
+  box-shadow: var(--pane-hairline-shadow);
+  isolation: isolate;
+}
+.hero::before { content: ""; position: absolute; z-index: -1; inline-size: 14rem; block-size: 14rem; inset-inline-end: -4.5rem; inset-block-start: -7.5rem; border-radius: 50%; background: var(--hero-shape); }
+.hero::after { content: ""; position: absolute; z-index: -1; inline-size: 4.5rem; block-size: 4.5rem; inset-inline-start: 0; inset-block-end: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent); }
+.hero .eyebrow,
+.hero .up-next__label,
+.hero .since-set__label { color: rgba(255, 255, 255, 0.6); }
+.hero .up-next__meta,
+.hero__meta { color: rgba(255, 255, 255, 0.6); }
+.hero .cds--btn--ghost,
+.hero .up-next__pick,
+.hero .hero__ghost { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.momentum { border-radius: 20px; }
+.step-list { background: var(--surface); }
+
+/* 6 · Charts: bars in the series grey, today in blue (set in the charts). */
+
+/* Education's hero: the next step. */
+.next-hero__title { margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.next-hero__meta { margin: 0.125rem 0 0; font-size: 0.875rem; }
+.next-hero__actions { display: flex; gap: 0.5rem; margin-block-start: 1rem; }
+.next-hero__actions .cds--btn { min-block-size: 2.5rem; }
+.hero__ghost { display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.5rem; padding: 0 1rem; border-radius: var(--r-pill); font-size: 0.9375rem; font-weight: 500; }
+
+/* Health's hero: the workout up next. */
+.up-next.hero { gap: 0.125rem; padding: 1.25rem; }
+.hero .up-next__name { font-size: 1.625rem; font-weight: 500; letter-spacing: -0.01em; color: #ffffff; }
+.hero .up-next__meta { font-size: 0.875rem; }
+.up-next__actions { margin-block-start: 1rem; }
+.hero .up-next__pick { inline-size: 3.25rem; block-size: 3.25rem; flex: none; border-radius: 50%; }
+
+/* Nutrition's hero: today's calories. */
+.kcal-hero__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.kcal-now__fig { margin: 0.5rem 0 0; font-size: 3rem; line-height: 1; color: #ffffff; }
+.kcal-hero .hero__meta { margin: 0.375rem 0 0; font-size: 0.875rem; }
+.kcal-hero__week { margin: 1rem 0 0 !important; padding-block-start: 0.75rem; border-block-start: 1px solid rgba(255, 255, 255, 0.08); font-size: 0.8125rem !important; }
+.row-more { display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; margin-inline-end: -0.5rem; border-radius: 50%; color: var(--faint); }
+.row-more svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+
+/* The live workout's hero: time since the last set. */
+.since-set.hero,
+.light .since-set.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 1.25rem; background: var(--hero-bg); box-shadow: var(--pane-hairline-shadow); }
+.since-set.hero .since-set__text { display: flex; flex-direction: column; gap: 0.5rem; }
+.since-set.hero .since-set__time { font-size: 3.5rem; line-height: 1; color: #ffffff; }
+.since-set.hero .since-set__what { text-align: end; font-size: 0.8125rem; line-height: 1.4; color: rgba(255, 255, 255, 0.6); white-space: normal; }
+.live-actions { display: inline-flex; align-items: center; gap: 0.5rem; }
+.live-actions .live-workout__clock { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 0.75rem; border-radius: var(--r-pill); background: var(--default); color: var(--foreground); font-size: 0.875rem; }
+.live-actions .live-workout__more { inline-size: 2rem; block-size: 2rem; border-radius: 50%; background: var(--default); }
+.live-actions .live-workout__more svg { inline-size: 1.125rem; block-size: 1.125rem; }
+
+/* Weight's head: the number with its status chip; the week's move and the
+   median sit on the line beneath, not squeezed beside it. */
+.weight-now { align-items: center; margin-block-end: 0.25rem; }
+.weight-now__badge { margin-inline-start: auto; white-space: nowrap; }
+.weight-now .flex-1,
+.weight-now__when { display: none; }
+
+/* Library's plan-and-look-back rows: grey tiles like every other row. */
+.hub-row__icon { display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; flex: none; border-radius: 9px; background: var(--default); color: var(--muted); }
+.hub-row__icon svg { inline-size: 1.0625rem; block-size: 1.0625rem; fill: currentColor; }
+
+/* Book status: a grey chip with a dot; reading takes the accent dot. */
+.rd-status { display: inline-flex; align-items: center; gap: 0.375rem; min-block-size: 1.5rem; padding: 0 0.625rem; border-radius: var(--r-pill); background: var(--default) !important; color: var(--foreground) !important; font-size: 0.75rem; font-weight: 500; }
+.rd-status::before { content: ""; inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--faint); }
+.rd-status--active::before { background: var(--accent); }
+.rd-status--paused::before { background: var(--warning); }
+.rd-status--finished::before { background: var(--success); }

@@ -23,7 +23,6 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
-  Clock,
   MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
@@ -706,7 +705,7 @@ function ExerciseBlock({
             </Button>
           ) : (
             <Button size="sm" variant="outline" className="shrink-0" onPress={finish}>
-              <Check className="h-3.5 w-3.5" /> Done
+              <Check className="h-3.5 w-3.5" /> All done
             </Button>
           ))}
       </div>
@@ -770,16 +769,35 @@ function SinceLastSet({ active }: { active: ActiveWorkout }) {
   if (!last) return null;
   const l = last as { at: number; set: number; name: string };
   return (
-    <div className="since-set" role="timer" aria-label="Time since the last set">
-      <Clock className="since-set__icon" aria-hidden />
+    <div className="since-set hero" role="timer" aria-label="Time since the last set">
       <span className="since-set__text">
         <span className="since-set__label">Since last set</span>
-        <span className="since-set__what">
-          Set {l.set} · {l.name}
-        </span>
+        <span className="since-set__time">{formatElapsed(now - l.at)}</span>
       </span>
-      <span className="since-set__time font-mono-n">{formatElapsed(now - l.at)}</span>
+      <span className="since-set__what">
+        Set {l.set}
+        <br />
+        {l.name}
+      </span>
     </div>
+  );
+}
+
+/** Beside the live workout's title: its clock and its menu. */
+export function LiveActions({ tracker, active }: { tracker: Tracker; active: ActiveWorkout }) {
+  return (
+    <span className="live-actions">
+      <span className="live-workout__clock">
+        <Elapsed startedAt={active.startedAt} />
+      </span>
+      <ActionMenu
+        label="Workout options"
+        className="live-workout__more"
+        items={[{ label: "Cancel workout", danger: true, onSelect: () => void tracker.cancelWorkout() }]}
+      >
+        <MoreHorizontal aria-hidden />
+      </ActionMenu>
+    </span>
   );
 }
 
@@ -818,20 +836,6 @@ export function ActiveWorkoutPanel({
 
   return (
     <div className="live-workout">
-      <div className="live-workout__head">
-        <span className="flex-1" />
-        <span className="live-workout__clock">
-          <Elapsed startedAt={active.startedAt} />
-        </span>
-        <ActionMenu
-          label="Workout options"
-          className="live-workout__more"
-          items={[{ label: "Cancel workout", danger: true, onSelect: () => void tracker.cancelWorkout() }]}
-        >
-          <MoreHorizontal aria-hidden />
-        </ActionMenu>
-      </div>
-
       {plain.length > 1 && (
         <div className="live-workout__chips" role="list" aria-label="Exercises">
           {plain.map((e, i) => {
@@ -852,6 +856,8 @@ export function ActiveWorkoutPanel({
         </div>
       )}
 
+      <SinceLastSet active={active} />
+
       {/* Circuit blocks are run by the clock rather than filled in by hand, so
           they get the timer instead of set rows. */}
       {circuits.map(({ block, exercises }) => (
@@ -868,8 +874,6 @@ export function ActiveWorkoutPanel({
           history={lastPerformed(sessions, shown.exerciseId)}
         />
       )}
-
-      <SinceLastSet active={active} />
 
       {upNext && (
         <button

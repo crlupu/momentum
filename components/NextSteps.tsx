@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronDown } from "./icons";
 import { usePending } from "./ActionButton";
+import { Button } from "./ui";
 import { Tracker, goalStatus, type Goal, type GoalItem } from "@/lib/tracker";
 
 /** How many steps show before the rest wait behind "Show more". */
@@ -33,9 +34,10 @@ function stepOf(g: Goal): Step | null {
 }
 
 /**
- * The next thing to do on each active goal, one row each, ticked from here.
- * At most three show, so the list never takes over the screen; the rest
- * wait behind one row. Tapping a row opens its goal.
+ * The next thing to do on each active goal. The first opens Education as its
+ * hero card, with the screen's one blue action; the others follow as rows,
+ * ticked from here, at most three before the rest wait behind one row.
+ * Tapping a row opens its goal.
  */
 export function NextSteps({ tracker, onOpen }: { tracker: Tracker; onOpen: (goalId: string) => void }) {
   const s = tracker.state!;
@@ -45,12 +47,16 @@ export function NextSteps({ tracker, onOpen }: { tracker: Tracker; onOpen: (goal
     .map(stepOf)
     .filter((x): x is Step => !!x);
   if (steps.length === 0) return null;
-  const shown = all ? steps : steps.slice(0, SHOWN);
-  const more = steps.length - SHOWN;
+  const [first, ...rest] = steps;
+  const shown = all ? rest : rest.slice(0, SHOWN);
+  const more = rest.length - SHOWN;
 
   return (
+    <>
+    <NextHero tracker={tracker} step={first} onOpen={onOpen} />
+    {rest.length > 0 && (
     <section>
-      <h2 className="panel-head__title next-steps__head">Next steps</h2>
+      <h2 className="panel-head__title next-steps__head">Then</h2>
       <ul className="group-list">
         {shown.map((st) => (
           <StepRow key={st.key} tracker={tracker} step={st} onOpen={onOpen} />
@@ -64,6 +70,33 @@ export function NextSteps({ tracker, onOpen }: { tracker: Tracker; onOpen: (goal
           </li>
         )}
       </ul>
+    </section>
+    )}
+    </>
+  );
+}
+
+/** The first next step, as the tab's hero: what it is, where it's from, and Mark done. */
+function NextHero({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onOpen: (id: string) => void }) {
+  const { pending, run } = usePending();
+  const tick = () =>
+    void run(() =>
+      step.item ? tracker.setItemDone(step.goal.id, step.item.id, true) : tracker.stepGoal(step.goal.id, 1)
+    );
+  const [from, count] = step.item ? [step.goal.title, step.sub.slice(step.goal.title.length + 3)] : [step.goal.title, step.sub];
+  return (
+    <section className="hero next-hero" aria-label="Next step">
+      <p className="eyebrow">Next step · {from}</p>
+      <p className="next-hero__title">{step.title}</p>
+      <p className="hero__meta next-hero__meta">{count}</p>
+      <div className="next-hero__actions">
+        <Button variant="primary" className="flex-1 justify-center" isDisabled={pending} onPress={tick}>
+          Mark done
+        </Button>
+        <button type="button" className="hero__ghost next-hero__open" onClick={() => onOpen(step.goal.id)}>
+          Open
+        </button>
+      </div>
     </section>
   );
 }
