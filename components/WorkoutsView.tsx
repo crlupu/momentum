@@ -1,6 +1,5 @@
 "use client";
 
-import { RepeatSelect } from "./RepeatSelect";
 import { InsertRow } from "./InsertRow";
 import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
@@ -18,7 +17,6 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input } from "./ui";
 import {
-  Pencil,
   Minus,
   ReorderLines,
   Check,
@@ -26,13 +24,11 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
-  MoreHorizontal,
-  Plus } from "./icons";
+  MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
-import { useConfigEditing } from "./ConfigCard";
 import { CircuitPlayer } from "./CircuitPlayer";
 import {
   Tracker,
@@ -42,7 +38,6 @@ import {
   Exercise,
   ExerciseTarget,
   formatTarget,
-  dateKey,
   ActiveWorkout,
   ActiveSet,
   ActiveExercise,
@@ -460,134 +455,6 @@ function ExerciseRow({
     </div>
   );
 }
-
-/* -------------------------------- workout -------------------------------- */
-
-function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
-  const [name, setName] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [newOneArm, setNewOneArm] = useState(false);
-  const { pending, run } = usePending();
-
-  const doneToday = tracker
-    .state!.workoutSessions.filter((x) => x.workoutId === workout.id && x.date === dateKey())
-    .length;
-
-  const closeAdd = () => {
-    setName("");
-    setNewOneArm(false);
-    setAdding(false);
-  };
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") closeAdd();
-  };
-
-  const addExercise = async (e: FormEvent) => {
-    e.preventDefault();
-    if (pending || !name.trim()) return;
-    const num = (v: string) => (v.trim() === "" ? null : Number(v));
-    const typed = { name, oneArm: newOneArm };
-    // Clear straight away: the row is added optimistically, so waiting on the
-    // save left the fields holding text that had already been committed.
-    setName("");
-    setNewOneArm(false);
-    // No weight: a set takes its numbers from the last time the exercise was
-    // performed, so asking for one here was asking for a figure nothing read.
-    const ok = await run(() =>
-      tracker.addExercise(workout.id, typed.name, null, typed.oneArm)
-    );
-    if (!ok) {
-      setName(typed.name);
-      setNewOneArm(typed.oneArm);
-    }
-  };
-
-  return (
-    <div>
-        {workout.exercises.length === 0 && (workout.blocks ?? []).length === 0 ? (
-          <p className="py-2 text-[15px] text-[var(--muted)]">
-            No exercises yet. Add the first one below.
-          </p>
-        ) : (
-          <div>
-            {/* The main body first — exercises in no block — then each block
-                under its own heading. */}
-            <SortableExercises tracker={tracker} workout={workout} exercises={blockExercises(workout, undefined)} />
-
-            {(workout.blocks ?? []).map((b) => (
-              <BlockSection key={b.id} tracker={tracker} workout={workout} block={b} />
-            ))}
-          </div>
-        )}
-
-        {/* Both add controls share a row with a gap. They were siblings in
-            flow, so the two buttons sat against each other with nothing
-            between them. Each form takes the full width, pushing the other
-            control onto its own line while it is open. */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-        <AddBlockRow tracker={tracker} workout={workout} />
-
-        {/* The add row never wraps: the cancel button belongs beside the field
-            it cancels, not stranded on a line of its own. The name field
-            carries min-w-0 so it is what gets squeezed. */}
-        {adding ? (
-          <form onSubmit={addExercise} className="flex w-full items-center gap-2" onKeyDown={onEscape}>
-            <Input
-              aria-label={`Add an exercise to ${workout.name}`}
-              placeholder="Bench press…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1"
-              autoFocus
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              isIconOnly
-              className="shrink-0"
-              aria-label="Add exercise"
-              isDisabled={pending}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              isIconOnly
-              className="shrink-0"
-              aria-label="Done adding exercises"
-              onPress={closeAdd}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </form>
-        ) : null}
-        {adding ? (
-          <label className="exercise-onearm">
-            <input
-              type="checkbox"
-              checked={newOneArm}
-              onChange={(e) => setNewOneArm(e.target.checked)}
-            />
-            One arm — counts double
-          </label>
-        ) : (
-          <InsertRow label="Add exercise" onPress={() => setAdding(true)} />
-        )}
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-          <span className="text-xs text-[var(--muted)]">
-            {workout.exercises.length}{" "}
-            {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            {doneToday > 0 && <span className="ml-2">· done {doneToday}× today</span>}
-          </span>
-          <span className="text-xs text-[var(--muted)]">Start it from Fitness</span>
-        </div>
-    </div>
-  );
-}
-
 
 /* ---------------------------- live workout ------------------------------- */
 
@@ -1035,193 +902,6 @@ export function ActiveWorkoutPanel({
           Finish workout
         </Button>
       </div>
-    </div>
-  );
-}
-
-/* --------------------------------- view ---------------------------------- */
-
-/** One row in the configuration list: title, then edit and delete. */
-function WorkoutRow({
-  tracker,
-  workout,
-  expanded,
-  onToggle,
-  editing }: {
-  tracker: Tracker;
-  workout: Workout;
-  expanded: boolean;
-  onToggle: () => void;
-  editing: boolean;
-}) {
-  // Renaming happens here, on the name already shown, rather than on a second
-  // copy of it inside the editor below.
-  const [renaming, setRenaming] = useState(false);
-  const [title, setTitle] = useState(workout.name);
-  const { run } = usePending();
-
-  const saveName = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    setRenaming(false);
-    const ok = await run(() => tracker.renameWorkout(workout.id, title));
-    if (ok === false) setRenaming(true);
-  };
-
-  return (
-    <div className="border-b border-foreground/10 last:border-b-0">
-      <div className="cfg-row">
-        {renaming ? (
-          <form onSubmit={saveName} className="flex min-w-0 flex-1 items-center gap-2">
-            <Input
-              aria-label="Workout name"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="min-w-0 flex-1"
-              autoFocus
-            />
-            <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save name">
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              isIconOnly
-              aria-label="Cancel rename"
-              onPress={() => {
-                setTitle(workout.name);
-                setRenaming(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </form>
-        ) : editing ? (
-          <>
-            <button
-              onClick={onToggle}
-              className="flex min-w-0 flex-1 items-center gap-2 text-left"
-              aria-expanded={expanded}
-            >
-              <ChevronRight
-                className={"h-3.5 w-3.5 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
-                aria-hidden
-              />
-              <span className="truncate text-[15px]">{workout.name}</span>
-            </button>
-            <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
-              <span aria-hidden>·</span>
-              {workout.exercises.length}{" "}
-              {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            </span>
-            <span className="cfg-actions">
-              {/* The pencil renames. Opening the workout is the row itself,
-                  which the chevron already says. */}
-              <RowActions
-                    name={workout.name} editLabel="Rename"
-                    onEdit={() => {
-                  setTitle(workout.name);
-                  setRenaming(true);
-                }}
-                    del={{ what: `the workout "${workout.name}"`, onDelete: () => tracker.removeWorkout(workout.id) }}
-                  />
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="cfg-label">{workout.name}</span>
-            <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
-              <span aria-hidden>·</span>
-              {workout.exercises.length}{" "}
-              {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            </span>
-          </>
-        )}
-      </div>
-
-      {expanded && editing && (
-        <div className="pb-3">
-          <WorkoutEditor tracker={tracker} workout={workout} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const editing = useConfigEditing();
-  const [name, setName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const { pending, run } = usePending();
-
-  const closeCreate = () => {
-    setName("");
-    setCreating(false);
-  };
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") closeCreate();
-  };
-
-  const addWorkout = async (e: FormEvent) => {
-    e.preventDefault();
-    if (pending || !name.trim()) return;
-    const typed = name;
-    closeCreate();
-    const ok = await run(() => tracker.addWorkout(typed));
-    if (!ok) {
-      setName(typed);
-      setCreating(true);
-    }
-  };
-
-  return (
-    <div>
-      {s.workouts.length === 0 && !creating ? (
-        <p className="cfg-empty">No workouts yet.</p>
-      ) : (
-        <div className={editing ? "mb-3" : undefined}>
-          {s.workouts.map((w) => (
-            <WorkoutRow
-              key={w.id}
-              tracker={tracker}
-              workout={w}
-              expanded={openId === w.id}
-              editing={editing}
-              onToggle={() => setOpenId(openId === w.id ? null : w.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      {editing && creating ? (
-        <form onSubmit={addWorkout} className="cfg-add" onKeyDown={onEscape}>
-          <Input
-            aria-label="New workout name"
-            placeholder="Push day…"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-w-[8rem] flex-1"
-            autoFocus
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            isDisabled={pending}
-          >
-            <Check className="h-4 w-4" /> Create
-          </Button>
-          <Button variant="outline" isIconOnly aria-label="Cancel" onPress={closeCreate}>
-            <X className="h-4 w-4" />
-          </Button>
-        </form>
-      ) : editing ? (
-        <InsertRow label="New workout" onPress={() => setCreating(true)} />
-      ) : null}
     </div>
   );
 }

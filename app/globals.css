@@ -4647,3 +4647,25 @@ input.mini-field:focus { outline: none; border-block-end: 2px solid var(--accent
 .arm-choice__opt[aria-checked="true"] span { color: var(--accent-text); font-weight: 400; }
 .workout-blocks { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: var(--r-card); background: var(--surface); }
 .workout-blocks > .insert-row:first-child, .workout-blocks > :first-child .insert-row { border-block-start: 0; }
+
+/* Board on a phone: one column, chosen above; each card has a menu. */
+.board-switch { margin-block-end: 0.75rem; }
+.board.board--one { display: block; overflow: visible; }
+.board.board--one .board-col { inline-size: 100%; max-inline-size: none; }
+.board-col__cards > li { position: relative; }
+.board-card__more { position: absolute; inset-block-start: 0.375rem; inset-inline-end: 0.375rem; display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: var(--r-control); color: var(--muted); }
+.board-card__more svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+@media (hover: hover) { .board-card__more:hover { background: var(--fill-hover); color: var(--foreground); } }
+.board.board--one .board-card { padding-inline-end: 2.75rem; }
+
+/* Projects: the + in the toolbar, and what's in progress on each card. */
+.goals-toolbar .head-add { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent-text); }
+.goals-toolbar .head-add svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+.project-tile__now { display: flex; align-items: baseline; gap: 0.625rem; padding-block-start: 0.625rem; border-block-start: 1px solid var(--separator); }
+.project-tile__now-label { font-size: 0.8125rem; font-weight: 500; color: var(--accent-text); }
+.project-tile__now-title { min-inline-size: 0; font-size: 0.9375rem; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Projects: the segmented control and its + share one row on a phone. */
+.goals-toolbar:has(.head-add) { flex-wrap: nowrap; }
+.goals-toolbar:has(.head-add) > .seg { flex: 1 1 auto; inline-size: auto; }
+.goals-toolbar:has(.head-add) .goals-toolbar__actions { flex: none; inline-size: auto; }
+.goals-toolbar:has(.head-add) .goals-toolbar__actions > * { flex: none; }
