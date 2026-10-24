@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Panel } from "./Panel";
 import { Card } from "./ui";
 import { usePending } from "./ActionButton";
-import { Check } from "./icons";
+import { BookOpen, Check, Dumbbell, School } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { REPEAT_LABEL, routines, type Routine } from "@/lib/routines";
 
@@ -29,7 +29,23 @@ function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
 }
 
 const KIND_ORDER = { goal: 0, book: 1, workout: 2 } as const;
+
+/** Each kind of routine is an area, with its colour and icon. */
+const AREA = {
+  goal: { cls: "area--learning", Icon: School },
+  book: { cls: "area--reading", Icon: BookOpen },
+  workout: { cls: "area--training", Icon: Dumbbell },
+} as const;
 const FREQ_ORDER = { daily: 0, weekly: 1, monthly: 2 } as const;
+
+function AreaTile({ kind }: { kind: Routine["kind"] }) {
+  const { cls, Icon } = AREA[kind];
+  return (
+    <span className={"area-tile " + cls} aria-hidden>
+      <Icon />
+    </span>
+  );
+}
 
 /**
  * The recurring list, kept by itself: active goals, books being read and
@@ -73,8 +89,8 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
               style={maxH ? { maxHeight: maxH } : undefined}
             >
               {list.map((r) => (
-                <li key={r.key} className="task-row">
-                  <RoutineCheckbox tracker={tracker} r={r} />
+                <li key={r.key} className="task-row task-row--area">
+                  <AreaTile kind={r.kind} />
                   <span className="task-row__text">
                     <span className={"task-row__title " + (r.done ? "is-done" : "")}>{r.title}</span>
                     <span className="task-row__sub">
@@ -84,6 +100,7 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                       {r.cat.name}
                     </span>
                   </span>
+                  <RoutineCheckbox tracker={tracker} r={r} />
                 </li>
               ))}
             </ul>

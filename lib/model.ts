@@ -174,8 +174,6 @@ export type Path = {
   /** What it is for, in a sentence. Optional; plenty need no explaining. */
   note?: string;
   catId?: string;
-  /** Its colour, for its goals' rings. Optional: the accent otherwise. */
-  color?: string;
   /** Its goals, in the order they are meant to be taken. */
   goalIds: string[];
 };
@@ -1197,9 +1195,7 @@ export function migrate(raw: unknown): TrackerState {
     items: migrateParts(g.parts) ? undefined : migrateItems(g.items),
     targetDate: isDateKey(g.targetDate) ? g.targetDate : undefined,
     minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
-    phaseIds: Array.isArray(g.phaseIds)
-      ? [...new Set((g.phaseIds as unknown[]).filter((x): x is string => typeof x === "string"))].slice(0, 2)
-      : undefined,
+    // Goals sit in paths, not reading phases: any phases saved on one are dropped.
     repeat: ["daily", "weekly", "monthly", "off"].includes(g.repeat as string) ? (g.repeat as Goal["repeat"]) : undefined,
     routineTicks: Array.isArray(g.routineTicks)
       ? (g.routineTicks as unknown[]).filter(isDateKey) as string[]

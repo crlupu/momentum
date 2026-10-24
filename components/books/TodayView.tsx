@@ -229,7 +229,7 @@ export function OpenBook({
         </button>
         {/* The update opens its own sheet, where the page has room and a
             number pad, rather than a squeezed box beside the title. */}
-        <button type="button" className="text-action shrink-0" onClick={() => flow.open({ kind: "log", bookId: book.id })}>
+        <button type="button" className="text-action text-action--sm shrink-0" onClick={() => flow.open({ kind: "log", bookId: book.id })}>
           Update
         </button>
       </li>

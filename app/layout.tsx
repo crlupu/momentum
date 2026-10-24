@@ -45,8 +45,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // The browser's own bars match the page ground in either appearance.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f3f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#161616" },
   ],
 };
 
@@ -54,8 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* No web fonts: the system face (SF Pro on Apple devices) is already
-            on the device, reads best at small sizes and works offline. */}
+        {/* IBM Plex is bundled with the app (app/fonts), so it works offline. */}
         {/* iOS home-screen app */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Momentum" />

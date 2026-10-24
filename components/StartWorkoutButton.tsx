@@ -25,6 +25,7 @@ export function StartWorkoutButton({ tracker }: { tracker: Tracker }) {
       <Button
         size="sm"
         variant="primary"
+        className="btn-pair"
         isDisabled={startable.length === 0}
         onPress={() => {
           // With a single workout there is nothing to choose.

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button, PanelHeader, AddButton, Stat } from "./ui";
+import { Card, Input, Button, PanelHeader, Stat } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -18,7 +18,7 @@ import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
 import { StartWorkoutButton } from "./StartWorkoutButton";
 import { ActiveWorkoutPanel } from "./WorkoutsView";
-import { ChevronRight } from "./icons";
+import { ChevronRight, Plus } from "./icons";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
@@ -139,12 +139,18 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
     <div>
       {/* Both controls sit with the chart they feed rather than in a section
           of their own. */}
+      {/* The two ways in sit on the summary only; the Training page is for
+          looking back. */}
       <PanelHeader title={summary ? "Training" : "This week"} color="var(--sec-fitness)">
-        <CardioButton tracker={tracker} />
-        <StartWorkoutButton tracker={tracker} />
+        {summary && (
+          <>
+            <CardioButton tracker={tracker} />
+            <StartWorkoutButton tracker={tracker} />
+          </>
+        )}
       </PanelHeader>
 
-      {s.activeWorkout && (
+      {summary && s.activeWorkout && (
         <div className="mb-5">
           <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />
         </div>
@@ -244,7 +250,9 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
 
   return (
     <>
-      <AddButton size="sm" secondary label="Add cardio" onPress={() => setOpen(true)} />
+      <Button size="sm" variant="ghost" className="btn-pair btn-pair--gray" onPress={() => setOpen(true)}>
+        <Plus className="h-3.5 w-3.5" /> Add cardio
+      </Button>
 
       <Modal open={open} onClose={close} title="Add cardio">
         <form onSubmit={submit} className="flex flex-col gap-3">

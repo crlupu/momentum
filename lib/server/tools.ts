@@ -113,7 +113,6 @@ function overview(s: TrackerState, section: string) {
       title: g.title,
       topic: goalTopic(g.id, s.paths)?.title,
       status: goalStatus(g),
-      phases: g.phaseIds?.map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean),
       progress: g.parts?.length
         ? undefined
         : g.target

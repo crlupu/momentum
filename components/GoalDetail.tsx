@@ -4,13 +4,14 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus, Trash2 } from "./icons";
+import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus } from "./icons";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
+import { GENERAL, pathOfGoal } from "@/lib/paths";
 import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
 import { goalLog, otherActiveInTopic } from "@/lib/ops";
-import { type LearningEntry } from "@/lib/model";
 import { fmtDateAuto } from "@/lib/dates";
 
 /** A number field's value, or null when empty or not a number. */
@@ -292,10 +293,9 @@ export function GoalDetail({
       </section>
       )}
 
-      <Sessions tracker={tracker} goal={g} log={log} />
-
       {/* Its category, how often it comes round in Recurring, and where it lives. */}
       <div className="step-list">
+        <PathRow tracker={tracker} goal={g} />
         <CategoryRow tracker={tracker} goal={g} />
         <div className="step-row">
           <span className="step-row__name flex-none">Repeat</span>
@@ -394,7 +394,7 @@ function StepRow({
       <li className="step-row step-row--editing">
         {onDelete && (
           <button type="button" className="step-delete" aria-label={`Delete ${name}`} onClick={() => void onDelete()}>
-            <Trash2 aria-hidden />
+            <DeleteGlyph />
           </button>
         )}
         {onName ? (
@@ -670,7 +670,7 @@ function ItemRow({
     return (
       <li className={"step-row step-row--editing item-row--editing" + (nested ? " item-row--nested" : "")}>
         <button type="button" className="step-delete" aria-label={`Delete ${i.title}`} onClick={() => void onDelete()}>
-          <Trash2 aria-hidden />
+          <DeleteGlyph />
         </button>
         <span className="item-row__fields">
           <input ref={nameRef} aria-label="Item name" placeholder="Name" className="step-field step-field--name" {...nameField} />
@@ -731,58 +731,22 @@ function Description({ text }: { text: string }) {
   );
 }
 
-/**
- * The goal's sessions, oldest first, each with its date, what moved and its
- * note. In Edit, a session can be deleted, which takes its amount back off.
- */
-function Sessions({ tracker, goal: g, log }: { tracker: Tracker; goal: Goal; log: LearningEntry[] }) {
-  const [editing, setEditing] = useState(false);
-  const [all, setAll] = useState(false);
-  if (log.length === 0) return null;
-  const shown = all ? log : log.slice(-10);
-  const partName = (id?: string) => (id ? g.parts?.find((p) => p.id === id)?.title ?? "Removed part" : null);
-  const itemName = (id?: string) => (id ? findItem(g, id)?.item.title ?? "Removed item" : null);
+/** The path the goal sits in, General if none. Picking one moves it there, at the end. */
+function PathRow({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const s = tracker.state!;
   return (
-    <section className="goal-steps" aria-label="Sessions">
-      <div className="goal-steps__head">
-        <h3 className="group-label">Sessions</h3>
-        <button type="button" className="text-action" aria-pressed={editing} onClick={() => setEditing((v) => !v)}>
-          {editing ? "Done" : "Edit"}
-        </button>
-      </div>
-      <ul className="step-list">
-        {log.length > shown.length && (
-          <li>
-            <button type="button" className="step-add" onClick={() => setAll(true)}>
-              Show all {log.length}
-            </button>
-          </li>
-        )}
-        {shown.map((e) => (
-          <li key={e.id} className="step-row session-row">
-            {editing && (
-              <button
-                type="button"
-                className="step-delete"
-                aria-label={`Delete the session of ${fmtDateAuto(e.date)}`}
-                onClick={() => void tracker.deleteLogEntry(e.id)}
-              >
-                <Trash2 aria-hidden />
-              </button>
-            )}
-            <span className="session-row__text">
-              <span className="session-row__head">
-                {fmtDateAuto(e.date)}
-                {partName(e.partId) && <> · {partName(e.partId)}</>}
-                {itemName(e.itemId) && <> · {itemName(e.itemId)}</>}
-                <span className="session-row__amount"> {e.amount > 0 ? `+${e.amount}` : e.amount}</span>
-              </span>
-              {e.note && <span className="session-row__note">{e.note}</span>}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="step-row">
+      <span className="step-row__name flex-none">Path</span>
+      <MenuSelect
+        label="Path"
+        value={pathOfGoal(s, g.id)}
+        onChange={(v) => void tracker.moveGoalToPath(g.id, v)}
+        options={[
+          ...s.paths.map((p) => ({ value: p.id, label: p.title })),
+          { value: GENERAL, label: "General" },
+        ]}
+      />
+    </div>
   );
 }
 

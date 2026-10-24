@@ -2,11 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
-import { Button, Input, PanelHeader, AddButton, Stat } from "./ui";
+import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
+import { type WeightPlan, addDays, expectedOn, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
 import Link from "next/link";
 import { ChevronRight } from "./icons";
 
@@ -31,7 +31,16 @@ function lastNDays(n: number): Date[] {
  * height, so the text stays the same size on a phone and a desktop. Days
  * without an entry are gaps the line passes over.
  */
-function WeightChart({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
+function WeightChart({
+  weights,
+  plan,
+  simple,
+}: {
+  weights: WeightEntry[];
+  plan?: WeightPlan;
+  /** Just the weight and the plan: no weekly medians. */
+  simple?: boolean;
+}) {
   const [box, measured] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
   const W = measured || 320;
@@ -42,7 +51,7 @@ function WeightChart({ weights, plan }: { weights: WeightEntry[]; plan?: WeightP
   const byDate = new Map(weights.map((w) => [w.date, w.kg]));
   const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
   const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
-  const medians = weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
+  const medians = simple ? [] : weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
   // Where the plan puts each day of the window it covers.
   const planPts = plan
     ? series.filter((p) => p.date >= plan.startDate).map((p) => ({ i: p.i, kg: expectedOn(plan, p.date) }))
@@ -221,6 +230,8 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
       </PanelHeader>
 
       <div className="card p-4 md:p-5">
+        {/* Weighed in from the summary only: one place to add a weight. */}
+        {summary && (
         <form onSubmit={submit} className="mb-3 flex gap-2">
           <Input
             type="number"
@@ -233,9 +244,22 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
           />
           <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
         </form>
+        )}
 
         {summary ? (
-          <WeightGlance tracker={tracker} />
+          <>
+            <WeightChart weights={data} plan={plan} simple />
+            <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
+              <span className="inline-block h-[2px] w-3" style={{ background: ACCENT }} aria-hidden />
+              Weight
+              {plan && (
+                <>
+                  <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
+                  Planned
+                </>
+              )}
+            </div>
+          </>
         ) : (
         <>
         <div className="mb-1 text-xs" style={{ color: LABEL }}>
@@ -312,34 +336,6 @@ function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
           })}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-/**
- * The weight at a glance, for the Fitness summary: this week's median, the
- * change from last week's, and where the plan stands, if there is one.
- */
-function WeightGlance({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const medians = weeklyMedians(s.weights);
-  const now = medians[medians.length - 1];
-  const prev = medians[medians.length - 2];
-  const plan = validPlan(s.weightPlan);
-  const check = plan ? latestCheck(plan, s.weights) : undefined;
-  if (!now) return <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet.</p>;
-  const d = prev ? Math.round((now.median - prev.median) * 10) / 10 : null;
-  return (
-    <div className="stat-grid stat-grid--3">
-      <Stat value={`${now.median.toFixed(1)} kg`} label="this week's median" />
-      <Stat
-        value={d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
-        label="from last week"
-      />
-      <Stat
-        value={check ? { ahead: "Ahead", "on-track": "On track", close: "Close", behind: "Behind" }[check.status] : "–"}
-        label={plan ? `plan, ${plan.targetKg} kg by ${fmtDate(plan.targetDate)}` : "no plan"}
-      />
     </div>
   );
 }

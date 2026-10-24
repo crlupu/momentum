@@ -1,5 +1,6 @@
 "use client";
 
+import { InsertRow } from "./InsertRow";
 import { useMemo, useState } from "react";
 import {
   DndContext,
@@ -23,7 +24,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { AddButton } from "./ui";
 import { Modal } from "./Modal";
 import { CardSheet, NewCardForm } from "./CardSheet";
 import { TagChip } from "./TagPicker";
@@ -197,7 +197,7 @@ function Column({
         </ul>
       </SortableContext>
       <div className="board-col__foot">
-        <AddButton size="sm" secondary label="Add card" onPress={onAdd} />
+        <InsertRow label="Add card" onPress={onAdd} />
       </div>
     </section>
   );

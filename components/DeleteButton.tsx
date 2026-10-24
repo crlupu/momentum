@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "./ui";
-import { Trash2 } from "./icons";
+import { DeleteGlyph } from "./DeleteGlyph";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
 import { DialogActions } from "./DialogActions";
 
 /**
- * The one delete button: a red bin (and label, unless icon-only) on a soft
- * red ground, the same everywhere. Always asks before deleting. In a pop-up
+ * The one delete button, as iOS draws it: on a row, the red trash on a quiet disc; with a label,
+ * the word in red on a soft red ground. Always asks before deleting. In a pop-up
  * it belongs in DialogActions; on a list row it is icon-only.
  */
 export function DeleteButton({
@@ -49,19 +49,20 @@ export function DeleteButton({
 
   return (
     <>
-      <Button
-        size={size}
-        variant="ghost"
-        isIconOnly={iconOnly}
-        aria-label={iconOnly ? `Delete ${what}` : undefined}
-        className={[fullWidth ? "w-full" : "", "btn-delete-bare", className]
-          .filter(Boolean)
-          .join(" ")}
-        onPress={() => setOpen(true)}
-      >
-        <Trash2 className="h-4 w-4" />
-        {!iconOnly && label}
-      </Button>
+      {iconOnly ? (
+        <button type="button" className="minus-delete" aria-label={`Delete ${what}`} onClick={() => setOpen(true)}>
+          <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
+        </button>
+      ) : (
+        <Button
+          size={size}
+          variant="ghost"
+          className={[fullWidth ? "w-full" : "", "btn-delete-bare", className].filter(Boolean).join(" ")}
+          onPress={() => setOpen(true)}
+        >
+          {label}
+        </Button>
+      )}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Confirm deletion">
         <p className="mb-1 text-[15px]">

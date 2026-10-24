@@ -3,7 +3,6 @@
 import { ReactNode } from "react";
 import { Button } from "./ui";
 import { DeleteButton } from "./DeleteButton";
-import { Trash2 } from "./icons";
 
 /**
  * The one footer for every pop-up, so they all read the same way: a delete
@@ -49,7 +48,7 @@ export function DialogActions({
           {del &&
             ("onPress" in del ? (
               <Button variant="ghost" className="btn-delete-bare" onPress={del.onPress}>
-                <Trash2 className="h-4 w-4" /> Delete
+                Delete
               </Button>
             ) : (
               <DeleteButton what={del.what} onDelete={del.onDelete} size="md" />

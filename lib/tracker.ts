@@ -818,8 +818,8 @@ export function useTracker() {
       })),
 
     // ---- learning paths ----
-    createPath: (title: string, color?: string) => commit((s) => LP.createPath(s, title, color).state),
-    editPath: (id: string, patch: { title?: string; color?: string }) => commit((s) => LP.editPath(s, id, patch)),
+    createPath: (title: string) => commit((s) => LP.createPath(s, title).state),
+    editPath: (id: string, patch: { title?: string }) => commit((s) => LP.editPath(s, id, patch)),
     deletePath: (id: string) => commit((s) => LP.deletePath(s, id)),
     movePath: (id: string, by: -1 | 1) => commit((s) => LP.movePath(s, id, by)),
     moveGoalToPath: (goalId: string, pathId: string) => commit((s) => LP.moveGoalToPath(s, goalId, pathId)),
@@ -1336,16 +1336,22 @@ export function useTracker() {
         ),
       })),
 
-    moveExercise: (workoutId: string, exerciseId: string, dir: -1 | 1) =>
+    /**
+     * Puts some of a workout's exercises (one list: the main body, or one
+     * block) in the given order. They take the same slots between them, so
+     * every other exercise stays where it is.
+     */
+    reorderExercises: (workoutId: string, ids: string[]) =>
       commit((s) => ({
         ...s,
         workouts: s.workouts.map((w) => {
           if (w.id !== workoutId) return w;
-          const i = w.exercises.findIndex((e) => e.id === exerciseId);
-          const j = i + dir;
-          if (i < 0 || j < 0 || j >= w.exercises.length) return w;
+          const slots = w.exercises.flatMap((e, i) => (ids.includes(e.id) ? [i] : []));
+          const byId = new Map(w.exercises.map((e) => [e.id, e]));
+          const moved = ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+          if (moved.length !== slots.length) return w;
           const next = [...w.exercises];
-          [next[i], next[j]] = [next[j], next[i]];
+          slots.forEach((slot, k) => (next[slot] = moved[k]));
           return { ...w, exercises: next };
         }),
       })),

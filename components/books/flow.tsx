@@ -249,78 +249,45 @@ function Gone() {
 }
 
 /**
- * Updates a book to the page you're on. The pages read are the difference
- * from where it stood, shown as the page is typed so a slip is caught before
- * it's saved; that difference is what's logged as today's reading.
- *
- * Two ways out of counting: pages skimmed can be marked as not read, and a
- * page behind the current one is a correction, which moves the book back
- * without logging anything. Entering pages read instead of a page is there
- * for when that's the number to hand.
+ * The page you're on, and nothing else. Pages since the last update are
+ * logged as read today; a page behind the current one corrects it, without
+ * logging anything.
  */
 function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   const { close, checkEnd } = useFlowFromContext();
-  const [mode, setMode] = useState<"page" | "pages">("page");
   const [value, setValue] = useState("");
-  const [skimmed, setSkimmed] = useState(false);
-  const [date, setDate] = useState(dateKey());
   const [error, setError] = useState<string | null>(null);
   const { pending, run } = usePending();
 
   const v = Number(value);
   const valid = value.trim() !== "" && Number.isFinite(v) && v >= 0;
-  const cap = (n: number) => (book.pages > 0 ? Math.min(n, book.pages) : n);
-  const diff = valid && mode === "page" ? cap(v) - book.read : 0;
-  const counts = mode === "pages" || (diff > 0 && !skimmed);
-
-  let derived = "";
-  if (valid) {
-    if (mode === "pages") derived = `Takes you to page ${cap(book.read + v)}`;
-    else if (diff > 0) derived = skimmed ? `Moves ahead ${diff} pages, not counted as read` : `${diff} page${diff === 1 ? "" : "s"} read`;
-    else if (diff < 0) derived = `Moves back ${-diff} pages — a correction, nothing is logged`;
-    else derived = `Already on page ${book.read}`;
-  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid || pending) return;
-
-    // Skimmed, or moved back: the book goes to the page, nothing is logged.
-    if (mode === "page" && !counts) {
-      if (diff === 0) {
-        setError(`Already on page ${book.read}.`);
-        return;
-      }
-      close();
-      const ok = await run(() => tracker.setCurrentPage(book.id, v));
-      if (ok) checkEnd(book.id);
-      return;
-    }
-
-    const input: R.LogInput = {
-      id: uid(),
-      date,
-      ...(mode === "page" ? { toPage: v } : { pages: v }),
-    };
-    const predicted = R.logSession(tracker.state!, book.id, input);
-    if (predicted === tracker.state) {
-      setError(mode === "page" ? `Already on page ${book.read}.` : "Nothing to log.");
+    const page = book.pages > 0 ? Math.min(v, book.pages) : v;
+    if (page === book.read) {
+      setError(`Already on page ${book.read}.`);
       return;
     }
     close();
-    const ok = await run(() => tracker.logReading(book.id, input));
+    const ok = await run(() =>
+      page > book.read
+        ? tracker.logReading(book.id, { id: uid(), date: dateKey(), toPage: page })
+        : tracker.setCurrentPage(book.id, page)
+    );
     if (ok) checkEnd(book.id);
   };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label={mode === "page" ? "Page you're on" : "Pages read"}>
+      <Field label="Page you're on">
         <input
           type="number"
           inputMode="numeric"
           min={0}
-          max={mode === "page" && book.pages > 0 ? book.pages : undefined}
-          placeholder={mode === "page" ? `Now on ${book.read}${book.pages > 0 ? ` of ${book.pages}` : ""}` : "e.g. 25"}
+          max={book.pages > 0 ? book.pages : undefined}
+          placeholder={`Now on ${book.read}${book.pages > 0 ? ` of ${book.pages}` : ""}`}
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
@@ -330,35 +297,11 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
           className="w-full rd-page-input"
         />
       </Field>
-      <p className={"rd-derived" + (valid && counts && (mode === "pages" || diff > 0) ? " is-counted" : "")}>
-        {error ? <span style={{ color: "var(--danger)" }}>{error}</span> : derived || "\u00a0"}
-      </p>
-
-      {mode === "page" && diff > 0 && (
-        <label className="rd-skim">
-          <input type="checkbox" checked={skimmed} onChange={(e) => setSkimmed(e.target.checked)} />
-          Skimmed — don&apos;t count these pages as read
-        </label>
+      {error && (
+        <p className="text-sm" style={{ color: "var(--danger)" }}>
+          {error}
+        </p>
       )}
-
-      {counts && (
-        <Field label="Date">
-          <input type="date" value={date} max={dateKey()} onChange={(e) => setDate(e.target.value || dateKey())} />
-        </Field>
-      )}
-
-      <button
-        type="button"
-        className="text-action self-start"
-        onClick={() => {
-          setMode(mode === "page" ? "pages" : "page");
-          setValue("");
-          setSkimmed(false);
-          setError(null);
-        }}
-      >
-        {mode === "page" ? "Enter pages read instead" : "Enter the page you're on"}
-      </button>
       <DialogActions primary={{ label: "Save", disabled: pending || !valid }} />
     </form>
   );
