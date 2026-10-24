@@ -75,6 +75,7 @@ export {
   MdLogout as LogOut,
   MdMoreHoriz as MoreHorizontal,
   MdApps as Apps,
+  MdPersonOutline as Person,
 
   // theme
   MdLightMode as Sun,

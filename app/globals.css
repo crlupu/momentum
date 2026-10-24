@@ -5260,3 +5260,58 @@ html[data-style="signal"] .kcal-hero__week { border-color: rgba(255, 255, 255, 0
 .path__card .goal-list__rows > li + li { box-shadow: inset 4rem 0 0 var(--pane-bg), inset 0 1px 0 var(--separator); }
 .goal-row__ring { inline-size: 2.25rem; justify-content: center; }
 .goal-row__blank { inline-size: 2.25rem; block-size: 2.25rem; }
+
+/* ============================================================
+   Settings, by area.
+   Phone: the list, or one page. Desktop: the list on the left, the page
+   beside it.
+   ============================================================ */
+.settings { display: block; }
+.settings--page .settings__nav { display: none; }
+.settings--home .settings__page { display: none; }
+.settings__page { display: flex; flex-direction: column; gap: 1.5rem; }
+.settings__page-title { display: none; }
+@media (min-width: 66rem) {
+  .settings { display: grid; grid-template-columns: 20rem minmax(0, 1fr); gap: 2.5rem; align-items: start; }
+  .settings--page .settings__nav,
+  .settings--home .settings__page { display: flex; }
+  .settings__nav { position: sticky; inset-block-start: 1.5rem; display: block; }
+  .settings__page { max-inline-size: 40rem; }
+  /* The page's own title is the large one above; the list replaces the back link. */
+  .section-panel:has(.settings) .back-link { display: none; }
+  .settings--home .settings__nav a[href="/configuration?view=today"].group-row { background: var(--default); }
+}
+.group-row.is-current { background: var(--default); }
+html[data-style="signal"] .group-row.is-current { background: var(--button-primary); color: #ffffff; }
+html[data-style="signal"] .group-row.is-current .group-row__value,
+html[data-style="signal"] .group-row.is-current .group-row__chev,
+html[data-style="signal"] .group-row.is-current .text-\[13px\] { color: rgba(255, 255, 255, 0.8); }
+
+.settings-search { display: flex; align-items: center; gap: 0.5rem; min-block-size: 2.75rem; padding: 0 0.875rem; border-radius: 12px; background: var(--default); color: var(--faint); }
+.settings-search svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; flex: none; }
+.settings-search input { flex: 1; min-inline-size: 0; border: 0; background: transparent; color: var(--foreground); font: inherit; font-size: 1rem; outline: none; }
+.settings-search input::placeholder { color: var(--faint); }
+
+.settings-account { display: flex; align-items: center; gap: 0.875rem; padding: 1rem 1.125rem; color: var(--hero-fg); text-decoration: none; }
+.settings-account__avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; flex: none; border-radius: 50%; background: rgba(0, 0, 0, 0.22); font-size: 1.25rem; font-weight: 600; }
+.settings-account__name { font-size: 1.0625rem; font-weight: 600; }
+.settings-account__chev { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; flex: none; opacity: 0.8; }
+
+.settings-group { display: flex; flex-direction: column; }
+.settings-group__note { margin: 0.5rem 0 0; padding-inline: 0.25rem; font-size: 0.8125rem; color: var(--muted); }
+.settings-dot { inline-size: 10px; block-size: 10px; border-radius: 50%; }
+.settings-chips { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.75rem 1rem 0.875rem; border-block-start: 1px solid var(--separator); }
+.settings-chips .cat-chip { text-decoration: none; }
+.settings-stepper { display: inline-flex; align-items: center; gap: 0.125rem; flex: none; padding: 2px; border-radius: var(--r-pill); background: var(--default); }
+.settings-stepper button { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2rem; border-radius: var(--r-pill); color: var(--foreground); }
+.settings-stepper button:disabled { color: var(--faint); }
+.settings-stepper button svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.settings-stepper__value { min-inline-size: 4.75rem; text-align: center; font-size: 0.9375rem; }
+.settings-sync { padding: 1.25rem; }
+.settings-sync__state { margin: 0.5rem 0 0.25rem; font-family: var(--font-figure); font-size: 2rem; font-weight: 300; letter-spacing: -0.02em; color: var(--hero-fg); }
+
+.settings__nav .group-row__value { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-account__avatar svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
+@media (min-width: 66rem) {
+  .settings--home .settings__page-title { display: block; margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
+}
