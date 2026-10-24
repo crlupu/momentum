@@ -3,8 +3,9 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
+import { usePending } from "./ActionButton";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ExternalLink, Minus, Pencil, Plus } from "./icons";
+import { Check, ChevronDown, ChevronRight, ExternalLink, Minus, Pencil, Plus } from "./icons";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
@@ -157,7 +158,7 @@ export function GoalDetail({
     <div className="goal-detail">
       {g.note && <Description text={g.note} />}
       <div className="goal-detail__summary">
-        <ProgressRing pct={pct} color="var(--accent)" size={64} />
+        <ProgressRing pct={pct} color="var(--area-learning)" size={64} />
         <div className="min-w-0">
           <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
           {minimumReached(g) && <p className="min-badge">Minimum reached</p>}
@@ -165,6 +166,8 @@ export function GoalDetail({
           {last && <p className="goal-detail__sub">Last session: {fmtDateAuto(last.date)}</p>}
         </div>
       </div>
+
+      {status !== "done" && <NextItem tracker={tracker} goal={g} />}
 
       {/* Where it stands, changed in one tap. Two active in a topic is
           allowed; it's only pointed out. */}
@@ -294,6 +297,7 @@ export function GoalDetail({
       )}
 
       {/* Its category, how often it comes round in Recurring, and where it lives. */}
+      <h3 className="group-label goal-detail__head">Details</h3>
       <div className="step-list">
         <PathRow tracker={tracker} goal={g} />
         <CategoryRow tracker={tracker} goal={g} />
@@ -315,6 +319,61 @@ export function GoalDetail({
       />
     </div>
   );
+}
+
+/**
+ * The next thing to do on the goal: its first unticked entry, with where it
+ * lives and Mark done. A goal that only counts shows the next one of its
+ * count instead.
+ */
+function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
+  const { pending, run } = usePending();
+  const all = [...(g.items ?? []), ...(g.parts ?? []).flatMap((p) => p.items ?? [])];
+  const item = all.find((i) => !i.done);
+  if (item) {
+    const n = all.filter((i) => i.done).length + 1;
+    return (
+      <div className="next-item">
+        <p className="next-item__label">
+          Next, {n} of {all.length}
+        </p>
+        <p className="next-item__title">{item.title}</p>
+        {item.url && (
+          <a href={item.url} target="_blank" rel="noopener noreferrer" className="next-item__link">
+            {item.url.replace(/^https?:\/\/(www\.)?/, "")}
+            <ExternalLink aria-hidden />
+          </a>
+        )}
+        <Button
+          variant="primary"
+          className="w-full justify-center"
+          isDisabled={pending}
+          onPress={() => void run(() => tracker.setItemDone(g.id, item.id, true))}
+        >
+          Mark done
+        </Button>
+      </div>
+    );
+  }
+  if (!all.length && !g.parts?.length && g.target && (g.current ?? 0) < g.target) {
+    return (
+      <div className="next-item">
+        <p className="next-item__label">Next</p>
+        <p className="next-item__title">
+          {(g.current ?? 0) + 1} of {g.target}
+        </p>
+        <Button
+          variant="primary"
+          className="w-full justify-center"
+          isDisabled={pending}
+          onPress={() => void run(() => tracker.logSession(g.id, undefined, uid()))}
+        >
+          Log one
+        </Button>
+      </div>
+    );
+  }
+  return null;
 }
 
 /**
@@ -602,9 +661,13 @@ function ChecklistRows({
     void write((list) => [...list, { id, title: `Item ${list.length + 1}`, done: false }]);
     onFocus(id);
   };
+  // Ticked entries fold into one row, outside Edit, so what's left leads.
+  const [showDone, setShowDone] = useState(false);
+  const doneCount = items.filter((i) => i.done).length;
+  const shown = editing || showDone ? items : items.filter((i) => !i.done);
   return (
     <>
-      {items.map((i) => (
+      {shown.map((i) => (
         <ItemRow
           key={i.id}
           item={i}
@@ -616,6 +679,17 @@ function ChecklistRows({
           onDelete={() => write((list) => list.filter((x) => x.id !== i.id))}
         />
       ))}
+      {!editing && doneCount > 0 && (
+        <li className={partId ? "item-row--nested" : undefined}>
+          <button type="button" className="done-fold" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
+            <span className="done-fold__mark" aria-hidden>
+              <Check />
+            </span>
+            <span className="flex-1">{doneCount} done</span>
+            {showDone ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
+          </button>
+        </li>
+      )}
       {editing && (
         <li className={partId ? "item-row--nested" : undefined}>
           <button type="button" className="step-add" onClick={add}>
