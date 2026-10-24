@@ -1259,12 +1259,13 @@ export function useTracker() {
       name: string,
       weight: number | null,
       oneArm = false,
-      extra?: { seconds?: number | null; note?: string; blockId?: string }
+      extra?: { seconds?: number | null; note?: string; blockId?: string; target?: ExerciseTarget | null }
     ) =>
       commit((s) => {
         const clean = name.trim();
         if (!clean) return s;
         const ex: Exercise = { id: uid(), name: clean };
+        if (extra?.target) ex.target = extra.target;
         if (weight != null && Number.isFinite(weight) && weight > 0) ex.weight = weight;
         if (oneArm) ex.oneArm = true;
         if (extra?.seconds != null && extra.seconds > 0) ex.seconds = Math.round(extra.seconds);
@@ -1542,7 +1543,11 @@ export function useTracker() {
     setSetDone: (exerciseId: string, setId: string, done: boolean) =>
       commit((s) =>
         editSets(s, exerciseId, (sets) =>
-          sets.map((x) => (x.id === setId ? { ...x, done } : x))
+          sets.map((x) => {
+            if (x.id !== setId) return x;
+            const { doneAt: _d, ...rest } = x;
+            return done ? { ...rest, done, doneAt: Date.now() } : { ...rest, done };
+          })
         )
       ),
 
