@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
 import { routines } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
+import { Check } from "./icons";
 
 /** Past this many routines the segments would be slivers; a bar reads better. */
 const MAX_SEGMENTS = 14;
@@ -35,27 +36,47 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
-  const headline = total === 0 ? "No routines yet" : left === 0 ? "All done" : `${done} of ${total}`;
-  const detail =
-    total === 0
-      ? "Active goals, books and workouts count here."
-      : left === 0
-        ? "Every routine is ticked off."
-        : `done · ${left} to go`;
+  const allDone = total > 0 && left === 0;
 
   return (
-    <section className="momentum" aria-label="Today's momentum">
+    <section className={"momentum" + (allDone ? " momentum--done" : "")} aria-label="Today's momentum">
       <span className="momentum__shape momentum__shape--circle" aria-hidden />
       <span className="momentum__shape momentum__shape--square" aria-hidden />
       <span className="momentum__shape momentum__shape--low" aria-hidden />
-      <div className="momentum__top">
-        <p className="momentum__count">
-          <span className="font-mono-n momentum__headline">{headline}</span>
-          {total > 0 && <span className="momentum__detail">{detail}</span>}
-        </p>
-        {total === 0 && <p className="momentum__detail">{detail}</p>}
-        {total > 0 &&
-          (total <= MAX_SEGMENTS ? (
+      {total === 0 ? (
+        // Day one: what to do first, rather than a count of nothing. The
+        // Start rows below say how.
+        <div className="momentum__top">
+          <div>
+            <p className="eyebrow">Day one</p>
+            <p className="momentum__start">Start with one thing.</p>
+            <p className="momentum__detail">
+              Each goal, book or workout becomes a routine here, with its segment on this card.
+            </p>
+          </div>
+          <div className="momentum__segments" aria-hidden>
+            {Array.from({ length: 5 }, (_, i) => (
+              <span key={i} className={"momentum__seg" + (i === 0 ? " is-next" : "")} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="momentum__top">
+          {allDone && (
+            <div className="momentum__head">
+              <p className="eyebrow">Today</p>
+              <span className="momentum__badge">
+                <Check aria-hidden />
+                All done
+              </span>
+            </div>
+          )}
+          <p className="momentum__count">
+            <span className="font-mono-n momentum__headline">{`${done} of ${total}`}</span>
+            {!allDone && <span className="momentum__detail">done · {left} to go</span>}
+          </p>
+          {allDone && <p className="momentum__detail">Every routine is ticked off. See you tomorrow.</p>}
+          {total <= MAX_SEGMENTS ? (
             <div
               className="momentum__segments"
               role="img"
@@ -72,8 +93,9 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
             <div className="momentum__bar" role="img" aria-label={`${Math.round(pct * 100)}% of today's routines done`}>
               <span style={{ inlineSize: `${pct * 100}%` }} />
             </div>
-          ))}
-      </div>
+          )}
+        </div>
+      )}
 
       <ul className="momentum__figures">
         <Figure label="To do" value={openTodos.toLocaleString()} href="#todo" />

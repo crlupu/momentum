@@ -9,7 +9,9 @@ import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
 import { PathsView } from "./PathsView";
 import { NextSteps } from "./NextSteps";
-import { CalendarDays, ChevronRight, Clock } from "./icons";
+import { BookOpen, CalendarDays, ChevronRight, Clock, School } from "./icons";
+import { EmptyState } from "./EmptyState";
+import { useShell } from "./AppShell";
 import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
@@ -60,25 +62,27 @@ export function LearningHub({
       ) : view === "history" ? (
         <HistoryPage tracker={tracker} />
       ) : (
-        <Hub tracker={tracker} />
+        <Hub tracker={tracker} library={view === "library"} />
       )}
     </ReadingFlow>
   );
 }
 
-function Hub({ tracker }: { tracker: Tracker }) {
+function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
   const s = tracker.state!;
   const router = useRouter();
   const flow = useFlow();
+  const { openGoal } = useShell();
   const [tab, setTab] = useState<Tab>("active");
   const [openId, setOpenId] = useState<string | null>(null);
 
   // The view last looked at, per device. Only a convenience.
+  // A link can ask for Library (Today's "Start a book").
   useEffect(() => {
     try {
-      if (localStorage.getItem(TAB_KEY) === "library") setTab("library");
+      if (library || localStorage.getItem(TAB_KEY) === "library") setTab("library");
     } catch {}
-  }, []);
+  }, [library]);
   const choose = (t: Tab) => {
     setTab(t);
     try {
@@ -114,10 +118,28 @@ function Hub({ tracker }: { tracker: Tracker }) {
 
       {tab === "active" ? (
         <>
-          <NextSteps tracker={tracker} onOpen={setOpenId} />
+          {reading.length === 0 && !s.goals.some((g) => goalStatus(g) === "active") ? (
+            <section className="hero next-hero" aria-label="Nothing active">
+              <p className="eyebrow">Nothing active</p>
+              <p className="next-hero__title">Pick something to learn</p>
+              <p className="hero__meta next-hero__meta">A course, a certification, a book. Its next step lands here.</p>
+              <div className="next-hero__actions">
+                <Button variant="primary" className="flex-1 justify-center" onPress={openGoal}>
+                  Set a goal
+                </Button>
+                <button type="button" className="hero__ghost" onClick={() => choose("library")}>
+                  Start a book
+                </button>
+              </div>
+            </section>
+          ) : (
+            <NextSteps tracker={tracker} onOpen={setOpenId} />
+          )}
           <Panel title="Reading" bare>
             {reading.length === 0 ? (
-              <p className="card p-4 text-[15px] text-[var(--muted)]">Nothing being read. Start a book from Library.</p>
+              <EmptyState icon={<BookOpen />} title="No book open">
+                Start one from Library; its page and pace show here.
+              </EmptyState>
             ) : (
               <div className="card goal-list">
                 <ul className="goal-list__rows">
@@ -133,7 +155,11 @@ function Hub({ tracker }: { tracker: Tracker }) {
               tracker={tracker}
               statuses={["active"]}
               onOpen={setOpenId}
-              empty="Nothing active. Set a goal to Active from Library."
+              empty={
+                <EmptyState icon={<School />} title="No goals active">
+                  Set a goal to Active and its progress ring appears here.
+                </EmptyState>
+              }
             />
           </Panel>
         </>

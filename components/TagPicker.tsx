@@ -125,7 +125,7 @@ export function TagManager({ tracker, project }: { tracker: Tracker; project: Pr
         <input
           type="text"
           aria-label="New tag"
-          placeholder="New tag…"
+          placeholder="New tag"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {

@@ -298,12 +298,17 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
       <div>
         <PanelHeader title="Weight" color="var(--sec-fitness)" />
         <div className="card p-4 md:p-5">
-          {latest && (
+          {latest ? (
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <WeightNow weights={data} plan={plan} compact />
               </div>
               <Sparkline weights={data} />
+            </div>
+          ) : (
+            <div>
+              <p className="empty-state__title">Log your first weigh-in</p>
+              <p className="empty-state__text">The trend and the plan start from it.</p>
             </div>
           )}
           {/* Weighed in from the summary only: one place to add a weight. */}
@@ -312,7 +317,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
               type="number"
               step="0.1"
               aria-label="Weight in kg"
-              placeholder="Today's weight, kg"
+              placeholder="Weight, kg"
               value={kg}
               onChange={(e) => setKg(e.target.value)}
               className="flex-1"
@@ -351,7 +356,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
           </p>
         </>
       ) : (
-        <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet. Add one from Health.</p>
+        <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet. Log the first from Health.</p>
       )}
 
       <div className="segmented my-4" role="tablist" aria-label="Chart range">

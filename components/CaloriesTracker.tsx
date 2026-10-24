@@ -145,7 +145,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
                 type="number"
                 inputMode="numeric"
                 aria-label="Calories to add"
-                placeholder="Add kcal…"
+                placeholder="Add kcal"
                 value={kcal}
                 onChange={(e) => setKcal(e.target.value)}
                 className="min-w-0 flex-1"

@@ -112,7 +112,9 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
           </form>
 
           {open.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do today.</p>
+            <p className="todo-empty">
+              {left.length === 0 ? "Nothing yet. Type one above; it stays until it's done." : "Nothing due today."}
+            </p>
           ) : (
             <ul
               className={
