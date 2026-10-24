@@ -4800,6 +4800,10 @@ body { font-feature-settings: "ss01" 0; }
   .tabbar__tab { flex-direction: column; }
   .tabbar__tab svg { inline-size: 1.375rem; block-size: 1.375rem; }
 }
+/* Desktop has the sidebar; the floating tab bar is for phones and tablets. */
+@media (min-width: 66rem) {
+  .tabbar { display: none; }
+}
 .app-main { padding-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 2.5rem); }
 @media (min-width: 66rem) {
   .app-main { padding-block-end: 3rem; }
@@ -5134,3 +5138,125 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .rd-status--active::before { background: var(--accent); }
 .rd-status--paused::before { background: var(--warning); }
 .rd-status--finished::before { background: var(--success); }
+
+/* Phases: Reorder on the first track label; the verdict is quiet unless the
+   phase is behind. */
+.phase-books__reorder { margin-inline-start: 0.5rem; text-transform: none; letter-spacing: 0; }
+.phase-books__pace + .phase-books__reorder { margin-inline-start: 0.5rem; }
+.group-head .phase-books__reorder:only-of-type { margin-inline-start: auto; }
+.phase-books__hint { margin: 0 0 0.5rem; padding-inline: 0.25rem; font-size: 0.8125rem; color: var(--muted); }
+.phase-card__verdict.is-ahead,
+.phase-card__verdict.is-done { padding: 0; background: none; color: var(--success); }
+
+/* The routines list never scrolls sideways: the ticks' pulled-out hit area
+   stays inside it. */
+.routine-list { overflow-x: clip; }
+
+/* ============================================================
+   Style: Signal Blue (Settings › Appearance).
+   Pure black (or stark white in light), weight-800 titles, and the logo's
+   own gradient (#2b91ff → #0667db) on the hero cards. Blue still means the
+   next thing to do; on a blue hero, the next step is drawn in black and the
+   hero's action is white.
+   ============================================================ */
+html[data-style="signal"].dark,
+html[data-style="signal"][data-theme="dark"] {
+  --background: #000000;
+  --surface: #111111;
+  --surface-secondary: #1c1c1c;
+  --surface-tertiary: #262626;
+  --overlay: #111111;
+  --foreground: #ffffff;
+  --overlay-foreground: #ffffff;
+  --muted: #a3a3a3;
+  --faint: #5f5f5f;
+  --separator: #1f1f1f;
+  --border: #262626;
+  --border-strong: #5f5f5f;
+  --accent: #2b91ff;
+  --accent-text: #6fb3ff;
+  --accent-soft: rgba(43, 145, 255, 0.16);
+  --accent-track: #262626;
+  --default: #1c1c1c;
+  --fill-hover: #262626;
+  --selected-bg: #ffffff;
+  --selected-fg: #000000;
+  --bar-bg: rgba(17, 17, 17, 0.94);
+  --bar-border: #262626;
+  --field-bg: #000000;
+  --chart-neutral: #3a3a3a;
+  --chart-grid: #1f1f1f;
+  --done-fill: #3a3a3a;
+  --done-tick: #ffffff;
+  --button-primary: #0667db;
+  --button-primary-hover: #0558bd;
+}
+html[data-style="signal"].light,
+html[data-style="signal"][data-theme="light"] {
+  --background: #ffffff;
+  --surface: #f3f4f6;
+  --surface-secondary: #e9ebef;
+  --surface-tertiary: #dfe2e7;
+  --overlay: #ffffff;
+  --foreground: #000000;
+  --overlay-foreground: #000000;
+  --muted: #55585f;
+  --faint: #9a9da4;
+  --separator: #e2e4e8;
+  --border: #e2e4e8;
+  --accent: #0667db;
+  --accent-text: #0667db;
+  --default: #e9ebef;
+  --fill-hover: #dfe2e7;
+  --selected-bg: #000000;
+  --selected-fg: #ffffff;
+  --field-bg: #ffffff;
+  --done-fill: #000000;
+  --done-tick: #ffffff;
+  --button-primary: #0667db;
+  --button-primary-hover: #0558bd;
+}
+html[data-style="signal"] {
+  --hero-bg: linear-gradient(160deg, #2b91ff 0%, #0667db 100%);
+  --hero-fg: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.78);
+  --hero-shape: rgba(255, 255, 255, 0.1);
+}
+html[data-style="signal"] .sec-band__title { font-weight: 800; letter-spacing: -0.025em; }
+html[data-style="signal"] .momentum__shape--square,
+html[data-style="signal"] .momentum__shape--low { display: none; }
+html[data-style="signal"] .momentum__seg { background: rgba(0, 0, 0, 0.22); }
+html[data-style="signal"] .momentum__seg.is-done { background: #ffffff; }
+html[data-style="signal"] .momentum__seg.is-next { background: #000000; }
+html[data-style="signal"] .momentum__figures,
+html[data-style="signal"] .momentum__figures > li + li { border-color: rgba(255, 255, 255, 0.2); box-shadow: none; }
+html[data-style="signal"] .momentum__figures > li + li { border-inline-start: 1px solid rgba(255, 255, 255, 0.2); }
+html[data-style="signal"] .momentum__label,
+html[data-style="signal"] .momentum__detail,
+html[data-style="signal"] .hero .eyebrow,
+html[data-style="signal"] .hero .up-next__label,
+html[data-style="signal"] .hero .since-set__label,
+html[data-style="signal"] .hero .up-next__meta,
+html[data-style="signal"] .hero__meta { color: rgba(255, 255, 255, 0.8); }
+html[data-style="signal"] .hero .cds--btn--primary { background: #ffffff; color: #0667db; }
+html[data-style="signal"] .hero .cds--btn--primary svg { fill: #0667db; }
+html[data-style="signal"] .hero .hero__ghost,
+html[data-style="signal"] .hero .up-next__pick { background: rgba(0, 0, 0, 0.18); color: #ffffff; }
+html[data-style="signal"] .kcal-hero svg circle:last-child { stroke: #ffffff; }
+html[data-style="signal"] .kcal-hero__week { border-color: rgba(255, 255, 255, 0.2); }
+
+/* The style picker. */
+.style-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.style-card { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; padding: 0.875rem; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--pane-hairline-shadow), inset 0 0 0 1.5px transparent; text-align: start; color: var(--foreground); }
+.style-card[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--foreground); }
+.style-card__swatch { display: flex; inline-size: 100%; block-size: 2.25rem; border-radius: 8px; overflow: hidden; margin-block-end: 0.375rem; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.25); }
+.style-card__swatch span { flex: 1; }
+.style-card__name { font-size: 1rem; font-weight: 600; }
+.style-card__note { font-size: 0.8125rem; color: var(--muted); }
+
+/* Goal rows inside a path card: the card has no padding of its own, so the
+   row carries the same 16px inset as every other list row. */
+.path__card .goal-row { margin-inline: 0; inline-size: 100%; padding: 0.625rem 1rem; border-radius: 0; }
+.path__card .goal-list__rows > li + li { box-shadow: inset 4rem 0 0 var(--pane-bg), inset 0 1px 0 var(--separator); }
+.goal-row__ring { inline-size: 2.25rem; justify-content: center; }
+.goal-row__blank { inline-size: 2.25rem; block-size: 2.25rem; }

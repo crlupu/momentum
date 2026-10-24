@@ -185,21 +185,9 @@ function PhaseBooks({
 
   return (
     <div className="phase-books">
-      {canReorder && (
-        <div className="rd-sub-row">
-          <span className="text-xs text-[var(--muted)]">{reordering ? "Drag a book to its new place" : ""}</span>
-          <button
-            type="button"
-            className="text-action"
-            aria-pressed={reordering}
-            onClick={() => setReordering((v) => !v)}
-          >
-            {reordering ? "Done" : "Reorder"}
-          </button>
-        </div>
-      )}
+      {reordering && <p className="phase-books__hint">Drag a book to its new place.</p>}
       <div className="rd-phase__tracks">
-        {groups.map(({ t, books: list }) => (
+        {groups.map(({ t, books: list }, i) => (
           <div key={t.id}>
             <h3 className="group-head flex items-center gap-1.5">
               <TrackDot color={t.color} /> {t.name}
@@ -207,6 +195,17 @@ function PhaseBooks({
                 const v = paceText(pace.get(t.id)!, started);
                 return <span className={"phase-books__pace" + v.tone}>{v.text}</span>;
               })()}
+              {/* Reorder sits with the lists it changes, on the first label. */}
+              {i === 0 && canReorder && (
+                <button
+                  type="button"
+                  className="text-action phase-books__reorder"
+                  aria-pressed={reordering}
+                  onClick={() => setReordering((v) => !v)}
+                >
+                  {reordering ? "Done" : "Reorder"}
+                </button>
+              )}
             </h3>
             <TrackList tracker={tracker} books={list} reordering={reordering} />
           </div>

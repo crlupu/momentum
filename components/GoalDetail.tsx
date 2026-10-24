@@ -5,7 +5,7 @@ import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ChevronRight, ExternalLink, Minus, Pencil, Plus } from "./icons";
+import { Check, ChevronDown, ChevronRight, ExternalLink, Minus, Plus } from "./icons";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
@@ -74,7 +74,7 @@ export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [field.value]);
-  // A pencil after the name says it can be typed over; it fades while editing.
+  // The name is typed over in place; renaming isn't a second Edit button.
   return (
     <span className="inline-title-wrap">
     <textarea
@@ -91,7 +91,6 @@ export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }
         }
       }}
     />
-    <Pencil className="inline-title__pencil" aria-hidden onClick={() => area.current?.focus()} />
     </span>
   );
 }

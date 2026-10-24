@@ -51,3 +51,51 @@ export function ThemeSwitch({ className }: { className?: string }) {
     </div>
   );
 }
+
+/** The app's styles. Neutral is the default; Signal Blue is black (or stark white) with the logo's blue. */
+const STYLES = [
+  { value: "neutral", label: "Neutral", note: "Greys, one blue accent", swatch: ["#0b0b0c", "#1f1f22", "#024cff"] },
+  { value: "signal", label: "Signal Blue", note: "Black, the logo's blue, heavy titles", swatch: ["#000000", "#2b91ff", "#0667db"] },
+] as const;
+export const STYLE_KEY = "momentum:style";
+
+/**
+ * The style, stored per device and set on <html data-style>. The inline
+ * script in the layout applies it before the first paint, so the page never
+ * flashes in the other style.
+ */
+export function StyleSwitch() {
+  const [style, setStyle] = useState<string | null>(null);
+  useEffect(() => {
+    setStyle(document.documentElement.dataset.style || "neutral");
+  }, []);
+  const choose = (v: string) => {
+    setStyle(v);
+    document.documentElement.dataset.style = v;
+    try {
+      localStorage.setItem(STYLE_KEY, v);
+    } catch {}
+  };
+  return (
+    <div role="radiogroup" aria-label="Style" className="style-cards">
+      {STYLES.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="radio"
+          aria-checked={style === o.value}
+          onClick={() => choose(o.value)}
+          className="style-card"
+        >
+          <span className="style-card__swatch" aria-hidden>
+            {o.swatch.map((c) => (
+              <span key={c} style={{ background: c }} />
+            ))}
+          </span>
+          <span className="style-card__name">{o.label}</span>
+          <span className="style-card__note">{o.note}</span>
+        </button>
+      ))}
+    </div>
+  );
+}

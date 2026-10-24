@@ -55,6 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Outfit is bundled with the app (app/fonts), so it works offline. */}
+        {/* The chosen style (Settings › Appearance), applied before the first paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var s=localStorage.getItem("momentum:style");if(s)document.documentElement.dataset.style=s}catch(e){}`,
+          }}
+        />
         {/* iOS home-screen app */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Momentum" />
