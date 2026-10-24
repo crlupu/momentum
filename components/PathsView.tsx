@@ -75,11 +75,11 @@ export function PathsView({
   const sections: Section[] = [
     ...s.paths.map((p) => {
       const all = goalsOf(s, p);
-      return { id: p.id, title: p.title, color: "var(--accent)", path: p, all, shown: all.filter(show) };
+      return { id: p.id, title: p.title, color: "var(--area-learning)", path: p, all, shown: all.filter(show) };
     }),
     (() => {
       const all = generalGoals(s);
-      return { id: GENERAL, title: "General", color: "var(--accent)", all, shown: all.filter(show) };
+      return { id: GENERAL, title: "General", color: "var(--area-learning)", all, shown: all.filter(show) };
     })(),
   ];
   // On Active, a path with nothing active is left out; in Library every path

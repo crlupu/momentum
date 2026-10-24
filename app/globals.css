@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* IBM Plex, served from the app itself (SIL Open Font License). */
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-Regular.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-Medium.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 600 800; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -74,31 +80,19 @@
 /* ============================================================
    Colour.
 
-   Momentum is ink on paper with one colour that means one thing:
-   electric blue, #097CFB, for progress. A checkmark, a progress ring, a
-   primary button, the current tab, the fallen dominoes in the mark —
-   anything electric blue is something done or the next thing to do.
+   Carbon's Gray 10 (light) and Gray 100 (dark) themes: neutral greys that
+   step up in lightness layer by layer, and one blue for everything you can
+   act on (buttons, links, the current tab, progress). Red is destructive
+   and nothing else.
 
-   It is the same colour in light and dark: 3.6:1 as a shape on the light
-   ground and 4.3:1 on a dark card. Text and checkmarks on it are white in
-   both themes, at 4.0:1 — enough for the ticks and for bold text 19px and
-   up, a little short of the 4.5:1 AA asks of smaller button labels. No
-   colour can also be small *text* on both grounds (that would need it to
-   be darker and lighter at once), so the accent never carries text: text
-   is ink, and the accent goes to the shape, the fill or the icon beside it.
+   Each area of life has its own colour, used only for marks: a section's
+   dot, a row's tinted icon tile, a book spine. Reading is orange, learning
+   purple, training green and food pink; lists and to-dos have no area and
+   stay blue. The dark theme takes the brighter JetBrains-style values, the
+   light theme Carbon's deeper ones, so each mark holds 3:1 on its card.
 
-     ink            text and icons: #1D1D1F on light, white on dark
-     paper          the page ground and the cards on it
-     electric blue  progress, completion, the primary action
-     amber          a warning: behind pace, over budget
-     red            destructive, and nothing else
-
-   People's own data (categories, meal tags, reading tracks, book spines)
-   draws from a separate palette, --data-*, used only on small marks: a
-   dot, a chip, a spine. Every data colour sits in the same luminance
-   band, so each carries white text at 5.0:1 and still reads at 3.4:1 on
-   the dark card. There is no blue or cyan in it, so nothing can be
-   mistaken for the accent.
+   People's own data (categories, meal tags, reading tracks) keeps the
+   separate --data-* palette below.
    ============================================================ */
 :root {
   --data-indigo: #635fd9;
@@ -113,23 +107,24 @@
   --data-olive: #64761c;
   --data-slate: #646f7f;
 
-  /* Electric blue: one value for both themes. */
-  --electric: #097cfb;
 
-  /* Shape. Corners sized by what the shape holds: cards largest,
-     controls smaller, chips fully round. */
-  --r-card: 16px;
-  --r-control: 10px;
-  --r-small: 6px;
+  /* Shape, Carbon × JetBrains: one soft 8px corner for cards and controls,
+     4px for chips and tags. Only marks (dots, rings, discs) stay round. */
+  --r-card: 8px;
+  --r-control: 8px;
+  --r-small: 4px;
   --r-pill: 999px;
 
-  /* Type. The system face everywhere — SF Pro on Apple devices, Segoe UI
-     and Roboto elsewhere. Figures use the rounded variant where the
-     platform has one (SF Pro Rounded), with tabular digits. */
-  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+  /* Type: IBM Plex Sans, bundled with the app (app/fonts) so it works
+     offline; figures in the same face with tabular digits. Plex Mono is
+     kept for codes and hex values. */
+  --font-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  --font-figure: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, sans-serif;
+  --font-figure: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --button-primary: #0f62fe;
+  --button-primary-hover: #0050e6;
 
   --tabbar-h: 3.25rem;
   --sidebar-w: 15rem;
@@ -140,77 +135,75 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Paper */
-  --background: #f2f2f7;            /* the ground: iOS grouped background */
-  --surface: #ffffff;               /* cards */
-  --surface-secondary: #f2f2f7;
-  --surface-tertiary: #e6e8e5;
+  /* Carbon Gray 10: a light grey ground, white layers on it. */
+  --background: #f4f4f4;
+  --surface: #ffffff;
+  --surface-secondary: #f4f4f4;
+  --surface-tertiary: #e0e0e0;
   --overlay: #ffffff;
 
-  /* Ink */
-  --foreground: #1d1d1f;            /* 16.8:1 on white */
-  --overlay-foreground: #1d1d1f;
-  --muted: #6c6c70;                 /* iOS secondary label: 5.2:1 on white */
-  --faint: #a4a7a5;                 /* placeholders' neighbours, never body text */
+  --foreground: #161616;
+  --overlay-foreground: #161616;
+  --muted: #525252;                 /* text-secondary: 7.8:1 on white */
+  --faint: #8d8d8d;
 
-  /* Lines */
-  --separator: #e5e5ea;
-  --border: #d9dcd8;
-  --border-strong: #8b8e8c;         /* 3.3:1 on white: a control's edge */
+  --separator: #e0e0e0;
+  --border: #e0e0e0;
+  --border-strong: #8d8d8d;
 
-  /* Electric blue */
-  --accent: var(--electric);
-  --accent-text: var(--foreground);  /* the accent never carries text */
-  --accent-foreground: #ffffff;      /* 4.0:1, see above */
-  --accent-soft: rgba(9, 124, 251, 0.12);
-  --accent-soft-strong: rgba(9, 124, 251, 0.2);
-  --accent-track: rgba(120, 120, 128, 0.2);   /* iOS tertiary fill: a neutral track */
+  /* One blue does every interactive job. */
+  --accent: #0f62fe;
+  --accent-text: #0f62fe;            /* link-primary: 5.4:1 on white */
+  --accent-foreground: #ffffff;
+  --accent-soft: rgba(15, 98, 254, 0.1);
+  --accent-soft-strong: rgba(15, 98, 254, 0.18);
+  --accent-track: #e0e0e0;
 
-  /* Status */
-  --warning: #9a5b00;               /* 5.4:1 on white */
-  --warning-soft: rgba(191, 120, 0, 0.12);
-  --success: var(--accent);
-  --danger: #d0302f;                /* 5.1:1 on white */
-  --danger-hover: #b32423;
+  --warning: #8e6a00;
+  --warning-soft: rgba(241, 194, 27, 0.2);
+  --success: #24a148;
+  --danger: #da1e28;
+  --danger-hover: #b81921;
   --danger-foreground: #ffffff;
-  --danger-soft: rgba(208, 48, 47, 0.1);
-  --danger-soft-hover: rgba(208, 48, 47, 0.16);
-  --danger-soft-foreground: #d0302f;
+  --danger-soft: rgba(218, 30, 40, 0.1);
+  --danger-soft-hover: rgba(218, 30, 40, 0.16);
+  --danger-soft-foreground: #da1e28;
 
-  /* Fills for quiet controls */
-  --default: rgba(118, 122, 118, 0.12);
-  --fill-hover: rgba(118, 122, 118, 0.2);
+  --default: #e8e8e8;
+  --fill-hover: #dcdcdc;
 
   --selected-bg: var(--accent);
   --selected-fg: var(--accent-foreground);
 
-  /* Bars and elevation */
-  --bar-bg: rgba(248, 249, 247, 0.78);
-  --bar-border: rgba(0, 0, 0, 0.1);
-  --card-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --lift-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
-  --blanket: rgba(0, 0, 0, 0.28);
+  --bar-bg: rgba(255, 255, 255, 0.92);
+  --bar-border: #e0e0e0;
+  --card-shadow: none;
+  --lift-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  --blanket: rgba(22, 22, 22, 0.5);
 
-  /* Fields */
   --field-bg: #ffffff;
-  --field-border: #d4d7d3;
-  --field-placeholder: #6b6e6c;
+  --field-border: #8d8d8d;
+  --field-placeholder: #6f6f6f;
 
-  /* Charts: series one is always electric blue; a second series is teal,
-     which no status colour uses. */
   --chart-1: var(--accent);
-  --chart-2: var(--data-teal);
-  --chart-neutral: #cfd2ce;
-  --chart-grid: #e6e8e5;
+  --chart-2: #009d9a;
+  --chart-neutral: #c6c6c6;
+  --chart-grid: #e0e0e0;
+
+  /* Areas, one colour each, used for marks and tinted tiles. */
+  --area-reading: #ba4e00;
+  --area-learning: #8a3ffc;
+  --area-training: #198038;
+  --area-food: #d02670;
 
   --radius: var(--r-control);
   --pane-bg: var(--surface);
-  --pane-bg-strong: var(--surface);
+  --pane-bg-strong: var(--surface-secondary);
   --pane-border: transparent;
   --pane-hairline: var(--separator);
-  --book-unread: #d2d5d1;
-  --book-fill: var(--data-slate);
-  --book-shelf: #8a7a66;
+  --book-unread: #e0e0e0;
+  --book-fill: var(--area-reading);
+  --book-shelf: #8d8d8d;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
@@ -220,91 +213,97 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --background: #000000;
-  --surface: #1c1c1e;
-  --surface-secondary: #2c2c2e;
-  --surface-tertiary: #3a3a3c;
-  --overlay: #1c1c1e;
+  /* Carbon Gray 100: layers step up in lightness. */
+  --background: #161616;
+  --surface: #262626;
+  --surface-secondary: #393939;
+  --surface-tertiary: #525252;
+  --overlay: #262626;
 
-  --foreground: #ffffff;
-  --overlay-foreground: #ffffff;
-  --muted: #9c9e9d;                 /* 6.3:1 on a card, 7.8:1 on the ground */
-  --faint: #5f615f;
+  --foreground: #f4f4f4;
+  --overlay-foreground: #f4f4f4;
+  --muted: #c6c6c6;
+  --faint: #6f6f6f;
 
-  --separator: #2f302f;
-  --border: #38393a;
-  --border-strong: #6e706f;         /* 3.4:1 on a card */
+  --separator: #393939;
+  --border: #393939;
+  --border-strong: #6f6f6f;
 
-  --accent: var(--electric);
-  --accent-text: var(--foreground);
+  --accent: #4589ff;
+  --accent-text: #78a9ff;
   --accent-foreground: #ffffff;
-  --accent-soft: rgba(9, 124, 251, 0.22);
-  --accent-soft-strong: rgba(9, 124, 251, 0.32);
-  --accent-track: rgba(120, 120, 128, 0.36);
-  --warning: #ffc453;
-  --warning-soft: rgba(255, 196, 83, 0.14);
-  --success: var(--accent);
-  --danger: #ff6b61;
-  --danger-hover: #ff453a;
-  --danger-foreground: #ffffff;
-  --danger-soft: rgba(255, 107, 97, 0.15);
-  --danger-soft-hover: rgba(255, 107, 97, 0.22);
-  --danger-soft-foreground: #ff6b61;
+  --accent-soft: rgba(69, 137, 255, 0.18);
+  --accent-soft-strong: rgba(69, 137, 255, 0.28);
+  --accent-track: #393939;
 
-  --default: rgba(120, 120, 128, 0.24);
-  --fill-hover: rgba(120, 120, 128, 0.34);
+  --warning: #f1c21b;
+  --warning-soft: rgba(241, 194, 27, 0.16);
+  --success: #42be65;
+  --danger: #fa4d56;
+  --danger-hover: #ff6f75;
+  --danger-foreground: #ffffff;
+  --danger-soft: rgba(250, 77, 86, 0.16);
+  --danger-soft-hover: rgba(250, 77, 86, 0.24);
+  --danger-soft-foreground: #ff8389;
+
+  --default: #393939;
+  --fill-hover: #474747;
 
   --selected-bg: var(--accent);
   --selected-fg: var(--accent-foreground);
 
-  --bar-bg: rgba(18, 18, 20, 0.78);
-  --bar-border: rgba(255, 255, 255, 0.1);
+  --bar-bg: rgba(38, 38, 38, 0.94);
+  --bar-border: #393939;
   --card-shadow: none;
-  --lift-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
-  --blanket: rgba(0, 0, 0, 0.55);
+  --lift-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --blanket: rgba(0, 0, 0, 0.6);
 
-  --field-bg: #2c2c2e;
-  --field-border: #3f4040;
-  --field-placeholder: #9c9e9d;
+  --field-bg: #393939;
+  --field-border: #6f6f6f;
+  --field-placeholder: #a8a8a8;
 
   --chart-1: var(--accent);
-  --chart-2: #3cc4b6;               /* teal, lifted for the dark */
-  --chart-neutral: #3a3b3c;
-  --chart-grid: #2c2c2e;
+  --chart-2: #08bdba;
+  --chart-neutral: #525252;
+  --chart-grid: #393939;
+
+  --area-reading: #fc801d;
+  --area-learning: #8f7eff;
+  --area-training: #21d789;
+  --area-food: #ff318c;
 
   --radius: var(--r-control);
   --pane-bg: var(--surface);
   --pane-bg-strong: var(--surface-secondary);
   --pane-border: transparent;
   --pane-hairline: var(--separator);
-  --book-unread: #48494a;
-  --book-fill: var(--data-slate);
-  --book-shelf: #6b5d4d;
+  --book-unread: #525252;
+  --book-fill: var(--area-reading);
+  --book-shelf: #6f6f6f;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
 }
 
-/* Names older rules still reach for, mapped onto the scheme above.
-   Sections no longer carry colours of their own: every section speaks
-   in ink and electric blue. Used for marks (dots), never for text. */
+/* Sections take their area's colour, for marks (dots, tiles), never text.
+   Lists and to-dos have no area and stay blue. */
 :root,
 .light,
 .dark {
-  --sec-goals: var(--accent);
+  --sec-goals: var(--area-learning);
   --sec-tasks: var(--accent);
-  --sec-fitness: var(--accent);
-  --sec-nutrition: var(--accent);
-  --sec-books: var(--accent);
+  --sec-fitness: var(--area-training);
+  --sec-nutrition: var(--area-food);
+  --sec-books: var(--area-reading);
   --sec-charts: var(--accent);
   --sec-log: var(--accent);
   --sec-config: var(--accent);
   --sec-recurring: var(--accent);
   --sec-todos: var(--accent);
-  --sec-weight: var(--chart-1);
-  --sec-calories: var(--chart-1);
+  --sec-weight: var(--area-training);
+  --sec-calories: var(--area-food);
 
-  /* Heatmap ramp: electric blue, rising in strength. */
+  /* Heatmap ramp: the blue, rising in strength. */
   --scale-1: color-mix(in srgb, var(--accent) 22%, var(--surface));
   --scale-2: color-mix(in srgb, var(--accent) 42%, var(--surface));
   --scale-3: color-mix(in srgb, var(--accent) 62%, var(--surface));
@@ -499,7 +498,7 @@ body {
 /* Positive action ("mark as done"): the accent, like every other completion. */
 .btn-success.cds--btn,
 .btn-success {
-  background-color: var(--accent);
+  background-color: var(--button-primary);
   background-image: none;
   color: var(--accent-foreground);
   border-color: transparent;
@@ -508,19 +507,20 @@ body {
   .btn-success.cds--btn:hover { filter: brightness(1.1); }
 }
 
-/* Primary action: the section's tint. */
+/* Primary action: Carbon's button blue, deep enough for white labels in
+   both themes. */
 .cds--btn--primary,
 .btn-invert.cds--btn,
 .btn-invert {
   background-image: none;
-  background-color: var(--accent);
+  background-color: var(--button-primary);
   color: var(--accent-foreground);
   border: 0;
 }
 @media (hover: hover) {
   .cds--btn--primary:hover,
   .btn-invert.cds--btn:hover {
-    background-color: color-mix(in srgb, var(--accent) 88%, #000);
+    background-color: var(--button-primary-hover);
     color: var(--accent-foreground);
   }
 }
@@ -1124,7 +1124,7 @@ html.dark {
   --cds-interactive: var(--accent);
   --cds-link-primary: var(--accent-text);
   --cds-support-error: var(--danger);
-  --cds-button-primary: var(--accent);
+  --cds-button-primary: #0f62fe;
   --cds-button-secondary: var(--default);
   --cds-button-tertiary: var(--foreground);
   --cds-button-danger-primary: var(--danger);
@@ -2617,7 +2617,7 @@ html.dark {
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
 }
-.dark .segmented__item.is-on { background: #636366; }
+.dark .segmented__item.is-on { background: var(--surface-tertiary); }
 @media (pointer: coarse) {
   .segmented__item { min-block-size: 2.25rem; }
 }
@@ -3313,7 +3313,7 @@ button.rd-link:active { background: var(--default); }
   color: var(--muted);
   background: var(--default);
 }
-.board-col--doing .board-col__count { color: var(--accent-foreground); background: var(--accent); }
+.board-col--doing .board-col__count { color: var(--accent-foreground); background: var(--button-primary); }
 .board-col__cards {
   display: flex;
   min-block-size: 3.5rem;
@@ -3834,7 +3834,7 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .phase-row .step-row__name { padding-block: 0.375rem; }
 .phase-row__chips { display: flex; flex: 1 1 12rem; flex-wrap: wrap; justify-content: flex-end; gap: 0.375rem; }
 .phase-chip { min-block-size: 2rem; }
-.phase-chip[aria-pressed="true"] { background-color: var(--accent); color: #fff; }
+.phase-chip[aria-pressed="true"] { background-color: var(--button-primary); color: #fff; }
 .phase-chip:disabled { opacity: 0.4; }
 
 /* A reading phase's heading over its goals: a disclosure row. */
@@ -4216,7 +4216,7 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 .drill-row svg { inline-size: 1.25rem; block-size: 1.25rem; fill: var(--muted); }
 .cat-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .cat-chips .cat-chip { min-block-size: 2rem; padding-inline: 0.75rem; font-size: 0.875rem; }
-.cat-chips .cat-chip[aria-checked="true"] { background-color: var(--accent); color: var(--accent-foreground); }
+.cat-chips .cat-chip[aria-checked="true"] { background-color: var(--button-primary); color: var(--accent-foreground); }
 .cat-chips .cat-chip[aria-checked="true"] span { color: inherit !important; }
 
 /* A labelled delete: the word in red on a soft red capsule. Icon-only
@@ -4238,8 +4238,8 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 @media (hover: hover) { .cds--btn.btn-pair--gray:hover { background: var(--fill-hover) !important; } }
 
 /* A path in Edit: iOS grouped lists, one card per group (PathsView SectionEdit). */
-:root { --ios-green: #34c759; }
-.dark { --ios-green: #30d158; }
+:root { --ios-green: var(--success); }
+.dark { --ios-green: var(--success); }
 .path__headrow { margin-block-end: 0.875rem; }
 .path-edit { display: flex; flex-direction: column; gap: 1.25rem; }
 .path-edit__group { padding: 0; overflow: hidden; }
@@ -4256,9 +4256,9 @@ input.path-edit__name:focus { color: var(--foreground); outline: none; }
 .path-edit__link:disabled { color: var(--muted); opacity: 0.5; }
 .path-edit__delete.cds--btn.btn-delete-bare { justify-content: center; min-block-size: 2.75rem; border-radius: 0 !important; background: transparent; color: var(--ios-red); font-size: 1rem; font-weight: 400; }
 
-:root { --ios-red: #ff3b30; }
-.dark { --ios-red: #ff453a; }
-@media (prefers-color-scheme: dark) { :root:not(.light) { --ios-red: #ff453a; } }
+:root { --ios-red: var(--danger); }
+.dark { --ios-red: var(--danger); }
+@media (prefers-color-scheme: dark) { :root:not(.light) { --ios-red: var(--danger); } }
 
 /* The app's button hierarchy (iOS conventions, the app's own look):
    - Primary: filled blue. The one action that finishes or confirms (Done,
@@ -4313,3 +4313,62 @@ svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
 .exercise-row .rd-grip { margin-inline-end: -0.625rem; }
 /* The set row's remove: iOS's dash, red on the quiet disc. */
 .set-row__actions .icon-disc--danger svg { inline-size: 1.375rem; block-size: 1.375rem; }
+
+/* ============================================================
+   Carbon × JetBrains shapes. Cards and controls share one 8px corner;
+   chips and tags take 4px. Rounds stay only where the shape is a mark:
+   check rings, row discs, dots and progress tracks.
+   ============================================================ */
+.text-action,
+.cds--btn.btn-pair,
+.cds--btn.btn-add.btn-add--plain,
+.cds--btn.btn-delete-bare,
+#config .cds--btn.btn-delete-bare,
+.segmented,
+.cds--btn:not(.btn-icon-only):not(.btn-round) { border-radius: var(--r-control) !important; }
+.segmented__item { border-radius: 6px; }
+.cat-chip,
+.exercise-tag,
+.tag-chip,
+.tag-owned,
+.target-chip,
+.board-card__due,
+.board-col__count,
+.rd-status,
+.rd-target,
+.rd-flag,
+.rd-later,
+.min-badge,
+.log-kind,
+.task-row__group,
+.phase-head__now,
+.cfg-block__mode,
+.book-suggest__tag { border-radius: var(--r-small); }
+.segmented__item.is-on { box-shadow: none; }
+/* Primary buttons use Carbon's button blue, a step deeper than the
+   interactive blue, so white labels hold 4.5:1 in both themes. */
+.text-action[aria-pressed="true"] { background: var(--button-primary); color: #ffffff; }
+.text-action { color: var(--accent-text); }
+.text-action svg { fill: currentColor; }
+
+/* A row's area: a tinted square tile with the area's icon, in place of a
+   coloured dot. --area is set per row (reading, learning, training). */
+.area-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: var(--r-control);
+  color: var(--area, var(--accent));
+  background: color-mix(in srgb, var(--area, var(--accent)) 16%, transparent);
+}
+.area-tile svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+.area--reading { --area: var(--area-reading); }
+.area--learning { --area: var(--area-learning); }
+.area--training { --area: var(--area-training); }
+.area--food { --area: var(--area-food); }
+.task-row .area-tile { margin-inline-start: 0.25rem; }
+.task-row--area { padding-inline: 0.625rem 0.125rem; }
+.task-row--area + .task-row--area { box-shadow: inset 3.5rem 0 0 var(--pane-bg), inset 0 1px 0 var(--separator); }
+.task-row--area .task-row__text { flex: 1 1 auto; min-inline-size: 0; }
