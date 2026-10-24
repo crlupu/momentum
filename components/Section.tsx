@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { sectionTitle, type SectionId } from "@/components/sections";
 import { useShell } from "@/components/AppShell";
-import { MoreHorizontal } from "@/components/icons";
+import { Apps } from "@/components/icons";
 
 /**
  * The heading that introduces a section: its title, as the page's large
@@ -58,6 +58,7 @@ export function SectionPage({
   size = "lg",
   subtitle,
   header,
+  actions,
   children,
 }: {
   id: SectionId;
@@ -67,6 +68,8 @@ export function SectionPage({
   subtitle?: ReactNode;
   /** Sits under the large title, before the content: a switch between pages. */
   header?: ReactNode;
+  /** Beside the title, before More: the page's own actions. */
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   const { openMore } = useShell();
@@ -89,7 +92,7 @@ export function SectionPage({
 
   const more = (
     <button type="button" onClick={openMore} aria-label="More" className="more-button lg:hidden">
-      <MoreHorizontal aria-hidden />
+      <Apps aria-hidden />
     </button>
   );
 
@@ -105,12 +108,13 @@ export function SectionPage({
           tabIndex={compact ? 0 : -1}
           className="more-button nav-compact__more"
         >
-          <MoreHorizontal aria-hidden />
+          <Apps aria-hidden />
         </button>
       </div>
 
       <div ref={titleRef}>
         <SectionBand id={id} title={title} size={size} subtitle={subtitle}>
+          {actions}
           {more}
         </SectionBand>
       </div>

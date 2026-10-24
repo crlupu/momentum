@@ -4,12 +4,15 @@ export function ProgressRing({
   pct,
   color,
   size = 56,
+  figure,
 }: {
   pct: number;
   color: string;
   size?: number;
+  /** A small ring in a row: its number inside, so an empty ring never reads as an unticked box. */
+  figure?: boolean;
 }) {
-  const stroke = size >= 48 ? 5 : 4;
+  const stroke = size >= 48 ? 5 : size >= 40 ? 4 : 3;
   const r = size / 2 - stroke;
   const circ = 2 * Math.PI * r;
   const cx = size / 2;
@@ -47,7 +50,22 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      ) : size < 48 ? null : (
+      ) : size < 48 ? (
+        figure ? (
+          <text
+            x={cx}
+            y={cx}
+            dominantBaseline="central"
+            textAnchor="middle"
+            className="font-mono-n"
+            fill="var(--muted)"
+            fontSize={pct >= 10 ? 9.5 : 10.5}
+            fontWeight="600"
+          >
+            {pct}
+          </text>
+        ) : null
+      ) : (
         <text
           x={cx}
           y={cx}
@@ -55,7 +73,7 @@ export function ProgressRing({
           textAnchor="middle"
           className="fill-foreground font-mono-n"
           fontSize={fontSize}
-          fontWeight="700"
+          fontWeight="500"
         >
           {label}
         </text>

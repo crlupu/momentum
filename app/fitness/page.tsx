@@ -12,7 +12,7 @@ import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 import { ChevronLeft, ChevronRight } from "@/components/icons";
 import { UpNextWorkout } from "@/components/UpNextWorkout";
 import { WorkoutScreen, WorkoutsList } from "@/components/WorkoutScreens";
-import { ActiveWorkoutPanel } from "@/components/WorkoutsView";
+import { ActiveWorkoutPanel, LiveActions } from "@/components/WorkoutsView";
 
 /**
  * Fitness, as Apple Health lays it out: a short summary of weight and
@@ -39,7 +39,12 @@ function Fitness() {
   if (view === "live") {
     const active = tracker.state?.activeWorkout;
     return (
-      <SectionPage id="fitness" title={active?.name ?? "Workout"} subtitle={back}>
+      <SectionPage
+        id="fitness"
+        title={active?.name ?? "Workout"}
+        subtitle={back}
+        actions={active ? <LiveActions tracker={tracker} active={active} /> : undefined}
+      >
         {active ? (
           <ActiveWorkoutPanel tracker={tracker} active={active} />
         ) : (

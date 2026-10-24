@@ -74,6 +74,7 @@ export {
   MdReceiptLong as ScrollText,
   MdLogout as LogOut,
   MdMoreHoriz as MoreHorizontal,
+  MdApps as Apps,
 
   // theme
   MdLightMode as Sun,

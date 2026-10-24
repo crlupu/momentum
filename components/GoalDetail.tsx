@@ -333,9 +333,9 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   if (item) {
     const n = all.filter((i) => i.done).length + 1;
     return (
-      <div className="next-item">
-        <p className="next-item__label">
-          Next, {n} of {all.length}
+      <div className="next-item goal-next">
+        <p className="goal-next__label">
+          Next · {n} of {all.length}
         </p>
         <p className="next-item__title">{item.title}</p>
         {item.url && (
@@ -346,7 +346,7 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
         )}
         <Button
           variant="primary"
-          className="w-full justify-center"
+          className="btn-l w-full justify-center"
           isDisabled={pending}
           onPress={() => void run(() => tracker.setItemDone(g.id, item.id, true))}
         >
@@ -357,8 +357,8 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   }
   if (!all.length && !g.parts?.length && g.target && (g.current ?? 0) < g.target) {
     return (
-      <div className="next-item">
-        <p className="next-item__label">Next</p>
+      <div className="next-item goal-next">
+        <p className="goal-next__label">Next</p>
         <p className="next-item__title">
           {(g.current ?? 0) + 1} of {g.target}
         </p>
@@ -623,7 +623,7 @@ function Checklist({
         </button>
       </div>
       <ul className="step-list">
-        <ChecklistRows tracker={tracker} goal={g} items={items} editing={editing} focusId={focusId} onFocus={setFocusId} />
+        <ChecklistRows tracker={tracker} goal={g} items={items} editing={editing} focusId={focusId} onFocus={setFocusId} skipFirst={!g.done} />
       </ul>
     </section>
   );
@@ -645,6 +645,7 @@ function ChecklistRows({
   editing,
   focusId,
   onFocus,
+  skipFirst,
 }: {
   tracker: Tracker;
   goal: Goal;
@@ -653,6 +654,8 @@ function ChecklistRows({
   editing: boolean;
   focusId: string | null;
   onFocus: (id: string | null) => void;
+  /** Leave out the first entry still to do: it's shown as the next item. */
+  skipFirst?: boolean;
 }) {
   const write = (fn: (list: GoalItem[]) => GoalItem[]) => {
     const now = tracker.state!.goals.find((x) => x.id === g.id);
@@ -669,9 +672,10 @@ function ChecklistRows({
   // A long list shows its next few; the rest are a tap away.
   const [showAll, setShowAll] = useState(false);
   const doneCount = items.filter((i) => i.done).length;
-  const left = items.filter((i) => !i.done);
+  // The goal's next entry is in its card above, so the list starts after it.
+  const left = items.filter((i) => !i.done).slice(skipFirst ? 1 : 0);
   const capped = !editing && !showDone && !showAll && left.length > STILL_SHOWN;
-  const shown = editing || showDone ? items : capped ? left.slice(0, STILL_SHOWN) : left;
+  const shown = editing ? items : showDone ? items.filter((i) => i.done || left.includes(i)) : capped ? left.slice(0, STILL_SHOWN) : left;
   return (
     <>
       {shown.map((i) => (

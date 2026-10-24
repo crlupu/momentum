@@ -128,6 +128,12 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
 /* ================================ Charts ================================ */
 
 type Segment = { id: string; name: string; value: number; color: string };
+
+/** Chart series: the first in the accent, the rest in greys, so a chart never brings its own palette. */
+const SERIES = ["var(--chart-1)", "var(--chart-2)", "var(--chart-neutral)", "var(--faint)"];
+function seriesColor(i: number): string {
+  return SERIES[i % SERIES.length];
+}
 type Column = { key: string; label: string; title: string; segments: Segment[] };
 
 /** Clean axis steps: a top that is 1, 2 or 5 times a power of ten, in three or four ticks. */
@@ -330,10 +336,10 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
       key: w,
       label: `${day}/${m}`,
       title: `Week of ${fmtDateAuto(w)}`,
-      segments: tracks.map((t) => ({
+      segments: tracks.map((t, i) => ({
         id: t.id,
         name: t.name,
-        color: t.color,
+        color: seriesColor(i),
         value: inWeek
           .filter((x) => trackOfBook.get(x.bookId) === t.id)
           .reduce((a, x) => a + x.pages, 0),
@@ -351,7 +357,7 @@ function PagesPerWeek({ tracker }: { tracker: Tracker }) {
             label="Pages read per week, by track, last 12 weeks"
             columns={columns}
             legend={
-              tracks.length > 1 ? tracks.map((t) => ({ name: t.name, color: t.color })) : null
+              tracks.length > 1 ? tracks.map((t, i) => ({ name: t.name, color: seriesColor(i) })) : null
             }
             unit="pages"
           />

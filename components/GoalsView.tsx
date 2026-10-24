@@ -276,7 +276,7 @@ export function GoalRow({
       <button type="button" className="goal-row" onClick={() => onOpen(g.id)}>
         <span className="goal-row__ring" aria-hidden>
           {measured || g.done ? (
-            <ProgressRing pct={g.done ? 100 : goalPct(g)} color={color} size={44} />
+            <ProgressRing pct={g.done ? 100 : goalPct(g)} color="var(--accent)" size={32} figure />
           ) : (
             <span className="goal-row__blank">
               <Target />

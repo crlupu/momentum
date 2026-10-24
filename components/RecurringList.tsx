@@ -113,10 +113,9 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                             {book.pages > 0 ? ` of ${book.pages}` : ""}
                           </span>
                         ) : (
-                          <>
-                            <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
-                            {r.cat.name}
-                          </>
+                          // The category in words: the tile already marks the kind, and
+                          // colour is kept for what's next.
+                          <>{r.cat.name}</>
                         );
                       })()}
                     </span>

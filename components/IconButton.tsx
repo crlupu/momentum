@@ -39,8 +39,8 @@ export function IconButton({
 export function CheckRing({ on }: { on: boolean }) {
   return on ? (
     <svg viewBox="0 0 22 22" width="22" height="22" aria-hidden>
-      <circle cx="11" cy="11" r="10" fill="var(--accent)" />
-      <path d="M6.5 11.3 9.6 14.3 15.5 8" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="11" cy="11" r="10" fill="var(--done-fill)" />
+      <path d="M6.5 11.3 9.6 14.3 15.5 8" fill="none" stroke="var(--done-tick)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ) : (
     <svg viewBox="0 0 22 22" width="22" height="22" aria-hidden>
