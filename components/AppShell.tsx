@@ -68,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="app-main">
           <AuthGate tracker={tracker}>
             {!tracker.state ? (
-              <p className="p-6 text-[var(--muted)]">Loading…</p>
+              <PageSkeleton />
             ) : (
               <div className="app-content">
                 {tracker.syncError && (
@@ -90,5 +90,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Modal>
       </div>
     </ShellContext.Provider>
+  );
+}
+
+/**
+ * The shape of a page while the data arrives: a title, the hero card and two
+ * lists, shimmering. In place of the word "Loading".
+ */
+function PageSkeleton() {
+  return (
+    <div className="app-content skeleton" role="status" aria-label="Loading">
+      <span className="skeleton__line" style={{ inlineSize: "8.75rem" }} />
+      <span className="skeleton__line skeleton__line--title" />
+      <span className="skeleton__block" style={{ blockSize: "11.25rem", borderRadius: 20 }} />
+      <span className="skeleton__line skeleton__line--label" />
+      <span className="skeleton__block" style={{ blockSize: "14rem" }} />
+      <span className="skeleton__line skeleton__line--label" />
+      <span className="skeleton__block" style={{ blockSize: "7.5rem" }} />
+    </div>
   );
 }

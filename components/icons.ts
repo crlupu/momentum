@@ -70,6 +70,8 @@ export {
   MdFitnessCenter as Dumbbell,
   MdRestaurant as Apple,
   MdMenuBook as BookOpen,
+  MdOutlineMonitorWeight as Scale,
+  MdTaskAlt as TaskDone,
   MdBarChart as BarChart3,
   MdReceiptLong as ScrollText,
   MdLogout as LogOut,

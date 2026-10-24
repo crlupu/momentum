@@ -135,7 +135,7 @@ export function BlockSection({
           <div className="flex items-center gap-2">
             <Input
               aria-label={`Add an exercise to ${block.name}`}
-              placeholder="Push-ups…"
+              placeholder="Push-ups"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="min-w-0 flex-1"
@@ -206,7 +206,7 @@ export function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: W
     <form onSubmit={add} className="flex w-full flex-col gap-2">
       <Input
         aria-label="Block name"
-        placeholder="Warm-up…"
+        placeholder="Warm-up"
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus

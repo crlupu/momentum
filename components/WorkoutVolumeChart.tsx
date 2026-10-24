@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, memo, useState } from "react";
 
 import { Card, Input, Button, PanelHeader } from "./ui";
@@ -134,14 +135,23 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
         {summary && <CardioButton tracker={tracker} />}
       </PanelHeader>
       {sessions === 0 && s.cardio.length === 0 ? (
-        <Card>
-          <Card.Content className="p-4 md:p-5">
-            <p className="py-2 text-[15px] text-[var(--muted)]">
-              Nothing logged yet. Finish a workout and its volume lands here; add cardio
-              minutes above and they join it.
-            </p>
-          </Card.Content>
-        </Card>
+        // A ghost of the week's chart, to show what fills it.
+        <div className="card week-empty">
+          <div className="week-empty__ghost" aria-hidden>
+            {[8, 20, 8, 34, 8, 26, 8].map((h, i) => (
+              <span key={i} style={{ blockSize: h }} />
+            ))}
+          </div>
+          <p className="week-empty__title">Your week fills in as you train</p>
+          <p className="empty-state__text">Finish a workout or add cardio minutes.</p>
+          {summary && (
+            <div className="week-empty__actions">
+              <Link href="/fitness?view=workouts" className="pill-link pill-link--primary">
+                Add a workout
+              </Link>
+            </div>
+          )}
+        </div>
       ) : (
         <>
           {/* Four tiles, two by two on a phone: the week at a glance. */}
@@ -227,7 +237,7 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
             type="number"
             inputMode="numeric"
             aria-label="Cardio minutes today"
-            placeholder="minutes…"
+            placeholder="Minutes"
             value={mins}
             onChange={(e) => setMins(e.target.value)}
             autoFocus

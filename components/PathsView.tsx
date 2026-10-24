@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -49,7 +49,8 @@ export function PathsView({
   statuses: GoalStatus[];
   editable?: boolean;
   onOpen: (id: string) => void;
-  empty: string;
+  /** A sentence, or a whole empty state of its own. */
+  empty: ReactNode;
   /** The section's title; in Library it carries the + for goals and paths. */
   heading?: string;
 }) {
@@ -129,7 +130,7 @@ export function PathsView({
       )}
 
       {visible.length === 0 ? (
-        <p className="card goal-list__empty p-4">{empty}</p>
+        typeof empty === "string" ? <p className="card goal-list__empty p-4">{empty}</p> : empty
       ) : (
         visible.map((sec) => {
           const editing = editingId === sec.id;

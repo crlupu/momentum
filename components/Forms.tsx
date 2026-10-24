@@ -223,7 +223,7 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </ul>
       {editing && (
       <form onSubmit={submit} className="cfg-add">
-        <Input aria-label="New category name" placeholder="New category…" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-0 flex-1" />
+        <Input aria-label="New category name" placeholder="New category" value={newCat} onChange={(e) => setNewCat(e.target.value)} className="min-w-0 flex-1" />
         <ColorPicker value={newColor} onChange={setNewColor} />
         <AddButton type="submit" aria-label="Add" isDisabled={pending} />
       </form>
@@ -399,7 +399,7 @@ export function MealTagsCard({ tracker }: { tracker: Tracker }) {
       <form onSubmit={add} className="cfg-add">
         <Input
           aria-label="New meal tag"
-          placeholder="Breakfast…"
+          placeholder="Breakfast"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="min-w-0 flex-1"

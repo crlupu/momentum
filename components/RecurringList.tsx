@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useShell } from "./AppShell";
 import { Panel } from "./Panel";
 import { Card } from "./ui";
 import { usePending } from "./ActionButton";
@@ -68,16 +70,13 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
   const doneCount = list.filter((r) => r.done).length;
   const shown = showDone ? list : list.filter((r) => !r.done);
 
+  if (list.length === 0) return <StartHere />;
+
   return (
     <ReadingFlow tracker={tracker}>
     <Panel title="Routines" bare>
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
-          {list.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
-              Nothing recurring. Active goals, books being read and workouts show here.
-            </p>
-          ) : (
             <ul
               // The whole list, no box of its own to scroll: what's done
               // folds away below, so it stays short.
@@ -112,7 +111,6 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                 </li>
               ))}
             </ul>
-          )}
           {doneCount > 0 && (
             <button
               type="button"
@@ -131,5 +129,40 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
       </Card>
     </Panel>
     </ReadingFlow>
+  );
+}
+
+const START = [
+  { kind: "goal", title: "Set a goal", sub: "Something to learn, counted or as a checklist" },
+  { kind: "book", title: "Start a book", sub: "Pages a day, tracked as you read" },
+  { kind: "workout", title: "Add a workout", sub: "Exercises with sets and reps" },
+] as const;
+
+/**
+ * Day one: no routines yet, so the list is the three ways to make one, each
+ * opening where it's made.
+ */
+function StartHere() {
+  const { openGoal } = useShell();
+  const router = useRouter();
+  const go = (kind: Routine["kind"]) =>
+    kind === "goal" ? openGoal() : router.push(kind === "book" ? "/education?view=library" : "/fitness?view=workouts");
+  return (
+    <Panel title="Start here" bare>
+      <ul className="card hub-list">
+        {START.map((r) => (
+          <li key={r.kind}>
+            <button type="button" className="hub-row" onClick={() => go(r.kind)}>
+              <AreaTile kind={r.kind} />
+              <span className="hub-row__text">
+                <span className="hub-row__title">{r.title}</span>
+                <span className="hub-row__sub">{r.sub}</span>
+              </span>
+              <ChevronRight className="rd-link__chevron" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }
