@@ -13,7 +13,7 @@ import {
   MacroTargetsCard,
   MealTagsCard,
 } from "@/components/Forms";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { StyleSwitch, ThemeSwitch } from "@/components/ThemeSwitch";
 import {
   Apple,
   ArrowDown,
@@ -42,6 +42,9 @@ const VIEWS: Record<string, { title: string; body: (t: Tracker) => ReactNode }> 
     title: "Appearance",
     body: () => (
       <div className="flex flex-col gap-3">
+        <h3 className="group-head">Style</h3>
+        <StyleSwitch />
+        <h3 className="group-head mt-2">Light or dark</h3>
         <ThemeSwitch className="w-full" />
         <p className="text-[13px] text-[var(--muted)]">System follows your device&apos;s light or dark setting.</p>
       </div>

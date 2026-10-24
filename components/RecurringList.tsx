@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Panel } from "./Panel";
 import { Card } from "./ui";
 import { usePending } from "./ActionButton";
@@ -68,18 +68,6 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
   const doneCount = list.filter((r) => r.done).length;
   const shown = showDone ? list : list.filter((r) => !r.done);
 
-  // Five rows show, the ones still to do first; the rest scroll. The box is
-  // measured to end exactly under the fifth row, so none is cut in half.
-  const ul = useRef<HTMLUListElement>(null);
-  const [maxH, setMaxH] = useState<number | undefined>(undefined);
-  useLayoutEffect(() => {
-    const rows = ul.current?.children;
-    if (!rows || rows.length <= 5) return setMaxH(undefined);
-    const first = rows[0] as HTMLElement;
-    const fifth = rows[4] as HTMLElement;
-    setMaxH(fifth.offsetTop + fifth.offsetHeight - first.offsetTop);
-  });
-
   return (
     <ReadingFlow tracker={tracker}>
     <Panel title="Routines" bare>
@@ -91,9 +79,9 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
             </p>
           ) : (
             <ul
-              ref={ul}
-              className={"list-none p-0" + (maxH ? " overflow-y-auto pr-1 recurring-scroll" : "")}
-              style={maxH ? { maxHeight: maxH } : undefined}
+              // The whole list, no box of its own to scroll: what's done
+              // folds away below, so it stays short.
+              className="routine-list list-none p-0"
             >
               {shown.map((r) => (
                 <li key={r.key} className="task-row task-row--area">
