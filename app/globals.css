@@ -4476,3 +4476,39 @@ input.todo-add__input::placeholder { color: var(--field-placeholder); }
 .next-step__sub { font-size: 0.8125rem; color: var(--muted); }
 .next-steps__more { display: flex; align-items: center; gap: 0.5rem; inline-size: 100%; min-block-size: 2.75rem; padding-inline: 1rem; border-block-start: 1px solid var(--separator); color: var(--accent-text); font-size: 0.9375rem; text-align: start; }
 .next-steps__more svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; transition: transform 150ms; }
+
+/* Grouped lists: a note under a group, and a summary line above. */
+.group-foot { margin: 0.5rem 0 0; padding-inline: 0.25rem; font-size: 0.8125rem; line-height: 1.4; color: var(--muted); }
+.track-summary { margin: 0; font-size: 0.9375rem; color: var(--muted); }
+.panel-head .head-add { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent-text); }
+.panel-head .head-add svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+@media (hover: hover) { .panel-head .head-add:hover { background: var(--accent-soft-strong); } }
+
+/* A book as a row of a grouped list: cover, title, a line under it. */
+.group-row.book-line { gap: 0.5rem; padding-inline: 0.75rem 0.5rem; min-block-size: 4.25rem; }
+.book-line__open { display: flex; flex: 1 1 auto; align-items: center; gap: 0.75rem; min-inline-size: 0; padding-block: 0.375rem; text-align: start; }
+.book-line__text { display: flex; flex-direction: column; min-inline-size: 0; }
+.book-line__title { font-size: 1rem; line-height: 1.3; color: var(--foreground); }
+.book-line__sub { font-size: 0.8125rem; color: var(--muted); }
+.group-row.book-line.is-dragging { position: relative; z-index: 1; background: var(--surface-secondary); box-shadow: var(--lift-shadow); }
+.group-list .insert-row { padding-inline: 0.75rem; }
+.group-list li:first-child > .insert-row { border-block-start: 0; }
+
+/* A reading phase. */
+.phase-card { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border-radius: var(--r-card); background: var(--surface); }
+.phase-card__head { display: flex; align-items: center; gap: 0.5rem; }
+.phase-card__name { margin: 0; font-size: 1.375rem; font-weight: 600; }
+.phase-card__now { padding: 0.125rem 0.5rem; border-radius: var(--r-small); background: var(--accent-soft); color: var(--accent-text); font-size: 0.8125rem; font-weight: 600; }
+.phase-card__sub { margin: 0; font-size: 0.875rem; color: var(--muted); }
+.phase-bars { display: grid; grid-template-columns: 3rem 1fr 2.5rem; align-items: center; gap: 0.5rem 0.625rem; font-size: 0.8125rem; color: var(--muted); }
+.phase-bars > span:nth-child(3n) { text-align: end; color: var(--foreground); }
+.phase-bars__track { display: block; block-size: 0.5rem; border-radius: 4px; background: var(--accent-track); overflow: hidden; }
+.phase-bars__fill { display: block; block-size: 100%; border-radius: inherit; background: var(--area-reading); }
+.phase-bars__fill.is-time { background: var(--faint); }
+.phase-card__verdict { margin: 0; padding: 0.625rem 0.75rem; border-radius: var(--r-control); font-size: 0.9375rem; line-height: 1.35; }
+.phase-card__verdict.is-behind { background: var(--warning-soft); color: var(--warning); }
+.phase-card__verdict.is-ahead, .phase-card__verdict.is-done { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+.phase-card .group-list { background: var(--surface-secondary); }
+.light .phase-card .group-list { background: var(--background); }
+.phase-card .rd-phase__book { padding-inline: 0.75rem; min-block-size: 2.75rem; }
+.phase-card .group-list li + li .rd-phase__book { border-block-start: 1px solid var(--separator); }

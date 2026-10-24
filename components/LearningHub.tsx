@@ -16,7 +16,7 @@ import { useFlow } from "./books/flowContext";
 import { useCoverLookup } from "./books/Cover";
 import { Segmented } from "./books/bits";
 import { OpenBook } from "./books/TodayView";
-import { NoTrack, TrackQueue } from "./books/TracksView";
+import { NoTrack, TrackPageView } from "./books/TracksView";
 import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
 import { Tracker, dateKey, goalStatus, type Goal } from "@/lib/tracker";
@@ -173,9 +173,10 @@ function Hub({ tracker }: { tracker: Tracker }) {
             </ul>
           </Panel>
 
-          <Panel title="Goals" bare>
+          <section className="panel">
             <PathsView
               tracker={tracker}
+              heading="Goals"
               statuses={showDropped ? ["active", "queued", "dropped"] : ["active", "queued"]}
               editable
               onOpen={setOpenId}
@@ -188,14 +189,17 @@ function Hub({ tracker }: { tracker: Tracker }) {
                 onToggle={() => setShowDropped((v) => !v)}
               />
             )}
-          </Panel>
+          </section>
 
           {/* Places to look back and plan ahead, apart from the tracks
               themselves. */}
+          <section>
+          <h3 className="group-head">Plan and look back</h3>
           <ul className="card hub-list">
             <HubRow icon={<CalendarDays aria-hidden />} title="Phases" sub={phasesLine(s)} onPress={() => go("view=phases")} />
             <HubRow icon={<Clock aria-hidden />} title="History" sub="Finished books and goals" onPress={() => go("view=history")} />
           </ul>
+          </section>
         </>
       )}
 
@@ -312,8 +316,7 @@ function TrackPage({ tracker, trackId }: { tracker: Tracker; trackId: string }) 
   if (!track) return null;
   return (
     <div className="flex flex-col gap-4">
-      {track.note && <p className="goal-desc__text">{track.note}</p>}
-      <TrackQueue tracker={tracker} track={track} asPage />
+      <TrackPageView tracker={tracker} track={track} />
       {track.archived && (
         <div>
           <Button variant="ghost" onPress={() => void tracker.updateTrack(track.id, { ...track, archived: false })}>

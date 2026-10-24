@@ -15,6 +15,7 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { GoalRow } from "./GoalsView";
 import { Modal } from "./Modal";
+import { ActionMenu } from "./Menu";
 import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
 import { ChevronRight, Plus, ReorderLines } from "./icons";
@@ -31,7 +32,7 @@ type Section = { id: string; title: string; color: string; path?: Path; all: Goa
  * where every goal in no path sits. A section's header folds it; its bar adds
  * up every item of every goal in it.
  *
- * With `editable` (Library), New Path adds a path, and each path's Edit
+ * With `editable` (Library), the heading's + adds a goal or a path, and each path's Edit
  * opens it for organizing: renaming, moving and deleting it, reordering and
  * deleting its goals, adding one. Active only shows.
  */
@@ -41,6 +42,7 @@ export function PathsView({
   editable,
   onOpen,
   empty,
+  heading,
 }: {
   tracker: Tracker;
   /** Which goals to show. The bars count every goal in the path. */
@@ -48,6 +50,8 @@ export function PathsView({
   editable?: boolean;
   onOpen: (id: string) => void;
   empty: string;
+  /** The section's title; in Library it carries the + for goals and paths. */
+  heading?: string;
 }) {
   const s = tracker.state!;
   // The path being edited, one at a time.
@@ -88,14 +92,26 @@ export function PathsView({
 
   return (
     <div className="paths">
-      {editable && (
-        <div className="paths__bar">
-          <button type="button" className="text-action" onClick={() => setAddingTo(GENERAL)}>
-            <Plus aria-hidden /> New Goal
-          </button>
-          <button type="button" className="text-action" onClick={() => setNewPath(true)}>
-            <Plus aria-hidden /> New Path
-          </button>
+      {heading && (
+        <div className="panel-head">
+          <div className="panel-head__text">
+            <h2 className="panel-head__title">{heading}</h2>
+          </div>
+          {editable && (
+            <div className="panel-head__side">
+              {/* One + for the section: a goal, or a path to group goals. */}
+              <ActionMenu
+                label={`Add to ${heading}`}
+                className="head-add"
+                items={[
+                  { label: "New goal", onSelect: () => setAddingTo(GENERAL) },
+                  { label: "New path", onSelect: () => setNewPath(true) },
+                ]}
+              >
+                <Plus aria-hidden />
+              </ActionMenu>
+            </div>
+          )}
         </div>
       )}
 
