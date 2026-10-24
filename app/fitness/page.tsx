@@ -1,17 +1,18 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePageTracker } from "@/components/AppShell";
 import { SectionPage } from "@/components/Section";
 import { HealthSwitch } from "@/components/HealthSwitch";
-import WeightTracker from "@/components/WeightTracker";
+import WeightTracker, { WeeklyMedians } from "@/components/WeightTracker";
 import WeightPlanCard from "@/components/WeightPlan";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 import { ChevronLeft, ChevronRight } from "@/components/icons";
 import { UpNextWorkout } from "@/components/UpNextWorkout";
 import { WorkoutScreen, WorkoutsList } from "@/components/WorkoutScreens";
+import { ActiveWorkoutPanel } from "@/components/WorkoutsView";
 
 /**
  * Fitness, as Apple Health lays it out: a short summary of weight and
@@ -23,12 +24,32 @@ function Fitness() {
   const view = params.get("view");
   const id = params.get("id");
   const router = useRouter();
+  // Finishing or cancelling the live workout ends it; its screen goes back
+  // to Health rather than standing empty.
+  const live = view === "live" && !!tracker.state?.activeWorkout;
+  useEffect(() => {
+    if (view === "live" && !live) router.replace("/fitness");
+  }, [view, live, router]);
   const back = (
     <Link href="/fitness" className="back-link">
       <ChevronLeft aria-hidden />
-      Fitness
+      Health
     </Link>
   );
+  if (view === "live") {
+    const active = tracker.state?.activeWorkout;
+    return (
+      <SectionPage id="fitness" title={active?.name ?? "Workout"} subtitle={back}>
+        {active ? (
+          <ActiveWorkoutPanel tracker={tracker} active={active} />
+        ) : (
+          <p className="text-[15px] text-[var(--muted)]">
+            No workout under way. Start one from <Link href="/fitness" className="text-[var(--accent-text)]">Health</Link>.
+          </p>
+        )}
+      </SectionPage>
+    );
+  }
   if (view === "workouts") {
     return (
       <SectionPage id="fitness" title="Workouts" subtitle={back}>
@@ -63,6 +84,7 @@ function Fitness() {
         <div className="space-y-5">
           <WeightTracker tracker={tracker} />
           <WeightPlanCard tracker={tracker} />
+          <WeeklyMedians weights={tracker.state?.weights ?? []} />
         </div>
       </SectionPage>
     );

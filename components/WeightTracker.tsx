@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
-import { Button, Input, PanelHeader, AddButton } from "./ui";
+import { Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
@@ -13,8 +13,13 @@ const ACCENT = "var(--chart-1)";
 const GRID = "var(--chart-grid)";
 const LABEL = "var(--muted)";
 
-/** The window the chart shows. */
-const DAYS = 30;
+/** The windows the chart can show; "all" runs from the first weigh-in. */
+const RANGES = [
+  { id: "30", label: "30D", days: 30 },
+  { id: "90", label: "90D", days: 90 },
+  { id: "all", label: "All", days: 0 },
+] as const;
+type RangeId = (typeof RANGES)[number]["id"];
 
 function lastNDays(n: number): Date[] {
   return Array.from({ length: n }, (_, i) => {
@@ -32,12 +37,12 @@ function lastNDays(n: number): Date[] {
 function WeightChart({
   weights,
   plan,
-  simple,
+  days: DAYS,
 }: {
   weights: WeightEntry[];
   plan?: WeightPlan;
-  /** Just the weight and the plan: no weekly medians. */
-  simple?: boolean;
+  /** How many days back the chart reaches, ending today. */
+  days: number;
 }) {
   const [box, measured] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
@@ -49,7 +54,7 @@ function WeightChart({
   const byDate = new Map(weights.map((w) => [w.date, w.kg]));
   const series = days.map((d, i) => ({ i, date: dateKey(d), kg: byDate.get(dateKey(d)) }));
   const present = series.filter((p) => typeof p.kg === "number") as { i: number; date: string; kg: number }[];
-  const medians = simple ? [] : weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
+  const medians = weeklyMedians(weights).filter((m) => addDays(m.week, 6) >= series[0].date);
   // Where the plan puts each day of the window it covers.
   const planPts = plan
     ? series.filter((p) => p.date >= plan.startDate).map((p) => ({ i: p.i, kg: expectedOn(plan, p.date) }))
@@ -137,7 +142,7 @@ function WeightChart({
             key={p.date}
             cx={x(p.i)}
             cy={y(p.kg)}
-            r={hover === p.i ? 5 : 4}
+            r={hover === p.i ? 5 : DAYS > 60 ? 2.5 : 4}
             fill={ACCENT}
             stroke="var(--pane-bg)"
             strokeWidth="2"
@@ -206,11 +211,27 @@ const STANDING = { ahead: "Ahead of plan", "on-track": "On plan", close: "Close 
  * The latest weight as one number, with how it has moved over the week
  * before it: down in green, up in the warning colour.
  */
-export function WeightNow({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
+export function WeightNow({ weights, plan, compact }: { weights: WeightEntry[]; plan?: WeightPlan; compact?: boolean }) {
   const latest = weights[weights.length - 1];
   const check = plan ? latestCheck(plan, weights) : undefined;
   const weekAgo = [...weights].reverse().find((w) => w.date <= addDays(latest.date, -7));
   const d = weekAgo ? Math.round((latest.kg - weekAgo.kg) * 10) / 10 : null;
+  if (compact) {
+    // On the Health summary: the number, and under it the week's change.
+    return (
+      <div>
+        <div className="weight-now weight-now--compact">
+          <span className="weight-now__kg font-mono-n">{latest.kg}</span>
+          <span className="weight-now__unit">kg</span>
+        </div>
+        {d != null && (
+          <p className={"weight-now__delta " + (d < 0 ? "is-down" : d > 0 ? "is-up" : "")}>
+            {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} kg this week
+          </p>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="weight-now">
       <span className="weight-now__kg font-mono-n">{latest.kg}</span>
@@ -229,12 +250,39 @@ export function WeightNow({ weights, plan }: { weights: WeightEntry[]; plan?: We
   );
 }
 
+/**
+ * The last fortnight's weigh-ins as a small line, no axes: the shape of the
+ * trend at a glance beside the number.
+ */
+function Sparkline({ weights }: { weights: WeightEntry[] }) {
+  const pts = weights.slice(-14);
+  if (pts.length < 2) return null;
+  const W = 112;
+  const H = 36;
+  const kgs = pts.map((w) => w.kg);
+  const lo = Math.min(...kgs);
+  const hi = Math.max(...kgs);
+  const span = hi - lo || 1;
+  const line = pts.map((w, i) => `${(i / (pts.length - 1)) * W},${H - 3 - ((w.kg - lo) / span) * (H - 6)}`).join(" ");
+  return (
+    <svg width={W} height={H} className="flex-none" aria-hidden>
+      <polyline points={line} fill="none" stroke="var(--chart-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * Weight. The summary (on Health) is the latest number beside a sparkline,
+ * with the field to weigh in; the full card (on the Weight page) adds how far
+ * it has come and the chart, over 30 days, 90 or all of it.
+ */
 export default function WeightTracker({ tracker, summary }: { tracker: Tracker; summary?: boolean }) {
   const s = tracker.state!;
   const data = s.weights;
   const latest = data.length ? data[data.length - 1] : null;
   const plan = validPlan(s.weightPlan);
   const [kg, setKg] = useState("");
+  const [range, setRange] = useState<RangeId>("30");
 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
@@ -245,62 +293,91 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
     if (ok) setKg("");
   };
 
-  return (
-    <div>
-      <PanelHeader title={summary ? "Weight" : "Weigh-ins"} color="var(--sec-fitness)">
-      </PanelHeader>
-
-      <div className="card p-4 md:p-5">
-        {latest && <WeightNow weights={data} plan={plan} />}
-        {/* Weighed in from the summary only: one place to add a weight. */}
-        {summary && (
-        <form onSubmit={submit} className="mb-3 flex gap-2">
-          <Input
-            type="number"
-            step="0.1"
-            aria-label="Weight in kg"
-            placeholder="Weight today (kg)…"
-            value={kg}
-            onChange={(e) => setKg(e.target.value)}
-            className="flex-1"
-          />
-          <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
-        </form>
-        )}
-
-        {summary ? (
-          <>
-            <WeightChart weights={data} plan={plan} simple />
-            <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
-              <span className="inline-block h-[2px] w-3" style={{ background: ACCENT }} aria-hidden />
-              Weight
-              {plan && (
-                <>
-                  <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
-                  Planned
-                </>
-              )}
+  if (summary) {
+    return (
+      <div>
+        <PanelHeader title="Weight" color="var(--sec-fitness)" />
+        <div className="card p-4 md:p-5">
+          {latest && (
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <WeightNow weights={data} plan={plan} compact />
+              </div>
+              <Sparkline weights={data} />
             </div>
-          </>
-        ) : (
-        <>
-        <div className="mb-1 text-xs" style={{ color: LABEL }}>
-          Last {DAYS} days
-        </div>
-        <WeightChart weights={data} plan={plan} />
-        <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
-          <span className="inline-block w-3 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
-          Weekly median
-          {plan && (
-            <>
-              <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
-              Plan
-            </>
           )}
+          {/* Weighed in from the summary only: one place to add a weight. */}
+          <form onSubmit={submit} className="mt-3 flex gap-2">
+            <Input
+              type="number"
+              step="0.1"
+              aria-label="Weight in kg"
+              placeholder="Today's weight, kg"
+              value={kg}
+              onChange={(e) => setKg(e.target.value)}
+              className="flex-1"
+            />
+            <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
+          </form>
         </div>
+      </div>
+    );
+  }
 
-        <WeeklyMedians weights={data} />
+  const first = data[0];
+  const days =
+    range === "all"
+      ? first
+        ? Math.max(14, Math.round((Date.now() - new Date(first.date + "T12:00:00").getTime()) / 86400000) + 1)
+        : 30
+      : RANGES.find((r) => r.id === range)!.days;
+  const since = latest ? [...data].find((w) => w.date >= dateKey(new Date(Date.now() - (days - 1) * 86400000))) : undefined;
+  const moved = latest && since && since.date !== latest.date ? Math.round((latest.kg - since.kg) * 10) / 10 : null;
+  const median = weeklyMedians(data).slice(-1)[0];
+
+  return (
+    <div className="card p-4 md:p-5">
+      {latest ? (
+        <>
+          <WeightNow weights={data} plan={plan} />
+          <p className="mt-1 text-[14px] text-[var(--muted)]">
+            {moved != null && since && (
+              <>
+                {moved === 0 ? "±0" : `${moved > 0 ? "+" : "−"}${Math.abs(moved).toFixed(1)}`} kg since {fmtDateAuto(since.date)}
+              </>
+            )}
+            {moved != null && median && " · "}
+            {median && <>median {median.median.toFixed(1)} kg</>}
+          </p>
         </>
+      ) : (
+        <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet. Add one from Health.</p>
+      )}
+
+      <div className="segmented my-4" role="tablist" aria-label="Chart range">
+        {RANGES.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="tab"
+            aria-selected={range === r.id}
+            className={"segmented__item" + (range === r.id ? " is-on" : "")}
+            onClick={() => setRange(r.id)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      <WeightChart weights={data} plan={plan} days={days} />
+      <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
+        <span className="inline-block w-3 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
+        Weekly median
+        {plan && (
+          <>
+            <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
+            Plan
+          </>
         )}
       </div>
     </div>
@@ -312,13 +389,13 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
  * from the week before. Weeks run Monday to Sunday; the current one is a
  * median so far.
  */
-function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
+export function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
   const all = weeklyMedians(weights);
   if (all.length === 0) return null;
   const thisWeek = mondayOf(dateKey());
   const rows = all.slice(-8).reverse();
   return (
-    <section className="mt-5">
+    <section>
       <h3 className="group-head">Weekly medians</h3>
       <ul className="group-list weight-medians">
         {rows.map((m) => {

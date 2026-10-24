@@ -1,24 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui";
 import { ChevronDown, Play } from "./icons";
 import { Modal } from "./Modal";
-import { ActiveWorkoutPanel } from "./WorkoutsView";
-import { Tracker, dateKey } from "@/lib/tracker";
+import { Elapsed } from "./WorkoutsView";
+import { Tracker, dateKey, activeWorkoutSets, activeWorkoutPlannedSets } from "@/lib/tracker";
 import { REPEAT_LABEL, repeatOf, routines } from "@/lib/routines";
 import { daysBetween } from "@/lib/reading";
 
 /**
  * What to train today, at the top of Fitness: the workout that's due (one
  * not done yet this period, the one waiting longest first), started in one
- * tap; the arrow picks another. While a workout is under way, it shows that
- * instead.
+ * tap; the arrow picks another. Starting one opens the live workout, a
+ * screen of its own. While a workout is under way, this shows it, with the
+ * way back in.
  */
 export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const router = useRouter();
   const [choosing, setChoosing] = useState(false);
-  if (s.activeWorkout) return <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />;
+  const start = (id: string) => {
+    void tracker.startWorkout(id);
+    router.push("/fitness?view=live");
+  };
+  if (s.activeWorkout) {
+    const a = s.activeWorkout;
+    return (
+      <section className="up-next">
+        <p className="up-next__label">In progress</p>
+        <div className="up-next__head">
+          <h2 className="up-next__name">{a.name}</h2>
+          <span className="up-next__meta font-mono-n">
+            <Elapsed startedAt={a.startedAt} />
+          </span>
+        </div>
+        <p className="up-next__meta">
+          {activeWorkoutSets(a)} of {activeWorkoutPlannedSets(a)} sets done
+        </p>
+        <div className="up-next__actions">
+          <Link href="/fitness?view=live" className="cds--btn cds--btn--primary flex-1 justify-center">
+            <Play className="h-4 w-4" /> Resume
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   const today = dateKey();
   const startable = s.workouts.filter((w) => w.exercises.length > 0);
@@ -53,7 +82,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
         {ago == null ? "not done yet" : ago === 0 ? "done today" : `last done ${ago} day${ago === 1 ? "" : "s"} ago`}
       </p>
       <div className="up-next__actions">
-        <Button variant="primary" className="flex-1 justify-center" onPress={() => void tracker.startWorkout(next.id)}>
+        <Button variant="primary" className="flex-1 justify-center" onPress={() => start(next.id)}>
           <Play className="h-4 w-4" /> Start {next.name}
         </Button>
         {startable.length > 1 && (
@@ -72,7 +101,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
                 className="group-row"
                 onClick={() => {
                   setChoosing(false);
-                  void tracker.startWorkout(w.id);
+                  start(w.id);
                 }}
               >
                 <span className="flex-1">{w.name}</span>

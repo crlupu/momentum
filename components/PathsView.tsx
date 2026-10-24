@@ -155,6 +155,8 @@ export function PathsView({
                 />
               ) : (
                 <div className="card path__card">
+                  {/* Open, the rows say how far along it is; folded, this line does. */}
+                  {!open && (
                   <div className="path__summary">
                     <div className="progress-track h-1">
                       <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
@@ -164,6 +166,7 @@ export function PathsView({
                       {sec.all.length === 1 ? "goal" : "goals"}
                     </span>
                   </div>
+                  )}
                   {open && (
                     <ul className="goal-list__rows">
                       {sec.shown.map((g) => (

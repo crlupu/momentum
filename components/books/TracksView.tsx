@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, AddButton } from "../ui";
-import { ChevronDown, ChevronRight, Pencil, Play, ReorderLines, Unarchive } from "../icons";
+import { ChevronDown, ChevronRight, Play, ReorderLines, Unarchive } from "../icons";
 import { Tracker, Book, categoryColor } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -362,11 +362,14 @@ export function TrackPageView({ tracker, track }: { tracker: Tracker; track: R.R
   return (
     <div className="flex flex-col gap-5">
       {track.note && <p className="goal-desc__text">{track.note}</p>}
-      {lead && pace?.eta && (
-        <p className="track-summary">
-          {lead.title} done around {fmtDateAuto(pace.eta)}
+      <div className="flex items-center gap-3">
+        <p className="track-summary min-w-0 flex-1">
+          {lead && pace?.eta ? `${lead.title} done around ${fmtDateAuto(pace.eta)}` : ""}
         </p>
-      )}
+        <button type="button" className="text-action" onClick={editTrack}>
+          Edit
+        </button>
+      </div>
 
       <section>
         <h3 className="group-head">Reading now</h3>
@@ -430,9 +433,6 @@ export function TrackPageView({ tracker, track }: { tracker: Tracker; track: R.R
         </div>
       </section>
 
-      <Button variant="outline" className="self-start" onPress={editTrack}>
-        <Pencil className="h-4 w-4" /> Edit track
-      </Button>
     </div>
   );
 }

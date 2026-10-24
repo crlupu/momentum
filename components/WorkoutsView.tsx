@@ -469,7 +469,7 @@ function formatElapsed(ms: number): string {
 }
 
 /** Ticks once a second while a workout is running. */
-function Elapsed({ startedAt }: { startedAt: number }) {
+export function Elapsed({ startedAt }: { startedAt: number }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -807,18 +807,19 @@ export function ActiveWorkoutPanel({
     .filter((c) => c.exercises.length > 0);
   const circuitIds = new Set(circuits.flatMap((c) => c.exercises.map((e) => e.exerciseId)));
   const plain = active.exercises.filter((e) => !circuitIds.has(e.exerciseId));
-  // The exercise being worked on: the first not marked done. The next one
-  // after it waits under "Up next".
+  // The exercise being worked on: the first not marked done, until another
+  // is picked from the chips. Only that one is on screen; the next one after
+  // it waits under "Up next".
+  const [picked, setPicked] = useState<string | null>(null);
   const currentIdx = plain.findIndex((e) => !e.done);
-  const upNext = currentIdx >= 0 ? plain.slice(currentIdx + 1).find((e) => !e.done) : undefined;
+  const shown = plain.find((e) => e.exerciseId === picked) ?? plain[currentIdx] ?? plain[plain.length - 1];
+  const shownIdx = shown ? plain.indexOf(shown) : -1;
+  const upNext = shownIdx >= 0 ? plain.slice(shownIdx + 1).find((e) => !e.done) ?? plain.find((e, i) => i !== shownIdx && !e.done) : undefined;
 
   return (
-    <div className="card card--live live-workout">
+    <div className="live-workout">
       <div className="live-workout__head">
-        <h3 className="live-workout__name">
-          <span className="sec-dot" style={{ background: "var(--sec-fitness)" }} aria-hidden />
-          <span className="truncate">{active.name}</span>
-        </h3>
+        <span className="flex-1" />
         <span className="live-workout__clock">
           <Elapsed startedAt={active.startedAt} />
         </span>
@@ -840,8 +841,9 @@ export function ActiveWorkoutPanel({
                 key={e.exerciseId}
                 type="button"
                 role="listitem"
-                className={"live-chip" + (i === currentIdx ? " is-current" : "") + (e.done ? " is-done" : "")}
-                onClick={() => document.getElementById(`ex-${e.exerciseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                aria-pressed={i === shownIdx}
+                className={"live-chip" + (i === shownIdx ? " is-current" : "") + (e.done ? " is-done" : "")}
+                onClick={() => setPicked(e.exerciseId)}
               >
                 {e.name} · {d}/{e.sets.length}
               </button>
@@ -858,16 +860,14 @@ export function ActiveWorkoutPanel({
         </div>
       ))}
 
-      <div className="space-y-3">
-        {plain.map((e) => (
-          <ExerciseBlock
-            key={e.exerciseId}
-            tracker={tracker}
-            exercise={e}
-            history={lastPerformed(sessions, e.exerciseId)}
-          />
-        ))}
-      </div>
+      {shown && (
+        <ExerciseBlock
+          key={shown.exerciseId}
+          tracker={tracker}
+          exercise={shown}
+          history={lastPerformed(sessions, shown.exerciseId)}
+        />
+      )}
 
       <SinceLastSet active={active} />
 
@@ -875,7 +875,7 @@ export function ActiveWorkoutPanel({
         <button
           type="button"
           className="live-next"
-          onClick={() => document.getElementById(`ex-${upNext.exerciseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onClick={() => setPicked(upNext.exerciseId)}
         >
           <span className="flex min-w-0 flex-1 flex-col text-start">
             <span className="live-next__label">Up next</span>
@@ -886,7 +886,7 @@ export function ActiveWorkoutPanel({
         </button>
       )}
 
-      <div className="live-workout__foot">
+      <div className="live-workout__foot live-workout__dock">
         <span className="live-workout__tally">
           {sets} of {planned} {planned === 1 ? "set" : "sets"}
           <span className="font-mono-n">{total.toLocaleString()} kg</span>

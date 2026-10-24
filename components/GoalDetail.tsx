@@ -7,7 +7,6 @@ import { usePending } from "./ActionButton";
 import { ProgressRing } from "./ProgressRing";
 import { Check, ChevronDown, ChevronRight, ExternalLink, Minus, Pencil, Plus } from "./icons";
 import { DeleteGlyph } from "./DeleteGlyph";
-import { Segmented } from "./books/bits";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
 import { GENERAL, pathOfGoal } from "@/lib/paths";
@@ -158,7 +157,7 @@ export function GoalDetail({
     <div className="goal-detail">
       {g.note && <Description text={g.note} />}
       <div className="goal-detail__summary">
-        <ProgressRing pct={pct} color="var(--area-learning)" size={64} />
+        <ProgressRing pct={pct} color="var(--accent)" size={64} />
         <div className="min-w-0">
           <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
           {minimumReached(g) && <p className="min-badge">Minimum reached</p>}
@@ -168,27 +167,6 @@ export function GoalDetail({
       </div>
 
       {status !== "done" && <NextItem tracker={tracker} goal={g} />}
-
-      {/* Where it stands, changed in one tap. Two active in a topic is
-          allowed; it's only pointed out. */}
-      <div className="goal-status">
-        <Segmented<GoalStatus>
-          label="Status"
-          value={status}
-          onChange={(v) => void tracker.setGoalStatus(g.id, v)}
-          options={[
-            { value: "queued", label: "Queued" },
-            { value: "active", label: "Active" },
-            { value: "done", label: "Done" },
-            { value: "dropped", label: "Dropped" },
-          ]}
-        />
-        {status === "active" && alsoActive.length > 0 && (
-          <p className="goal-status__note" role="status">
-            {alsoActive.map((x) => x.title).join(", ")} {alsoActive.length === 1 ? "is" : "are"} already active.
-          </p>
-        )}
-      </div>
 
       {/* A checklist counts itself: ticks instead of − and +. */}
       {g.items?.length ? (
@@ -296,9 +274,31 @@ export function GoalDetail({
       </section>
       )}
 
-      {/* Its category, how often it comes round in Recurring, and where it lives. */}
+      {status === "active" && alsoActive.length > 0 && (
+        <p className="goal-status__note" role="status">
+          {alsoActive.map((x) => x.title).join(", ")} {alsoActive.length === 1 ? "is" : "are"} already active.
+        </p>
+      )}
+
+      {/* Where it stands, its category, how often it comes round, and where it lives. */}
       <h3 className="group-label goal-detail__head">Details</h3>
       <div className="step-list">
+        {/* Where it stands. Two active in a topic is allowed; it's only
+            pointed out. */}
+        <div className="step-row">
+          <span className="step-row__name flex-none">Status</span>
+          <MenuSelect<GoalStatus>
+            label="Status"
+            value={status}
+            onChange={(v) => void tracker.setGoalStatus(g.id, v)}
+            options={[
+              { value: "queued", label: "Queued" },
+              { value: "active", label: "Active" },
+              { value: "done", label: "Done" },
+              { value: "dropped", label: "Dropped" },
+            ]}
+          />
+        </div>
         <PathRow tracker={tracker} goal={g} />
         <CategoryRow tracker={tracker} goal={g} />
         <div className="step-row">
@@ -608,7 +608,7 @@ function Checklist({
     <section className="goal-steps" aria-label="Checklist">
       <div className="goal-steps__head">
         <h3 className="group-label">
-          Checklist <span className="checklist__count">{done} of {items.length}</span>
+          {editing ? "Checklist" : "Still to do"} <span className="checklist__count">{done} of {items.length} done</span>
         </h3>
         <button
           type="button"
@@ -628,6 +628,9 @@ function Checklist({
     </section>
   );
 }
+
+/** How many entries still to do a checklist shows before "Show N more". */
+const STILL_SHOWN = 5;
 
 /**
  * A checklist's rows, the goal's or a part's: one per entry, then, in Edit,
@@ -663,8 +666,12 @@ function ChecklistRows({
   };
   // Ticked entries fold into one row, outside Edit, so what's left leads.
   const [showDone, setShowDone] = useState(false);
+  // A long list shows its next few; the rest are a tap away.
+  const [showAll, setShowAll] = useState(false);
   const doneCount = items.filter((i) => i.done).length;
-  const shown = editing || showDone ? items : items.filter((i) => !i.done);
+  const left = items.filter((i) => !i.done);
+  const capped = !editing && !showDone && !showAll && left.length > STILL_SHOWN;
+  const shown = editing || showDone ? items : capped ? left.slice(0, STILL_SHOWN) : left;
   return (
     <>
       {shown.map((i) => (
@@ -679,6 +686,14 @@ function ChecklistRows({
           onDelete={() => write((list) => list.filter((x) => x.id !== i.id))}
         />
       ))}
+      {capped && (
+        <li className={partId ? "item-row--nested" : undefined}>
+          <button type="button" className="done-fold" onClick={() => setShowAll(true)}>
+            <span className="flex-1">Show {left.length - STILL_SHOWN} more</span>
+            <ChevronDown aria-hidden />
+          </button>
+        </li>
+      )}
       {!editing && doneCount > 0 && (
         <li className={partId ? "item-row--nested" : undefined}>
           <button type="button" className="done-fold" aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>

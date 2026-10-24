@@ -112,6 +112,7 @@ function PhaseCard({
             : null;
 
   return (
+    <>
     <section className="phase-card">
       <div className="phase-card__head">
         <h2 className="phase-card__name">{p.name}</h2>
@@ -138,52 +139,23 @@ function PhaseCard({
         <span className="font-mono-n">{read}%</span>
       </div>
       {verdict && <p className={"phase-card__verdict " + verdict.tone}>{verdict.text}</p>}
-      <p className="phase-card__sub">
-        {st.finished} of {st.books.length} books finished
-        {st.unsized > 0 && ` · ${st.unsized} without a page count`}
-      </p>
-      <PaceRows tracker={tracker} phase={p} today={today} />
-      {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} />}
     </section>
+    {/* The phase's books, a group per track, outside the card: each track's
+        pace sits beside its name. */}
+    {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} phase={p} today={today} />}
+    </>
   );
 }
 
-/**
- * Each track's standing in the phase: pages ahead of or behind reading the
- * phase's books at an even pace, with the figures it comes from.
- */
-function PaceRows({ tracker, phase, today }: { tracker: Tracker; phase: R.ReadingPhase; today: string }) {
-  const rows = R.phaseTrackPace(tracker.state!, phase, today);
-  if (rows.length === 0) return null;
-  const started = today >= phase.start;
+/** A track's standing in the phase: pages ahead of or behind an even pace. */
+function paceText(r: ReturnType<typeof R.phaseTrackPace>[number], started: boolean): { text: string; tone: string } {
   const n = (v: number) => v.toLocaleString();
-  return (
-    <ul className="pace-list" aria-label="Pages ahead or behind, by track">
-      {rows.map((r) => {
-        const verdict = !started
-          ? `${n(r.planned)} pages planned`
-          : r.delta === 0
-            ? "On pace"
-            : `${n(Math.abs(r.delta))} page${Math.abs(r.delta) === 1 ? "" : "s"} ${r.delta > 0 ? "ahead" : "behind"}`;
-        const tone = !started || r.delta === 0 ? "" : r.delta > 0 ? " is-ahead" : " is-behind";
-        return (
-          <li key={r.track.id} className="pace-row">
-            <TrackDot color={r.track.color} />
-            <span className="pace-row__text">
-              <span className="pace-row__name">{r.track.name}</span>
-              <span className="pace-row__sub">
-                {started
-                  ? `${n(r.actual)} of ${n(r.planned)} · plan ${n(r.expected)}`
-                  : `${n(r.actual)} of ${n(r.planned)} read so far`}
-                {r.unsized > 0 && ` · ${r.unsized} without a page count`}
-              </span>
-            </span>
-            <span className={"pace-row__verdict" + tone}>{verdict}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
+  if (!started) return { text: `${n(r.planned)} pages planned`, tone: "" };
+  if (r.delta === 0) return { text: "On pace", tone: "" };
+  return {
+    text: `${n(Math.abs(r.delta))} page${Math.abs(r.delta) === 1 ? "" : "s"} ${r.delta > 0 ? "ahead" : "behind"}`,
+    tone: r.delta > 0 ? " is-ahead" : " is-behind",
+  };
 }
 
 /**
@@ -191,16 +163,28 @@ function PaceRows({ tracker, phase, today }: { tracker: Tracker; phase: R.Readin
  * handles, as on Tracks: drag a book up or down within its track. Only this
  * phase's books trade places, so the rest of the track's queue stays put.
  */
-function PhaseBooks({ tracker, books }: { tracker: Tracker; books: Book[] }) {
+function PhaseBooks({
+  tracker,
+  books,
+  phase,
+  today,
+}: {
+  tracker: Tracker;
+  books: Book[];
+  phase: R.ReadingPhase;
+  today: string;
+}) {
   const s = tracker.state!;
   const [reordering, setReordering] = useState(false);
+  const pace = new Map(R.phaseTrackPace(s, phase, today).map((r) => [r.track.id, r]));
+  const started = today >= phase.start;
   const groups = s.readingTracks
     .map((t) => ({ t, books: books.filter((b) => b.trackId === t.id).sort((a, b) => a.queueOrder - b.queueOrder) }))
     .filter((x) => x.books.length > 0);
   const canReorder = groups.some((g) => g.books.length > 1);
 
   return (
-    <div className="mt-3">
+    <div className="phase-books">
       {canReorder && (
         <div className="rd-sub-row">
           <span className="text-xs text-[var(--muted)]">{reordering ? "Drag a book to its new place" : ""}</span>
@@ -219,6 +203,10 @@ function PhaseBooks({ tracker, books }: { tracker: Tracker; books: Book[] }) {
           <div key={t.id}>
             <h3 className="group-head flex items-center gap-1.5">
               <TrackDot color={t.color} /> {t.name}
+              {pace.get(t.id) && (() => {
+                const v = paceText(pace.get(t.id)!, started);
+                return <span className={"phase-books__pace" + v.tone}>{v.text}</span>;
+              })()}
             </h3>
             <TrackList tracker={tracker} books={list} reordering={reordering} />
           </div>

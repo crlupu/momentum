@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input, PanelHeader, AddButton } from "./ui";
-import { } from "./icons";
+import { Input, PanelHeader, AddButton } from "./ui";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, macroTotalsByDate } from "@/lib/tracker";
 
@@ -39,51 +38,30 @@ function Legend({ color, name }: { color: string; name: string }) {
   );
 }
 
-/**
- * Today's total against its target. Laid out in fixed rows — name, figure,
- * detail, bar — so nothing wraps in a narrow column and both meters keep
- * their bars on the same line.
- */
-function TargetMeter({
-  label,
-  value,
-  target,
-  fill,
-  solid }: {
-  label: string;
-  value: number;
-  target?: number;
-  fill: string;
-  solid: string;
-}) {
+/** Today's total against its target, as a row: name, figure, then its bar. */
+function TargetRow({ label, value, target, fill }: { label: string; value: number; target?: number; fill: string }) {
   const pct = target ? Math.round((value / target) * 100) : 0;
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
-      <span className="font-mono-n text-2xl font-bold leading-none">
-        {target ? `${pct}%` : value}
-      </span>
-      <span className="mt-1 truncate text-xs tabular-nums" style={{ color: LABEL }}>
-        {target ? `${value} / ${target} g` : `${value} g logged`}
-      </span>
-      <div
-        className="mt-2 h-1.5 w-full overflow-hidden rounded-full"
-        style={{ background: TRACK }}
-      >
-        {target ? (
-          <div
-            className="h-full"
-            style={{
-              width: `${Math.min(100, pct)}%`,
-              background: fill,
-              transition: "width .3s ease" }}
-          />
-        ) : null}
+    <div className="macro-row">
+      <div className="macro-row__head">
+        <span>{label}</span>
+        <span className="font-mono-n">
+          <b>{value}</b>
+          <span className="text-[var(--muted)]">{target ? ` / ${target} g` : " g"}</span>
+        </span>
+      </div>
+      <div className="macro-row__track" role="img" aria-label={target ? `${pct}% of the ${label.toLowerCase()} target` : `${value} g ${label.toLowerCase()}`}>
+        {target ? <span style={{ inlineSize: `${Math.min(100, pct)}%`, background: fill }} /> : null}
       </div>
     </div>
   );
 }
 
-export default function MacroTracker({ tracker }: { tracker: Tracker }) {
+/**
+ * Protein and fibre. `today` is a card of two rows, today against each
+ * target, with the add fields beneath; `trends` the last two weeks as bars.
+ */
+export default function MacroTracker({ tracker, view = "today" }: { tracker: Tracker; view?: "today" | "trends" }) {
   const s = tracker.state!;
   const [protein, setProtein] = useState("");
   const [fiber, setFiber] = useState("");
@@ -127,51 +105,44 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
     }
   };
 
+  if (view === "today") {
+    return (
+      <div>
+        <PanelHeader title="Protein & fibre" color="var(--sec-nutrition)" />
+        <div className="card p-4 md:p-5">
+          <TargetRow label="Protein" value={todayTotals.protein} target={s.proteinTarget} fill={PROTEIN} />
+          <TargetRow label="Fibre" value={todayTotals.fiber} target={s.fiberTarget} fill={FIBER} />
+          <form onSubmit={submit} className="mt-4 flex gap-2">
+            <Input
+              type="number"
+              aria-label="Protein in grams"
+              placeholder="Protein g"
+              value={protein}
+              onChange={(e) => setProtein(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <Input
+              type="number"
+              aria-label="Fibre in grams"
+              placeholder="Fibre g"
+              value={fiber}
+              onChange={(e) => setFiber(e.target.value)}
+              className="min-w-0 flex-1"
+            />
+            <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <PanelHeader title="Protein & fibre" color="var(--sec-nutrition)">
+    <section aria-label="Protein and fibre, last two weeks">
+      <PanelHeader title="Protein & fibre · two weeks" color="var(--sec-nutrition)">
         <Legend color={PROTEIN_SOLID} name="Protein" />
         <Legend color={FIBER_SOLID} name="Fibre" />
       </PanelHeader>
-
       <div className="card p-4 md:p-5">
-        <form onSubmit={submit} className="mb-4 flex gap-2">
-          <Input
-            type="number"
-            aria-label="Protein in grams"
-            placeholder="Protein (g)…"
-            value={protein}
-            onChange={(e) => setProtein(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            type="number"
-            aria-label="Fibre in grams"
-            placeholder="Fibre (g)…"
-            value={fiber}
-            onChange={(e) => setFiber(e.target.value)}
-            className="flex-1"
-          />
-          <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
-        </form>
-
-        <div className="mb-1 flex items-stretch gap-5">
-          <TargetMeter
-            label="protein"
-            value={todayTotals.protein}
-            target={s.proteinTarget}
-            fill={PROTEIN}
-            solid={PROTEIN_SOLID}
-          />
-          <TargetMeter
-            label="fibre"
-            value={todayTotals.fiber}
-            target={s.fiberTarget}
-            fill={FIBER}
-            solid={FIBER_SOLID}
-          />
-        </div>
-
         {asPercent ? (
           s.macros.length > 0 && (
             <p className="mt-3 text-[11px]" style={{ color: LABEL }}>
@@ -250,6 +221,6 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

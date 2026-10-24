@@ -171,6 +171,7 @@ export function WorkoutScreen({ tracker, workout, onDeleted }: { tracker: Tracke
         open={!!sheet}
         onClose={() => setSheet(null)}
         title={sheet === "new" ? "New Exercise" : sheet ? sheet.name : ""}
+        save={{ label: sheet === "new" ? "Add" : "Save", form: "exercise-sheet" }}
       >
         {sheet && (
           <ExerciseSheet
@@ -272,7 +273,7 @@ function ExerciseSheet({
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5">
+    <form id="exercise-sheet" onSubmit={submit} className="flex flex-col gap-5">
       <div className="group-list">
         <label className="group-row">
           <span className="w-20 flex-none">Name</span>
@@ -325,20 +326,20 @@ function ExerciseSheet({
         </div>
       </section>
 
-      <DialogActions
-        primary={{ label: exercise ? "Save" : "Add Exercise", disabled: !name.trim() || pending }}
-        del={
-          exercise
-            ? {
-                what: `the exercise "${exercise.name}"`,
-                onDelete: async () => {
-                  onDone();
-                  return tracker.removeExercise(workout.id, exercise.id);
-                },
-              }
-            : undefined
-        }
-      />
+      {exercise && (
+        <div className="group-list">
+          <DeleteButton
+            what={`the exercise "${exercise.name}"`}
+            label="Delete Exercise"
+            fullWidth
+            className="path-edit__delete"
+            onDelete={async () => {
+              onDone();
+              return tracker.removeExercise(workout.id, exercise.id);
+            }}
+          />
+        </div>
+      )}
     </form>
   );
 }

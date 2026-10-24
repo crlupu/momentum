@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "../ui";
-import { Pencil, Play } from "../icons";
+import { Play } from "../icons";
 import { Tracker, Book, categoryColor } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
@@ -144,10 +144,6 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
           Meant to be read after: {prereqs.map((b) => b.title).join(", ")}
         </p>
       )}
-
-      <Button variant="outline" className="self-start" onPress={() => flow.open({ kind: "edit", bookId: book.id })}>
-        <Pencil className="h-4 w-4" /> Edit book
-      </Button>
 
       {(book.statusLog ?? []).length > 0 && (
         <ol className="flex flex-col gap-1 text-sm">
