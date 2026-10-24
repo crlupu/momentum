@@ -11,7 +11,7 @@ import { FlowContext, useFlow as useFlowFromContext, type Dialog, type Flow } fr
 import { BookDetail } from "./BookDetail";
 import { BookForm } from "./BookForm";
 import { BulkAddForm, ImportPlanForm, PhaseForm, TrackForm } from "./forms";
-import { Field, Segmented } from "./bits";
+import { Minus, Plus } from "../icons";
 
 /** The book has reached its last page but hasn't been marked finished. */
 function atEnd(b: Book | undefined): boolean {
@@ -248,24 +248,34 @@ function Gone() {
   return <p className="text-[15px] text-[var(--muted)]">This book is no longer on the shelf.</p>;
 }
 
+/** Pages to jump ahead by, one tap each. */
+const JUMPS = [5, 15, 20, 30];
+
 /**
- * The page you're on, and nothing else. Pages since the last update are
- * logged as read today; a page behind the current one corrects it, without
- * logging anything.
+ * The page you're on, and nothing else: the current page to start from,
+ * − and + to nudge it, a few jumps ahead in one tap, and Save. Pages since
+ * the last update are logged as read today; a page behind the current one
+ * corrects it, without logging anything.
  */
 function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   const { close, checkEnd } = useFlowFromContext();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(String(book.read));
   const [error, setError] = useState<string | null>(null);
   const { pending, run } = usePending();
 
+  const cap = (n: number) => Math.max(0, book.pages > 0 ? Math.min(n, book.pages) : n);
   const v = Number(value);
   const valid = value.trim() !== "" && Number.isFinite(v) && v >= 0;
+  const page = valid ? cap(v) : book.read;
+  const diff = page - book.read;
+  const set = (n: number) => {
+    setValue(String(cap(n)));
+    setError(null);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid || pending) return;
-    const page = book.pages > 0 ? Math.min(v, book.pages) : v;
     if (page === book.read) {
       setError(`Already on page ${book.read}.`);
       return;
@@ -280,29 +290,51 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <Field label="Page you're on">
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={book.pages > 0 ? book.pages : undefined}
-          placeholder={`Now on ${book.read}${book.pages > 0 ? ` of ${book.pages}` : ""}`}
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setError(null);
-          }}
-          autoFocus
-          className="w-full rd-page-input"
-        />
-      </Field>
-      {error && (
-        <p className="text-sm" style={{ color: "var(--danger)" }}>
-          {error}
-        </p>
-      )}
-      <DialogActions primary={{ label: "Save", disabled: pending || !valid }} />
+    <form onSubmit={submit} className="log-sheet">
+      <p className="log-sheet__book">{book.title}</p>
+      <div className="log-sheet__dial">
+        <button type="button" className="log-sheet__step" aria-label="One page back" onClick={() => set(page - 1)}>
+          <Minus aria-hidden />
+        </button>
+        <label className="log-sheet__field">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={book.pages > 0 ? book.pages : undefined}
+            aria-label="Page you're on"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setError(null);
+            }}
+            onFocus={(e) => e.currentTarget.select()}
+            className="log-sheet__input"
+          />
+          <span className="log-sheet__of">
+            {book.pages > 0 ? `of ${book.pages} · ` : ""}was {book.read}
+          </span>
+        </label>
+        <button type="button" className="log-sheet__step" aria-label="One page forward" onClick={() => set(page + 1)}>
+          <Plus aria-hidden />
+        </button>
+      </div>
+      <div className="log-sheet__jumps">
+        {JUMPS.map((n) => (
+          <button key={n} type="button" className="log-sheet__jump" onClick={() => set(book.read + n)}>
+            +{n}
+          </button>
+        ))}
+      </div>
+      <p className={"log-sheet__note" + (diff > 0 ? " is-up" : "")} aria-live="polite">
+        {error ??
+          (diff > 0
+            ? `+${diff} page${diff === 1 ? "" : "s"}${book.pages > 0 ? ` · ${Math.round((page / book.pages) * 100)}%` : ""}`
+            : diff < 0
+              ? `Back ${-diff} page${diff === -1 ? "" : "s"}: a correction, nothing is logged`
+              : "\u00a0")}
+      </p>
+      <DialogActions primary={{ label: "Save", disabled: pending || !valid || diff === 0 }} />
     </form>
   );
 }

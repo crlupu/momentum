@@ -4372,3 +4372,81 @@ svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
 .task-row--area { padding-inline: 0.625rem 0.125rem; }
 .task-row--area + .task-row--area { box-shadow: inset 3.5rem 0 0 var(--pane-bg), inset 0 1px 0 var(--separator); }
 .task-row--area .task-row__text { flex: 1 1 auto; min-inline-size: 0; }
+
+/* Sheets are a layer above the page; what sits in them is a layer above
+   that, as Carbon stacks its layers. */
+.sheet { background: var(--surface); border-radius: var(--r-card) var(--r-card) 0 0; }
+.light .sheet { background: var(--background); }
+.dark .sheet .card,
+.dark .sheet .group-list { background: var(--surface-secondary); }
+
+/* A grouped list: a card of rows, each a label and its value. */
+.group-head { margin: 0 0 0.5rem; padding-inline: 0.25rem; font-size: 0.8125rem; font-weight: 500; color: var(--muted); }
+.group-list { margin: 0; padding: 0; list-style: none; background: var(--surface); border-radius: var(--r-card); overflow: hidden; }
+.group-row { display: flex; align-items: center; gap: 0.75rem; min-block-size: 3rem; padding: 0.375rem 1rem; font-size: 1rem; color: var(--foreground); }
+.group-row + .group-row { border-block-start: 1px solid var(--separator); }
+.group-row__value { color: var(--muted); text-align: end; }
+a.group-row, button.group-row { inline-size: 100%; text-align: start; text-decoration: none; }
+@media (hover: hover) { a.group-row:hover, button.group-row:hover { background: var(--fill-hover); } }
+
+/* "✎ Page": the same size whatever the page, opening the page sheet. */
+.page-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  inline-size: 5.5rem;
+  min-block-size: 2.5rem;
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.page-btn svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.page-btn:active { opacity: 0.7; }
+.page-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) { .page-btn:hover { background: var(--accent-soft-strong); } }
+.task-row .page-btn { margin-inline-end: 0.25rem; }
+
+/* The page sheet. */
+.log-sheet { display: flex; flex-direction: column; gap: 1rem; }
+.log-sheet__book { margin: 0; text-align: center; font-size: 0.9375rem; color: var(--muted); }
+.log-sheet__dial { display: flex; align-items: center; justify-content: center; gap: 1.25rem; }
+.log-sheet__step { display: grid; place-items: center; inline-size: 3.5rem; block-size: 3.5rem; border-radius: 50%; background: var(--default); color: var(--accent-text); }
+.log-sheet__step svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
+.log-sheet__step:active { opacity: 0.7; }
+.log-sheet__field { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; }
+input.log-sheet__input {
+  inline-size: 8.5rem;
+  block-size: 4.5rem;
+  border: 0;
+  border-block-end: 2px solid var(--accent);
+  border-radius: var(--r-control) var(--r-control) 0 0;
+  background: var(--field-bg);
+  color: var(--foreground);
+  font-size: 2.5rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+input.log-sheet__input::-webkit-inner-spin-button, input.log-sheet__input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input.log-sheet__input:focus { outline: none; border-block-end-color: var(--accent); background: var(--field-bg); }
+.log-sheet__of { font-size: 0.875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.log-sheet__jumps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
+.log-sheet__jump { min-block-size: 2.75rem; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent-text); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.log-sheet__jump:active { opacity: 0.7; }
+@media (hover: hover) { .log-sheet__jump:hover { background: var(--accent-soft-strong); } }
+.log-sheet__note { margin: 0; min-block-size: 1.25rem; text-align: center; font-size: 0.875rem; color: var(--muted); }
+.log-sheet__note.is-up { color: var(--success); }
+
+/* A book's own screen. */
+.book-head { display: flex; gap: 0.875rem; align-items: flex-start; }
+.book-progress { display: flex; flex-direction: column; gap: 0.625rem; padding: 1rem; border-radius: var(--r-card); background: var(--surface); }
+.dark .sheet .book-progress { background: var(--surface-secondary); }
+.book-progress__line { display: flex; align-items: baseline; gap: 0.375rem; }
+.book-progress__page { font-size: 1.5rem; font-weight: 600; }
+.book-progress__of, .book-progress__pct { font-size: 0.9375rem; color: var(--muted); }
+.book-progress__pace { margin: 0; font-size: 0.875rem; color: var(--muted); }

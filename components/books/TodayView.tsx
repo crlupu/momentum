@@ -3,7 +3,7 @@
 import { Panel } from "../Panel";
 import { FormEvent, useState } from "react";
 import { Button } from "../ui";
-import { Check, ChevronRight, Flame, Play, Tune, Warning } from "../icons";
+import { Check, ChevronRight, Flame, Pencil, Play, Tune, Warning } from "../icons";
 import { usePending } from "../ActionButton";
 import { Tracker, Book, dateKey, uid } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -127,6 +127,25 @@ function TrackToday({
 }
 
 /**
+ * Sets the page you're on: always the same "✎ Page" button, whatever the
+ * page, opening the update sheet. Needs a ReadingFlow around it.
+ */
+export function PageButton({ book }: { book: Book }) {
+  const flow = useFlow();
+  return (
+    <button
+      type="button"
+      className="page-btn"
+      aria-label={`Set page for ${book.title}, now ${book.read}`}
+      onClick={() => flow.open({ kind: "log", bookId: book.id })}
+    >
+      <Pencil aria-hidden />
+      Page
+    </button>
+  );
+}
+
+/**
  * An open book with its quick update: type the page you're on and the pages
  * since the last update are logged as read. A number with a plus in front,
  * "+25", is taken as pages read instead.
@@ -214,14 +233,8 @@ export function OpenBook({
                   {/* The page, not the pace: how far ahead or behind the
                       plan a track is belongs to Phases. */}
                   <span className="font-mono-n shrink-0">
-                    {book.pages > 0 ? `${book.read} of ${book.pages}` : `page ${book.read}`}
+                    {book.pages > 0 ? `p. ${book.read} of ${book.pages}` : `p. ${book.read}`}
                   </span>
-                  {book.author && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span className="book-row__author">{book.author}</span>
-                    </>
-                  )}
                 </>
               )}
             </span>
@@ -229,9 +242,7 @@ export function OpenBook({
         </button>
         {/* The update opens its own sheet, where the page has room and a
             number pad, rather than a squeezed box beside the title. */}
-        <button type="button" className="text-action text-action--sm shrink-0" onClick={() => flow.open({ kind: "log", bookId: book.id })}>
-          Update
-        </button>
+        <PageButton book={book} />
       </li>
     );
   }

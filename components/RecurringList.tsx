@@ -7,6 +7,8 @@ import { usePending } from "./ActionButton";
 import { BookOpen, Check, Dumbbell, School } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { REPEAT_LABEL, routines, type Routine } from "@/lib/routines";
+import { ReadingFlow } from "./books/flow";
+import { PageButton } from "./books/TodayView";
 
 function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
   const { pending, run } = usePending();
@@ -75,6 +77,7 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
   });
 
   return (
+    <ReadingFlow tracker={tracker}>
     <Panel title="Recurring" bare>
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
@@ -96,10 +99,28 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                     <span className="task-row__sub">
                       {REPEAT_LABEL[r.freq]}
                       <span aria-hidden> · </span>
-                      <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
-                      {r.cat.name}
+                      {(() => {
+                        // A book's page in place of its category: the tile
+                        // already says it's reading.
+                        const book = r.kind === "book" ? s.books.find((b) => b.id === r.id) : undefined;
+                        return book ? (
+                          <span className="font-mono-n whitespace-nowrap">
+                            p. {book.read}
+                            {book.pages > 0 ? ` of ${book.pages}` : ""}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
+                            {r.cat.name}
+                          </>
+                        );
+                      })()}
                     </span>
                   </span>
+                  {r.kind === "book" && !r.done && (() => {
+                    const book = s.books.find((b) => b.id === r.id);
+                    return book ? <PageButton book={book} /> : null;
+                  })()}
                   <RoutineCheckbox tracker={tracker} r={r} />
                 </li>
               ))}
@@ -108,5 +129,6 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
         </Card.Content>
       </Card>
     </Panel>
+    </ReadingFlow>
   );
 }
