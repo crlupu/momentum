@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* The chosen style (Settings › Appearance), applied before the first paint. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var s=localStorage.getItem("momentum:style");if(s)document.documentElement.dataset.style=s}catch(e){}`,
+            __html: `var d=document.documentElement;d.dataset.style="volt";try{var s=localStorage.getItem("momentum:style");if(s)d.dataset.style=s}catch(e){}`,
           }}
         />
         {/* iOS home-screen app */}

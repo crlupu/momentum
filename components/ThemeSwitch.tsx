@@ -52,8 +52,14 @@ export function ThemeSwitch({ className }: { className?: string }) {
   );
 }
 
-/** The app's styles. Neutral is the default; Signal Blue is black (or stark white) with the logo's blue. */
+/**
+ * The app's styles. Signal Volt is the default: all black, and only the next
+ * step lights up in the logo's blue. Signal Blue paints the hero cards in the
+ * logo's gradient; Neutral is the quiet grey original.
+ */
+export const DEFAULT_STYLE = "volt";
 const STYLES = [
+  { value: "volt", label: "Signal Volt", note: "Black; only what's next lights up", swatch: ["#000000", "#1a1a1e", "#2b91ff"] },
   { value: "neutral", label: "Neutral", note: "Greys, one blue accent", swatch: ["#0b0b0c", "#1f1f22", "#024cff"] },
   { value: "signal", label: "Signal Blue", note: "Black, the logo's blue, heavy titles", swatch: ["#000000", "#2b91ff", "#0667db"] },
 ] as const;
@@ -67,7 +73,7 @@ export const STYLE_KEY = "momentum:style";
 export function StyleSwitch() {
   const [style, setStyle] = useState<string | null>(null);
   useEffect(() => {
-    setStyle(document.documentElement.dataset.style || "neutral");
+    setStyle(document.documentElement.dataset.style || DEFAULT_STYLE);
   }, []);
   const choose = (v: string) => {
     setStyle(v);
@@ -77,7 +83,7 @@ export function StyleSwitch() {
     } catch {}
   };
   return (
-    <div role="radiogroup" aria-label="Style" className="style-cards">
+    <div role="radiogroup" aria-label="Style" className="style-cards style-cards--3">
       {STYLES.map((o) => (
         <button
           key={o.value}
