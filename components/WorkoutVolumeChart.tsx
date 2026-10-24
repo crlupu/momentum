@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, memo, useState } from "react";
 
 import { Card, Input, Button, PanelHeader, Stat } from "./ui";
@@ -16,9 +15,7 @@ import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
-import { StartWorkoutButton } from "./StartWorkoutButton";
-import { ActiveWorkoutPanel } from "./WorkoutsView";
-import { ChevronRight, Plus } from "./icons";
+import { Plus } from "./icons";
 
 const LABEL = "var(--muted)";
 const TRACK = "var(--default)";
@@ -141,20 +138,11 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
           of their own. */}
       {/* The two ways in sit on the summary only; the Training page is for
           looking back. */}
-      <PanelHeader title={summary ? "Training" : "This week"} color="var(--sec-fitness)">
-        {summary && (
-          <>
-            <CardioButton tracker={tracker} />
-            <StartWorkoutButton tracker={tracker} />
-          </>
-        )}
+      {/* Starting a workout is Up next's job, above; cardio is logged
+          beside the week it counts toward. */}
+      <PanelHeader title="This week" color="var(--sec-fitness)">
+        {summary && <CardioButton tracker={tracker} />}
       </PanelHeader>
-
-      {summary && s.activeWorkout && (
-        <div className="mb-5">
-          <ActiveWorkoutPanel tracker={tracker} active={s.activeWorkout} />
-        </div>
-      )}
       {sessions === 0 && s.cardio.length === 0 ? (
         <Card>
           <Card.Content className="p-4 md:p-5">
@@ -183,13 +171,6 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
               was readable. Each is scaled to its own heaviest day, so a light
               workout still fills its chart — which means heights compare
               within a chart but never between two. */}
-          {summary && (
-            <Link href="/fitness?view=training" className="drill-row card mt-3">
-              <span>Volume by workout</span>
-              <span className="drill-row__meta">{charts.length} charts</span>
-              <ChevronRight aria-hidden />
-            </Link>
-          )}
           {!summary && charts.map((c) => (
             <div key={c.id} className="mt-3">
               <DayChart

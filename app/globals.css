@@ -4527,3 +4527,42 @@ input.todo-add__input::placeholder { color: var(--field-placeholder); }
 .next-item__link svg { flex: none; inline-size: 0.875rem; block-size: 0.875rem; fill: currentColor; }
 .goal-detail__head { margin: 0.25rem 0 -0.25rem; }
 .step-list .done-fold { border-block-start: 0; padding-inline: 0; }
+
+/* Fitness: the workout that's due. */
+.up-next { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; border-radius: var(--r-card); background: var(--surface); }
+.up-next__label { margin: 0; font-size: 0.8125rem; font-weight: 500; color: var(--area-training); }
+.up-next__head { display: flex; align-items: baseline; gap: 0.5rem; }
+.up-next__name { flex: 1 1 auto; margin: 0; font-size: 1.375rem; font-weight: 600; }
+.up-next__meta { margin: 0; font-size: 0.875rem; color: var(--muted); }
+.up-next__actions { display: flex; gap: 0.5rem; margin-block-start: 0.625rem; }
+.up-next__actions .cds--btn { min-block-size: 3rem; }
+.up-next__pick { display: grid; place-items: center; inline-size: 3rem; border-radius: var(--r-control); background: var(--default); color: var(--accent-text); }
+.up-next__pick svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+
+/* The latest weight, as one number. */
+.weight-now { display: flex; align-items: flex-end; gap: 0.375rem; margin-block-end: 0.875rem; }
+.weight-now__kg { font-size: 2.25rem; font-weight: 600; line-height: 1; }
+.weight-now__unit { padding-block-end: 0.2rem; font-size: 1rem; color: var(--muted); }
+.weight-now__when { display: flex; flex-direction: column; align-items: flex-end; gap: 0.125rem; font-size: 0.8125rem; color: var(--muted); }
+.weight-now__when .is-down { color: var(--success); font-weight: 500; }
+.weight-now__when .is-up { color: var(--warning); font-weight: 500; }
+
+/* A row that opens a page. */
+.group-row__chev { flex: none; inline-size: 1.125rem; block-size: 1.125rem; fill: var(--muted); }
+.weight-now__badge { align-self: center; margin-inline-start: 0.5rem; padding: 0.125rem 0.5rem; border-radius: var(--r-small); font-size: 0.8125rem; font-weight: 600; }
+.weight-now__badge.is-ahead, .weight-now__badge.is-on-track { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+.weight-now__badge.is-close { background: var(--warning-soft); color: var(--warning); }
+.weight-now__badge.is-behind { background: var(--danger-soft); color: var(--danger-soft-foreground); }
+.weight-medians__change { inline-size: 3rem; text-align: end; }
+.card .group-list { background: var(--surface-secondary); }
+.light .card .group-list { background: var(--background); }
+
+/* Nutrition: today's ring and the week beside it. */
+.kcal-now { display: flex; align-items: center; gap: 1rem; margin-block-end: 1rem; }
+.kcal-now__title { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.kcal-now__line { margin: 0; font-size: 0.9375rem; color: var(--muted); }
+.kcal-ring__num { fill: var(--foreground); font-size: 1.125rem; font-weight: 600; font-family: var(--font-figure); }
+.kcal-ring__unit { fill: var(--muted); font-size: 0.625rem; font-family: var(--font-ui); }
+.cat-chip.meal-chip[aria-checked="true"] { background: var(--button-primary); color: #fff; }
+.cat-chip.meal-chip[aria-checked="true"] .cat-chip__dot { background: #fff; }
+.group-row.weight-plan__progress { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-block: 0.75rem; }

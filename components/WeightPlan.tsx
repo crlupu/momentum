@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Panel } from "./Panel";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
-import { Button, Input, Stat } from "./ui";
+import { Button, Input } from "./ui";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
 import { useWidth } from "./useWidth";
@@ -85,59 +85,65 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <div className="text-[13px] text-[var(--muted)]">Target for {fmtDateAuto(plan.targetDate)}</div>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
-          <span className="font-mono-n text-3xl font-bold" style={{ color: "var(--accent)" }}>
-            {kg1(plan.targetKg)} kg
+      <ul className="group-list">
+        <li className="group-row">
+          <span className="flex-1">Target</span>
+          <span className="group-row__value">
+            {kg1(plan.targetKg)} kg by {fmtDateAuto(plan.targetDate)}
           </span>
-          <span className="text-[15px] text-[var(--muted)]">from {kg1(plan.startKg)} kg</span>
-        </div>
-        <div className="book-card__meter mt-3" aria-label={`${Math.round(sum.progress * 100)}% of the way`}>
-          <span style={{ width: `${sum.progress * 100}%`, background: "var(--accent)" }} />
-        </div>
-        <div className="mt-1 text-xs text-[var(--muted)]">
-          {Math.round(sum.progress * 100)}% of the way · weekly median {kg1(sum.current)} kg
-          {sum.next && sum.next.date !== plan.targetDate && ` · next: ${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}`}
-        </div>
-      </div>
+        </li>
+        {sum.next && sum.next.date !== plan.targetDate && (
+          <li className="group-row">
+            <span className="flex-1">Next checkpoint</span>
+            <span className="group-row__value">
+              {kg1(sum.next.kg)} kg by {fmtDateAuto(sum.next.date)}
+            </span>
+          </li>
+        )}
+        <li className="group-row">
+          <span className="flex-1">Pace needed</span>
+          <span className="group-row__value">{pace(sum.neededPace)} kg / week</span>
+        </li>
+        <li className="group-row">
+          <span className="flex-1">Pace so far</span>
+          <span className="group-row__value">{pace(sum.actualPace)} kg / week</span>
+        </li>
+        <li className="group-row weight-plan__progress">
+          <span className="flex w-full justify-between gap-2 text-[13px] text-[var(--muted)]">
+            <span>{kg1(plan.startKg)} kg</span>
+            <span>{Math.round(sum.progress * 100)}% of the way</span>
+            <span>{kg1(plan.targetKg)} kg</span>
+          </span>
+          <span className="book-card__meter" aria-hidden>
+            <span style={{ width: `${sum.progress * 100}%`, background: "var(--area-training)" }} />
+          </span>
+        </li>
+      </ul>
 
       <DayStanding plan={plan} tracker={tracker} medians={medians} today={today} />
 
-      <div className="stat-grid stat-grid--4">
-        <Stat value={`${kg1(Math.max(0, sum.lost))} kg`} label="Lost" />
-        <Stat value={`${kg1(sum.toGo)} kg`} label="To go" />
-        <Stat value={pace(sum.neededPace)} label="kg/week needed" />
-        <Stat value={pace(sum.actualPace)} label="kg/week so far" />
-      </div>
-
       <PlanChart plan={plan} medians={medians} today={today} />
 
-      <table className="rd-table">
-        <thead>
-          <tr>
-            <th>Checkpoint</th>
-            <th className="text-right">Target</th>
-            <th className="text-right">Week median</th>
-            <th className="text-right">Status</th>
-          </tr>
-        </thead>
-        <tbody>
+      <section>
+        <h3 className="group-head">Checkpoints</h3>
+        <ul className="group-list">
           {plan.checkpoints.map((c) => {
             const st = checkpointStatus(c, medians, today);
             return (
-              <tr key={c.date}>
-                <td>{fmtDateAuto(c.date)}</td>
-                <td className="text-right font-mono-n">{kg1(c.kg)} kg</td>
-                <td className="text-right font-mono-n">{st.median != null ? `${kg1(st.median)} kg` : "–"}</td>
-                <td className="text-right">
-                  <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>
-                </td>
-              </tr>
+              <li key={c.date} className="group-row">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span>{fmtDateAuto(c.date)}</span>
+                  <span className="text-[13px] text-[var(--muted)]">
+                    {st.median != null ? `week median ${kg1(st.median)} kg` : "no median yet"}
+                  </span>
+                </span>
+                <span className="font-mono-n">{kg1(c.kg)} kg</span>
+                <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>
+              </li>
             );
           })}
-        </tbody>
-      </table>
+        </ul>
+      </section>
     </div>
   );
 }
