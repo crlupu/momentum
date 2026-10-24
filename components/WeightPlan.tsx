@@ -120,7 +120,7 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
                   </span>
                 </span>
                 <span className="font-mono-n">{kg1(c.kg)} kg</span>
-                <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>
+                {st.status !== "pending" && <span className={`rd-flag ${STATUS[st.status].cls}`}>{STATUS[st.status].label}</span>}
               </li>
             );
           })}

@@ -5134,3 +5134,12 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .rd-status--active::before { background: var(--accent); }
 .rd-status--paused::before { background: var(--warning); }
 .rd-status--finished::before { background: var(--success); }
+
+/* Phases: Reorder on the first track label; the verdict is quiet unless the
+   phase is behind. */
+.phase-books__reorder { margin-inline-start: 0.5rem; text-transform: none; letter-spacing: 0; }
+.phase-books__pace + .phase-books__reorder { margin-inline-start: 0.5rem; }
+.group-head .phase-books__reorder:only-of-type { margin-inline-start: auto; }
+.phase-books__hint { margin: 0 0 0.5rem; padding-inline: 0.25rem; font-size: 0.8125rem; color: var(--muted); }
+.phase-card__verdict.is-ahead,
+.phase-card__verdict.is-done { padding: 0; background: none; color: var(--success); }

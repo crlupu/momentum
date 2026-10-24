@@ -10,7 +10,6 @@ import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
   IoDocumentTextOutline, IoHeart, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
 } from "react-icons/io5";
-import { ThemeSwitch } from "./ThemeSwitch";
 import { Logo } from "./Logo";
 import { Tracker } from "@/lib/tracker";
 import {
@@ -111,7 +110,6 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
       </nav>
 
       <div className="sidebar__foot">
-        <ThemeSwitch className="w-full" />
         {tracker.user && (
           <button type="button" className="side-link" onClick={() => tracker.signOutUser()}>
             <span className="side-link__icon" aria-hidden><LogOut /></span>
@@ -213,9 +211,6 @@ export function MoreSheet({
             );
           })}
         </ul>
-
-        <h3 className="group-label mt-5">Appearance</h3>
-        <ThemeSwitch className="w-full" />
 
         {tracker.user && (
           <ul className="inset-list mt-5">

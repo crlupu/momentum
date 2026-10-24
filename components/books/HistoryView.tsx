@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useWidth } from "../useWidth";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { PanelHeader } from "../ui";
+import { BookOpen } from "../icons";
 import * as R from "@/lib/reading";
-import { Segmented, StatusBadge, TrackDot, fmtDateAuto, monthLabel } from "./bits";
+import { Segmented, TrackDot, fmtDateAuto, monthLabel } from "./bits";
 import { useFlow } from "./flowContext";
 
 /** Finished and dropped books, the reading charts, and a year in review. */
@@ -55,67 +56,50 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
             onChange={setYear}
             options={[{ value: "", label: "All years" }, ...years.map((y) => ({ value: y, label: y }))]}
           />
-          <label className="flex items-center gap-1.5 text-sm text-foreground/70">
-            <input
-              type="checkbox"
-              checked={showDropped}
-              onChange={(e) => setShowDropped(e.target.checked)}
-              className="h-4 w-4"
-            />
+          {/* A toggle like every other in the app, not the browser's checkbox. */}
+          <button
+            type="button"
+            className="text-action"
+            aria-pressed={showDropped}
+            onClick={() => setShowDropped((v) => !v)}
+          >
             Include dropped
-          </label>
+          </button>
         </div>
-        <div className="card p-4 md:p-5">
-          {list.length === 0 ? (
-            <p className="text-[15px] text-[var(--muted)]">
-              Nothing finished{year ? ` in ${year}` : ""} yet.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="rd-table">
-                <thead>
-                  <tr>
-                    <th>Book</th>
-                    <th>Started</th>
-                    <th>Ended</th>
-                    <th className="text-right">Days</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((b) => {
-                    const t = R.trackOf(s, b.trackId);
-                    const end = endOf(b);
-                    const days =
-                      b.startedDate && end ? R.daysBetween(b.startedDate, end) + 1 : null;
-                    return (
-                      <tr key={b.id}>
-                        <td>
-                          <button
-                            type="button"
-                            className="flex items-center gap-1.5 text-left hover:underline"
-                            onClick={() => flow.open({ kind: "detail", bookId: b.id })}
-                          >
-                            {t && <TrackDot color={t.color} />}
-                            <span className="font-semibold">{b.title}</span>
-                          </button>
-                          {b.status === "dropped" && (
-                            <span className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                              <StatusBadge status="dropped" />
-                              {b.dropReason}
-                            </span>
-                          )}
-                        </td>
-                        <td>{fmtDateAuto(b.startedDate)}</td>
-                        <td>{fmtDateAuto(end)}</td>
-                        <td className="text-right font-mono-n">{days ?? "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {list.length === 0 ? (
+          <p className="card p-4 text-[15px] text-[var(--muted)]">
+            Nothing finished{year ? ` in ${year}` : ""} yet.
+          </p>
+        ) : (
+          // Rows rather than a table: a phone has no room for four columns.
+          <ul className="group-list">
+            {list.map((b) => {
+              const t = R.trackOf(s, b.trackId);
+              const end = endOf(b);
+              const days = b.startedDate && end ? R.daysBetween(b.startedDate, end) + 1 : null;
+              const span = [fmtDateAuto(b.startedDate), fmtDateAuto(end)].filter((x) => x && x !== "—").join(" – ");
+              return (
+                <li key={b.id}>
+                  <button type="button" className="group-row" onClick={() => flow.open({ kind: "detail", bookId: b.id })}>
+                    <span className="area-tile" aria-hidden>
+                      <BookOpen />
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        {t && <TrackDot color={t.color} />}
+                        <span className="truncate">{b.title}</span>
+                      </span>
+                      <span className="text-[13px] text-[var(--muted)]">
+                        {b.status === "dropped" ? `Dropped${b.dropReason ? ` · ${b.dropReason}` : ""}` : span || "Finished"}
+                      </span>
+                    </span>
+                    {days != null && <span className="group-row__value font-mono-n">{days} d</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <PagesPerWeek tracker={tracker} />

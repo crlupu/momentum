@@ -59,6 +59,8 @@ export function PathsView({
   const [newPath, setNewPath] = useState(false);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<string[]>([]);
+  // One Edit for the section; while on, each path shows its own Edit.
+  const [arranging, setArranging] = useState(false);
 
   // Which paths are folded, per device. Only a convenience.
   useEffect(() => {
@@ -99,6 +101,17 @@ export function PathsView({
           </div>
           {editable && (
             <div className="panel-head__side">
+              <button
+                type="button"
+                className="text-action"
+                aria-pressed={arranging}
+                onClick={() => {
+                  setArranging((v) => !v);
+                  setEditingId(null);
+                }}
+              >
+                {arranging ? "Done" : "Edit"}
+              </button>
               {/* One + for the section: a goal, or a path to group goals. */}
               <ActionMenu
                 label={`Add to ${heading}`}
@@ -135,7 +148,7 @@ export function PathsView({
                   <span className="path__pct font-mono-n">{prog.pct}%</span>
                   {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
                 </button>
-                {editable && (
+                {editable && arranging && (
                   <button
                     type="button"
                     className="text-action text-action--sm"
