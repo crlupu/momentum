@@ -4,9 +4,11 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Panel } from "./Panel";
 import { Card } from "./ui";
 import { usePending } from "./ActionButton";
-import { BookOpen, Check, Dumbbell, School } from "./icons";
+import { BookOpen, Check, ChevronDown, ChevronRight, Dumbbell, School } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { REPEAT_LABEL, routines, type Routine } from "@/lib/routines";
+import { ReadingFlow } from "./books/flow";
+import { PageButton } from "./books/TodayView";
 
 function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
   const { pending, run } = usePending();
@@ -62,6 +64,11 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
       a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
   );
 
+  // What's left shows; what's done folds into one row, opened on request.
+  const [showDone, setShowDone] = useState(false);
+  const doneCount = list.filter((r) => r.done).length;
+  const shown = showDone ? list : list.filter((r) => !r.done);
+
   // Five rows show, the ones still to do first; the rest scroll. The box is
   // measured to end exactly under the fifth row, so none is cut in half.
   const ul = useRef<HTMLUListElement>(null);
@@ -75,7 +82,8 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
   });
 
   return (
-    <Panel title="Recurring" bare>
+    <ReadingFlow tracker={tracker}>
+    <Panel title="Routines" bare>
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
           {list.length === 0 ? (
@@ -88,7 +96,7 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
               className={"list-none p-0" + (maxH ? " overflow-y-auto pr-1 recurring-scroll" : "")}
               style={maxH ? { maxHeight: maxH } : undefined}
             >
-              {list.map((r) => (
+              {shown.map((r) => (
                 <li key={r.key} className="task-row task-row--area">
                   <AreaTile kind={r.kind} />
                   <span className="task-row__text">
@@ -96,17 +104,50 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                     <span className="task-row__sub">
                       {REPEAT_LABEL[r.freq]}
                       <span aria-hidden> · </span>
-                      <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
-                      {r.cat.name}
+                      {(() => {
+                        // A book's page in place of its category: the tile
+                        // already says it's reading.
+                        const book = r.kind === "book" ? s.books.find((b) => b.id === r.id) : undefined;
+                        return book ? (
+                          <span className="font-mono-n whitespace-nowrap">
+                            p. {book.read}
+                            {book.pages > 0 ? ` of ${book.pages}` : ""}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="cat-dot" style={{ background: r.cat.color }} aria-hidden />
+                            {r.cat.name}
+                          </>
+                        );
+                      })()}
                     </span>
                   </span>
+                  {r.kind === "book" && !r.done && (() => {
+                    const book = s.books.find((b) => b.id === r.id);
+                    return book ? <PageButton book={book} /> : null;
+                  })()}
                   <RoutineCheckbox tracker={tracker} r={r} />
                 </li>
               ))}
             </ul>
           )}
+          {doneCount > 0 && (
+            <button
+              type="button"
+              className="done-fold"
+              aria-expanded={showDone}
+              onClick={() => setShowDone((v) => !v)}
+            >
+              <span className="done-fold__mark" aria-hidden>
+                <Check />
+              </span>
+              <span className="flex-1">{doneCount} done</span>
+              {showDone ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
+            </button>
+          )}
         </Card.Content>
       </Card>
     </Panel>
+    </ReadingFlow>
   );
 }

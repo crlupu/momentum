@@ -1,6 +1,5 @@
 "use client";
 
-import { RepeatSelect } from "./RepeatSelect";
 import { InsertRow } from "./InsertRow";
 import { CheckRing, IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
@@ -18,19 +17,18 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input } from "./ui";
 import {
-  Pencil,
   Minus,
   ReorderLines,
   Check,
   X,
   ChevronRight,
   CheckCircle2,
-  Info,
-  Plus } from "./icons";
+  Clock,
+  MoreHorizontal } from "./icons";
+import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
-import { useConfigEditing } from "./ConfigCard";
 import { CircuitPlayer } from "./CircuitPlayer";
 import {
   Tracker,
@@ -40,7 +38,6 @@ import {
   Exercise,
   ExerciseTarget,
   formatTarget,
-  dateKey,
   ActiveWorkout,
   ActiveSet,
   ActiveExercise,
@@ -53,7 +50,7 @@ import {
 /* --------------------------------- blocks -------------------------------- */
 
 /** A block's heading, its timings if it is a circuit, and its exercises. */
-function BlockSection({
+export function BlockSection({
   tracker,
   workout,
   block }: {
@@ -181,7 +178,7 @@ function BlockSection({
 }
 
 /** Creates a block. Its exercises are added to it afterwards. */
-function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
+export function AddBlockRow({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [mode, setMode] = useState<"sets" | "circuit">("circuit");
@@ -459,134 +456,6 @@ function ExerciseRow({
   );
 }
 
-/* -------------------------------- workout -------------------------------- */
-
-function WorkoutEditor({ tracker, workout }: { tracker: Tracker; workout: Workout }) {
-  const [name, setName] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [newOneArm, setNewOneArm] = useState(false);
-  const { pending, run } = usePending();
-
-  const doneToday = tracker
-    .state!.workoutSessions.filter((x) => x.workoutId === workout.id && x.date === dateKey())
-    .length;
-
-  const closeAdd = () => {
-    setName("");
-    setNewOneArm(false);
-    setAdding(false);
-  };
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") closeAdd();
-  };
-
-  const addExercise = async (e: FormEvent) => {
-    e.preventDefault();
-    if (pending || !name.trim()) return;
-    const num = (v: string) => (v.trim() === "" ? null : Number(v));
-    const typed = { name, oneArm: newOneArm };
-    // Clear straight away: the row is added optimistically, so waiting on the
-    // save left the fields holding text that had already been committed.
-    setName("");
-    setNewOneArm(false);
-    // No weight: a set takes its numbers from the last time the exercise was
-    // performed, so asking for one here was asking for a figure nothing read.
-    const ok = await run(() =>
-      tracker.addExercise(workout.id, typed.name, null, typed.oneArm)
-    );
-    if (!ok) {
-      setName(typed.name);
-      setNewOneArm(typed.oneArm);
-    }
-  };
-
-  return (
-    <div>
-        {workout.exercises.length === 0 && (workout.blocks ?? []).length === 0 ? (
-          <p className="py-2 text-[15px] text-[var(--muted)]">
-            No exercises yet. Add the first one below.
-          </p>
-        ) : (
-          <div>
-            {/* The main body first — exercises in no block — then each block
-                under its own heading. */}
-            <SortableExercises tracker={tracker} workout={workout} exercises={blockExercises(workout, undefined)} />
-
-            {(workout.blocks ?? []).map((b) => (
-              <BlockSection key={b.id} tracker={tracker} workout={workout} block={b} />
-            ))}
-          </div>
-        )}
-
-        {/* Both add controls share a row with a gap. They were siblings in
-            flow, so the two buttons sat against each other with nothing
-            between them. Each form takes the full width, pushing the other
-            control onto its own line while it is open. */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-        <AddBlockRow tracker={tracker} workout={workout} />
-
-        {/* The add row never wraps: the cancel button belongs beside the field
-            it cancels, not stranded on a line of its own. The name field
-            carries min-w-0 so it is what gets squeezed. */}
-        {adding ? (
-          <form onSubmit={addExercise} className="flex w-full items-center gap-2" onKeyDown={onEscape}>
-            <Input
-              aria-label={`Add an exercise to ${workout.name}`}
-              placeholder="Bench press…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="min-w-0 flex-1"
-              autoFocus
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              isIconOnly
-              className="shrink-0"
-              aria-label="Add exercise"
-              isDisabled={pending}
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              isIconOnly
-              className="shrink-0"
-              aria-label="Done adding exercises"
-              onPress={closeAdd}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </form>
-        ) : null}
-        {adding ? (
-          <label className="exercise-onearm">
-            <input
-              type="checkbox"
-              checked={newOneArm}
-              onChange={(e) => setNewOneArm(e.target.checked)}
-            />
-            One arm — counts double
-          </label>
-        ) : (
-          <InsertRow label="Add exercise" onPress={() => setAdding(true)} />
-        )}
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-          <span className="text-xs text-[var(--muted)]">
-            {workout.exercises.length}{" "}
-            {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            {doneToday > 0 && <span className="ml-2">· done {doneToday}× today</span>}
-          </span>
-          <span className="text-xs text-[var(--muted)]">Start it from Fitness</span>
-        </div>
-    </div>
-  );
-}
-
-
 /* ---------------------------- live workout ------------------------------- */
 
 /** mm:ss while under an hour, then h:mm:ss. */
@@ -726,9 +595,9 @@ function useTapFeedback(): [boolean, () => void] {
 }
 
 /**
- * One set in the live workout. A set is planned first and performed second, so
- * the row carries its own numbers, last session's numbers for reference, and a
- * single button that turns the first into the second.
+ * One set in the live workout, as a row of the exercise's table: its
+ * number, last time's figures for reference, this time's weight and reps,
+ * complete and remove. Completing it locks the figures.
  */
 function SetRow({
   tracker,
@@ -751,63 +620,46 @@ function SetRow({
     void tracker.setSetDone(exerciseId, set.id, true);
   };
 
-  const className = ["set-row", done ? "set-row--done" : "", tapped ? "is-tapped" : ""]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div className={className}>
-      <div className="set-row__head">
-        <span className="set-row__index">Set {index + 1}</span>
-
-        {/* Last time's numbers: reference only, never editable. */}
-        <span className="set-row__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
-          {previous ? `last · ${formatSet(previous)}` : "no history"}
-        </span>
-      </div>
-
-      <div className="set-row__body">
-        <NumberField
-          label={`Weight for set ${index + 1}`}
-          placeholder="kg"
-          value={set.weight}
-          locked={done}
-          onCommit={(n) => tracker.setSetWeight(exerciseId, set.id, n)}
-        />
-        <span className="set-row__times" aria-hidden>
-          ×
-        </span>
-        <NumberField
-          label={`Reps for set ${index + 1}`}
-          placeholder="reps"
-          inputMode="numeric"
-          value={set.reps}
-          locked={done}
-          onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
-        />
-
-        {/* Two actions of one kind: complete and delete, the same size. */}
-        <span className="set-row__actions">
-          <IconButton
-            label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
-            pressed={done}
-            onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
-          >
-            <CheckRing on={done} />
-          </IconButton>
-          <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
-            <span className="icon-disc icon-disc--danger"><Minus /></span>
-          </IconButton>
-        </span>
-      </div>
+    <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}>
+      <span className="set-line__no">{index + 1}</span>
+      {/* Last time's numbers: reference only, never editable. */}
+      <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
+        {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
+      </span>
+      <NumberField
+        label={`Weight for set ${index + 1}`}
+        placeholder={previous?.weight != null ? String(previous.weight) : "kg"}
+        value={set.weight}
+        locked={done}
+        onCommit={(n) => tracker.setSetWeight(exerciseId, set.id, n)}
+      />
+      <NumberField
+        label={`Reps for set ${index + 1}`}
+        placeholder={previous?.reps != null ? String(previous.reps) : "reps"}
+        inputMode="numeric"
+        value={set.reps}
+        locked={done}
+        onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
+      />
+      <IconButton
+        label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
+        pressed={done}
+        onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
+      >
+        <CheckRing on={done} />
+      </IconButton>
+      <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
+        <span className="icon-disc icon-disc--danger"><Minus /></span>
+      </IconButton>
     </div>
   );
 }
 
 /**
- * One exercise inside the live workout. While it is being worked through it
- * shows an editable row per set; once marked done it collapses to a plain
- * record of what was lifted, a line per set, with nothing left to type into.
+ * One exercise inside the live workout: its name and target, then a table
+ * of sets. Once marked done it collapses to a plain record of what was
+ * lifted, a line per set, with nothing left to type into.
  */
 function ExerciseBlock({
   tracker,
@@ -829,15 +681,16 @@ function ExerciseBlock({
 
   return (
     <div
-      className={["exercise", done ? "exercise--done" : "", tapped ? "is-tapped" : ""]
-        .filter(Boolean)
-        .join(" ")}
+      id={`ex-${e.exerciseId}`}
+      className={["exercise", done ? "exercise--done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="min-w-0 flex-1 truncate text-[15px]">{e.name}</span>
-        <span className="shrink-0 text-xs text-[var(--muted)]">
-          {empty ? "no sets" : `${doneCount}/${e.sets.length} done`}
-        </span>
+      <div className="exercise__head">
+        <span className="exercise__name">{e.name}</span>
+        {e.target && (
+          <span className="exercise__target" aria-label={`Recommended: ${formatTarget(e.target)}`}>
+            {formatTarget(e.target)}
+          </span>
+        )}
         {/* Only offered once there is something to finish. */}
         {!empty &&
           (done ? (
@@ -858,13 +711,6 @@ function ExerciseBlock({
           ))}
       </div>
 
-      {/* The recommendation, under the name, for the whole time it's worked. */}
-      {e.target && (
-        <span className="target-chip mb-2" aria-label={`Recommended: ${formatTarget(e.target)}`}>
-          <Info aria-hidden /> {formatTarget(e.target)}
-        </span>
-      )}
-
       {done ? (
         <ul className="exercise__record">
           {e.sets.map((s, i) => (
@@ -876,21 +722,63 @@ function ExerciseBlock({
         </ul>
       ) : (
         <>
-          <div className="space-y-2">
-            {e.sets.map((s, i) => (
-              <SetRow
-                key={s.id}
-                tracker={tracker}
-                exerciseId={e.exerciseId}
-                set={s}
-                index={i}
-                previous={history?.sets[i]}
-              />
-            ))}
-          </div>
+          {!empty && (
+            <div className="set-line set-line--head" aria-hidden>
+              <span>Set</span>
+              <span>Previous</span>
+              <span>kg</span>
+              <span>Reps</span>
+              <span>Done</span>
+              <span />
+            </div>
+          )}
+          {e.sets.map((s, i) => (
+            <SetRow
+              key={s.id}
+              tracker={tracker}
+              exerciseId={e.exerciseId}
+              set={s}
+              index={i}
+              previous={history?.sets[i]}
+            />
+          ))}
           <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
+          {!empty && (
+            <p className="exercise__count">
+              {doneCount} of {e.sets.length} done
+            </p>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+/** How long since the last set was completed, ticking each second. */
+function SinceLastSet({ active }: { active: ActiveWorkout }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  let last: { at: number; set: number; name: string } | null = null;
+  for (const e of active.exercises) {
+    e.sets.forEach((x, i) => {
+      if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name };
+    });
+  }
+  if (!last) return null;
+  const l = last as { at: number; set: number; name: string };
+  return (
+    <div className="since-set" role="timer" aria-label="Time since the last set">
+      <Clock className="since-set__icon" aria-hidden />
+      <span className="since-set__text">
+        <span className="since-set__label">Since last set</span>
+        <span className="since-set__what">
+          Set {l.set} · {l.name}
+        </span>
+      </span>
+      <span className="since-set__time font-mono-n">{formatElapsed(now - l.at)}</span>
     </div>
   );
 }
@@ -919,23 +807,51 @@ export function ActiveWorkoutPanel({
     .filter((c) => c.exercises.length > 0);
   const circuitIds = new Set(circuits.flatMap((c) => c.exercises.map((e) => e.exerciseId)));
   const plain = active.exercises.filter((e) => !circuitIds.has(e.exerciseId));
+  // The exercise being worked on: the first not marked done. The next one
+  // after it waits under "Up next".
+  const currentIdx = plain.findIndex((e) => !e.done);
+  const upNext = currentIdx >= 0 ? plain.slice(currentIdx + 1).find((e) => !e.done) : undefined;
 
   return (
-    <div className="card card--live p-4 md:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-display flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight">
+    <div className="card card--live live-workout">
+      <div className="live-workout__head">
+        <h3 className="live-workout__name">
           <span className="sec-dot" style={{ background: "var(--sec-fitness)" }} aria-hidden />
           <span className="truncate">{active.name}</span>
         </h3>
-        <span className="shrink-0 text-sm text-foreground/70">
+        <span className="live-workout__clock">
           <Elapsed startedAt={active.startedAt} />
         </span>
+        <ActionMenu
+          label="Workout options"
+          className="live-workout__more"
+          items={[{ label: "Cancel workout", danger: true, onSelect: () => void tracker.cancelWorkout() }]}
+        >
+          <MoreHorizontal aria-hidden />
+        </ActionMenu>
       </div>
 
+      {plain.length > 1 && (
+        <div className="live-workout__chips" role="list" aria-label="Exercises">
+          {plain.map((e, i) => {
+            const d = e.sets.filter((x) => x.done).length;
+            return (
+              <button
+                key={e.exerciseId}
+                type="button"
+                role="listitem"
+                className={"live-chip" + (i === currentIdx ? " is-current" : "") + (e.done ? " is-done" : "")}
+                onClick={() => document.getElementById(`ex-${e.exerciseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                {e.name} · {d}/{e.sets.length}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Circuit blocks are run by the clock rather than filled in by hand, so
-          they get the timer instead of set rows. Anything not in a circuit
-          block — including every workout that has no blocks at all — is
-          unchanged. */}
+          they get the timer instead of set rows. */}
       {circuits.map(({ block, exercises }) => (
         <div key={block.id} className="mb-3">
           <CircuitPlayer tracker={tracker} block={block} exercises={exercises} />
@@ -953,216 +869,39 @@ export function ActiveWorkoutPanel({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-foreground/10 pt-3">
-        <span className="text-xs text-[var(--muted)]">
-          {sets} of {planned} {planned === 1 ? "set" : "sets"} ·{" "}
-          <span className="font-mono-n text-sm font-bold text-foreground">
-            {total.toLocaleString()} kg
+      <SinceLastSet active={active} />
+
+      {upNext && (
+        <button
+          type="button"
+          className="live-next"
+          onClick={() => document.getElementById(`ex-${upNext.exerciseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
+          <span className="flex min-w-0 flex-1 flex-col text-start">
+            <span className="live-next__label">Up next</span>
+            <span className="live-next__name">{upNext.name}</span>
           </span>
-        </span>
-        <span className="flex items-center gap-2">
-          <Button variant="outline" isDisabled={pending} onPress={() => tracker.cancelWorkout()}>
-            Cancel
-          </Button>
-          <Button
-            className="btn-success"
-            // Enabled once anything has been done. A circuit is ticked off by
-            // the clock and never records a set, so requiring one left the
-            // button dead for the whole of a timed workout.
-            isDisabled={pending || (sets === 0 && !active.exercises.some((e) => e.done))}
-            onPress={() => void run(() => tracker.finishWorkout())}
-          >
-            <CheckCircle2 className="h-4 w-4" /> Mark as done
-          </Button>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------- view ---------------------------------- */
-
-/** One row in the configuration list: title, then edit and delete. */
-function WorkoutRow({
-  tracker,
-  workout,
-  expanded,
-  onToggle,
-  editing }: {
-  tracker: Tracker;
-  workout: Workout;
-  expanded: boolean;
-  onToggle: () => void;
-  editing: boolean;
-}) {
-  // Renaming happens here, on the name already shown, rather than on a second
-  // copy of it inside the editor below.
-  const [renaming, setRenaming] = useState(false);
-  const [title, setTitle] = useState(workout.name);
-  const { run } = usePending();
-
-  const saveName = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    setRenaming(false);
-    const ok = await run(() => tracker.renameWorkout(workout.id, title));
-    if (ok === false) setRenaming(true);
-  };
-
-  return (
-    <div className="border-b border-foreground/10 last:border-b-0">
-      <div className="cfg-row">
-        {renaming ? (
-          <form onSubmit={saveName} className="flex min-w-0 flex-1 items-center gap-2">
-            <Input
-              aria-label="Workout name"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="min-w-0 flex-1"
-              autoFocus
-            />
-            <Button type="submit" size="sm" variant="primary" isIconOnly aria-label="Save name">
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              isIconOnly
-              aria-label="Cancel rename"
-              onPress={() => {
-                setTitle(workout.name);
-                setRenaming(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </form>
-        ) : editing ? (
-          <>
-            <button
-              onClick={onToggle}
-              className="flex min-w-0 flex-1 items-center gap-2 text-left"
-              aria-expanded={expanded}
-            >
-              <ChevronRight
-                className={"h-3.5 w-3.5 shrink-0 transition-transform " + (expanded ? "rotate-90" : "")}
-                aria-hidden
-              />
-              <span className="truncate text-[15px]">{workout.name}</span>
-            </button>
-            <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
-              <span aria-hidden>·</span>
-              {workout.exercises.length}{" "}
-              {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            </span>
-            <span className="cfg-actions">
-              {/* The pencil renames. Opening the workout is the row itself,
-                  which the chevron already says. */}
-              <RowActions
-                    name={workout.name} editLabel="Rename"
-                    onEdit={() => {
-                  setTitle(workout.name);
-                  setRenaming(true);
-                }}
-                    del={{ what: `the workout "${workout.name}"`, onDelete: () => tracker.removeWorkout(workout.id) }}
-                  />
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="cfg-label">{workout.name}</span>
-            <span className="cfg-meta flex items-center gap-1.5">
-              <RepeatSelect tracker={tracker} kind="workout" item={workout} inline />
-              <span aria-hidden>·</span>
-              {workout.exercises.length}{" "}
-              {workout.exercises.length === 1 ? "exercise" : "exercises"}
-            </span>
-          </>
-        )}
-      </div>
-
-      {expanded && editing && (
-        <div className="pb-3">
-          <WorkoutEditor tracker={tracker} workout={workout} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function WorkoutsView({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const editing = useConfigEditing();
-  const [name, setName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const { pending, run } = usePending();
-
-  const closeCreate = () => {
-    setName("");
-    setCreating(false);
-  };
-
-  const onEscape = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") closeCreate();
-  };
-
-  const addWorkout = async (e: FormEvent) => {
-    e.preventDefault();
-    if (pending || !name.trim()) return;
-    const typed = name;
-    closeCreate();
-    const ok = await run(() => tracker.addWorkout(typed));
-    if (!ok) {
-      setName(typed);
-      setCreating(true);
-    }
-  };
-
-  return (
-    <div>
-      {s.workouts.length === 0 && !creating ? (
-        <p className="cfg-empty">No workouts yet.</p>
-      ) : (
-        <div className={editing ? "mb-3" : undefined}>
-          {s.workouts.map((w) => (
-            <WorkoutRow
-              key={w.id}
-              tracker={tracker}
-              workout={w}
-              expanded={openId === w.id}
-              editing={editing}
-              onToggle={() => setOpenId(openId === w.id ? null : w.id)}
-            />
-          ))}
-        </div>
+          {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
+          <ChevronRight className="group-row__chev" aria-hidden />
+        </button>
       )}
 
-      {editing && creating ? (
-        <form onSubmit={addWorkout} className="cfg-add" onKeyDown={onEscape}>
-          <Input
-            aria-label="New workout name"
-            placeholder="Push day…"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="min-w-[8rem] flex-1"
-            autoFocus
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            isDisabled={pending}
-          >
-            <Check className="h-4 w-4" /> Create
-          </Button>
-          <Button variant="outline" isIconOnly aria-label="Cancel" onPress={closeCreate}>
-            <X className="h-4 w-4" />
-          </Button>
-        </form>
-      ) : editing ? (
-        <InsertRow label="New workout" onPress={() => setCreating(true)} />
-      ) : null}
+      <div className="live-workout__foot">
+        <span className="live-workout__tally">
+          {sets} of {planned} {planned === 1 ? "set" : "sets"}
+          <span className="font-mono-n">{total.toLocaleString()} kg</span>
+        </span>
+        <Button
+          variant="primary"
+          // Enabled once anything has been done. A circuit is ticked off by
+          // the clock and never records a set, so requiring one left the
+          // button dead for the whole of a timed workout.
+          isDisabled={pending || (sets === 0 && !active.exercises.some((e) => e.done))}
+          onPress={() => void run(() => tracker.finishWorkout())}
+        >
+          Finish workout
+        </Button>
+      </div>
     </div>
   );
 }

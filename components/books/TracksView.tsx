@@ -19,11 +19,13 @@ import {
   verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, AddButton } from "../ui";
-import { ChevronDown, ChevronRight, Play, ReorderLines, Unarchive } from "../icons";
+import { ChevronDown, ChevronRight, Pencil, Play, ReorderLines, Unarchive } from "../icons";
 import { Tracker, Book, categoryColor } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { Cover } from "./Cover";
-import { Meter, ProgressText, StatusBadge, TrackDot } from "./bits";
+import { Meter, ProgressText, StatusBadge, TrackDot, fmtDateAuto } from "./bits";
+import { PageButton } from "./TodayView";
+import { InsertRow } from "../InsertRow";
 import { useFlow } from "./flowContext";
 
 /** How many of the queue show before the rest fold away under "Later". */
@@ -326,6 +328,141 @@ function QueueRow({
           </Button>
         </>
       )}
+    </li>
+  );
+}
+
+/**
+ * A track's own page: the books open now, each with its Page button; the
+ * queue, dragged into order by its handles; and the track's rules as rows
+ * that open its settings.
+ */
+export function TrackPageView({ tracker, track }: { tracker: Tracker; track: R.ReadingTrack }) {
+  const s = tracker.state!;
+  const flow = useFlow();
+  const open = R.activeBooks(s, track.id);
+  const queue = R.trackQueue(s, track.id);
+  const lead = open[0];
+  const pace = lead ? R.bookPace(s, lead) : null;
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const ids = queue.map((b) => b.id);
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    void tracker.reorderQueue(track.id, arrayMove(ids, from, to));
+  };
+  const editTrack = () => flow.open({ kind: "track", trackId: track.id });
+
+  return (
+    <div className="flex flex-col gap-5">
+      {track.note && <p className="goal-desc__text">{track.note}</p>}
+      {lead && pace?.eta && (
+        <p className="track-summary">
+          {lead.title} done around {fmtDateAuto(pace.eta)}
+        </p>
+      )}
+
+      <section>
+        <h3 className="group-head">Reading now</h3>
+        <ul className="group-list">
+          {open.length === 0 ? (
+            <li className="group-row group-row__value">Nothing open. Start the top book below.</li>
+          ) : (
+            open.map((b) => (
+              <li key={b.id} className="group-row book-line">
+                <button type="button" className="book-line__open" onClick={() => flow.open({ kind: "detail", bookId: b.id })}>
+                  <Cover book={b} size="sm" />
+                  <span className="book-line__text">
+                    <span className="book-line__title">{b.title}</span>
+                    <span className="book-line__sub font-mono-n">
+                      p. {b.read}
+                      {b.pages > 0 ? ` of ${b.pages}` : ""}
+                    </span>
+                  </span>
+                </button>
+                <PageButton book={b} />
+              </li>
+            ))
+          )}
+        </ul>
+      </section>
+
+      <section>
+        <h3 className="group-head">Up next</h3>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <ul className="group-list">
+              {queue.map((b) => (
+                <QueueLine key={b.id} book={b} perDay={track.dailyTarget} />
+              ))}
+              <li>
+                <InsertRow label="Add Book" onPress={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })} />
+              </li>
+            </ul>
+          </SortableContext>
+        </DndContext>
+        {queue.length > 0 && (
+          <p className="group-foot">The top book starts when the current one is finished. Drag ≡ to change the order.</p>
+        )}
+      </section>
+
+      <section>
+        <h3 className="group-head">Rules</h3>
+        <div className="group-list">
+          <button type="button" className="group-row" onClick={editTrack}>
+            <span className="flex-1">Pages a day</span>
+            <span className="group-row__value">{track.dailyTarget > 0 ? track.dailyTarget : "No target"}</span>
+          </button>
+          <button type="button" className="group-row" onClick={editTrack}>
+            <span className="flex-1">Books at a time</span>
+            <span className="group-row__value">{track.wipLimit}</span>
+          </button>
+          <button type="button" className="group-row" onClick={editTrack}>
+            <span className="flex-1">Rest days</span>
+            <span className="group-row__value">{track.restDays > 0 ? `${track.restDays} a week` : "None"}</span>
+          </button>
+        </div>
+      </section>
+
+      <Button variant="outline" className="self-start" onPress={editTrack}>
+        <Pencil className="h-4 w-4" /> Edit track
+      </Button>
+    </div>
+  );
+}
+
+/** A book waiting in the queue: opens the book; its handle drags it. */
+function QueueLine({ book, perDay }: { book: Book; perDay: number }) {
+  const flow = useFlow();
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: book.id,
+  });
+  const days = perDay > 0 && book.pages > 0 ? Math.ceil(R.remainingPages(book) / perDay) : null;
+  return (
+    <li
+      ref={setNodeRef}
+      className={"group-row book-line" + (isDragging ? " is-dragging" : "")}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <button type="button" className="book-line__open" onClick={() => flow.open({ kind: "detail", bookId: book.id })}>
+        <Cover book={book} size="sm" />
+        <span className="book-line__text">
+          <span className="book-line__title">{book.title}</span>
+          <span className="book-line__sub">
+            {book.status === "paused" ? `Paused at p. ${book.read}` : book.pages > 0 ? `${book.pages} pages` : "Pages not set"}
+            {days ? ` · about ${days} days` : ""}
+          </span>
+        </span>
+      </button>
+      <button type="button" ref={setActivatorNodeRef} className="rd-grip" aria-label={`Move ${book.title}`} {...attributes} {...listeners}>
+        <ReorderLines className="h-6 w-6" />
+      </button>
     </li>
   );
 }

@@ -431,7 +431,12 @@ export type SetRecord = {
  * One set inside a live workout. A set is planned first and performed second:
  * `done` is what separates the two, and only done sets count towards volume.
  */
-export type ActiveSet = SetRecord & { id: string; done?: boolean };
+export type ActiveSet = SetRecord & {
+  id: string;
+  done?: boolean;
+  /** When it was completed, epoch ms: the live workout counts time since the last one. */
+  doneAt?: number;
+};
 
 export type ActiveExercise = {
   exerciseId: string;

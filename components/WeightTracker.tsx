@@ -6,9 +6,7 @@ import { Button, Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { type WeightPlan, addDays, expectedOn, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
-import Link from "next/link";
-import { ChevronRight } from "./icons";
+import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -202,6 +200,35 @@ function WeightChart({
   );
 }
 
+const STANDING = { ahead: "Ahead of plan", "on-track": "On plan", close: "Close to plan", behind: "Behind plan" } as const;
+
+/**
+ * The latest weight as one number, with how it has moved over the week
+ * before it: down in green, up in the warning colour.
+ */
+export function WeightNow({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
+  const latest = weights[weights.length - 1];
+  const check = plan ? latestCheck(plan, weights) : undefined;
+  const weekAgo = [...weights].reverse().find((w) => w.date <= addDays(latest.date, -7));
+  const d = weekAgo ? Math.round((latest.kg - weekAgo.kg) * 10) / 10 : null;
+  return (
+    <div className="weight-now">
+      <span className="weight-now__kg font-mono-n">{latest.kg}</span>
+      <span className="weight-now__unit">kg</span>
+      {check && <span className={"weight-now__badge is-" + check.status}>{STANDING[check.status]}</span>}
+      <span className="flex-1" />
+      <span className="weight-now__when">
+        {d != null && (
+          <span className={d < 0 ? "is-down" : d > 0 ? "is-up" : ""}>
+            {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} kg this week
+          </span>
+        )}
+        <span>{fmtDateAuto(latest.date)}</span>
+      </span>
+    </div>
+  );
+}
+
 export default function WeightTracker({ tracker, summary }: { tracker: Tracker; summary?: boolean }) {
   const s = tracker.state!;
   const data = s.weights;
@@ -221,15 +248,10 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
   return (
     <div>
       <PanelHeader title={summary ? "Weight" : "Weigh-ins"} color="var(--sec-fitness)">
-        {latest && (
-          <span>
-            <span className="font-mono-n font-bold text-foreground">{latest.kg}</span> kg ·{" "}
-            {fmtDateAuto(latest.date)}
-          </span>
-        )}
       </PanelHeader>
 
       <div className="card p-4 md:p-5">
+        {latest && <WeightNow weights={data} plan={plan} />}
         {/* Weighed in from the summary only: one place to add a weight. */}
         {summary && (
         <form onSubmit={submit} className="mb-3 flex gap-2">
@@ -281,12 +303,6 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
         </>
         )}
       </div>
-      {summary && (
-        <Link href="/fitness?view=weight" className="drill-row card mt-3">
-          <span>Weight, medians and plan</span>
-          <ChevronRight aria-hidden />
-        </Link>
-      )}
     </div>
   );
 }
@@ -302,40 +318,32 @@ function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
   const thisWeek = mondayOf(dateKey());
   const rows = all.slice(-8).reverse();
   return (
-    <div className="mt-4">
-      <div className="mb-1 text-[13px] font-semibold">Weekly median</div>
-      <table className="rd-table">
-        <thead>
-          <tr>
-            <th>Week of</th>
-            <th className="text-right">Weigh-ins</th>
-            <th className="text-right">Median</th>
-            <th className="text-right">Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((m) => {
-            const prev = all[all.indexOf(m) - 1];
-            const d = prev ? Math.round((m.median - prev.median) * 10) / 10 : null;
-            return (
-              <tr key={m.week}>
-                <td>
-                  {fmtDate(m.week)}
-                  {m.week === thisWeek && <span className="ml-1 text-xs text-[var(--muted)]">· so far</span>}
-                </td>
-                <td className="text-right font-mono-n">{m.n}</td>
-                <td className="text-right font-mono-n font-semibold">{m.median.toFixed(1)} kg</td>
-                <td
-                  className="text-right font-mono-n"
-                  style={{ color: d == null || d === 0 ? "var(--muted)" : d < 0 ? "var(--success)" : "var(--danger)" }}
-                >
-                  {d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <section className="mt-5">
+      <h3 className="group-head">Weekly medians</h3>
+      <ul className="group-list weight-medians">
+        {rows.map((m) => {
+          const prev = all[all.indexOf(m) - 1];
+          const d = prev ? Math.round((m.median - prev.median) * 10) / 10 : null;
+          return (
+            <li key={m.week} className="group-row">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span>{m.week === thisWeek ? "This week" : fmtDate(m.week)}</span>
+                <span className="text-[13px] text-[var(--muted)]">
+                  {m.n} weigh-in{m.n === 1 ? "" : "s"}
+                  {m.week === thisWeek ? " so far" : ""}
+                </span>
+              </span>
+              <span className="font-mono-n font-semibold">{m.median.toFixed(1)}</span>
+              <span
+                className="weight-medians__change font-mono-n"
+                style={{ color: d == null || d === 0 ? "var(--muted)" : d < 0 ? "var(--success)" : "var(--warning)" }}
+              >
+                {d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

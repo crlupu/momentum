@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "./ui";
 import { DeleteGlyph } from "./DeleteGlyph";
+import { Minus } from "./icons";
 import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
 import { DialogActions } from "./DialogActions";
@@ -20,6 +21,7 @@ export function DeleteButton({
   className,
   fullWidth,
   iconOnly,
+  dash,
   bare,
 }: {
   /** Name of the thing being deleted, shown in the dialog. */
@@ -31,6 +33,8 @@ export function DeleteButton({
   fullWidth?: boolean;
   /** Render just the trash icon (still confirms before deleting). */
   iconOnly?: boolean;
+  /** With iconOnly: a red dash on a soft red disc instead of the trash, as an edit list shows it. */
+  dash?: boolean;
   /** @deprecated Every delete is the soft red one now; kept so callers compile. */
   bare?: boolean;
 }) {
@@ -51,7 +55,11 @@ export function DeleteButton({
     <>
       {iconOnly ? (
         <button type="button" className="minus-delete" aria-label={`Delete ${what}`} onClick={() => setOpen(true)}>
-          <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
+          {dash ? (
+            <span className="icon-disc icon-disc--danger icon-disc--soft-danger"><Minus /></span>
+          ) : (
+            <span className="icon-disc icon-disc--danger"><DeleteGlyph /></span>
+          )}
         </button>
       ) : (
         <Button

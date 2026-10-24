@@ -6,6 +6,8 @@ import { fmtDateAuto } from "@/lib/dates";
 import { CalendarDays } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
+import { caloriesLeftThisWeek } from "@/lib/model";
+import { DeleteButton } from "./DeleteButton";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -25,6 +27,46 @@ function mondayOfThisWeek(): string {
   return dateKey(d);
 }
 
+/** Today's kcal as a ring filling toward the day's budget, the figure inside. */
+function KcalRing({ today, budget }: { today: number; budget?: number }) {
+  const size = 96;
+  const stroke = 10;
+  const r = size / 2 - stroke / 2;
+  const circ = 2 * Math.PI * r;
+  const frac = budget ? Math.min(1, today / budget) : 0;
+  const over = !!budget && today > budget;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label={budget ? `${today} of ${budget} kcal today` : `${today} kcal today`}
+      className="flex-none"
+    >
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent-track)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={over ? "var(--warning)" : "var(--area-food)"}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - frac)}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text x="50%" y="47%" textAnchor="middle" className="kcal-ring__num">
+        {today.toLocaleString()}
+      </text>
+      <text x="50%" y="66%" textAnchor="middle" className="kcal-ring__unit">
+        kcal today
+      </text>
+    </svg>
+  );
+}
+
 export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [kcal, setKcal] = useState("");
@@ -39,6 +81,9 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   const weekDays = Object.entries(totals).filter(([d]) => d >= weekStart && d <= today);
   const weekSum = weekDays.reduce((a, [, v]) => a + v, 0);
   const weekAvg = weekDays.length ? Math.round(weekSum / weekDays.length) : 0;
+
+  const weekLeft = caloriesLeftThisWeek(s.calories, s.calorieBudget);
+  const todayEntries = s.calories.filter((e) => e.date === today);
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const counts = days.map((d) => totals[dateKey(d)] ?? 0);
@@ -75,13 +120,24 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
   return (
     <div>
       <PanelHeader title="Calories" color="var(--sec-nutrition)">
-        <span>
-          <span className="font-mono-n font-bold text-foreground">{todayTotal.toLocaleString()}</span> kcal
-          today
-        </span>
+        {s.calorieBudget ? <span>budget {s.calorieBudget.toLocaleString()} a day</span> : null}
       </PanelHeader>
 
       <div className="card p-4 md:p-5">
+        {/* Today in the ring, against the day's budget; the week beside it. */}
+        <div className="kcal-now">
+          <KcalRing today={todayTotal} budget={s.calorieBudget} />
+          <div className="min-w-0">
+            <p className="kcal-now__title">This week</p>
+            <p className="kcal-now__line">{weekAvg.toLocaleString()} a day on average</p>
+            {weekLeft != null && (
+              <p className="kcal-now__line">
+                {weekLeft >= 0 ? `${weekLeft.toLocaleString()} left this week` : `${(-weekLeft).toLocaleString()} over this week`}
+              </p>
+            )}
+          </div>
+        </div>
+
         <form onSubmit={submit} className="mb-3 space-y-2">
           <div className="flex gap-2">
             <Input
@@ -124,18 +180,16 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
             <AddButton type="submit" aria-label="Add" isDisabled={pending} />
           </div>
           {s.mealTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Meal">
               {s.mealTags.map((m) => (
                 <button
                   key={m.id}
                   type="button"
+                  role="radio"
                   onClick={() => setTagId(tagId === m.id ? "" : m.id)}
-                  className="cat-chip"
-                  style={{
-                    ["--chip-color" as string]: m.color,
-                    opacity: tagId && tagId !== m.id ? 0.45 : 1,
-                    outline: tagId === m.id ? `1px solid ${m.color}` : undefined }}
-                  aria-pressed={tagId === m.id}
+                  className="cat-chip meal-chip"
+                  style={{ ["--chip-color" as string]: m.color }}
+                  aria-checked={tagId === m.id}
                 >
                   <span className="cat-chip__dot" aria-hidden />
                   {m.name}
@@ -145,13 +199,23 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           )}
         </form>
 
-        <div className="mb-1 flex items-baseline gap-2">
-          <span className="font-mono-n text-xl font-bold">
-            {weekAvg.toLocaleString()}
-          </span>
-          <span className="text-xs" style={{ color: LABEL }}>avg kcal/day · this week</span>
-        </div>
+        {todayEntries.length > 0 && (
+          <section className="mb-4">
+            <h3 className="group-head">Today</h3>
+            <ul className="group-list">
+              {todayEntries.map((e) => (
+                <li key={e.id} className="group-row">
+                  <span className="cat-dot" style={{ background: colorOf(e.tagId) }} aria-hidden />
+                  <span className="flex-1">{tagOf(e.tagId)?.name ?? "Untagged"}</span>
+                  <span className="group-row__value font-mono-n">{e.kcal.toLocaleString()} kcal</span>
+                  <DeleteButton iconOnly what={`${e.kcal} kcal (${tagOf(e.tagId)?.name ?? "untagged"})`} onDelete={() => tracker.removeCalorieEntry(e.id)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
+        <h3 className="group-head">Last two weeks</h3>
         {s.calories.length === 0 ? (
           <p className="px-1 py-2 text-[15px]" style={{ color: LABEL }}>
             Add entries to see daily totals.

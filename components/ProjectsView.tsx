@@ -7,8 +7,9 @@ import { Modal } from "./Modal";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectBoard } from "./ProjectBoard";
 import { Segmented } from "./books/bits";
-import { ChevronLeft, ChevronRight, ExternalLink, Kanban } from "./icons";
+import { ChevronLeft, ChevronRight, ExternalLink, Kanban, Plus } from "./icons";
 import { Tracker } from "@/lib/tracker";
+import { fmtDateAuto } from "@/lib/dates";
 import { columnCards, projectFinished, projectProgress, type Project } from "@/lib/projects";
 
 type View = "active" | "done";
@@ -39,7 +40,9 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
           ]}
         />
         <span className="goals-toolbar__actions">
-          <AddButton secondary label="New project" onPress={() => setAdding(true)} />
+          <button type="button" className="head-add" aria-label="New project" onClick={() => setAdding(true)}>
+            <Plus aria-hidden />
+          </button>
         </span>
       </div>
 
@@ -84,6 +87,12 @@ function ProjectTile({
   const { done, total, pct } = projectProgress(p);
   const todo = columnCards(p, "todo").length;
   const doing = columnCards(p, "doing").length;
+  const doingCard = columnCards(p, "doing")[0];
+  const nextCard = columnCards(p, "todo")[0];
+  const nextDue = p.cards
+    .filter((c) => c.status !== "done" && c.due)
+    .map((c) => c.due!)
+    .sort()[0];
 
   return (
     <button type="button" className="card project-tile" onClick={() => onOpen(p.id)}>
@@ -98,12 +107,18 @@ function ProjectTile({
         </span>
         <span className="project-tile__pct font-mono-n">{pct}%</span>
       </span>
+      {!projectFinished(p) && (doingCard || nextCard) && (
+        <span className="project-tile__now">
+          <span className="project-tile__now-label">{doingCard ? "Doing" : "Next"}</span>
+          <span className="project-tile__now-title">{(doingCard ?? nextCard)!.title}</span>
+        </span>
+      )}
       <span className="project-tile__meta">
         {projectFinished(p)
           ? "Finished"
           : total === 0
             ? "No cards yet"
-            : `${todo} to do · ${doing} doing · ${done} done`}
+            : `${todo} to do · ${doing} doing · ${done} done${nextDue ? ` · next due ${fmtDateAuto(nextDue)}` : ""}`}
       </span>
     </button>
   );

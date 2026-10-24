@@ -27,7 +27,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { Modal } from "./Modal";
 import { CardSheet, NewCardForm } from "./CardSheet";
 import { TagChip } from "./TagPicker";
-import { CalendarEvent } from "./icons";
+import { CalendarEvent, MoreHorizontal } from "./icons";
+import { ActionMenu, type MenuAction } from "./Menu";
+import { Segmented } from "./books/bits";
+import { useWidth } from "./useWidth";
 import { dateKey, Tracker } from "@/lib/tracker";
 import { fmtDateAuto } from "@/lib/dates";
 import { COLUMNS, cardTags, type CardStatus, type Project, type ProjectCard } from "@/lib/projects";
@@ -57,6 +60,11 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState<CardStatus | null>(null);
+  // On a phone, one column at a time, chosen above; a card moves between
+  // columns from its menu rather than by dragging across the screen.
+  const [boxRef, width] = useWidth<HTMLDivElement>();
+  const phone = width > 0 && width < 640;
+  const [shownCol, setShownCol] = useState<CardStatus>("todo");
 
   const base = useMemo(() => colsOf(p), [p]);
   const cols = drag ?? base;
@@ -131,18 +139,43 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
           setDrag(null);
         }}
       >
-        <div className="board">
-          {COLUMNS.map((col) => (
-            <Column
-              key={col.id}
-              project={p}
-              status={col.id}
-              title={col.title}
-              cards={cols[col.id].map((id) => byId.get(id)).filter(Boolean) as ProjectCard[]}
-              onOpen={setOpenId}
-              onAdd={() => setAdding(col.id)}
-            />
-          ))}
+        <div ref={boxRef}>
+          {phone && (
+            <div className="board-switch">
+              <Segmented<CardStatus>
+                label="Column"
+                value={shownCol}
+                onChange={setShownCol}
+                options={COLUMNS.map((c) => ({ value: c.id, label: `${c.title} · ${cols[c.id].length}` }))}
+              />
+            </div>
+          )}
+          <div className={"board" + (phone ? " board--one" : "")}>
+            {COLUMNS.filter((col) => !phone || col.id === shownCol).map((col) => (
+              <Column
+                key={col.id}
+                project={p}
+                status={col.id}
+                title={col.title}
+                cards={cols[col.id].map((id) => byId.get(id)).filter(Boolean) as ProjectCard[]}
+                onOpen={setOpenId}
+                onAdd={() => setAdding(col.id)}
+                menu={
+                  phone
+                    ? (c) => [
+                        ...COLUMNS.filter((x) => x.id !== c.status).map((x) => ({
+                          label: `Move to ${x.title}`,
+                          onSelect: () => void tracker.moveCard(p.id, c.id, x.id),
+                        })),
+                        { label: "Edit", onSelect: () => setOpenId(c.id) },
+                        "separator" as const,
+                        { label: "Delete", danger: true, onSelect: () => void tracker.deleteCard(p.id, c.id) },
+                      ]
+                    : undefined
+                }
+              />
+            ))}
+          </div>
         </div>
         <DragOverlay>{active ? <CardFace project={p} card={active} lifted /> : null}</DragOverlay>
       </DndContext>
@@ -173,6 +206,7 @@ function Column({
   cards,
   onOpen,
   onAdd,
+  menu,
 }: {
   project: Project;
   status: CardStatus;
@@ -180,6 +214,8 @@ function Column({
   cards: ProjectCard[];
   onOpen: (id: string) => void;
   onAdd: () => void;
+  /** On a phone: each card's actions, in a menu on the card. */
+  menu?: (c: ProjectCard) => MenuAction[];
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
@@ -191,7 +227,7 @@ function Column({
       <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className={"board-col__cards" + (isOver ? " is-over" : "")}>
           {cards.map((c) => (
-            <SortableCard key={c.id} project={project} card={c} onOpen={onOpen} />
+            <SortableCard key={c.id} project={project} card={c} onOpen={onOpen} menu={menu?.(c)} />
           ))}
           {cards.length === 0 && <li className="board-col__empty">Drop cards here</li>}
         </ul>
@@ -207,10 +243,12 @@ function SortableCard({
   project,
   card: c,
   onOpen,
+  menu,
 }: {
   project: Project;
   card: ProjectCard;
   onOpen: (id: string) => void;
+  menu?: MenuAction[];
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
   return (
@@ -230,6 +268,11 @@ function SortableCard({
       >
         <CardBody project={project} card={c} />
       </button>
+      {menu && (
+        <ActionMenu label={`Actions for ${c.title}`} className="board-card__more" items={menu}>
+          <MoreHorizontal aria-hidden />
+        </ActionMenu>
+      )}
     </li>
   );
 }

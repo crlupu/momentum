@@ -19,13 +19,13 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Panel } from "../Panel";
-import { Button, AddButton } from "../ui";
+
 import { ChevronRight, ReorderLines } from "../icons";
 import { Tracker, dateKey, type Book } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
 import { useFlow } from "./flowContext";
+import { InsertRow } from "../InsertRow";
 
 /**
  * The plan in blocks. Each phase shows how far through it is, when it will
@@ -42,61 +42,109 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
   ).length;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-[var(--muted)]">
-          {phases.length === 0
-            ? "No phases yet. A phase is a block of the plan, e.g. Q4 2026, holding books from every track."
-            : unassigned > 0
+    <div className="flex flex-col gap-5">
+      {phases.length === 0 && (
+        <p className="text-[15px] text-[var(--muted)]">
+          No phases yet. A phase is a block of the plan, e.g. Q4 2026, holding books from every track.
+        </p>
+      )}
+
+      {phases.map((p) => (
+        <PhaseCard key={p.id} tracker={tracker} phase={p} st={stats.get(p.id)!} today={today} />
+      ))}
+
+      <section>
+        <h3 className="group-head">{phases.length ? "Later" : "Plan"}</h3>
+        <ul className="group-list">
+          <li>
+            <InsertRow label="New Phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
+          </li>
+          {phases.length === 0 && (
+            <li>
+              <InsertRow label="Import a Plan" onPress={() => flow.open({ kind: "import" })} />
+            </li>
+          )}
+        </ul>
+        {phases.length > 0 && (
+          <p className="group-foot">
+            {unassigned > 0
               ? `${unassigned} unfinished book${unassigned === 1 ? " isn't" : "s aren't"} in a phase.`
               : "Every unfinished book is in a phase."}
-        </p>
-        <span className="flex gap-2">
-          {phases.length === 0 && (
-            <Button size="sm" variant="ghost" onPress={() => flow.open({ kind: "import" })}>
-              Import a plan
-            </Button>
-          )}
-          <AddButton secondary label="New phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
-        </span>
-      </div>
-
-      {phases.map((p) => {
-        const st = stats.get(p.id)!;
-        const pct = Math.round(st.completion * 100);
-        const current = p.start <= today && today <= p.end;
-        return (
-          <Panel
-            key={p.id}
-            title={p.name}
-            subtitle={`${fmtDate(p.start, true)} – ${fmtDate(p.end, true)}${current ? " · now" : ""}`}
-            onEdit={() => flow.open({ kind: "phase", phaseId: p.id })}
-            bodyClassName={current ? "rd-phase--current" : undefined}
-          >
-            {p.goal && <p className="mb-2 max-w-prose text-sm text-foreground/75">{p.goal}</p>}
-            <div className="flex items-center gap-2">
-              <div className="book-card__meter flex-1" aria-hidden>
-                <span style={{ width: `${pct}%`, background: "var(--accent)" }} />
-              </div>
-              <span className="font-mono-n text-sm font-bold">{pct}%</span>
-            </div>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              {st.finished} of {st.books.length} books finished
-              {st.projected &&
-                ` · projected ${fmtDateAuto(st.projected)}${st.assumed ? " (at target pace)" : ""}`}
-              {st.unsized > 0 &&
-                (st.projected
-                  ? ` · ${st.unsized} without a page count not projected`
-                  : ` · page counts needed for a projection (${st.unsized} missing)`)}
-            </p>
-
-            <PaceRows tracker={tracker} phase={p} today={today} />
-
-            {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} />}
-          </Panel>
-        );
-      })}
+          </p>
+        )}
+      </section>
     </div>
+  );
+}
+
+/**
+ * One phase: its dates and aim, time gone against pages read, a verdict in
+ * words, each track's standing, and its books by track.
+ */
+function PhaseCard({
+  tracker,
+  phase: p,
+  st,
+  today,
+}: {
+  tracker: Tracker;
+  phase: R.ReadingPhase;
+  st: R.PhaseStats;
+  today: string;
+}) {
+  const flow = useFlow();
+  const read = Math.round(st.completion * 100);
+  const current = p.start <= today && today <= p.end;
+  const span = Math.max(1, R.daysBetween(p.start, p.end));
+  const time = today < p.start ? 0 : today > p.end ? 100 : Math.round((R.daysBetween(p.start, today) / span) * 100);
+  const projection = st.projected
+    ? ` At your recent pace it ends around ${fmtDateAuto(st.projected)}${st.assumed ? " (at target pace)" : ""}.`
+    : "";
+  const verdict =
+    st.flag === "done"
+      ? { tone: "is-done", text: "Done." }
+      : st.flag === "behind"
+        ? { tone: "is-behind", text: `Behind.${projection}` }
+        : st.flag === "at-risk"
+          ? { tone: "is-behind", text: `A little behind.${projection}` }
+          : st.flag === "on-track"
+            ? { tone: "is-ahead", text: `On pace.${projection}` }
+            : null;
+
+  return (
+    <section className="phase-card">
+      <div className="phase-card__head">
+        <h2 className="phase-card__name">{p.name}</h2>
+        {current && <span className="phase-card__now">Now</span>}
+        <span className="flex-1" />
+        <button type="button" className="text-action text-action--sm" onClick={() => flow.open({ kind: "phase", phaseId: p.id })}>
+          Edit
+        </button>
+      </div>
+      <p className="phase-card__sub">
+        {fmtDate(p.start, true)} – {fmtDate(p.end, true)}
+        {p.goal ? ` · ${p.goal}` : ""}
+      </p>
+      <div className="phase-bars">
+        <span>Time</span>
+        <span className="phase-bars__track" aria-hidden>
+          <span className="phase-bars__fill is-time" style={{ width: `${time}%` }} />
+        </span>
+        <span className="font-mono-n">{time}%</span>
+        <span>Read</span>
+        <span className="phase-bars__track" aria-hidden>
+          <span className="phase-bars__fill" style={{ width: `${read}%` }} />
+        </span>
+        <span className="font-mono-n">{read}%</span>
+      </div>
+      {verdict && <p className={"phase-card__verdict " + verdict.tone}>{verdict.text}</p>}
+      <p className="phase-card__sub">
+        {st.finished} of {st.books.length} books finished
+        {st.unsized > 0 && ` · ${st.unsized} without a page count`}
+      </p>
+      <PaceRows tracker={tracker} phase={p} today={today} />
+      {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} />}
+    </section>
   );
 }
 
@@ -169,9 +217,9 @@ function PhaseBooks({ tracker, books }: { tracker: Tracker; books: Book[] }) {
       <div className="rd-phase__tracks">
         {groups.map(({ t, books: list }) => (
           <div key={t.id}>
-            <h5 className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground/70">
+            <h3 className="group-head flex items-center gap-1.5">
               <TrackDot color={t.color} /> {t.name}
-            </h5>
+            </h3>
             <TrackList tracker={tracker} books={list} reordering={reordering} />
           </div>
         ))}
@@ -201,7 +249,7 @@ function TrackList({ tracker, books, reordering }: { tracker: Tracker; books: Bo
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col">
+        <ul className="group-list">
           {books.map((b) => (
             <PhaseBookRow key={b.id} book={b} reordering={reordering} />
           ))}

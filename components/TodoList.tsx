@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Card, Input, PanelHeader, AddButton } from "./ui";
-import { Check, ChevronDown, ChevronRight } from "./icons";
+import { Card, PanelHeader } from "./ui";
+import { Check, ChevronDown, ChevronRight, Plus } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker } from "@/lib/tracker";
 import { dateKey, todoDueBy, type TodoItem, type TrackerState } from "@/lib/model";
@@ -91,19 +91,28 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
 
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
-          <form onSubmit={submit} className="mb-3 flex gap-2">
-            <Input
+          {/* The add is the list's first row: type and press return. */}
+          <form onSubmit={submit} className="todo-add">
+            <span className="todo-add__mark" aria-hidden>
+              <Plus />
+            </span>
+            <input
               aria-label="New to-do"
-              placeholder="Add a to-do…"
+              placeholder="New to-do"
+              enterKeyHint="done"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="flex-1"
+              className="todo-add__input"
             />
-            <AddButton type="submit" aria-label="Add to-do" isDisabled={pending} />
+            {title.trim() && (
+              <button type="submit" className="todo-add__go" disabled={pending}>
+                Add
+              </button>
+            )}
           </form>
 
           {open.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do today. Add a to-do above.</p>
+            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">Nothing to do today.</p>
           ) : (
             <ul
               className={
