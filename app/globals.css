@@ -5253,3 +5253,10 @@ html[data-style="signal"] .kcal-hero__week { border-color: rgba(255, 255, 255, 0
 .style-card__swatch span { flex: 1; }
 .style-card__name { font-size: 1rem; font-weight: 600; }
 .style-card__note { font-size: 0.8125rem; color: var(--muted); }
+
+/* Goal rows inside a path card: the card has no padding of its own, so the
+   row carries the same 16px inset as every other list row. */
+.path__card .goal-row { margin-inline: 0; inline-size: 100%; padding: 0.625rem 1rem; border-radius: 0; }
+.path__card .goal-list__rows > li + li { box-shadow: inset 4rem 0 0 var(--pane-bg), inset 0 1px 0 var(--separator); }
+.goal-row__ring { inline-size: 2.25rem; justify-content: center; }
+.goal-row__blank { inline-size: 2.25rem; block-size: 2.25rem; }

@@ -12,7 +12,7 @@ export function ProgressRing({
   /** A small ring in a row: its number inside, so an empty ring never reads as an unticked box. */
   figure?: boolean;
 }) {
-  const stroke = size >= 48 ? 5 : size >= 40 ? 4 : 3;
+  const stroke = size >= 48 ? 5 : size >= 40 ? 4 : 2.5;
   const r = size / 2 - stroke;
   const circ = 2 * Math.PI * r;
   const cx = size / 2;
@@ -59,10 +59,10 @@ export function ProgressRing({
             textAnchor="middle"
             className="font-mono-n"
             fill="var(--muted)"
-            fontSize={pct >= 10 ? 9.5 : 10.5}
+            fontSize={pct >= 10 ? 8.5 : 9.5}
             fontWeight="600"
           >
-            {pct}
+            {pct}%
           </text>
         ) : null
       ) : (
