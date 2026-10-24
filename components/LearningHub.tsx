@@ -8,6 +8,7 @@ import { Modal } from "./Modal";
 import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
 import { PathsView } from "./PathsView";
+import { NextSteps } from "./NextSteps";
 import { CalendarDays, ChevronRight, Clock } from "./icons";
 import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
@@ -113,6 +114,7 @@ function Hub({ tracker }: { tracker: Tracker }) {
 
       {tab === "active" ? (
         <>
+          <NextSteps tracker={tracker} onOpen={setOpenId} />
           <Panel title="Reading" bare>
             {reading.length === 0 ? (
               <p className="card p-4 text-[15px] text-[var(--muted)]">Nothing being read. Start a book from Library.</p>

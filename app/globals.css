@@ -4450,3 +4450,29 @@ input.log-sheet__input:focus { outline: none; border-block-end-color: var(--acce
 .book-progress__page { font-size: 1.5rem; font-weight: 600; }
 .book-progress__of, .book-progress__pct { font-size: 0.9375rem; color: var(--muted); }
 .book-progress__pace { margin: 0; font-size: 0.875rem; color: var(--muted); }
+
+/* Done routines, folded into one row under the list. */
+.done-fold { display: flex; align-items: center; gap: 0.75rem; inline-size: 100%; min-block-size: 2.75rem; margin-block-start: 0.25rem; padding: 0.25rem 0.625rem; border-block-start: 1px solid var(--separator); color: var(--muted); font-size: 0.9375rem; text-align: start; }
+.done-fold svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.done-fold__mark { display: grid; place-items: center; inline-size: 1.25rem; block-size: 1.25rem; border-radius: 50%; background: var(--accent); color: #fff; }
+.done-fold__mark svg { inline-size: 0.875rem; block-size: 0.875rem; }
+@media (hover: hover) { .done-fold:hover { color: var(--foreground); } }
+
+/* The to-do add, as the list's first row. */
+.todo-add { display: flex; align-items: center; gap: 0.75rem; min-block-size: 3rem; margin-block-end: 0.25rem; padding-inline: 0.625rem 0.25rem; border-block-end: 1px solid var(--separator); }
+.todo-add__mark { display: grid; flex: none; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }
+.todo-add__mark svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+input.todo-add__input { flex: 1 1 auto; min-inline-size: 0; block-size: 2.75rem; padding: 0; border: 0; background: transparent; color: var(--foreground); font-size: 1rem; }
+input.todo-add__input:focus { outline: none; }
+input.todo-add__input::placeholder { color: var(--field-placeholder); }
+.todo-add__go { flex: none; min-block-size: 2.25rem; padding-inline: 0.875rem; border-radius: var(--r-control); background: var(--button-primary); color: #fff; font-size: 0.9375rem; font-weight: 600; }
+
+/* Next steps on Education: one tickable row per active goal. */
+.next-steps__head { margin: 0 0 0.75rem; }
+.next-step { display: flex; align-items: center; gap: 0.5rem; min-block-size: 3.5rem; padding-inline: 0.5rem 1rem; }
+.next-step + .next-step { border-block-start: 1px solid var(--separator); }
+.next-step__open { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; padding-block: 0.5rem; text-align: start; }
+.next-step__title { font-size: 1rem; color: var(--foreground); }
+.next-step__sub { font-size: 0.8125rem; color: var(--muted); }
+.next-steps__more { display: flex; align-items: center; gap: 0.5rem; inline-size: 100%; min-block-size: 2.75rem; padding-inline: 1rem; border-block-start: 1px solid var(--separator); color: var(--accent-text); font-size: 0.9375rem; text-align: start; }
+.next-steps__more svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; transition: transform 150ms; }
