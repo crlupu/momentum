@@ -5468,8 +5468,7 @@ html[data-style="signal"] .momentum--done .momentum__seg.is-done { box-shadow: n
 .task-row__title.is-done { transition: color 160ms var(--ease) 120ms, opacity 160ms var(--ease) 120ms; }
 .momentum__seg { transition: background-color 300ms var(--ease), box-shadow 300ms var(--ease); }
 .momentum__bar > span { transition: inline-size 300ms var(--ease); }
-.section-panel__body { animation: page-in 180ms var(--ease) both; }
-@keyframes page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Pages change instantly: a fade from blank read as the app being slow. */
 .dialog { animation: sheet-in 240ms var(--ease) both; }
 .scrim { animation: scrim-in 200ms var(--ease) both; }
 @keyframes sheet-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
@@ -5481,7 +5480,6 @@ html[data-style="signal"] .momentum--done .momentum__seg.is-done { box-shadow: n
 
 @media (prefers-reduced-motion: reduce) {
   .check--on .check__ring,
-  .section-panel__body,
   .dialog,
   .scrim,
   .skeleton__line,
