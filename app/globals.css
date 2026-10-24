@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
-/* IBM Plex, served from the app itself (SIL Open Font License). */
-@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-Regular.woff2") format("woff2"); }
-@font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-Medium.woff2") format("woff2"); }
-@font-face { font-family: "IBM Plex Sans"; font-weight: 600 800; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexSans-SemiBold.woff2") format("woff2"); }
+/* Outfit for the interface, served from the app itself so it works offline
+   (SIL Open Font License). One variable file covers every weight. IBM Plex
+   Mono stays for codes and hex values. */
+@font-face { font-family: "Outfit"; font-weight: 100 900; font-style: normal; font-display: swap; src: url("./fonts/Outfit-Variable.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Outfit"; font-weight: 100 900; font-style: normal; font-display: swap; src: url("./fonts/Outfit-Variable-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("./fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
 
 @theme inline {
@@ -78,18 +79,17 @@
 }
 
 /* ============================================================
-   Colour.
+   Colour: neutral, with one accent.
 
-   Carbon's Gray 10 (light) and Gray 100 (dark) themes: neutral greys that
-   step up in lightness layer by layer, and one blue for everything you can
-   act on (buttons, links, the current tab, progress). Red is destructive
-   and nothing else.
+   Greys from near-black to white carry almost every screen. Blue is the
+   only accent and it means one thing: the next thing to do — the primary
+   action, the current item, the progress still to make. It comes from the
+   logo, where the fallen dominoes sit back and the standing one is solid.
+   A screen shows two or three blue things at most. Done is grey, never blue.
 
-   Each area of life has its own colour, used only for marks: a section's
-   dot, a row's tinted icon tile, a book spine. Reading is orange, learning
-   purple, training green and food pink; lists and to-dos have no area and
-   stay blue. The dark theme takes the brighter JetBrains-style values, the
-   light theme Carbon's deeper ones, so each mark holds 3:1 on its card.
+   Red stays for destructive actions, green and amber for on/off-plan
+   readings; areas of life no longer get their own colours, so their marks
+   (icon tiles, dots) are grey too.
 
    People's own data (categories, meal tags, reading tracks) keeps the
    separate --data-* palette below.
@@ -108,25 +108,24 @@
   --data-slate: #646f7f;
 
 
-  /* Shape, Carbon × JetBrains: one soft 8px corner for cards and controls,
-     4px for chips and tags. Only marks (dots, rings, discs) stay round. */
-  --r-card: 8px;
-  --r-control: 8px;
-  --r-small: 4px;
+  /* Shape: 14px cards, 10px fields and tiles, 6px for the small square
+     buttons and chips. Actions are pills; marks (dots, rings) stay round. */
+  --r-card: 14px;
+  --r-control: 10px;
+  --r-small: 6px;
   --r-pill: 999px;
 
-  /* Type: IBM Plex Sans, bundled with the app (app/fonts) so it works
-     offline; figures in the same face with tabular digits. Plex Mono is
-     kept for codes and hex values. */
-  --font-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  /* Type: Outfit, a geometric sans, bundled with the app (app/fonts);
+     figures in the same face with tabular digits. */
+  --font-ui: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  --font-figure: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-figure: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --button-primary: #0f62fe;
-  --button-primary-hover: #0050e6;
+  --button-primary: #024cff;
+  --button-primary-hover: #0040d9;
 
-  --tabbar-h: 3.25rem;
+  --tabbar-h: 3.75rem;
   --sidebar-w: 15rem;
 }
 
@@ -135,75 +134,84 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Carbon Gray 10: a light grey ground, white layers on it. */
-  --background: #f4f4f4;
+  /* Paper: an off-white ground, white cards on it. */
+  --background: #f4f4f5;
   --surface: #ffffff;
-  --surface-secondary: #f4f4f4;
-  --surface-tertiary: #e0e0e0;
+  --surface-secondary: #f4f4f5;
+  --surface-tertiary: #e4e4e7;
   --overlay: #ffffff;
 
-  --foreground: #161616;
-  --overlay-foreground: #161616;
-  --muted: #525252;                 /* text-secondary: 7.8:1 on white */
-  --faint: #8d8d8d;
+  --foreground: #0b0b0c;
+  --overlay-foreground: #0b0b0c;
+  --muted: #5e5e66;                 /* 6.4:1 on white */
+  --faint: #a1a1aa;
 
-  --separator: #e0e0e0;
-  --border: #e0e0e0;
-  --border-strong: #8d8d8d;
+  --separator: #ececee;
+  --border: #e4e4e7;
+  --border-strong: #a1a1aa;
 
-  /* One blue does every interactive job. */
-  --accent: #0f62fe;
-  --accent-text: #0f62fe;            /* link-primary: 5.4:1 on white */
+  /* The one accent. */
+  --accent: #024cff;
+  --accent-text: #024cff;            /* 6.0:1 on white */
   --accent-foreground: #ffffff;
-  --accent-soft: rgba(15, 98, 254, 0.1);
-  --accent-soft-strong: rgba(15, 98, 254, 0.18);
-  --accent-track: #e0e0e0;
+  --accent-soft: rgba(2, 76, 255, 0.08);
+  --accent-soft-strong: rgba(2, 76, 255, 0.16);
+  --accent-track: #e4e4e7;
 
-  --warning: #8e6a00;
-  --warning-soft: rgba(241, 194, 27, 0.2);
-  --success: #24a148;
-  --danger: #da1e28;
-  --danger-hover: #b81921;
+  --warning: #8a5a00;
+  --warning-soft: rgba(217, 144, 0, 0.14);
+  --success: #15803d;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
   --danger-foreground: #ffffff;
-  --danger-soft: rgba(218, 30, 40, 0.1);
-  --danger-soft-hover: rgba(218, 30, 40, 0.16);
-  --danger-soft-foreground: #da1e28;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --danger-soft-hover: rgba(220, 38, 38, 0.14);
+  --danger-soft-foreground: #dc2626;
 
-  --default: #e8e8e8;
-  --fill-hover: #dcdcdc;
+  --default: #ececee;
+  --fill-hover: #e2e2e5;
 
-  --selected-bg: var(--accent);
-  --selected-fg: var(--accent-foreground);
+  /* Selected (a chip, a segment) is neutral: black on paper. */
+  --selected-bg: #0b0b0c;
+  --selected-fg: #ffffff;
 
-  --bar-bg: rgba(255, 255, 255, 0.92);
-  --bar-border: #e0e0e0;
+  --bar-bg: rgba(255, 255, 255, 0.94);
+  --bar-border: #e4e4e7;
   --card-shadow: none;
-  --lift-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-  --blanket: rgba(22, 22, 22, 0.5);
+  --lift-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+  --blanket: rgba(11, 11, 12, 0.45);
 
-  --field-bg: #ffffff;
-  --field-border: #8d8d8d;
-  --field-placeholder: #6f6f6f;
+  --field-bg: #f4f4f5;
+  --field-border: transparent;
+  --field-placeholder: #8e8e96;
 
   --chart-1: var(--accent);
-  --chart-2: #009d9a;
-  --chart-neutral: #c6c6c6;
-  --chart-grid: #e0e0e0;
+  --chart-2: #3f3f46;
+  --chart-neutral: #d4d4d8;
+  --chart-grid: #ececee;
 
-  /* Areas, one colour each, used for marks and tinted tiles. */
-  --area-reading: #ba4e00;
-  --area-learning: #8a3ffc;
-  --area-training: #198038;
-  --area-food: #d02670;
+  /* Areas share one grey: their marks say where, not how loud. */
+  --area-reading: #52525b;
+  --area-learning: #52525b;
+  --area-training: #52525b;
+  --area-food: #52525b;
+
+  /* Done ticks and the hero. */
+  --done-fill: #3f3f46;
+  --done-tick: #ffffff;
+  --hero-bg: #0b0b0c;
+  --hero-fg: #ffffff;
+  --hero-muted: #a1a1aa;
+  --hero-shape: linear-gradient(200deg, #0b0b0c 0%, #2a2a2e 100%);
 
   --radius: var(--r-control);
   --pane-bg: var(--surface);
   --pane-bg-strong: var(--surface-secondary);
   --pane-border: transparent;
   --pane-hairline: var(--separator);
-  --book-unread: #e0e0e0;
+  --book-unread: #e4e4e7;
   --book-fill: var(--area-reading);
-  --book-shelf: #8d8d8d;
+  --book-shelf: #a1a1aa;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
@@ -213,73 +221,81 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Carbon Gray 100: layers step up in lightness. */
-  --background: #161616;
-  --surface: #262626;
-  --surface-secondary: #393939;
-  --surface-tertiary: #525252;
-  --overlay: #262626;
+  /* Near-black ground; panels step up in lightness. */
+  --background: #0b0b0c;
+  --surface: #161618;
+  --surface-secondary: #1f1f22;
+  --surface-tertiary: #2a2a2e;
+  --overlay: #161618;
 
-  --foreground: #f4f4f4;
-  --overlay-foreground: #f4f4f4;
-  --muted: #c6c6c6;
-  --faint: #6f6f6f;
+  --foreground: #f4f4f5;
+  --overlay-foreground: #f4f4f5;
+  --muted: #a1a1aa;
+  --faint: #5e5e66;
 
-  --separator: #393939;
-  --border: #393939;
-  --border-strong: #6f6f6f;
+  --separator: #232326;
+  --border: #2a2a2e;
+  --border-strong: #5e5e66;
 
-  --accent: #4589ff;
-  --accent-text: #78a9ff;
+  /* A touch brighter than the light theme's, so marks hold 3:1 on panels. */
+  --accent: #1f5fff;
+  --accent-text: #7fa6ff;
   --accent-foreground: #ffffff;
-  --accent-soft: rgba(69, 137, 255, 0.18);
-  --accent-soft-strong: rgba(69, 137, 255, 0.28);
-  --accent-track: #393939;
+  --accent-soft: rgba(31, 95, 255, 0.16);
+  --accent-soft-strong: rgba(31, 95, 255, 0.26);
+  --accent-track: #2a2a2e;
 
-  --warning: #f1c21b;
-  --warning-soft: rgba(241, 194, 27, 0.16);
-  --success: #42be65;
-  --danger: #fa4d56;
-  --danger-hover: #ff6f75;
+  --warning: #f5b544;
+  --warning-soft: rgba(245, 181, 68, 0.14);
+  --success: #4ade80;
+  --danger: #f87171;
+  --danger-hover: #fca5a5;
   --danger-foreground: #ffffff;
-  --danger-soft: rgba(250, 77, 86, 0.16);
-  --danger-soft-hover: rgba(250, 77, 86, 0.24);
-  --danger-soft-foreground: #ff8389;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --danger-soft-hover: rgba(248, 113, 113, 0.22);
+  --danger-soft-foreground: #fca5a5;
 
-  --default: #393939;
-  --fill-hover: #474747;
+  --default: #232326;
+  --fill-hover: #2e2e33;
 
-  --selected-bg: var(--accent);
-  --selected-fg: var(--accent-foreground);
+  --selected-bg: #f4f4f5;
+  --selected-fg: #0b0b0c;
 
-  --bar-bg: rgba(38, 38, 38, 0.94);
-  --bar-border: #393939;
+  --bar-bg: rgba(22, 22, 24, 0.94);
+  --bar-border: #2a2a2e;
   --card-shadow: none;
-  --lift-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --lift-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
   --blanket: rgba(0, 0, 0, 0.6);
 
-  --field-bg: #393939;
-  --field-border: #6f6f6f;
-  --field-placeholder: #a8a8a8;
+  --field-bg: #0b0b0c;
+  --field-border: transparent;
+  --field-placeholder: #8e8e96;
 
   --chart-1: var(--accent);
-  --chart-2: #08bdba;
-  --chart-neutral: #525252;
-  --chart-grid: #393939;
+  --chart-2: #d4d4d8;
+  --chart-neutral: #3f3f46;
+  --chart-grid: #232326;
 
-  --area-reading: #fc801d;
-  --area-learning: #8f7eff;
-  --area-training: #21d789;
-  --area-food: #ff318c;
+  --area-reading: #a1a1aa;
+  --area-learning: #a1a1aa;
+  --area-training: #a1a1aa;
+  --area-food: #a1a1aa;
+
+  --done-fill: #3f3f46;
+  --done-tick: #f4f4f5;
+  --hero-bg: #1f1f22;
+  --hero-fg: #ffffff;
+  --hero-muted: #a1a1aa;
+  --hero-shape: linear-gradient(200deg, #0b0b0c 0%, #2a2a2e 100%);
 
   --radius: var(--r-control);
   --pane-bg: var(--surface);
   --pane-bg-strong: var(--surface-secondary);
   --pane-border: transparent;
   --pane-hairline: var(--separator);
-  --book-unread: #525252;
+  --book-unread: #3f3f46;
   --book-fill: var(--area-reading);
-  --book-shelf: #6f6f6f;
+  --book-shelf: #5e5e66;
   --book-ink: #ffffff;
   --book-ink-done: #ffffff;
   --pill-fg: #ffffff;
@@ -1124,13 +1140,13 @@ html.dark {
   --cds-interactive: var(--accent);
   --cds-link-primary: var(--accent-text);
   --cds-support-error: var(--danger);
-  --cds-button-primary: #0f62fe;
+  --cds-button-primary: var(--button-primary);
   --cds-button-secondary: var(--default);
   --cds-button-tertiary: var(--foreground);
   --cds-button-danger-primary: var(--danger);
   --cds-button-disabled: var(--default);
   --cds-toggle-off: var(--border-strong);
-  --cds-support-success: var(--accent);
+  --cds-support-success: var(--success);
 }
 
 /* ============================================================
@@ -2853,65 +2869,66 @@ html.dark {
 }
 
 /* ============================================================
-   Momentum card: the Today page's opening.
+   Momentum: the Today page's opening, a dark hero card.
+   Black on paper, raised grey in the dark. Its shapes (two circles and a
+   square, grey fading into the ground) are the identity's; they stay grey
+   so the one blue segment, the next routine, is what the eye lands on.
    ============================================================ */
 .momentum {
-  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem 1.25rem 0.25rem;
+  border-radius: var(--r-card);
+  background: var(--hero-bg);
+  color: var(--hero-fg);
+  box-shadow: var(--pane-hairline-shadow);
+  isolation: isolate;
 }
-.momentum__top {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-.momentum__ring { flex: none; }
+.momentum__shape { position: absolute; z-index: -1; background: var(--hero-shape); pointer-events: none; }
+.momentum__shape--circle { inline-size: 15rem; block-size: 15rem; inset-inline-end: -5rem; inset-block-start: -8rem; border-radius: 50%; }
+.momentum__shape--low { inline-size: 9rem; block-size: 9rem; inset-inline-end: -2rem; inset-block-end: -6rem; border-radius: 50%; background: linear-gradient(0deg, transparent, rgba(255, 255, 255, 0.05)); }
+.momentum__shape--square { inline-size: 5rem; block-size: 5rem; inset-inline-start: 0; inset-block-end: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent); }
+.momentum__top { display: flex; flex-direction: column; gap: 0.875rem; }
+.momentum__count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.25rem 0.625rem; margin: 0; }
 .momentum__headline {
-  margin: 0;
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  font-size: 3.25rem;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
-.momentum__detail {
-  margin: 0.25rem 0 0;
-  font-size: 0.9375rem;
-  color: var(--muted);
-}
+.momentum__detail { margin: 0; font-size: 0.9375rem; color: var(--hero-muted); }
+.momentum__segments { display: flex; gap: 3px; }
+.momentum__seg { flex: 1; block-size: 6px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }
+.momentum__seg.is-done { background: #ffffff; }
+.momentum__seg.is-next { background: var(--accent); }
+.momentum__bar { block-size: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
+.momentum__bar span { display: block; block-size: 100%; background: #ffffff; }
 .momentum__figures {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 1.25rem 0 0;
-  padding: 0;
+  margin: 1.125rem -1.25rem 0;
+  padding: 0 0.25rem;
   list-style: none;
-  border-block-start: 0.5px solid var(--separator);
+  border-block-start: 1px solid rgba(255, 255, 255, 0.08);
 }
-.momentum__figures > li + li { box-shadow: inset 0.5px 0 0 var(--separator); }
+.momentum__figures > li + li { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08); }
 .momentum__figure {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
   min-block-size: 2.75rem;
-  padding: 0.875rem 0.75rem 0;
-  border-radius: var(--r-control);
-  color: var(--foreground);
+  padding: 0.75rem 1rem 0.875rem;
+  color: var(--hero-fg);
 }
-.momentum__figures > li:first-child .momentum__figure { padding-inline-start: 0; }
 @media (hover: hover) {
-  .momentum__figure:hover .momentum__label { color: var(--foreground); }
+  .momentum__figure:hover .momentum__label { color: var(--hero-fg); }
 }
-.momentum__value {
-  font-size: 1.375rem;
-  font-weight: 700;
-  line-height: 1.15;
-}
+.momentum__value { font-size: 1.25rem; font-weight: 500; line-height: 1.15; }
 .momentum__value.is-warn { color: var(--warning); }
-.momentum__label {
-  font-size: 0.75rem;
-  line-height: 1.3;
-  color: var(--muted);
-}
+.momentum__label { font-size: 0.75rem; line-height: 1.3; color: var(--hero-muted); }
 @media (min-width: 42rem) {
-  .momentum { padding: 1.5rem; }
-  .momentum__figures { margin-block-start: 1.5rem; }
+  .momentum { padding: 1.5rem 1.5rem 0.25rem; }
+  .momentum__figures { margin-inline: -1.5rem; padding-inline: 0.5rem; }
 }
 
 /* ============================================================
@@ -4669,3 +4686,241 @@ input.mini-field:focus { outline: none; border-block-end: 2px solid var(--accent
 .goals-toolbar:has(.head-add) > .seg { flex: 1 1 auto; inline-size: auto; }
 .goals-toolbar:has(.head-add) .goals-toolbar__actions { flex: none; inline-size: auto; }
 .goals-toolbar:has(.head-add) .goals-toolbar__actions > * { flex: none; }
+
+/* ============================================================
+   Neutral identity.
+   The last word on shape and colour, so it sits unlayered at the end:
+   greys everywhere, blue only for what comes next (the primary action, the
+   current item, progress still to make), Outfit throughout, small tracked
+   capitals for section labels, pills for actions and a floating tab bar.
+   ============================================================ */
+:root,
+.light { --pane-hairline-shadow: none; }
+.dark { --pane-hairline-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05); }
+
+body { font-feature-settings: "ss01" 0; }
+.font-display,
+.sec-band__title { font-family: var(--font-ui); font-weight: 600; letter-spacing: -0.02em; }
+
+/* Cards: a quiet plane, with a hairline in the dark so panels don't melt
+   into the ground. */
+.card { box-shadow: var(--pane-hairline-shadow); }
+.group-list { box-shadow: var(--pane-hairline-shadow); }
+
+/* Section labels: small tracked capitals in the secondary grey. A label
+   orders the page; it never competes with what's in it. */
+.panel-head__title,
+.group-head,
+.group-label {
+  font-size: 0.75rem;
+  line-height: 1.33;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel-head { align-items: center; }
+
+/* Buttons. Primary is the blue pill — at most one per screen. Secondary and
+   the rest are grey with ordinary text. */
+.cds--btn { border-radius: var(--r-pill); font-weight: 500; }
+.cds--btn--secondary,
+.text-action {
+  background-color: var(--default);
+  color: var(--foreground);
+}
+.text-action svg { fill: currentColor; }
+.text-action[aria-pressed="true"] { background: var(--selected-bg); color: var(--selected-fg); }
+@media (hover: hover) {
+  .cds--btn--secondary:hover { background-color: var(--fill-hover); color: var(--foreground); }
+}
+.text-action { border-radius: var(--r-pill); }
+
+/* Done is grey, not blue: the tick fills with the done grey. */
+.check--on .check__ring { background: var(--done-fill); border-color: var(--done-fill); }
+.check { color: var(--done-tick); }
+@media (hover: hover) {
+  .check:hover:not(.check--on) .check__ring { border-color: var(--muted); }
+}
+
+/* Selected chips and segments are neutral (white on dark, black on light). */
+.cat-chips .cat-chip[aria-checked="true"],
+.cat-chip.meal-chip[aria-checked="true"],
+.phase-chip[aria-pressed="true"] { background: var(--selected-bg); color: var(--selected-fg); }
+.cat-chip.meal-chip[aria-checked="true"] .cat-chip__dot { background: var(--selected-fg); }
+.segmented { border-radius: var(--r-pill); padding: 3px; }
+.segmented__item { border-radius: var(--r-pill); }
+.segmented__item.is-on { background: var(--surface-tertiary); color: var(--foreground); }
+.light .segmented__item.is-on { background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+.arm-choice__opt[aria-checked="true"] { background: var(--default); box-shadow: inset 0 0 0 1.5px var(--foreground); }
+.arm-choice__opt[aria-checked="true"] span { color: var(--muted); }
+
+/* Add rows: ordinary text beside a small square button. */
+.insert-row { color: var(--foreground); }
+.insert-row .icon-disc { border-radius: var(--r-small); background: var(--default); color: var(--foreground); }
+.panel-head .head-add { border-radius: var(--r-small); background: var(--default); color: var(--foreground); }
+
+/* Icon tiles take the area grey on a neutral fill. */
+.area-tile { background: var(--default) !important; color: var(--muted) !important; }
+.area-tile svg { fill: currentColor; }
+
+/* ---- Tab bar: a floating pill of round icon tabs ---- */
+.tabbar {
+  inset-inline: 0;
+  inset-block-end: calc(env(safe-area-inset-bottom) + 0.75rem);
+  margin-inline: auto;
+  inline-size: max-content;
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  border: 0;
+  border-radius: var(--r-pill);
+  box-shadow: var(--pane-hairline-shadow), var(--lift-shadow);
+}
+.tabbar__tab {
+  inline-size: 3rem;
+  block-size: 3rem;
+  min-block-size: 0;
+  padding: 0;
+  border-radius: var(--r-pill);
+  color: var(--faint);
+}
+.tabbar__tab span {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.tabbar__tab svg { inline-size: 1.375rem; block-size: 1.375rem; }
+.tabbar__tab.is-active { background: var(--selected-bg); color: var(--selected-fg); }
+.tabbar__tab.is-active svg { fill: currentColor; }
+@media (min-width: 42rem) {
+  .tabbar__tab { flex-direction: column; }
+  .tabbar__tab svg { inline-size: 1.375rem; block-size: 1.375rem; }
+}
+.app-main { padding-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 2.5rem); }
+@media (min-width: 66rem) {
+  .app-main { padding-block-end: 3rem; }
+  .side-link.is-active { background: var(--default); }
+  .side-link.is-active .side-link__icon { color: var(--foreground); }
+}
+
+/* The More button: a grey disc, not a blue one. */
+.more-button { color: var(--foreground); }
+
+/* Protein and fibre: a row per target — name and figure, then the bar. */
+.macro-row + .macro-row { margin-block-start: 1rem; }
+.macro-row__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; font-size: 1rem; }
+.macro-row__head b { font-weight: 600; }
+.macro-row__track { margin-block-start: 0.5rem; block-size: 6px; border-radius: 3px; background: var(--default); overflow: hidden; }
+.macro-row__track span { display: block; block-size: 100%; border-radius: 3px; transition: inline-size 0.3s ease; }
+
+/* The week's figures on Health: four small tiles, two by two on a phone. */
+.stat-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 42rem) { .stat-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.stat-tile { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.75rem 1rem; }
+.stat-tile__value { font-size: 1.375rem; font-weight: 500; line-height: 1.2; }
+.stat-tile__label { font-size: 0.8125rem; color: var(--muted); }
+
+/* The live workout is a screen of its own: no card around it, the current
+   exercise as the one panel, and the tally with Finish docked above the tab
+   bar so it's always one tap away. */
+.live-workout { padding: 0; }
+.live-workout__head { margin-block-start: -0.5rem; }
+.live-workout .exercise { background: var(--surface); box-shadow: var(--pane-hairline-shadow); }
+.light .live-workout .exercise { background: var(--surface); }
+.live-chip { border-radius: var(--r-pill); }
+.live-chip.is-current { background: var(--selected-bg); color: var(--selected-fg); }
+.since-set,
+.live-next,
+.light .since-set,
+.light .live-next { background: var(--surface); box-shadow: var(--pane-hairline-shadow); }
+.since-set__icon { fill: var(--muted); }
+.since-set__time { font-weight: 400; font-size: 2rem; letter-spacing: -0.02em; }
+.set-line.is-done { background: var(--default); }
+.live-workout__dock {
+  position: sticky;
+  inset-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.5rem);
+  z-index: 5;
+  margin-block-start: 0.5rem;
+  padding: 0.625rem 0.625rem 0.625rem 1.25rem;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--bar-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: var(--pane-hairline-shadow), var(--lift-shadow);
+}
+@media (min-width: 66rem) {
+  .live-workout__dock { inset-block-end: 1.5rem; }
+}
+
+/* An editing sheet's top row: Cancel, the title, and the save. */
+.sheet-nav { display: grid; grid-template-columns: minmax(4.5rem, auto) 1fr minmax(4.5rem, auto); align-items: center; gap: 0.5rem; margin: -0.25rem 0 1rem; }
+.sheet-nav__title { margin: 0; font-size: 1.0625rem; font-weight: 600; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-nav__side { justify-self: start; min-block-size: 2.75rem; padding-inline: 0.25rem; font-size: 1.0625rem; color: var(--muted); }
+.sheet-nav__save { justify-self: end; font-weight: 600; color: var(--accent-text); }
+.sheet-nav__save:disabled { color: var(--faint); }
+.weight-now--compact { margin: 0; }
+.weight-now__delta { margin: 0.125rem 0 0; font-size: 0.9375rem; color: var(--muted); }
+.weight-now__delta.is-down { color: var(--success); }
+.weight-now__delta.is-up { color: var(--warning); }
+.live-workout__head { margin-block: -0.75rem -0.25rem; }
+
+/* A phase's books, below its card: a group per track, its pace at the end of
+   the label. */
+.phase-books { margin-block-start: -0.75rem; }
+.phase-books__pace { margin-inline-start: auto; letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--muted); }
+.phase-books__pace.is-ahead { color: var(--success); }
+.phase-books__pace.is-behind { color: var(--warning); }
+
+/* ---- The board, neutral ---- */
+.board-col { background: var(--surface-secondary); }
+.dark .board-col { background: var(--surface); box-shadow: var(--pane-hairline-shadow); }
+.dark .board-card { background: var(--surface-secondary); }
+.board-col--doing .board-col__count { color: var(--selected-fg); background: var(--selected-bg); }
+
+/* On a phone, one column as one list: the switch above already names it and
+   counts it, so the column drops its own head and its cards become rows. */
+.board--one { display: block; margin-inline: 0; padding-inline: 0; overflow: visible; }
+.board--one .board-col { padding: 0; gap: 0; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--pane-hairline-shadow); overflow: hidden; }
+.board--one .board-col__head { display: none; }
+.board--one .board-col__cards { gap: 0; min-block-size: 0; border-radius: 0; }
+.board--one .board-col__cards > li + li { border-block-start: 1px solid var(--separator); }
+.board--one .board-card,
+.dark .board--one .board-card { min-block-size: 3.5rem; justify-content: center; padding: 0.75rem 3rem 0.75rem 1rem; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.board--one .board-card__more { inset-block-start: 50%; transform: translateY(-50%); }
+.board--one .board-col__empty { margin: 0.75rem; }
+.board--one .board-col__foot { padding: 0 0.75rem; border-block-start: 1px solid var(--separator); }
+.board--one .board-col__foot .insert-row { border: 0; }
+.board-switch .segmented { inline-size: 100%; }
+
+/* Settings rows lead with a small grey icon tile. */
+.settings-icon { display: grid; place-items: center; flex: none; inline-size: 1.875rem; block-size: 1.875rem; border-radius: 8px; background: var(--default); color: var(--muted); }
+.settings-icon svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+
+/* Done folds are grey; the Page button is the blue pill — reading's next step. */
+.done-fold__mark { background: var(--done-fill); color: var(--done-tick); }
+.page-btn { inline-size: 5.25rem; min-block-size: 2.25rem; border-radius: var(--r-pill); background: var(--button-primary); color: #ffffff; font-weight: 500; }
+
+/* Secondary adds (a panel's +, a toolbar's +) are small grey squares; the
+   blue round + is kept for a form's own submit. */
+.cds--btn.btn-add.btn-add--plain,
+.btn-add.btn-add--plain,
+.head-add { border-radius: var(--r-small) !important; background: var(--default) !important; color: var(--foreground) !important; }
+.btn-add.btn-add--plain svg,
+.head-add svg { fill: currentColor !important; }
+@media (hover: hover) { .btn-add.btn-add--plain:hover, .head-add:hover { background: var(--fill-hover) !important; } }
+
+/* Segments everywhere: the pill track with a raised neutral thumb. */
+.seg { border-radius: var(--r-pill); padding: 3px; }
+.seg__btn { border-radius: var(--r-pill); }
+.dark .seg__btn[aria-pressed="true"] { background: var(--surface-tertiary); }
+.board-switch .seg { display: flex; inline-size: 100%; }
+.board-switch .seg__btn { flex: 1; }
+
+/* A phase's books as rows in their own lists. */
+.phase-books .rd-phase__book { min-block-size: 3rem; padding: 0.5rem 0.75rem 0.5rem 1rem; font-size: 1rem; border-bottom: 0; }
+.phase-books .group-list > li + li .rd-phase__book { border-block-start: 1px solid var(--separator); }

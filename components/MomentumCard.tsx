@@ -5,16 +5,17 @@ import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
 import { routines } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
 
-const RING = 88;
-const STROKE = 10;
+/** Past this many routines the segments would be slivers; a bar reads better. */
+const MAX_SEGMENTS = 14;
 
 /**
- * The day's momentum: how much of today's routine is done, as one ring.
+ * The day's momentum: how many of today's routines are done.
  *
- * The one large piece of colour in the app. It fills in electric blue as
- * routines are done, and closes when the day is done.
- * Below it, the figures from the other sections that change daily, each a
- * link to the page that holds them.
+ * A dark hero card: the count in large figures, then one segment per
+ * routine — done ones white, the next one blue (the app's one accent: what
+ * comes next), the rest faint. Grey circles and a square sit behind it, the
+ * identity's shapes. Below, the figures from the other sections that change
+ * daily, each a link to the page that holds them.
  */
 export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const st = tracker.state;
@@ -34,65 +35,44 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
-  const r = RING / 2 - STROKE / 2;
-  const circ = 2 * Math.PI * r;
-
-  const headline =
-    total === 0
-      ? "No routines yet"
-      : left === 0
-        ? "All done today"
-        : `${done} of ${total} done`;
+  const headline = total === 0 ? "No routines yet" : left === 0 ? "All done" : `${done} of ${total}`;
   const detail =
     total === 0
       ? "Active goals, books and workouts count here."
       : left === 0
         ? "Every routine is ticked off."
-        : `${left} ${left === 1 ? "routine" : "routines"} still to do`;
+        : `done · ${left} to go`;
 
   return (
-    <section className="momentum card" aria-label="Today's momentum">
+    <section className="momentum" aria-label="Today's momentum">
+      <span className="momentum__shape momentum__shape--circle" aria-hidden />
+      <span className="momentum__shape momentum__shape--square" aria-hidden />
+      <span className="momentum__shape momentum__shape--low" aria-hidden />
       <div className="momentum__top">
-        <svg
-          className="momentum__ring"
-          width={RING}
-          height={RING}
-          viewBox={`0 0 ${RING} ${RING}`}
-          role="img"
-          aria-label={total ? `${Math.round(pct * 100)}% of today's routines done` : "No routines"}
-        >
-          <circle cx={RING / 2} cy={RING / 2} r={r} fill="none" stroke="var(--accent-track)" strokeWidth={STROKE} />
-          <circle
-            className="ring-progress"
-            cx={RING / 2}
-            cy={RING / 2}
-            r={r}
-            fill="none"
-            stroke="var(--accent)"
-            strokeWidth={STROKE}
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={circ * (1 - pct)}
-            transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
-            opacity={pct > 0 ? 1 : 0}
-          />
-          <text
-            x="50%"
-            y="50%"
-            dominantBaseline="central"
-            textAnchor="middle"
-            className="font-mono-n"
-            fontSize="22"
-            fontWeight="700"
-            fill="var(--foreground)"
-          >
-            {total ? `${Math.round(pct * 100)}%` : "–"}
-          </text>
-        </svg>
-        <div className="min-w-0">
-          <p className="momentum__headline">{headline}</p>
-          <p className="momentum__detail">{detail}</p>
-        </div>
+        <p className="momentum__count">
+          <span className="font-mono-n momentum__headline">{headline}</span>
+          {total > 0 && <span className="momentum__detail">{detail}</span>}
+        </p>
+        {total === 0 && <p className="momentum__detail">{detail}</p>}
+        {total > 0 &&
+          (total <= MAX_SEGMENTS ? (
+            <div
+              className="momentum__segments"
+              role="img"
+              aria-label={`${done} of ${total} routines done`}
+            >
+              {units.map((_, i) => (
+                <span
+                  key={i}
+                  className={"momentum__seg" + (i < done ? " is-done" : i === done ? " is-next" : "")}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="momentum__bar" role="img" aria-label={`${Math.round(pct * 100)}% of today's routines done`}>
+              <span style={{ inlineSize: `${pct * 100}%` }} />
+            </div>
+          ))}
       </div>
 
       <ul className="momentum__figures">

@@ -7,38 +7,24 @@ import { DialogActions } from "./DialogActions";
 import { Button, Input } from "./ui";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
-import { useWidth } from "./useWidth";
 import { usePending } from "./ActionButton";
-import { fmtDate, fmtDateAuto } from "@/lib/dates";
-import { Tracker, dateKey, daysSinceEpoch } from "@/lib/tracker";
+import { fmtDateAuto } from "@/lib/dates";
+import { Tracker, dateKey } from "@/lib/tracker";
 import {
   type CheckStatus,
   type WeightCheckpoint,
   type WeightPlan,
-  type WeekMedian,
   addDays,
   checkpointStatus,
-  checkDay,
-  latestCheck,
   makePlan,
   mondayOf,
   planSummary,
   validPlan,
   weeklyMedians,
   weightOnOrBefore,
-  type DayStatus,
 } from "@/lib/weight";
 
 const kg1 = (v: number) => v.toFixed(1).replace(/\.0$/, "");
-
-const DAY: Record<DayStatus, { label: string; cls: string }> = {
-  ahead: { label: "Ahead", cls: "rd-flag--done" },
-  "on-track": { label: "On track", cls: "rd-flag--on-track" },
-  close: { label: "Close", cls: "rd-flag--at-risk" },
-  behind: { label: "Behind", cls: "rd-flag--behind" },
-};
-
-const signed = (v: number) => (v === 0 ? "±0" : `${v > 0 ? "+" : "−"}${kg1(Math.abs(v))}`);
 
 const STATUS: Record<CheckStatus, { label: string; cls: string }> = {
   reached: { label: "Reached", cls: "rd-flag--on-track" },
@@ -59,7 +45,7 @@ export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
   const today = dateKey();
 
   return (
-    <Panel title="Weight plan" onEdit={plan ? () => setEditing(true) : undefined}>
+    <Panel title="Plan" bare={!!plan} onEdit={plan ? () => setEditing(true) : undefined} editLabel="Edit plan">
       {!plan ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[15px] text-[var(--muted)]">No plan yet. Set the weights to reach, each by a date.</p>
@@ -115,14 +101,10 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
             <span>{kg1(plan.targetKg)} kg</span>
           </span>
           <span className="book-card__meter" aria-hidden>
-            <span style={{ width: `${sum.progress * 100}%`, background: "var(--area-training)" }} />
+            <span style={{ width: `${sum.progress * 100}%`, background: "var(--accent)" }} />
           </span>
         </li>
       </ul>
-
-      <DayStanding plan={plan} tracker={tracker} medians={medians} today={today} />
-
-      <PlanChart plan={plan} medians={medians} today={today} />
 
       <section>
         <h3 className="group-head">Checkpoints</h3>
@@ -144,167 +126,6 @@ function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker
           })}
         </ul>
       </section>
-    </div>
-  );
-}
-
-/**
- * Today against the plan: the latest weigh-in beside where the plan puts its
- * day, and this week's median beside where the plan puts the middle of the
- * week, so a single day's swing can be read for what it is.
- */
-function DayStanding({
-  plan,
-  tracker,
-  medians,
-  today,
-}: {
-  plan: WeightPlan;
-  tracker: Tracker;
-  medians: WeekMedian[];
-  today: string;
-}) {
-  const day = latestCheck(plan, tracker.state!.weights);
-  const wk = medians.find((m) => m.week === mondayOf(today));
-  const week = wk ? checkDay(plan, addDays(wk.week, 3) < today ? addDays(wk.week, 3) : today, wk.median) : undefined;
-  if (today < plan.startDate) {
-    return <p className="text-[13px] text-[var(--muted)]">The plan starts {fmtDateAuto(plan.startDate)}.</p>;
-  }
-  return (
-    <div className="day-standing">
-      <div className="day-standing__row">
-        <span className="day-standing__text">
-          <span className="day-standing__label">
-            {day && day.date !== today ? `Last weigh-in, ${fmtDateAuto(day.date)}` : "Today"}
-          </span>
-          {day ? (
-            <span className="day-standing__figs font-mono-n">
-              <strong>{kg1(day.kg)} kg</strong> · plan {kg1(day.expected)} · {signed(day.diff)}
-            </span>
-          ) : (
-            <span className="day-standing__figs text-[var(--muted)]">
-              No weigh-in yet · plan {kg1(checkDay(plan, today, 1).expected)} kg
-            </span>
-          )}
-        </span>
-        {day && <span className={`rd-flag ${DAY[day.status].cls}`}>{DAY[day.status].label}</span>}
-      </div>
-      {week && (
-        <div className="day-standing__row">
-          <span className="day-standing__text">
-            <span className="day-standing__label">This week&apos;s median</span>
-            <span className="day-standing__figs font-mono-n">
-              <strong>{kg1(week.kg)} kg</strong> · plan {kg1(week.expected)} · {signed(week.diff)}
-            </span>
-          </span>
-          <span className={`rd-flag ${DAY[week.status].cls}`}>{DAY[week.status].label}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * The plan from start to target: dashed lines from the start through each
- * checkpoint, the checkpoints as rings, and the weekly medians on top, each
- * at the middle of its week.
- */
-function PlanChart({ plan, medians, today }: { plan: WeightPlan; medians: WeekMedian[]; today: string }) {
-  const [box, measured] = useWidth();
-  const W = measured || 320;
-  const H = 190;
-  const pad = { l: 40, r: 12, t: 12, b: 24 };
-  const d0 = daysSinceEpoch(plan.startDate);
-  const d1 = Math.max(d0 + 1, daysSinceEpoch(plan.targetDate));
-  const pts = medians
-    .map((m) => ({ ...m, day: daysSinceEpoch(addDays(m.week, 3)) }))
-    .filter((m) => m.day >= d0 - 3 && m.day <= d1 + 3);
-  const line = [{ date: plan.startDate, kg: plan.startKg }, ...plan.checkpoints];
-
-  const all = [...line.map((c) => c.kg), ...pts.map((p) => p.median)];
-  const span = Math.max(...all) - Math.min(...all) || 2;
-  const lo = Math.min(...all) - span * 0.1;
-  const hi = Math.max(...all) + span * 0.1;
-  const x = (day: number) => pad.l + ((Math.min(d1, Math.max(d0, day)) - d0) / (d1 - d0)) * (W - pad.l - pad.r);
-  const y = (kg: number) => H - pad.b - ((kg - lo) / (hi - lo)) * (H - pad.t - pad.b);
-  const ticks = [0, 0.5, 1].map((f) => lo + f * (hi - lo));
-  const t = daysSinceEpoch(today);
-  const months: { day: number; label: string }[] = [];
-  for (let d = plan.startDate; daysSinceEpoch(d) <= d1; d = addDays(d, 1)) {
-    if (d.endsWith("-01") || d === plan.startDate) months.push({ day: daysSinceEpoch(d), label: fmtDate(d) });
-  }
-  // Labels at least 48px apart, so they don't run into each other.
-  const labels = months.filter((m, i, a) => i === 0 || x(m.day) - x(a[i - 1].day) >= 48);
-
-  return (
-    <div ref={box}>
-      <svg width={W} height={H} className="block" role="img" aria-label="Weight plan and weekly medians">
-        {ticks.map((v) => (
-          <g key={v}>
-            <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="var(--chart-grid)" />
-            <text x={pad.l - 8} y={y(v)} dy="0.32em" textAnchor="end" fill="var(--muted)" fontSize="11">
-              {v.toFixed(1)}
-            </text>
-          </g>
-        ))}
-        <polyline
-          points={line.map((c) => `${x(daysSinceEpoch(c.date))},${y(c.kg)}`).join(" ")}
-          fill="none"
-          stroke="var(--muted)"
-          strokeWidth="1.5"
-          strokeDasharray="4 4"
-        />
-        {t >= d0 && t <= d1 && (
-          <line x1={x(t)} x2={x(t)} y1={pad.t} y2={H - pad.b} stroke="var(--border-strong)" strokeWidth="1" />
-        )}
-        {plan.checkpoints.map((c) => (
-          <circle
-            key={c.date}
-            cx={x(daysSinceEpoch(c.date))}
-            cy={y(c.kg)}
-            r={5}
-            fill="var(--pane-bg)"
-            stroke="var(--chart-2)"
-            strokeWidth="2"
-          >
-            <title>{`${fmtDateAuto(c.date)}: ${kg1(c.kg)} kg`}</title>
-          </circle>
-        ))}
-        {pts.length > 1 && (
-          <polyline
-            points={pts.map((p) => `${x(p.day)},${y(p.median)}`).join(" ")}
-            fill="none"
-            stroke="var(--chart-1)"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        )}
-        {pts.map((p) => (
-          <circle key={p.week} cx={x(p.day)} cy={y(p.median)} r={4} fill="var(--chart-1)" stroke="var(--pane-bg)" strokeWidth="2">
-            <title>{`Week of ${fmtDateAuto(p.week)}: ${kg1(p.median)} kg`}</title>
-          </circle>
-        ))}
-        {labels.map((m, i) => (
-          <text
-            key={m.day}
-            x={x(m.day)}
-            y={H - 6}
-            textAnchor={i === 0 ? "start" : "middle"}
-            fill="var(--muted)"
-            fontSize="11"
-          >
-            {m.label}
-          </text>
-        ))}
-      </svg>
-      <div className="rd-legend mt-1 text-xs text-[var(--muted)]">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--chart-1)" }} /> Weekly median
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full border-2" style={{ borderColor: "var(--chart-2)" }} /> Checkpoint
-        </span>
-      </div>
     </div>
   );
 }

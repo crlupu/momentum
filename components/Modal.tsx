@@ -11,6 +11,8 @@ export function Modal({
   titleNode,
   children,
   wide,
+  save,
+  headAction,
 }: {
   open: boolean;
   onClose: () => void;
@@ -20,6 +22,13 @@ export function Modal({
   children: React.ReactNode;
   /** For dialogs that hold a whole view rather than a short form. */
   wide?: boolean;
+  /**
+   * An editing sheet, iOS style: Cancel on the left, the title in the middle
+   * and the save on the right, submitting the form with this id.
+   */
+  save?: { label: string; form: string; disabled?: boolean };
+  /** An action beside the close button, such as Edit. */
+  headAction?: React.ReactNode;
 }) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -53,6 +62,17 @@ export function Modal({
         style={{ color: "var(--overlay-foreground)" }}
       >
         <div className="sheet__grabber md:hidden" aria-hidden />
+        {save ? (
+          <div className="sheet-nav">
+            <button type="button" className="sheet-nav__side" onClick={onClose}>
+              Cancel
+            </button>
+            <h2 id={titleId} className="sheet-nav__title">{title}</h2>
+            <button type="submit" form={save.form} className="sheet-nav__side sheet-nav__save" disabled={save.disabled}>
+              {save.label}
+            </button>
+          </div>
+        ) : (
         <div className="mb-4 flex items-center justify-between gap-3">
           {titleNode ? (
             <div className="min-w-0 flex-1">
@@ -62,10 +82,12 @@ export function Modal({
           ) : (
             <h2 id={titleId} className="text-xl font-bold">{title}</h2>
           )}
+          {headAction}
           <button onClick={onClose} aria-label="Close" className="icon-circle">
             <X aria-hidden />
           </button>
         </div>
+        )}
         {children}
       </div>
     </div>,

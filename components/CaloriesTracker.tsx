@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Button, Input, PanelHeader, AddButton } from "./ui";
+import { Input, AddButton } from "./ui";
 import { fmtDateAuto } from "@/lib/dates";
 import { CalendarDays } from "./icons";
 import { usePending } from "./ActionButton";
@@ -67,7 +67,13 @@ function KcalRing({ today, budget }: { today: number; budget?: number }) {
   );
 }
 
-export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
+/**
+ * Calories. `today` is the Nutrition page itself: the ring with the week
+ * beside it, the add field and meal chips, then today's entries as a list.
+ * `trends` is the page behind "History and trends": the last two weeks as
+ * stacked bars, one segment per meal.
+ */
+export default function CaloriesTracker({ tracker, view = "today" }: { tracker: Tracker; view?: "today" | "trends" }) {
   const s = tracker.state!;
   const [kcal, setKcal] = useState("");
 
@@ -117,105 +123,110 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
     if (!ok) setKcal(String(v));
   };
 
-  return (
-    <div>
-      <PanelHeader title="Calories" color="var(--sec-nutrition)">
-        {s.calorieBudget ? <span>budget {s.calorieBudget.toLocaleString()} a day</span> : null}
-      </PanelHeader>
-
-      <div className="card p-4 md:p-5">
-        {/* Today in the ring, against the day's budget; the week beside it. */}
-        <div className="kcal-now">
-          <KcalRing today={todayTotal} budget={s.calorieBudget} />
-          <div className="min-w-0">
-            <p className="kcal-now__title">This week</p>
-            <p className="kcal-now__line">{weekAvg.toLocaleString()} a day on average</p>
-            {weekLeft != null && (
-              <p className="kcal-now__line">
-                {weekLeft >= 0 ? `${weekLeft.toLocaleString()} left this week` : `${(-weekLeft).toLocaleString()} over this week`}
-              </p>
-            )}
+  if (view === "today") {
+    return (
+      <div className="space-y-5">
+        <div className="card p-4 md:p-5">
+          {/* Today in the ring, against the day's budget; the week beside it. */}
+          <div className="kcal-now">
+            <KcalRing today={todayTotal} budget={s.calorieBudget} />
+            <div className="min-w-0">
+              <p className="kcal-now__title">This week</p>
+              <p className="kcal-now__line">{weekAvg.toLocaleString()} a day on average</p>
+              {weekLeft != null && (
+                <p className="kcal-now__line">
+                  {weekLeft >= 0 ? `${weekLeft.toLocaleString()} left this week` : `${(-weekLeft).toLocaleString()} over this week`}
+                </p>
+              )}
+            </div>
           </div>
+          <form onSubmit={submit} className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                inputMode="numeric"
+                aria-label="Calories to add"
+                placeholder="Add kcal…"
+                value={kcal}
+                onChange={(e) => setKcal(e.target.value)}
+                className="min-w-0 flex-1"
+              />
+              {/* Just the icon. A date field spells out a date that is almost
+                  always today, taking a third of the row to say so; the icon
+                  turns accent-coloured on the days it is not, which is the only
+                  time the date is worth reading.
+
+                  The real input lies over the icon at zero opacity rather than
+                  beside it. Tapping it opens the platform's own date picker —
+                  the wheel on a phone — which is what makes this work without
+                  showPicker(), whose support is patchier than a tap's. */}
+              <span className="relative shrink-0">
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-[var(--r-control)] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
+                  style={{
+                    background: loggingToday ? "var(--default)" : "var(--accent-soft)",
+                    color: loggingToday ? "var(--muted)" : "var(--accent-text)" }}
+                  aria-hidden
+                >
+                  <CalendarDays className="h-4 w-4" />
+                </span>
+                <input
+                  type="date"
+                  aria-label="Date to log against"
+                  value={date}
+                  max={today}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+              </span>
+              <AddButton type="submit" aria-label="Add" isDisabled={pending} />
+            </div>
+            {s.mealTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Meal">
+                {s.mealTags.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    onClick={() => setTagId(tagId === m.id ? "" : m.id)}
+                    className="cat-chip meal-chip"
+                    style={{ ["--chip-color" as string]: m.color }}
+                    aria-checked={tagId === m.id}
+                  >
+                    <span className="cat-chip__dot" aria-hidden />
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
         </div>
 
-        <form onSubmit={submit} className="mb-3 space-y-2">
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              inputMode="numeric"
-              aria-label="Calories to add"
-              placeholder="Add kcal…"
-              value={kcal}
-              onChange={(e) => setKcal(e.target.value)}
-              className="min-w-0 flex-1"
-            />
-            {/* Just the icon. A date field spells out a date that is almost
-                always today, taking a third of the row to say so; the icon
-                turns accent-coloured on the days it is not, which is the only
-                time the date is worth reading.
-
-                The real input lies over the icon at zero opacity rather than
-                beside it. Tapping it opens the platform's own date picker —
-                the wheel on a phone — which is what makes this work without
-                showPicker(), whose support is patchier than a tap's. */}
-            <span className="relative shrink-0">
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-[var(--r-control)] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
-                style={{
-                  background: loggingToday ? "var(--default)" : "var(--accent-soft)",
-                  color: loggingToday ? "var(--muted)" : "var(--accent-text)" }}
-                aria-hidden
-              >
-                <CalendarDays className="h-4 w-4" />
-              </span>
-              <input
-                type="date"
-                aria-label="Date to log against"
-                value={date}
-                max={today}
-                onChange={(e) => setDate(e.target.value)}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </span>
-            <AddButton type="submit" aria-label="Add" isDisabled={pending} />
-          </div>
-          {s.mealTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Meal">
-              {s.mealTags.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="radio"
-                  onClick={() => setTagId(tagId === m.id ? "" : m.id)}
-                  className="cat-chip meal-chip"
-                  style={{ ["--chip-color" as string]: m.color }}
-                  aria-checked={tagId === m.id}
-                >
-                  <span className="cat-chip__dot" aria-hidden />
-                  {m.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </form>
-
         {todayEntries.length > 0 && (
-          <section className="mb-4">
+          <section>
             <h3 className="group-head">Today</h3>
             <ul className="group-list">
               {todayEntries.map((e) => (
                 <li key={e.id} className="group-row">
-                  <span className="cat-dot" style={{ background: colorOf(e.tagId) }} aria-hidden />
-                  <span className="flex-1">{tagOf(e.tagId)?.name ?? "Untagged"}</span>
+                  <span className={"flex-1" + (tagOf(e.tagId) ? "" : " text-[var(--muted)]")}>{tagOf(e.tagId)?.name ?? "No meal"}</span>
                   <span className="group-row__value font-mono-n">{e.kcal.toLocaleString()} kcal</span>
-                  <DeleteButton iconOnly what={`${e.kcal} kcal (${tagOf(e.tagId)?.name ?? "untagged"})`} onDelete={() => tracker.removeCalorieEntry(e.id)} />
+                  <DeleteButton iconOnly what={`${e.kcal} kcal (${tagOf(e.tagId)?.name ?? "no meal"})`} onDelete={() => tracker.removeCalorieEntry(e.id)} />
                 </li>
               ))}
             </ul>
           </section>
         )}
+      </div>
+    );
+  }
 
-        <h3 className="group-head">Last two weeks</h3>
+  return (
+    <section aria-label="Calories, last two weeks">
+      <h3 className="group-head">Calories · last two weeks</h3>
+      <div className="card p-4 md:p-5">
+        {s.calorieBudget ? (
+          <p className="mb-3 text-[13px] text-[var(--muted)]">Budget {s.calorieBudget.toLocaleString()} a day</p>
+        ) : null}
         {s.calories.length === 0 ? (
           <p className="px-1 py-2 text-[15px]" style={{ color: LABEL }}>
             Add entries to see daily totals.
@@ -279,6 +290,6 @@ export default function CaloriesTracker({ tracker }: { tracker: Tracker }) {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

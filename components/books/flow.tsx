@@ -112,7 +112,19 @@ function DialogFor({
   switch (d.kind) {
     case "detail":
       return (
-        <Modal open onClose={close} title={book?.title ?? "Book"} wide>
+        <Modal
+          open
+          onClose={close}
+          title={book?.title ?? "Book"}
+          wide
+          headAction={
+            book && (
+              <button type="button" className="text-action" onClick={() => flow.open({ kind: "edit", bookId: book.id })}>
+                Edit
+              </button>
+            )
+          }
+        >
           {book ? <BookDetail tracker={tracker} book={book} /> : <Gone />}
         </Modal>
       );

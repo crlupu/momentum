@@ -8,7 +8,6 @@ import { BookOpen, Check, ChevronDown, ChevronRight, Dumbbell, School } from "./
 import { Tracker, dateKey } from "@/lib/tracker";
 import { REPEAT_LABEL, routines, type Routine } from "@/lib/routines";
 import { ReadingFlow } from "./books/flow";
-import { PageButton } from "./books/TodayView";
 
 function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
   const { pending, run } = usePending();
@@ -122,10 +121,6 @@ export default function RecurringList({ tracker }: { tracker: Tracker }) {
                       })()}
                     </span>
                   </span>
-                  {r.kind === "book" && !r.done && (() => {
-                    const book = s.books.find((b) => b.id === r.id);
-                    return book ? <PageButton book={book} /> : null;
-                  })()}
                   <RoutineCheckbox tracker={tracker} r={r} />
                 </li>
               ))}

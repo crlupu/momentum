@@ -2,7 +2,7 @@
 
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button, PanelHeader, Stat } from "./ui";
+import { Card, Input, Button, PanelHeader } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -154,17 +154,13 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
         </Card>
       ) : (
         <>
-          <Card>
-            <Card.Content className="p-4 md:p-5">
-              {/* Four across is too tight on a phone, so they wrap two by two. */}
-              <div className="stat-grid stat-grid--4">
-                <Stat value={`${weekTotal.toLocaleString()} kg`} label="this week" />
-                <Stat value={weekMinutes ? `${weekMinutes} min` : "–"} label="lifting this week" />
-                <Stat value={weekCardio ? `${weekCardio} min` : "–"} label="cardio this week" />
-                <Stat value={sessions} label="sessions logged" />
-              </div>
-            </Card.Content>
-          </Card>
+          {/* Four tiles, two by two on a phone: the week at a glance. */}
+          <ul className="stat-tiles">
+            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekTotal.toLocaleString()} kg</span><span className="stat-tile__label">lifted</span></li>
+            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekMinutes ? `${weekMinutes} min` : "–"}</span><span className="stat-tile__label">lifting</span></li>
+            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekCardio ? `${weekCardio} min` : "0 min"}</span><span className="stat-tile__label">cardio</span></li>
+            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{sessions}</span><span className="stat-tile__label">sessions</span></li>
+          </ul>
 
           {/* A chart each, rather than one stack. Push and Pull move different
               amounts of weight, and stacked into one bar neither one's shape
