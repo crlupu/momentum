@@ -5315,3 +5315,86 @@ html[data-style="signal"] .group-row.is-current .text-\[13px\] { color: rgba(255
 @media (min-width: 66rem) {
   .settings--home .settings__page-title { display: block; margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; }
 }
+
+/* ============================================================
+   Style: Signal Volt, the default.
+   All black, weight-800 titles, and only the next step lights up: the hero
+   card stays black with a blue glow in its corner, like a scoreboard LED.
+   In light mode the page turns white and the hero stays black.
+   ============================================================ */
+html[data-style="volt"].dark,
+html[data-style="volt"][data-theme="dark"] {
+  --background: #000000;
+  --surface: #0e0e10;
+  --surface-secondary: #1a1a1e;
+  --surface-tertiary: #24242a;
+  --overlay: #0e0e10;
+  --foreground: #ffffff;
+  --overlay-foreground: #ffffff;
+  --muted: #9e9ea6;
+  --faint: #5a5a62;
+  --separator: #1c1c20;
+  --border: #24242a;
+  --border-strong: #5a5a62;
+  --accent: #2b91ff;
+  --accent-text: #6fb3ff;
+  --accent-soft: rgba(43, 145, 255, 0.16);
+  --accent-track: #24242a;
+  --default: #1a1a1e;
+  --fill-hover: #24242a;
+  --selected-bg: #ffffff;
+  --selected-fg: #000000;
+  --bar-bg: rgba(14, 14, 16, 0.94);
+  --bar-border: #24242a;
+  --field-bg: #000000;
+  --chart-neutral: #34343a;
+  --chart-grid: #1c1c20;
+  --done-fill: #34343a;
+  --done-tick: #ffffff;
+  --button-primary: #0667db;
+  --button-primary-hover: #0558bd;
+  --hero-bg: #0e0e10;
+}
+html[data-style="volt"].light,
+html[data-style="volt"][data-theme="light"] {
+  --background: #ffffff;
+  --surface: #f3f4f6;
+  --surface-secondary: #e9ebef;
+  --surface-tertiary: #dfe2e7;
+  --overlay: #ffffff;
+  --foreground: #000000;
+  --overlay-foreground: #000000;
+  --muted: #55585f;
+  --faint: #9a9da4;
+  --separator: #e2e4e8;
+  --border: #e2e4e8;
+  --accent: #0667db;
+  --accent-text: #0667db;
+  --default: #e9ebef;
+  --fill-hover: #dfe2e7;
+  --selected-bg: #000000;
+  --selected-fg: #ffffff;
+  --field-bg: #ffffff;
+  --done-fill: #000000;
+  --done-tick: #ffffff;
+  --button-primary: #0667db;
+  --button-primary-hover: #0558bd;
+  --hero-bg: #000000;
+}
+html[data-style="volt"] {
+  --hero-fg: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.62);
+  --hero-shape: radial-gradient(circle at 30% 75%, rgba(43, 145, 255, 0.5), rgba(43, 145, 255, 0) 65%);
+}
+html[data-style="volt"] .sec-band__title { font-weight: 800; letter-spacing: -0.025em; }
+html[data-style="volt"] .momentum__shape--circle { background: var(--hero-shape); inline-size: 18rem; block-size: 18rem; inset-inline-end: -7rem; inset-block-start: -9rem; }
+html[data-style="volt"] .momentum__shape--square,
+html[data-style="volt"] .momentum__shape--low { display: none; }
+html[data-style="volt"] .momentum__seg.is-next { background: #2b91ff; box-shadow: 0 0 10px rgba(43, 145, 255, 0.7); }
+html[data-style="volt"] .hero::before { background: var(--hero-shape); }
+html[data-style="volt"] .group-row.is-current { background: var(--button-primary); color: #ffffff; }
+html[data-style="volt"] .group-row.is-current .group-row__value,
+html[data-style="volt"] .group-row.is-current .group-row__chev,
+html[data-style="volt"] .group-row.is-current .text-\[13px\] { color: rgba(255, 255, 255, 0.8); }
+.style-cards--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 30rem) { .style-cards--3 { grid-template-columns: 1fr 1fr; } }

@@ -450,7 +450,8 @@ function exportData(t: Tracker) {
 function useStyleName(): string {
   const [name, setName] = useState("");
   useEffect(() => {
-    setName(document.documentElement.dataset.style === "signal" ? "Signal Blue" : "Neutral");
+    const st = document.documentElement.dataset.style;
+    setName(st === "signal" ? "Signal Blue" : st === "neutral" ? "Neutral" : "Signal Volt");
   }, []);
   return name;
 }
