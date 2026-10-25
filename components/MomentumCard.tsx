@@ -2,21 +2,39 @@
 
 import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
-import { routines } from "@/lib/routines";
+import { byRoutineOrder, routines, type Routine, type RoutineKind } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
-import { Check } from "./icons";
+import { BookOpen, Check, Dumbbell, School } from "./icons";
 
-/** Past this many routines the segments would be slivers; a bar reads better. */
-const MAX_SEGMENTS = 14;
+/** Past two rows of tiles they'd be too many to read; a bar reads better. */
+const MAX_TILES = 16;
+
+const KIND: Record<RoutineKind, { Icon: typeof School; one: string; many: string; a: string }> = {
+  goal: { Icon: School, one: "goal", many: "goals", a: "a goal" },
+  book: { Icon: BookOpen, one: "book", many: "books", a: "a book" },
+  workout: { Icon: Dumbbell, one: "workout", many: "workouts", a: "a workout" },
+};
+
+const WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+
+/** "Two books, three goals and a workout": what the day was made of. */
+function madeOf(units: Routine[]): string {
+  const parts = (["book", "goal", "workout"] as const)
+    .map((k) => [k, units.filter((u) => u.kind === k).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([k, n]) => `${(WORDS[n] ?? String(n)).toLowerCase()} ${n === 1 ? KIND[k].one : KIND[k].many}`);
+  const text = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0];
+  return text.charAt(0).toUpperCase() + text.slice(1) + ".";
+}
 
 /**
  * The day's momentum: how many of today's routines are done.
  *
- * A dark hero card: the count in large figures, then one segment per
- * routine — done ones white, the next one blue (the app's one accent: what
- * comes next), the rest faint. Grey circles and a square sit behind it, the
- * identity's shapes. Below, the figures from the other sections that change
- * daily, each a link to the page that holds them.
+ * A dark hero card: the count in large figures, then one tile per routine
+ * carrying its kind — done ones white, the next one outlined blue (the app's
+ * one accent: what comes next), the rest faint — so it shows what the day is
+ * made of, not just how much. Below, the figures from the other sections
+ * that change daily, each a link to the page that holds them.
  */
 export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const st = tracker.state;
@@ -25,7 +43,10 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const today = dateKey();
   // The routines: active goals, books being read and workouts, each due
   // once in its period.
-  const units = routines(st, today);
+  // Done first, then what's left in the list's order: the first of those
+  // is the next one, as it is at the top of Routines.
+  const units = routines(st, today).sort(byRoutineOrder);
+  const ordered = [...units.filter((u) => u.done), ...units.filter((u) => !u.done)];
   const done = units.filter((u) => u.done).length;
   const total = units.length;
   const pct = total ? done / total : 0;
@@ -37,12 +58,10 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
   const allDone = total > 0 && left === 0;
+  const next = ordered[done];
 
   return (
     <section className={"momentum" + (allDone ? " momentum--done" : "")} aria-label="Today's momentum">
-      <span className="momentum__shape momentum__shape--circle" aria-hidden />
-      <span className="momentum__shape momentum__shape--square" aria-hidden />
-      <span className="momentum__shape momentum__shape--low" aria-hidden />
       {total === 0 ? (
         // Day one: what to do first, rather than a count of nothing. The
         // Start rows below say how.
@@ -51,44 +70,64 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
             <p className="eyebrow">Day one</p>
             <p className="momentum__start">Start with one thing.</p>
             <p className="momentum__detail">
-              Each goal, book or workout becomes a routine here, with its segment on this card.
+              Each goal, book or workout becomes a routine here, with its tile on this card.
             </p>
           </div>
-          <div className="momentum__segments" aria-hidden>
-            {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} className={"momentum__seg" + (i === 0 ? " is-next" : "")} />
-            ))}
-          </div>
+          <ol className="momentum__tiles" aria-hidden>
+            {(["goal", "book", "workout"] as const).map((k, i) => {
+              const { Icon } = KIND[k];
+              return (
+                <li key={k} className={"momentum__tile" + (i === 0 ? " is-next" : "")}>
+                  <Icon />
+                </li>
+              );
+            })}
+          </ol>
         </div>
       ) : (
         <div className="momentum__top">
-          {allDone && (
-            <div className="momentum__head">
-              <p className="eyebrow">Today</p>
+          <div className="momentum__head">
+            <p className="eyebrow">Today</p>
+            {allDone && (
               <span className="momentum__badge">
                 <Check aria-hidden />
                 All done
               </span>
-            </div>
-          )}
-          <p className="momentum__count">
-            <span className="font-mono-n momentum__headline">{`${done} of ${total}`}</span>
-            {!allDone && <span className="momentum__detail">done · {left} to go</span>}
-          </p>
-          {allDone && <p className="momentum__detail">Every routine is ticked off. See you tomorrow.</p>}
-          {total <= MAX_SEGMENTS ? (
-            <div
-              className="momentum__segments"
-              role="img"
-              aria-label={`${done} of ${total} routines done`}
-            >
-              {units.map((_, i) => (
-                <span
-                  key={i}
-                  className={"momentum__seg" + (i < done ? " is-done" : i === done ? " is-next" : "")}
-                />
-              ))}
-            </div>
+            )}
+          </div>
+          <div>
+            <p className="momentum__count">
+              <span className="font-mono-n momentum__headline">{`${done} of ${total}`}</span>
+              {!allDone && <span className="momentum__detail">{left} to go</span>}
+            </p>
+            <p className="momentum__detail momentum__next">
+              {allDone ? (
+                madeOf(units)
+              ) : (
+                <>
+                  Next · <span className="momentum__next-name">{next!.title}</span>, {KIND[next!.kind].a}
+                </>
+              )}
+            </p>
+          </div>
+          {total <= MAX_TILES ? (
+            <ol className="momentum__tiles" aria-label={`${done} of ${total} routines done`}>
+              {ordered.map((u, i) => {
+                const { Icon } = KIND[u.kind];
+                return (
+                  <li
+                    key={u.key}
+                    className={"momentum__tile" + (u.done ? " is-done" : i === done ? " is-next" : "")}
+                    title={u.title}
+                  >
+                    <Icon aria-hidden />
+                    <span className="sr-only">
+                      {u.title}, {u.done ? "done" : "to do"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
           ) : (
             <div className="momentum__bar" role="img" aria-label={`${Math.round(pct * 100)}% of today's routines done`}>
               <span style={{ inlineSize: `${pct * 100}%` }} />
