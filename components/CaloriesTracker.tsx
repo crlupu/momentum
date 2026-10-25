@@ -5,6 +5,7 @@ import { Input, AddButton } from "./ui";
 import { fmtDateAuto } from "@/lib/dates";
 import { Apple, CalendarDays, MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
+import { CardMeter, CardTiles, SummaryCard } from "./SummaryCard";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 import { caloriesLeftThisWeek } from "@/lib/model";
@@ -27,40 +28,6 @@ function mondayOfThisWeek(): string {
   return dateKey(d);
 }
 
-/** Today's kcal as a ring filling toward the day's budget, on the hero card. */
-function KcalRing({ today, budget }: { today: number; budget?: number }) {
-  const size = 84;
-  const stroke = 8;
-  const r = size / 2 - stroke / 2;
-  const circ = 2 * Math.PI * r;
-  const frac = budget ? Math.min(1, today / budget) : 0;
-  const over = !!budget && today > budget;
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      role="img"
-      aria-label={budget ? `${today} of ${budget} kcal today` : `${today} kcal today`}
-      className="flex-none"
-    >
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke={over ? "var(--warning)" : "var(--accent)"}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={circ * (1 - frac)}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        opacity={frac > 0 ? 1 : 0}
-      />
-    </svg>
-  );
-}
 
 export default function CaloriesTracker({ tracker, view = "today" }: { tracker: Tracker; view?: "today" | "trends" }) {
   const s = tracker.state!;
@@ -78,6 +45,10 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
   const weekAvg = weekDays.length ? Math.round(weekSum / weekDays.length) : 0;
 
   const weekLeft = caloriesLeftThisWeek(s.calories, s.calorieBudget);
+  const todaysMeals = s.calories.filter((e) => e.date === today);
+  const macrosToday = s.macros.filter((m) => m.date === today);
+  const protein = macrosToday.reduce((a, m) => a + (m.protein ?? 0), 0);
+  const fiber = macrosToday.reduce((a, m) => a + (m.fiber ?? 0), 0);
   const todayEntries = s.calories.filter((e) => e.date === today);
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
@@ -117,26 +88,42 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
       <div className="space-y-5">
         {/* The tab's hero: today's figure, the ring toward the day's budget
             beside it, and the week underneath. */}
-        <section className="hero kcal-hero" aria-label="Calories today">
-          <div className="kcal-hero__top">
-            <div className="min-w-0">
-              <p className="eyebrow">Today</p>
-              <p className="kcal-now__fig">{todayTotal.toLocaleString()}</p>
-              <p className="hero__meta">
-                {s.calorieBudget
-                  ? todayTotal <= s.calorieBudget
-                    ? `of ${s.calorieBudget.toLocaleString()} kcal · ${(s.calorieBudget - todayTotal).toLocaleString()} left`
-                    : `of ${s.calorieBudget.toLocaleString()} kcal · ${(todayTotal - s.calorieBudget).toLocaleString()} over`
-                  : "kcal today"}
-              </p>
-            </div>
-            <KcalRing today={todayTotal} budget={s.calorieBudget} />
-          </div>
-          <p className="hero__meta kcal-hero__week">
-            This week · {weekAvg.toLocaleString()} a day on average
-            {weekLeft != null && ` · ${weekLeft >= 0 ? `${weekLeft.toLocaleString()} left` : `${(-weekLeft).toLocaleString()} over`}`}
-          </p>
-        </section>
+        <SummaryCard
+          aria-label="Calories today"
+          label="Today"
+          aside={
+            s.calorieBudget
+              ? todayTotal <= s.calorieBudget
+                ? `${(s.calorieBudget - todayTotal).toLocaleString()} left`
+                : <span className="text-[#ff7a45]">{(todayTotal - s.calorieBudget).toLocaleString()} over</span>
+              : undefined
+          }
+          figure={todayTotal.toLocaleString()}
+          detail={s.calorieBudget ? `of ${s.calorieBudget.toLocaleString()} kcal` : "kcal today"}
+          band={{
+            label: "This week",
+            content: `${weekAvg.toLocaleString()} a day on average`,
+            action: weekLeft != null ? (weekLeft >= 0 ? `${weekLeft.toLocaleString()} left` : `${(-weekLeft).toLocaleString()} over`) : undefined,
+            href: "/nutrition?view=trends",
+          }}
+          figures={[
+            { value: protein, label: s.proteinTarget ? `/ ${s.proteinTarget} g protein` : "g protein" },
+            { value: fiber, label: s.fiberTarget ? `/ ${s.fiberTarget} g fibre` : "g fibre" },
+            { value: todaysMeals.length, label: todaysMeals.length === 1 ? "meal" : "meals" },
+          ]}
+        >
+          {s.calorieBudget ? <CardMeter value={todayTotal / s.calorieBudget} accent /> : null}
+          {todaysMeals.length > 0 && (
+            <CardTiles
+              items={todaysMeals.slice(0, 8).map((m) => ({
+                key: m.id,
+                icon: <Apple aria-hidden />,
+                label: s.mealTags.find((t) => t.id === m.tagId)?.name ?? "Meal",
+                state: "done" as const,
+              }))}
+            />
+          )}
+        </SummaryCard>
 
         <div className="card p-4">
           <form onSubmit={submit} className="space-y-3">

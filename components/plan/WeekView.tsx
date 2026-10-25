@@ -24,6 +24,7 @@ import { DialogActions } from "../DialogActions";
 import { EmptyState } from "../EmptyState";
 import { Check, ChevronDown, ChevronRight, Minus, Plus, Target, X } from "../icons";
 import { PlanTile, WeekRings } from "./bits";
+import { SummaryCard } from "../SummaryCard";
 
 const iconOf = (g: WeekGoal): PlanIcon =>
   g.mode === "once" ? "task" : g.ref?.kind === "book" ? "book" : g.ref?.kind === "workout" ? "gym" : "learn";
@@ -50,46 +51,34 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
       <p className="week-dates">
         {fmt(week)} – {fmt(addDays(week, 6))} · {daysLeft === 1 ? "last day" : `${daysLeft} days left`}
       </p>
-      <section className={"momentum week-hero" + (sum.done ? " momentum--done" : "")} aria-label="This week">
-        <div className="momentum__top">
-          {sum.done && (
-            <div className="momentum__head">
-              <p className="eyebrow">Week {weekNumber(week)}</p>
-              <span className="momentum__badge">
-                <Check aria-hidden />
-                Week done
-              </span>
-            </div>
-          )}
-          <div>
-            <p className="momentum__count">
-              {sum.goals.length ? (
-                <>
-                  <span className="font-mono-n momentum__headline">{`${sum.goalsDone} of ${sum.goals.length}`}</span>
-                  <span className="momentum__detail">week goals</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-mono-n momentum__headline">{`${sum.daysDone} of ${sum.daysPlanned}`}</span>
-                  <span className="momentum__detail">plan days</span>
-                </>
-              )}
-            </p>
-            <p className="momentum__detail momentum__next">
-              {sum.done
-                ? "Every goal and every plan day, done."
-                : [
-                    onPace ? `${onPace} on pace` : null,
-                    behind ? <span key="b" className="week-hero__behind">{behind} behind</span> : null,
-                    sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
-                  ]
-                    .filter(Boolean)
-                    .flatMap((x, i) => (i ? [" · ", x] : [x]))}
-            </p>
-          </div>
-          <WeekRings days={sum.days} today={today} size={40} />
-        </div>
-      </section>
+      <SummaryCard
+        className="week-hero"
+        aria-label="This week"
+        label={`Week ${weekNumber(week)}`}
+        aside={daysLeft === 1 ? "Last day" : `${daysLeft} days left`}
+        done={sum.done}
+        doneLabel="Week done"
+        figure={sum.goals.length ? `${sum.goalsDone} of ${sum.goals.length}` : `${sum.daysDone} of ${sum.daysPlanned}`}
+        detail={sum.goals.length ? "week goals" : "plan days"}
+        line={
+          sum.done
+            ? "Every goal and every plan day, done."
+            : [
+                onPace ? `${onPace} on pace` : null,
+                behind ? <span key="b" className="week-hero__behind">{behind} behind</span> : null,
+                sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
+              ]
+                .filter(Boolean)
+                .flatMap((x, i) => (i ? [" · ", x] : [x]))
+        }
+        figures={[
+          { value: `${sum.daysDone} of ${sum.daysPlanned}`, label: "plan days" },
+          { value: s.workoutSessions.filter((x) => x.date >= week).length + (s.learningLog ?? []).filter((e) => e.date >= week).length, label: "sessions" },
+          { value: s.readingSessions.filter((x) => x.date >= week).reduce((a, x) => a + x.pages, 0), label: "pages read" },
+        ]}
+      >
+        <WeekRings days={sum.days} today={today} size={40} />
+      </SummaryCard>
 
       <section>
         <div className="panel-head">

@@ -7,6 +7,7 @@ import { Modal } from "./Modal";
 import { ProjectForm } from "./ProjectForm";
 import { ProjectBoard } from "./ProjectBoard";
 import { Segmented } from "./books/bits";
+import { CardMeter, SummaryCard } from "./SummaryCard";
 import { ChevronLeft, ChevronRight, ExternalLink, Kanban, Plus } from "./icons";
 import { Tracker } from "@/lib/tracker";
 import { fmtDateAuto } from "@/lib/dates";
@@ -95,32 +96,44 @@ function ProjectTile({
     .sort()[0];
 
   return (
-    <button type="button" className="card project-tile" onClick={() => onOpen(p.id)}>
-      <span className="project-tile__head">
-        <span className="project-tile__title">{p.title}</span>
-        <ChevronRight className="rd-link__chevron" aria-hidden />
-      </span>
-      {p.note && <span className="project-tile__note">{p.note}</span>}
-      <span className="project-tile__progress">
-        <span className="progress-track h-1.5 flex-1">
-          <span className="progress-fill block h-full" style={{ width: `${pct}%` }} />
-        </span>
-        <span className="project-tile__pct font-mono-n">{pct}%</span>
-      </span>
-      {!projectFinished(p) && (doingCard || nextCard) && (
-        <span className="project-tile__now">
-          <span className="project-tile__now-label">{doingCard ? "Doing" : "Next"}</span>
-          <span className="project-tile__now-title">{(doingCard ?? nextCard)!.title}</span>
-        </span>
-      )}
-      <span className="project-tile__meta">
-        {projectFinished(p)
-          ? "Finished"
-          : total === 0
-            ? "No cards yet"
-            : `${todo} to do · ${doing} doing · ${done} done${nextDue ? ` · next due ${fmtDateAuto(nextDue)}` : ""}`}
-      </span>
-    </button>
+    // The whole card opens the board; the band says so.
+    <div
+      role="link"
+      tabIndex={0}
+      className="project-card"
+      onClick={() => onOpen(p.id)}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(p.id))}
+    >
+      <SummaryCard
+        label="Project"
+        aside={`${pct}%`}
+        done={projectFinished(p)}
+        doneLabel="Finished"
+        title={p.title}
+        line={p.note}
+        band={
+          !projectFinished(p) && (doingCard || nextCard)
+            ? { label: doingCard ? "Doing" : "Next", content: (doingCard ?? nextCard)!.title, action: nextDue ? `due ${fmtDateAuto(nextDue)}` : "Open", onPress: () => onOpen(p.id) }
+            : { label: total === 0 ? "No cards yet" : "Board", content: "", action: "Open", onPress: () => onOpen(p.id) }
+        }
+        figures={total ? [
+          { value: todo, label: "to do" },
+          { value: doing, label: "doing" },
+          { value: done, label: "done" },
+        ] : undefined}
+      >
+        {total > 0 &&
+          (total <= 16 ? (
+            <span className="momentum__segments" aria-hidden>
+              {[...columnCards(p, "done"), ...columnCards(p, "doing"), ...columnCards(p, "todo")].map((c) => (
+                <span key={c.id} className={"momentum__seg" + (c.status === "done" ? " is-done" : c.status === "doing" ? " is-next" : "")} />
+              ))}
+            </span>
+          ) : (
+            <CardMeter value={pct / 100} />
+          ))}
+      </SummaryCard>
+    </div>
   );
 }
 

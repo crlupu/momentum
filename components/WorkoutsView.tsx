@@ -23,11 +23,13 @@ import {
   X,
   ChevronRight,
   CheckCircle2,
+  Dumbbell,
   MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
+import { CardTiles, SummaryCard } from "./SummaryCard";
 import { CircuitPlayer } from "./CircuitPlayer";
 import {
   Tracker,
@@ -768,18 +770,39 @@ function SinceLastSet({ active }: { active: ActiveWorkout }) {
   }
   if (!last) return null;
   const l = last as { at: number; set: number; name: string };
+  const setsDone = active.exercises.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0);
+  const setsPlanned = active.exercises.reduce((a, e) => a + e.sets.length, 0);
+  const exDone = active.exercises.filter((e) => e.sets.length > 0 && e.sets.every((x) => x.done)).length;
+  const current = active.exercises.find((e) => e.sets.some((x) => !x.done));
   return (
-    <div className="since-set hero" role="timer" aria-label="Time since the last set">
-      <span className="since-set__text">
-        <span className="since-set__label">Since last set</span>
-        <span className="since-set__time">{formatElapsed(now - l.at)}</span>
-      </span>
-      <span className="since-set__what">
-        Set {l.set}
-        <br />
-        {l.name}
-      </span>
-    </div>
+    <SummaryCard
+      className="since-set-card"
+      aria-label="Time since the last set"
+      label="Since last set"
+      aside={<Elapsed startedAt={active.startedAt} />}
+      figure={<span role="timer">{formatElapsed(now - l.at)}</span>}
+      line={`Set ${l.set} · ${l.name}`}
+      figures={[
+        { value: `${setsDone} of ${setsPlanned}`, label: "sets" },
+        { value: exDone, label: `of ${active.exercises.length} exercises` },
+        { value: Math.round((now - active.startedAt) / 60000), label: "min" },
+      ]}
+    >
+      {active.exercises.length > 1 && (
+        <CardTiles
+          items={active.exercises.slice(0, 8).map((e) => {
+            const all = e.sets.length > 0 && e.sets.every((x) => x.done);
+            return {
+              key: e.exerciseId,
+              icon: <Dumbbell aria-hidden />,
+              label: e.name,
+              title: e.name,
+              state: (all ? "done" : e === current ? "next" : "todo") as "done" | "next" | "todo",
+            };
+          })}
+        />
+      )}
+    </SummaryCard>
   );
 }
 
