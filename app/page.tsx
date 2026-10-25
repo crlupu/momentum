@@ -9,7 +9,6 @@ import TodoList from "@/components/TodoList";
 import { PlanCard, PlanWelcome } from "@/components/plan/PlanCard";
 import { PlanTimeline } from "@/components/plan/PlanTimeline";
 import { PlanGlyph } from "@/components/plan/bits";
-import { ChevronRight } from "@/components/icons";
 import { addDays, planOf, plannedKeys, stepsOn, WEEKDAY_LONG, weekdayOf, type DayPlan } from "@/lib/plan";
 import { dateKey } from "@/lib/tracker";
 import { routines } from "@/lib/routines";
@@ -49,7 +48,6 @@ export default function TodayPage() {
         ) : (
           <>
             <div className="flex flex-col gap-6">
-              {!fresh && <PlanInvite />}
               <RecurringList tracker={tracker} />
             </div>
             <TodoList tracker={tracker} />
@@ -57,19 +55,6 @@ export default function TodayPage() {
         )}
       </div>
     </SectionPage>
-  );
-}
-
-/** No plan yet: one row that says what a plan is and opens it. */
-function PlanInvite() {
-  return (
-    <Link href="/plan" className="card plan-invite">
-      <span className="plan-invite__text">
-        <span className="plan-invite__title">Plan your workday</span>
-        <span className="plan-invite__sub">The same steps every workday, in order: read, gym, a video…</span>
-      </span>
-      <ChevronRight aria-hidden />
-    </Link>
   );
 }
 

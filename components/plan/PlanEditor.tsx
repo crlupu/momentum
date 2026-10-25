@@ -14,6 +14,7 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Tracker, dateKey, goalStatus, uid } from "@/lib/tracker";
+import { byRoutineOrder, routines, type RoutineKind } from "@/lib/routines";
 import {
   DEFAULT_DAYS,
   addDays,
@@ -95,6 +96,7 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
       </section>
 
       <PlanWeekGrid tracker={tracker} plan={plan} onOpen={setEditing} />
+      {plan.steps.length === 0 && <FromRoutines tracker={tracker} onUse={save} days={plan.days} />}
 
       <section>
         <h3 className="group-head">Steps · in order</h3>
@@ -220,6 +222,48 @@ function PlanGridRow({ st, i, children }: { st: PlanStep; i: number; children: R
       </span>
       {children}
     </>
+  );
+}
+
+const KIND_STEP: Record<RoutineKind, { name: string; icon: PlanIcon }> = {
+  book: { name: "Read", icon: "book" },
+  workout: { name: "Gym", icon: "gym" },
+  goal: { name: "Learn", icon: "learn" },
+};
+
+/**
+ * An empty plan, with routines already set up: one tap turns them into
+ * steps, daily ones first, each the same every day, to rename, reorder and
+ * vary by day after.
+ */
+function FromRoutines({ tracker, onUse, days }: { tracker: Tracker; onUse: (p: DayPlan) => void; days: number[] }) {
+  const list = routines(tracker.state!).sort((a, b) => Number(a.freq !== "daily") - Number(b.freq !== "daily") || byRoutineOrder({ ...a, done: false }, { ...b, done: false }));
+  if (!list.length) return null;
+  const use = () =>
+    onUse({
+      days,
+      steps: list.map((r) => ({
+        id: uid(),
+        name: KIND_STEP[r.kind].name,
+        icon: KIND_STEP[r.kind].icon,
+        same: true,
+        pick: { kind: r.kind, id: r.id },
+        byDay: {},
+      })),
+    });
+  return (
+    <section className="card plan-start">
+      <p className="plan-start__title">Start from your routines</p>
+      <p className="plan-note">
+        {list.length} routine{list.length === 1 ? "" : "s"} become steps, daily ones first: {list.slice(0, 3).map((r) => r.title).join(", ")}
+        {list.length > 3 ? "…" : ""}. Reorder them and change them by day after.
+      </p>
+      <div>
+        <button type="button" className="pill-link pill-link--primary" onClick={use}>
+          Use my {list.length} routine{list.length === 1 ? "" : "s"}
+        </button>
+      </div>
+    </section>
   );
 }
 
