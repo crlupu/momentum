@@ -6,12 +6,13 @@ import { SectionPage } from "@/components/Section";
 import { MomentumCard } from "@/components/MomentumCard";
 import RecurringList from "@/components/RecurringList";
 import TodoList from "@/components/TodoList";
-import { PlanCard } from "@/components/plan/PlanCard";
+import { PlanCard, PlanWelcome } from "@/components/plan/PlanCard";
 import { PlanTimeline } from "@/components/plan/PlanTimeline";
 import { PlanGlyph } from "@/components/plan/bits";
 import { ChevronRight } from "@/components/icons";
 import { addDays, planOf, plannedKeys, stepsOn, WEEKDAY_LONG, weekdayOf, type DayPlan } from "@/lib/plan";
 import { dateKey } from "@/lib/tracker";
+import { routines } from "@/lib/routines";
 
 /**
  * Today: with a day plan, its card, the day's steps as a timeline, what else
@@ -28,12 +29,14 @@ export default function TodayPage() {
   const plan = tracker.state ? planOf(tracker.state) : null;
   const planned = plan && plan.steps.length > 0 ? plan : null;
   const restDay = planned && stepsOn(tracker.state!, planned, dateKey()).length === 0;
+  // Day one: no plan and nothing repeating yet, so the card invites a plan.
+  const fresh = !planned && !!tracker.state && routines(tracker.state).length === 0;
 
   return (
     <SectionPage id="tasks" subtitle={subtitle}>
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="lg:col-span-2">
-          {planned ? <PlanCard tracker={tracker} plan={planned} /> : <MomentumCard tracker={tracker} />}
+          {planned ? <PlanCard tracker={tracker} plan={planned} /> : fresh ? <PlanWelcome /> : <MomentumCard tracker={tracker} />}
         </div>
         {planned ? (
           <>
@@ -46,7 +49,7 @@ export default function TodayPage() {
         ) : (
           <>
             <div className="flex flex-col gap-6">
-              <PlanInvite />
+              {!fresh && <PlanInvite />}
               <RecurringList tracker={tracker} />
             </div>
             <TodoList tracker={tracker} />
