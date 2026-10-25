@@ -5721,3 +5721,7 @@ html[data-style="signal"] .plan-welcome__ghost.is-next { border-color: #ffffff; 
 .plan-grid__cell.is-done { background: var(--foreground); color: var(--surface); }
 .plan-grid__cell.is-done .plan-grid__ask { color: color-mix(in srgb, var(--surface) 60%, transparent); }
 .plan-grid__cell.is-next { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.momentum__plan-hint { overflow: hidden; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.62); text-overflow: ellipsis; white-space: nowrap; }
+.plan-start { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.125rem; }
+.plan-start__title { margin: 0; font-size: 1.0625rem; font-weight: 600; }
+.plan-start .plan-note { margin: 0; }

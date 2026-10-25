@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
 import { byRoutineOrder, routines, type Routine, type RoutineKind } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
-import { BookOpen, Check, Dumbbell, School } from "./icons";
+import { BookOpen, Check, ChevronRight, Dumbbell, School } from "./icons";
 
 /** Past two rows of tiles they'd be too many to read; a bar reads better. */
 const MAX_TILES = 16;
@@ -132,6 +132,18 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
         </div>
       )}
 
+      {/* No day plan yet: the way to one, on the card itself rather than a
+          row below it, where it went unnoticed. */}
+      {total > 0 && (
+        <Link href="/plan" className="plan-card__week">
+          <span className="plan-card__week-label">Day plan</span>
+          <span className="plan-card__week-rings momentum__plan-hint">Turn these into your workday, in order</span>
+          <span className="plan-card__week-goals">
+            Make one
+            <ChevronRight aria-hidden />
+          </span>
+        </Link>
+      )}
       <TodayFigures tracker={tracker} />
     </section>
   );
