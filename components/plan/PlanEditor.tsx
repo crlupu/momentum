@@ -22,7 +22,6 @@ import {
   resolve,
   stepsOn,
   weekOf,
-  PLAN_ICONS,
   WEEKDAY,
   WEEKDAY_LONG,
   WEEK_ORDER,
@@ -309,14 +308,19 @@ function StepItem({ tracker, plan, step, n, onOpen }: { tracker: Tracker; plan: 
   );
 }
 
-type Kind = "goal" | "track" | "workout" | "focus";
-const KINDS: { kind: Kind; label: string; icon: PlanIcon }[] = [
-  { kind: "goal", label: "Goals", icon: "learn" },
-  { kind: "track", label: "Reading", icon: "book" },
-  { kind: "workout", label: "Gym", icon: "gym" },
-  { kind: "focus", label: "Focus", icon: "target" },
-];
-const KIND_OF = (r: PlanRef | null | undefined): Kind => (!r ? "goal" : r.kind === "book" ? "track" : (r.kind as Kind));
+/**
+ * The step's icon is also what it can point at: Read a track, Gym a
+ * workout, Video the goals in a Video category, Learn the other goals,
+ * Focus a block of time.
+ */
+type Kind = "goal" | "video" | "track" | "workout" | "focus";
+const STEP_ICONS: PlanIcon[] = ["book", "gym", "video", "learn", "target"];
+const KIND_OF_ICON: Record<PlanIcon, Kind> = { book: "track", gym: "workout", video: "video", learn: "goal", task: "goal", target: "focus" };
+/** Whether a pick belongs to a kind, so changing the icon keeps only picks that still fit. */
+const fits = (r: PlanRef | null, k: Kind) =>
+  !r ||
+  (k === "track" ? r.kind === "track" || r.kind === "book" : k === "goal" || k === "video" ? r.kind === "goal" : r.kind === k);
+const isVideoCat = (name: string) => /video|talk|watch/i.test(name);
 const MINUTES = [25, 50, 90, 120];
 
 const same = (a?: PlanRef | null, b?: PlanRef | null) =>
@@ -346,10 +350,12 @@ function StepForm({
   });
   const [openDay, setOpenDay] = useState<number | null>(null);
   const days = WEEK_ORDER.filter((d) => plan.days.includes(d));
-  // A new step takes its kind's icon until one is chosen.
-  const [iconSet, setIconSet] = useState(!!step);
-  const follow = (r: PlanRef | null) => {
-    if (!iconSet && r) setIcon(KINDS.find((k) => k.kind === KIND_OF(r))!.icon);
+  const kind = KIND_OF_ICON[icon];
+  const chooseIcon = (x: PlanIcon) => {
+    setIcon(x);
+    const k = KIND_OF_ICON[x];
+    if (!fits(pick, k)) setPick(null);
+    setByDay((b) => Object.fromEntries(Object.entries(b).map(([d, r]) => [d, fits(r, k) ? r : null])));
   };
 
   const submit = (e: FormEvent) => {
@@ -368,20 +374,17 @@ function StepForm({
     <form id="plan-step" onSubmit={submit} className="flex flex-col gap-4">
       <Input aria-label="Step name" placeholder={ICON_NAME[icon]} value={name} onChange={(e) => setName(e.target.value)} />
       <div className="plan-icons" role="radiogroup" aria-label="Icon">
-        {PLAN_ICONS.map((x) => (
+        {STEP_ICONS.map((x) => (
           <button
             key={x}
             type="button"
             role="radio"
-            aria-checked={icon === x}
-            aria-label={ICON_NAME[x]}
+            aria-checked={icon === x || (icon === "task" && x === "learn")}
             className="plan-icons__icon"
-            onClick={() => {
-              setIcon(x);
-              setIconSet(true);
-            }}
+            onClick={() => chooseIcon(x)}
           >
             <PlanGlyph icon={x} />
+            <span>{ICON_NAME[x]}</span>
           </button>
         ))}
       </div>
@@ -395,15 +398,7 @@ function StepForm({
         ]}
       />
       {mode === "same" ? (
-        <Picker
-          tracker={tracker}
-          value={pick}
-          allowNone={false}
-          onPick={(r) => {
-            setPick(r);
-            follow(r);
-          }}
-        />
+        <Picker tracker={tracker} kind={kind} value={pick} allowNone={false} onPick={(r) => setPick(r)} />
       ) : (
         <ul className="card plan-byday">
           {days.map((d) => {
@@ -417,10 +412,7 @@ function StepForm({
                     {v ? (
                       <>
                         <span className="plan-byday__title">{refTitle(tracker.state!, v) ?? "Gone"}</span>
-                        <span className="plan-byday__kind">
-                          {KINDS.find((k) => k.kind === KIND_OF(v))!.label}
-                          {v.kind === "focus" ? ` · ${v.minutes} min` : ""}
-                        </span>
+                        {v.kind === "focus" && <span className="plan-byday__kind">Focus · {v.minutes} min</span>}
                       </>
                     ) : (
                       "Nothing · step skipped"
@@ -432,11 +424,11 @@ function StepForm({
                   <div className="plan-byday__pick">
                     <Picker
                       tracker={tracker}
+                      kind={kind}
                       value={v}
                       allowNone
                       onPick={(r, close = true) => {
                         setByDay((b) => ({ ...b, [d]: r }));
-                        follow(r);
                         if (close) setOpenDay(null);
                       }}
                     />
@@ -461,18 +453,20 @@ function StepForm({
  */
 function Picker({
   tracker,
+  kind,
   value,
   onPick,
   allowNone,
 }: {
   tracker: Tracker;
+  /** What the step's icon says it points at. */
+  kind: Kind;
   value: PlanRef | null;
   /** `close` false: a change that keeps the list open (a focus length). */
   onPick: (r: PlanRef | null, close?: boolean) => void;
   allowNone: boolean;
 }) {
   const s = tracker.state!;
-  const [kind, setKind] = useState<Kind>(KIND_OF(value));
   const [query, setQuery] = useState("");
   const [queued, setQueued] = useState(false);
   const [minutes, setMinutes] = useState(value?.kind === "focus" ? value.minutes ?? 50 : 50);
@@ -493,15 +487,20 @@ function Picker({
   );
 
   let body: React.ReactNode = null;
-  if (kind === "goal") {
+  if (kind === "goal" || kind === "video") {
     const q = query.trim().toLowerCase();
-    const all = s.goals.filter((g) => goalStatus(g) === "active" || (queued && goalStatus(g) === "queued"));
+    // Video: the goals in a Video category; Learn: the rest. With no such
+    // category, both show every goal.
+    const videoCats = new Set(s.categories.filter((c) => isVideoCat(c.name)).map((c) => c.id));
+    const inKind = (g: (typeof s.goals)[number]) =>
+      !videoCats.size || (kind === "video" ? videoCats.has(g.catId ?? "") : !videoCats.has(g.catId ?? ""));
+    const all = s.goals.filter((g) => inKind(g) && (goalStatus(g) === "active" || (queued && goalStatus(g) === "queued")));
     const found = q ? all.filter((g) => g.title.toLowerCase().includes(q)) : all;
     const groups = [...s.categories.map((c) => ({ id: c.id, name: c.name, color: c.color })), { id: "", name: "Other", color: "var(--faint)" }]
       .map((c) => ({ c, goals: found.filter((g) => (s.categories.some((x) => x.id === g.catId) ? g.catId === c.id : c.id === "")) }))
       .filter((x) => x.goals.length);
-    const queuedCount = s.goals.filter((g) => goalStatus(g) === "queued").length;
-    const activeCount = s.goals.filter((g) => goalStatus(g) === "active").length;
+    const queuedCount = s.goals.filter((g) => inKind(g) && goalStatus(g) === "queued").length;
+    const activeCount = s.goals.filter((g) => inKind(g) && goalStatus(g) === "active").length;
     body = (
       <>
         {all.length > 5 && (
@@ -525,7 +524,11 @@ function Picker({
             </div>
           </section>
         ))}
-        {!groups.length && <p className="plan-note">{q ? "No goal matches." : "No active goals. Set one to Active in Education."}</p>}
+        {!groups.length && (
+          <p className="plan-note">
+            {q ? "No goal matches." : kind === "video" ? "No active goals in a Video category." : "No active goals. Set one to Active in Education."}
+          </p>
+        )}
         <p className="plan-picker__foot">
           <span>{queued ? "Active and queued" : `Only active goals · ${activeCount}`}</span>
           {queuedCount > 0 && (
@@ -613,14 +616,6 @@ function Picker({
 
   return (
     <div className="plan-picker">
-      <div className="plan-kinds" role="tablist" aria-label="What it points at">
-        {KINDS.map((k) => (
-          <button key={k.kind} type="button" role="tab" aria-selected={kind === k.kind} className="plan-kinds__kind" onClick={() => setKind(k.kind)}>
-            <PlanGlyph icon={k.icon} />
-            {k.label}
-          </button>
-        ))}
-      </div>
       {body}
       {allowNone && (
         <div className="card plan-opts">

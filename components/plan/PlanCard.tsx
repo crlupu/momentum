@@ -93,9 +93,6 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
             </li>
           ))}
         </ol>
-        {!allDone && done > 0 && steps.some((x, i) => !x.done && steps.slice(i + 1).some((y) => y.done)) && (
-          <p className="momentum__detail plan-card__hint">Done in any order; the plan suggests one.</p>
-        )}
       </div>
       {left.length > 0 ? (
         <a href="#leftovers" className="plan-card__week">
