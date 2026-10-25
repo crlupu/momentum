@@ -5813,3 +5813,9 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .plan-icons .plan-icons__icon { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3125rem; inline-size: auto; block-size: auto; padding: 0.625rem 0; border-radius: 14px; font-size: 0.75rem; font-weight: 500; }
 .plan-icons .plan-icons__icon[aria-checked="true"] { color: var(--foreground); font-weight: 600; }
 .plan-icons .plan-icons__icon[aria-checked="true"] svg { fill: var(--accent-text); }
+/* A card's corner button: accent text, no fill. */
+.card-aside-btn { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0; background: none; color: #9ccbff; font-size: 0.8125rem; font-weight: 600; }
+.card-aside-btn svg { inline-size: 0.9375rem; block-size: 0.9375rem; fill: currentColor; }
+/* The weigh-in's + stays a round button inside a card's actions. */
+.summary-card__actions .weight-form .cds--btn { flex: none; inline-size: 2.75rem; min-inline-size: 2.75rem; block-size: 2.75rem; min-block-size: 2.75rem; padding: 0; border-radius: 50%; justify-content: center; }
+.summary-card__actions .weight-form .cds--text-input { block-size: 2.75rem; }

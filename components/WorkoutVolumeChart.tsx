@@ -161,7 +161,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
               day for the last seven, and the rest as figures. */}
           <SummaryCard
             label="Last 7 days"
-            aside={summary ? <CardioButton tracker={tracker} /> : undefined}
+            aside={summary ? <CardioButton tracker={tracker} compact /> : undefined}
             figure={weekTotal.toLocaleString()}
             detail="kg lifted"
             band={summary ? { label: "Charts", content: "Volume by workout, duration, cardio", action: "Open", href: "/fitness?view=training" } : undefined}
@@ -211,7 +211,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
  * done once after the gym rather than a control worth standing permanent
  * duty beside the chart.
  */
-function CardioButton({ tracker }: { tracker: Tracker }) {
+function CardioButton({ tracker, compact }: { tracker: Tracker; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [mins, setMins] = useState("");
   const { pending, run } = usePending();
@@ -243,9 +243,16 @@ function CardioButton({ tracker }: { tracker: Tracker }) {
 
   return (
     <>
-      <Button size="sm" variant="ghost" className="btn-pair btn-pair--gray" onPress={() => setOpen(true)}>
-        <Plus className="h-3.5 w-3.5" /> Add cardio
-      </Button>
+      {/* On a card's corner, a plain text button; elsewhere the grey pair. */}
+      {compact ? (
+        <button type="button" className="card-aside-btn" onClick={() => setOpen(true)}>
+          <Plus aria-hidden /> Cardio
+        </button>
+      ) : (
+        <Button size="sm" variant="ghost" className="btn-pair btn-pair--gray" onPress={() => setOpen(true)}>
+          <Plus className="h-3.5 w-3.5" /> Add cardio
+        </Button>
+      )}
 
       <Modal open={open} onClose={close} title="Add cardio">
         <form onSubmit={submit} className="flex flex-col gap-3">
