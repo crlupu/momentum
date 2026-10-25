@@ -8,7 +8,7 @@ import { Card } from "./ui";
 import { usePending } from "./ActionButton";
 import { BookOpen, Check, ChevronDown, ChevronRight, Dumbbell, School } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
-import { REPEAT_LABEL, routines, type Routine } from "@/lib/routines";
+import { REPEAT_LABEL, byRoutineOrder, routines, type Routine } from "@/lib/routines";
 import { ReadingFlow } from "./books/flow";
 
 function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
@@ -31,15 +31,12 @@ function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
   );
 }
 
-const KIND_ORDER = { goal: 0, book: 1, workout: 2 } as const;
-
 /** Each kind of routine is an area, with its colour and icon. */
 const AREA = {
   goal: { cls: "area--learning", Icon: School },
   book: { cls: "area--reading", Icon: BookOpen },
   workout: { cls: "area--training", Icon: Dumbbell },
 } as const;
-const FREQ_ORDER = { daily: 0, weekly: 1, monthly: 2 } as const;
 
 function AreaTile({ kind }: { kind: Routine["kind"] }) {
   const { cls, Icon } = AREA[kind];
@@ -57,13 +54,7 @@ function AreaTile({ kind }: { kind: Routine["kind"] }) {
  */
 export default function RecurringList({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const list = routines(s, dateKey()).sort(
-    (a, b) =>
-      Number(a.done) - Number(b.done) ||
-      FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] ||
-      KIND_ORDER[a.kind] - KIND_ORDER[b.kind] ||
-      a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
-  );
+  const list = routines(s, dateKey()).sort(byRoutineOrder);
 
   // What's left shows; what's done folds into one row, opened on request.
   const [showDone, setShowDone] = useState(false);

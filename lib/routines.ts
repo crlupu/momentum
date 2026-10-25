@@ -115,6 +115,22 @@ function items(s: TrackerState, all: boolean): Item[] {
   return out;
 }
 
+const FREQ_ORDER: Record<Repeat, number> = { daily: 0, weekly: 1, monthly: 2 };
+const KIND_ORDER: Record<RoutineKind, number> = { goal: 0, book: 1, workout: 2 };
+
+/**
+ * The order routines are shown in: what's left first, then by how often,
+ * kind and title. The first not done is the next one.
+ */
+export function byRoutineOrder(a: Routine, b: Routine): number {
+  return (
+    Number(a.done) - Number(b.done) ||
+    FREQ_ORDER[a.freq] - FREQ_ORDER[b.freq] ||
+    KIND_ORDER[a.kind] - KIND_ORDER[b.kind] ||
+    a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
+  );
+}
+
 /** Today's routines, in kind order: goals, then books, then workouts. */
 export function routines(s: TrackerState, today: string = dateKey()): Routine[] {
   const out: Routine[] = [];
