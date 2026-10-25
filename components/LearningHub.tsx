@@ -11,6 +11,7 @@ import { PathsView } from "./PathsView";
 import { NextSteps } from "./NextSteps";
 import { BookOpen, CalendarDays, ChevronRight, Clock, School } from "./icons";
 import { EmptyState } from "./EmptyState";
+import { SummaryCard } from "./SummaryCard";
 import { useShell } from "./AppShell";
 import { fmtDateAuto } from "@/lib/dates";
 import { ReadingFlow } from "./books/flow";
@@ -119,19 +120,22 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
       {tab === "active" ? (
         <>
           {reading.length === 0 && !s.goals.some((g) => goalStatus(g) === "active") ? (
-            <section className="hero next-hero" aria-label="Nothing active">
-              <p className="eyebrow">Nothing active</p>
-              <p className="next-hero__title">Pick something to learn</p>
-              <p className="hero__meta next-hero__meta">A course, a certification, a book. Its next step lands here.</p>
-              <div className="next-hero__actions">
-                <Button variant="primary" className="flex-1 justify-center" onPress={openGoal}>
-                  Set a goal
-                </Button>
-                <button type="button" className="hero__ghost" onClick={() => choose("library")}>
-                  Start a book
-                </button>
-              </div>
-            </section>
+            <SummaryCard
+              aria-label="Nothing active"
+              label="Nothing active"
+              title="Pick something to learn"
+              line="A course, a certification, a book. Its next step lands here."
+              actions={
+                <>
+                  <Button variant="primary" onPress={openGoal}>
+                    Set a goal
+                  </Button>
+                  <button type="button" className="hero__ghost" onClick={() => choose("library")}>
+                    Start a book
+                  </button>
+                </>
+              }
+            />
           ) : (
             <NextSteps tracker={tracker} onOpen={setOpenId} />
           )}

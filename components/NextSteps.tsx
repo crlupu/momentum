@@ -1,7 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown } from "./icons";
+import { Check, ChevronDown, School } from "./icons";
+import { CardTiles, SummaryCard, type CardFigure } from "./SummaryCard";
+import { dateKey } from "@/lib/tracker";
+import { weekOf } from "@/lib/plan";
+
+/** Learning's figures: goals under way, books open, sessions this week. */
+export function learningFigures(tracker: Tracker): CardFigure[] {
+  const s = tracker.state!;
+  const from = weekOf(dateKey());
+  return [
+    { value: s.goals.filter((g) => goalStatus(g) === "active").length, label: "goals active" },
+    { value: s.books.filter((b) => b.status === "active").length, label: "books open" },
+    { value: (s.learningLog ?? []).filter((e) => e.date >= from).length, label: "sessions this week" },
+  ];
+}
 import { usePending } from "./ActionButton";
 import { Button } from "./ui";
 import { Tracker, goalStatus, type Goal, type GoalItem } from "@/lib/tracker";
@@ -84,20 +98,40 @@ function NextHero({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onO
       step.item ? tracker.setItemDone(step.goal.id, step.item.id, true) : tracker.stepGoal(step.goal.id, 1)
     );
   const [from, count] = step.item ? [step.goal.title, step.sub.slice(step.goal.title.length + 3)] : [step.goal.title, step.sub];
+  // The goal's entries around the next one: two before, the next, two after.
+  const all = [step.goal.items ?? [], ...(step.goal.parts ?? []).map((p) => p.items ?? [])].flat();
+  const at = step.item ? all.findIndex((i) => i.id === step.item!.id) : -1;
+  const around =
+    at < 0
+      ? []
+      : all.slice(Math.max(0, Math.min(at - 2, all.length - 5)), Math.max(0, Math.min(at - 2, all.length - 5)) + 5).map((i) => ({
+          key: i.id,
+          icon: <School aria-hidden />,
+          label: i.title,
+          title: i.title,
+          state: (i.done ? "done" : i.id === step.item!.id ? "next" : "todo") as "done" | "next" | "todo",
+        }));
   return (
-    <section className="hero next-hero" aria-label="Next step">
-      <p className="eyebrow">Next step · {from}</p>
-      <p className="next-hero__title">{step.title}</p>
-      <p className="hero__meta next-hero__meta">{count}</p>
-      <div className="next-hero__actions">
-        <Button variant="primary" className="flex-1 justify-center" isDisabled={pending} onPress={tick}>
-          Mark done
-        </Button>
-        <button type="button" className="hero__ghost next-hero__open" onClick={() => onOpen(step.goal.id)}>
-          Open
-        </button>
-      </div>
-    </section>
+    <SummaryCard
+      aria-label="Next step"
+      label="Next step"
+      aside={count}
+      title={step.title}
+      line={from}
+      actions={
+        <>
+          <Button variant="primary" isDisabled={pending} onPress={tick}>
+            <Check aria-hidden /> Mark done
+          </Button>
+          <button type="button" className="hero__ghost" onClick={() => onOpen(step.goal.id)}>
+            Open
+          </button>
+        </>
+      }
+      figures={learningFigures(tracker)}
+    >
+      {around.length > 1 && <CardTiles items={around} />}
+    </SummaryCard>
   );
 }
 

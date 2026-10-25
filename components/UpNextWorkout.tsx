@@ -10,6 +10,23 @@ import { Elapsed } from "./WorkoutsView";
 import { Tracker, dateKey, activeWorkoutSets, activeWorkoutPlannedSets } from "@/lib/tracker";
 import { REPEAT_LABEL, repeatOf, routines } from "@/lib/routines";
 import { daysBetween } from "@/lib/reading";
+import { weekOf } from "@/lib/plan";
+import { CardTiles, SummaryCard, type CardFigure } from "./SummaryCard";
+import { Dumbbell } from "./icons";
+
+/** The week's training, as the card's figures: workouts, kg lifted, cardio. */
+function weekFigures(tracker: Tracker): CardFigure[] {
+  const s = tracker.state!;
+  const from = weekOf(dateKey());
+  const sessions = s.workoutSessions.filter((x) => x.date >= from);
+  const kg = sessions.reduce((a, x) => a + (x.total || 0), 0);
+  const cardio = s.cardio.filter((c) => c.date >= from).reduce((a, c) => a + c.minutes, 0);
+  return [
+    { value: sessions.length, label: "workouts this week", href: "/fitness?view=workouts" },
+    { value: kg.toLocaleString(), label: "kg lifted", href: "/fitness?view=training" },
+    { value: cardio, label: "min cardio", href: "/fitness?view=training" },
+  ];
+}
 
 /**
  * What to train today, at the top of Fitness: the workout that's due (one
@@ -29,23 +46,22 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
   if (s.activeWorkout) {
     const a = s.activeWorkout;
     return (
-      <section className="up-next hero">
-        <p className="up-next__label">In progress</p>
-        <div className="up-next__head">
-          <h2 className="up-next__name">{a.name}</h2>
-          <span className="up-next__meta font-mono-n">
+      <SummaryCard
+        label="In progress"
+        aside={
+          <span className="font-mono-n">
             <Elapsed startedAt={a.startedAt} />
           </span>
-        </div>
-        <p className="up-next__meta">
-          {activeWorkoutSets(a)} of {activeWorkoutPlannedSets(a)} sets done
-        </p>
-        <div className="up-next__actions">
-          <Link href="/fitness?view=live" className="cds--btn cds--btn--primary flex-1 justify-center">
+        }
+        title={a.name}
+        line={`${activeWorkoutSets(a)} of ${activeWorkoutPlannedSets(a)} sets done`}
+        actions={
+          <Link href="/fitness?view=live" className="pill-link pill-link--primary flex-1">
             <Play className="h-4 w-4" /> Resume
           </Link>
-        </div>
-      </section>
+        }
+        figures={weekFigures(tracker)}
+      />
     );
   }
 
@@ -69,28 +85,35 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
   const freq = repeatOf("workout", next);
 
   return (
-    <section className="up-next hero">
-      <p className="up-next__label">{due.length ? "Up next" : "All done for now"}</p>
-      <div className="up-next__head">
-        <h2 className="up-next__name">{next.name}</h2>
-        <span className="up-next__meta">
-          {next.exercises.length} {next.exercises.length === 1 ? "exercise" : "exercises"}
-        </span>
-      </div>
-      <p className="up-next__meta">
-        {freq !== "off" ? `${REPEAT_LABEL[freq]} · ` : ""}
-        {ago == null ? "not done yet" : ago === 0 ? "done today" : `last done ${ago} day${ago === 1 ? "" : "s"} ago`}
-      </p>
-      <div className="up-next__actions">
-        <Button variant="primary" className="flex-1 justify-center" onPress={() => start(next.id)}>
-          <Play className="h-4 w-4" /> Start {next.name}
-        </Button>
-        {startable.length > 1 && (
-          <button type="button" className="up-next__pick" aria-label="Choose another workout" onClick={() => setChoosing(true)}>
-            <ChevronDown aria-hidden />
-          </button>
-        )}
-      </div>
+    <>
+    <SummaryCard
+      label={due.length ? "Up next" : "All done for now"}
+      aside={`${next.exercises.length} ${next.exercises.length === 1 ? "exercise" : "exercises"}`}
+      title={next.name}
+      line={
+        <>
+          {freq !== "off" ? `${REPEAT_LABEL[freq]} · ` : ""}
+          {ago == null ? "not done yet" : ago === 0 ? "done today" : `last done ${ago} day${ago === 1 ? "" : "s"} ago`}
+        </>
+      }
+      actions={
+        <>
+          <Button variant="primary" onPress={() => start(next.id)}>
+            <Play className="h-4 w-4" /> Start {next.name}
+          </Button>
+          {startable.length > 1 && (
+            <button type="button" className="hero__ghost" aria-label="Choose another workout" onClick={() => setChoosing(true)}>
+              Others <ChevronDown aria-hidden />
+            </button>
+          )}
+        </>
+      }
+      figures={weekFigures(tracker)}
+    >
+      <CardTiles
+        items={next.exercises.slice(0, 8).map((e) => ({ key: e.id, icon: <Dumbbell aria-hidden />, label: e.name, state: "todo" as const, title: e.name }))}
+      />
+    </SummaryCard>
 
       <Modal open={choosing} onClose={() => setChoosing(false)} title="Start a workout">
         <ul className="group-list">
@@ -113,6 +136,6 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
           ))}
         </ul>
       </Modal>
-    </section>
+    </>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, memo, useState } from "react";
 
-import { Card, Input, Button, PanelHeader } from "./ui";
+import { Input, Button, PanelHeader } from "./ui";
 import {
   Tracker,
   dateKey,
@@ -14,6 +14,7 @@ import { } from "./icons";
 import { usePending } from "./ActionButton";
 import { Modal } from "./Modal";
 import { DialogActions } from "./DialogActions";
+import { CardBars, SummaryCard } from "./SummaryCard";
 import { Plus } from "./icons";
 
 const LABEL = "var(--muted)";
@@ -131,9 +132,11 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
           looking back. */}
       {/* Starting a workout is Up next's job, above; cardio is logged
           beside the week it counts toward. */}
-      <PanelHeader title="This week" color="var(--sec-fitness)">
-        {summary && <CardioButton tracker={tracker} />}
-      </PanelHeader>
+      {sessions === 0 && s.cardio.length === 0 && (
+        <PanelHeader title="This week" color="var(--sec-fitness)">
+          {summary && <CardioButton tracker={tracker} />}
+        </PanelHeader>
+      )}
       {sessions === 0 && s.cardio.length === 0 ? (
         // A ghost of the week's chart, to show what fills it.
         <div className="card week-empty">
@@ -154,13 +157,26 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
         </div>
       ) : (
         <>
-          {/* Four tiles, two by two on a phone: the week at a glance. */}
-          <ul className="stat-tiles">
-            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekTotal.toLocaleString()} kg</span><span className="stat-tile__label">lifted</span></li>
-            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekMinutes ? `${weekMinutes} min` : "–"}</span><span className="stat-tile__label">lifting</span></li>
-            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{weekCardio ? `${weekCardio} min` : "0 min"}</span><span className="stat-tile__label">cardio</span></li>
-            <li className="stat-tile card"><span className="stat-tile__value font-mono-n">{sessions}</span><span className="stat-tile__label">sessions</span></li>
-          </ul>
+          {/* The week at a glance, in Today's card: the weight lifted, a bar a
+              day for the last seven, and the rest as figures. */}
+          <SummaryCard
+            label="Last 7 days"
+            aside={summary ? <CardioButton tracker={tracker} /> : undefined}
+            figure={weekTotal.toLocaleString()}
+            detail="kg lifted"
+            band={summary ? { label: "Charts", content: "Volume by workout, duration, cardio", action: "Open", href: "/fitness?view=training" } : undefined}
+            figures={[
+              { value: weekMinutes || "–", label: "min lifting" },
+              { value: weekCardio, label: "min cardio" },
+              { value: s.workoutSessions.filter((x) => x.date >= keys[7]).length, label: "sessions" },
+            ]}
+          >
+            <CardBars
+              values={values.slice(7).map((v, i) => v || (cardio.slice(7)[i] ? 1 : 0))}
+              labels={days.slice(7).map((d) => "SMTWTFS"[d.getDay()])}
+              highlight={6}
+            />
+          </SummaryCard>
 
           {/* A chart each, rather than one stack. Push and Pull move different
               amounts of weight, and stacked into one bar neither one's shape
@@ -306,18 +322,13 @@ function DayChart({
   const lastDay = values.reduce((a, v, i) => (v ? i : a), -1);
 
   return (
-    <Card>
-      <Card.Content className="p-4 md:p-5">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: colour }} aria-hidden />
-            <span className="truncate text-[15px] font-semibold">{title}</span>
-          </span>
-          <span className="font-mono-n shrink-0 text-xs" style={{ color: LABEL }}>
-            {total.toLocaleString()} {unit}
-          </span>
-        </div>
-
+    <SummaryCard
+      label={title}
+      aside={`${total.toLocaleString()} ${unit} · 14 days`}
+      figure={lastDay >= 0 ? values[lastDay].toLocaleString() : "–"}
+      detail={`${unit} last time`}
+    >
+      <div className="day-chart">
         {/* No flex gap here: the line above is positioned as a fraction of this
             row's width, so a column's centre has to be exactly (i + 0.5) / 14
             of it. A gap would push every bar off its own point, by more and
@@ -356,8 +367,8 @@ function DayChart({
             {lineLabel}
           </div>
         )}
-      </Card.Content>
-    </Card>
+      </div>
+    </SummaryCard>
   );
 }
 

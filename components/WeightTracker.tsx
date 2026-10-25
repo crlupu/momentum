@@ -6,7 +6,8 @@ import { Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, validPlan, weeklyMedians } from "@/lib/weight";
+import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, planSummary, validPlan, weeklyMedians } from "@/lib/weight";
+import { SummaryCard, type CardFigure } from "./SummaryCard";
 
 /** Section accent; follows the theme so it stays visible on dark. */
 const ACCENT = "var(--chart-1)";
@@ -207,66 +208,60 @@ function WeightChart({
 
 const STANDING = { ahead: "Ahead of plan", "on-track": "On plan", close: "Close to plan", behind: "Behind plan" } as const;
 
-/**
- * The latest weight as one number, with how it has moved over the week
- * before it: down in green, up in the warning colour.
- */
-export function WeightNow({ weights, plan, compact }: { weights: WeightEntry[]; plan?: WeightPlan; compact?: boolean }) {
+/** The plan's standing as the card's badge. */
+function Standing({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
+  const check = plan && weights.length ? latestCheck(plan, weights) : undefined;
+  return check ? <span className={"weight-now__badge is-" + check.status}>{STANDING[check.status]}</span> : null;
+}
+
+/** "−0.2 kg this week", down in green, up in the warning colour. */
+function WeekChange({ weights }: { weights: WeightEntry[] }) {
   const latest = weights[weights.length - 1];
-  const check = plan ? latestCheck(plan, weights) : undefined;
   const weekAgo = [...weights].reverse().find((w) => w.date <= addDays(latest.date, -7));
   const d = weekAgo ? Math.round((latest.kg - weekAgo.kg) * 10) / 10 : null;
-  if (compact) {
-    // On the Health summary: the number, and under it the week's change.
-    return (
-      <div>
-        <div className="weight-now weight-now--compact">
-          <span className="weight-now__kg font-mono-n">{latest.kg}</span>
-          <span className="weight-now__unit">kg</span>
-        </div>
-        {d != null && (
-          <p className={"weight-now__delta " + (d < 0 ? "is-down" : d > 0 ? "is-up" : "")}>
-            {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} kg this week
-          </p>
-        )}
-      </div>
-    );
-  }
+  if (d == null) return <>kg</>;
   return (
-    <div className="weight-now">
-      <span className="weight-now__kg font-mono-n">{latest.kg}</span>
-      <span className="weight-now__unit">kg</span>
-      {check && <span className={"weight-now__badge is-" + check.status}>{STANDING[check.status]}</span>}
-      <span className="flex-1" />
-      <span className="weight-now__when">
-        {d != null && (
-          <span className={d < 0 ? "is-down" : d > 0 ? "is-up" : ""}>
-            {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} kg this week
-          </span>
-        )}
-        <span>{fmtDateAuto(latest.date)}</span>
+    <>
+      kg ·{" "}
+      <span className={"weight-change " + (d < 0 ? "is-down" : d > 0 ? "is-up" : "")}>
+        {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} this week
       </span>
-    </div>
+    </>
   );
+}
+
+/** What's moving: the week's median, weigh-ins this week, the plan's pace. */
+function weightFigures(weights: WeightEntry[], plan?: WeightPlan): CardFigure[] {
+  const median = weeklyMedians(weights).slice(-1)[0];
+  const week = mondayOf(dateKey());
+  const out: CardFigure[] = [
+    { value: median ? median.median.toFixed(1) : "–", label: "median" },
+    { value: weights.filter((w) => w.date >= week).length, label: "weigh-ins this week" },
+  ];
+  if (plan) {
+    const sum = planSummary(plan, weights);
+    out.push({ value: sum.neededPace != null ? sum.neededPace.toFixed(2) : "–", label: "kg / week needed" });
+  } else out.push({ value: fmtDateAuto(weights[weights.length - 1].date), label: "last weigh-in" });
+  return out;
 }
 
 /**
  * The last fortnight's weigh-ins as a small line, no axes: the shape of the
  * trend at a glance beside the number.
  */
-function Sparkline({ weights }: { weights: WeightEntry[] }) {
+function Sparkline({ weights, wide }: { weights: WeightEntry[]; wide?: boolean }) {
   const pts = weights.slice(-14);
   if (pts.length < 2) return null;
-  const W = 112;
-  const H = 36;
+  const W = wide ? 350 : 112;
+  const H = wide ? 44 : 36;
   const kgs = pts.map((w) => w.kg);
   const lo = Math.min(...kgs);
   const hi = Math.max(...kgs);
   const span = hi - lo || 1;
   const line = pts.map((w, i) => `${(i / (pts.length - 1)) * W},${H - 3 - ((w.kg - lo) / span) * (H - 6)}`).join(" ");
   return (
-    <svg width={W} height={H} className="flex-none" aria-hidden>
-      <polyline points={line} fill="none" stroke="var(--chart-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={wide ? "100%" : W} height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={wide ? "weight-spark" : "flex-none"} aria-hidden>
+      <polyline points={line} fill="none" stroke={wide ? "currentColor" : "var(--chart-1)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -293,38 +288,50 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
     if (ok) setKg("");
   };
 
+  // Weighed in from the summary only: one place to add a weight.
+  const weighIn = (
+    <form onSubmit={submit} className="weight-form">
+      <Input
+        type="number"
+        step="0.1"
+        aria-label="Weight in kg"
+        placeholder="Weight, kg"
+        value={kg}
+        onChange={(e) => setKg(e.target.value)}
+        className="flex-1"
+      />
+      <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
+    </form>
+  );
+
   if (summary) {
     return (
       <div>
-        <PanelHeader title="Weight" color="var(--sec-fitness)" />
-        <div className="card p-4 md:p-5">
-          {latest ? (
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <WeightNow weights={data} plan={plan} compact />
-              </div>
-              <Sparkline weights={data} />
-            </div>
-          ) : (
-            <div>
-              <p className="empty-state__title">Log your first weigh-in</p>
-              <p className="empty-state__text">The trend and the plan start from it.</p>
-            </div>
-          )}
-          {/* Weighed in from the summary only: one place to add a weight. */}
-          <form onSubmit={submit} className="mt-3 flex gap-2">
-            <Input
-              type="number"
-              step="0.1"
-              aria-label="Weight in kg"
-              placeholder="Weight, kg"
-              value={kg}
-              onChange={(e) => setKg(e.target.value)}
-              className="flex-1"
-            />
-            <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
-          </form>
-        </div>
+        {!latest && <PanelHeader title="Weight" color="var(--sec-fitness)" />}
+        {latest ? (
+          <SummaryCard
+            label="Weight"
+            aside={<Standing weights={data} plan={plan} />}
+            figure={latest.kg}
+            detail={<WeekChange weights={data} />}
+            band={{
+              label: "Plan",
+              content: plan ? `${plan.targetKg} kg by ${fmtDateAuto(plan.targetDate)}` : "No plan yet",
+              action: plan ? "Open" : "Set one",
+              href: "/fitness?view=weight",
+            }}
+            figures={weightFigures(data, plan)}
+            actions={weighIn}
+          >
+            <Sparkline weights={data} wide />
+          </SummaryCard>
+        ) : (
+          <div className="card p-4 md:p-5">
+            <p className="empty-state__title">Log your first weigh-in</p>
+            <p className="empty-state__text">The trend and the plan start from it.</p>
+            <div className="mt-3">{weighIn}</div>
+          </div>
+        )}
       </div>
     );
   }
@@ -338,27 +345,27 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
       : RANGES.find((r) => r.id === range)!.days;
   const since = latest ? [...data].find((w) => w.date >= dateKey(new Date(Date.now() - (days - 1) * 86400000))) : undefined;
   const moved = latest && since && since.date !== latest.date ? Math.round((latest.kg - since.kg) * 10) / 10 : null;
-  const median = weeklyMedians(data).slice(-1)[0];
-
   return (
-    <div className="card p-4 md:p-5">
-      {latest ? (
-        <>
-          <WeightNow weights={data} plan={plan} />
-          <p className="mt-1 text-[14px] text-[var(--muted)]">
-            {moved != null && since && (
-              <>
-                {moved === 0 ? "±0" : `${moved > 0 ? "+" : "−"}${Math.abs(moved).toFixed(1)}`} kg since {fmtDateAuto(since.date)}
-              </>
-            )}
-            {moved != null && median && " · "}
-            {median && <>median {median.median.toFixed(1)} kg</>}
-          </p>
-        </>
-      ) : (
-        <p className="text-[15px] text-[var(--muted)]">No weigh-ins yet. Log the first from Health.</p>
-      )}
-
+    <SummaryCard
+      label="Weight"
+      aside={<Standing weights={data} plan={plan} />}
+      figure={latest ? latest.kg : "–"}
+      detail={
+        latest ? (
+          moved != null && since ? (
+            <>
+              kg · {moved === 0 ? "±0" : `${moved > 0 ? "+" : "−"}${Math.abs(moved).toFixed(1)}`} since {fmtDateAuto(since.date)}
+            </>
+          ) : (
+            "kg"
+          )
+        ) : (
+          "No weigh-ins yet. Log the first from Health."
+        )
+      }
+      figures={latest ? weightFigures(data, plan) : undefined}
+    >
+      <div>
       <div className="segmented my-4" role="tablist" aria-label="Chart range">
         {RANGES.map((r) => (
           <button
@@ -385,7 +392,8 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
           </>
         )}
       </div>
-    </div>
+      </div>
+    </SummaryCard>
   );
 }
 

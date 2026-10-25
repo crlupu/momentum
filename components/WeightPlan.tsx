@@ -7,6 +7,7 @@ import { DialogActions } from "./DialogActions";
 import { Button, Input } from "./ui";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { InsertRow } from "./InsertRow";
+import { CardMeter, SummaryCard } from "./SummaryCard";
 import { usePending } from "./ActionButton";
 import { fmtDateAuto } from "@/lib/dates";
 import { Tracker, dateKey } from "@/lib/tracker";
@@ -44,8 +45,17 @@ export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
   const [editing, setEditing] = useState(false);
   const today = dateKey();
 
+  if (plan)
+    return (
+      <>
+        <PlanBody plan={plan} tracker={tracker} today={today} onEdit={() => setEditing(true)} />
+        <Modal open={editing} onClose={() => setEditing(false)} title="Weight plan">
+          {editing && <PlanForm tracker={tracker} plan={plan} onDone={() => setEditing(false)} />}
+        </Modal>
+      </>
+    );
   return (
-    <Panel title="Plan" bare={!!plan} onEdit={plan ? () => setEditing(true) : undefined} editLabel="Edit plan">
+    <Panel title="Plan">
       {!plan ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-[15px] text-[var(--muted)]">No plan yet. Set the weights to reach, each by a date.</p>
@@ -54,7 +64,7 @@ export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
           </Button>
         </div>
       ) : (
-        <PlanBody plan={plan} tracker={tracker} today={today} />
+        null
       )}
       <Modal open={editing} onClose={() => setEditing(false)} title="Weight plan">
         {editing && <PlanForm tracker={tracker} plan={plan} onDone={() => setEditing(false)} />}
@@ -63,48 +73,34 @@ export default function WeightPlanCard({ tracker }: { tracker: Tracker }) {
   );
 }
 
-function PlanBody({ plan, tracker, today }: { plan: WeightPlan; tracker: Tracker; today: string }) {
+function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker: Tracker; today: string; onEdit: () => void }) {
   const weights = tracker.state!.weights.filter((w) => w.date >= mondayOf(plan.startDate));
   const medians = weeklyMedians(weights);
   const sum = planSummary(plan, tracker.state!.weights, today);
   const pace = (v: number | null) => (v == null ? "–" : `${v < 0 ? "+" : ""}${Math.abs(v).toFixed(2)}`);
+  const slow = sum.neededPace != null && sum.actualPace != null && sum.actualPace < sum.neededPace;
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="group-list">
-        <li className="group-row">
-          <span className="flex-1">Target</span>
-          <span className="group-row__value">
-            {kg1(plan.targetKg)} kg by {fmtDateAuto(plan.targetDate)}
-          </span>
-        </li>
-        {sum.next && sum.next.date !== plan.targetDate && (
-          <li className="group-row">
-            <span className="flex-1">Next checkpoint</span>
-            <span className="group-row__value">
-              {kg1(sum.next.kg)} kg by {fmtDateAuto(sum.next.date)}
-            </span>
-          </li>
-        )}
-        <li className="group-row">
-          <span className="flex-1">Pace needed</span>
-          <span className="group-row__value">{pace(sum.neededPace)} kg / week</span>
-        </li>
-        <li className="group-row">
-          <span className="flex-1">Pace so far</span>
-          <span className="group-row__value">{pace(sum.actualPace)} kg / week</span>
-        </li>
-        <li className="group-row weight-plan__progress">
-          <span className="flex w-full justify-between gap-2 text-[13px] text-[var(--muted)]">
-            <span>{kg1(plan.startKg)} kg</span>
-            <span>{Math.round(sum.progress * 100)}% of the way</span>
-            <span>{kg1(plan.targetKg)} kg</span>
-          </span>
-          <span className="book-card__meter" aria-hidden>
-            <span style={{ width: `${sum.progress * 100}%`, background: "var(--accent)" }} />
-          </span>
-        </li>
-      </ul>
+      <SummaryCard
+        label="Plan"
+        aside={`${Math.round(sum.progress * 100)}% of the way`}
+        figure={kg1(plan.targetKg)}
+        detail={`kg by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)} kg`}
+        band={{
+          label: "Next",
+          content: sum.next && sum.next.date !== plan.targetDate ? `${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}` : "The target",
+          action: "Edit plan",
+          onPress: onEdit,
+        }}
+        figures={[
+          { value: pace(sum.neededPace), label: "kg / week needed" },
+          { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
+          { value: plan.checkpoints.length, label: plan.checkpoints.length === 1 ? "checkpoint" : "checkpoints" },
+        ]}
+      >
+        <CardMeter value={sum.progress} accent />
+      </SummaryCard>
 
       <section>
         <h3 className="group-head">Checkpoints</h3>

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { usePageTracker } from "@/components/AppShell";
+import { SummaryCard } from "@/components/SummaryCard";
 import { SectionPage } from "@/components/Section";
 import { ConfigCard } from "@/components/ConfigCard";
 import { CategoriesCard, CalorieBudgetCard, MacroTargetsCard, MealTagsCard } from "@/components/Forms";
@@ -163,18 +164,14 @@ function SettingsHome({ tracker, current }: { tracker: Tracker; current: PageId 
         </section>
       ) : (
         <>
-          <Link href="/configuration?view=account" className={"hero settings-account" + (current === "account" ? " is-current" : "")}>
-            <span className="settings-account__avatar" aria-hidden>
-              {tracker.user?.email ? tracker.user.email.slice(0, 1).toUpperCase() : <Person />}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="settings-account__name">{tracker.user ? "Your account" : "This device"}</span>
-              <span className="hero__meta truncate text-[13px]">
-                {tracker.user ? tracker.user.email ?? "Signed in" : "Not signed in · saved on this device"}
-              </span>
-            </span>
-            <ChevronRight aria-hidden className="settings-account__chev" />
-          </Link>
+          <SummaryCard
+            className={"settings-account-card" + (current === "account" ? " is-current" : "")}
+            label="Account"
+            aside={tracker.user ? "Signed in" : "Signed out"}
+            title={tracker.user ? "Your account" : "This device"}
+            line={tracker.user ? tracker.user.email ?? "Signed in" : "Not signed in · saved on this device"}
+            band={{ label: "Data and sync", content: tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "This device only", action: "Open", href: "/configuration?view=account" }}
+          />
           {(["areas", "app"] as const).map((g) => (
             <section key={g}>
               <h3 className="group-head">{g === "areas" ? "Your areas" : "App"}</h3>
@@ -320,19 +317,23 @@ function PageBody({ id, tracker }: { id: PageId; tracker: Tracker }) {
     case "account":
       return (
         <>
-          <section className="hero settings-sync">
-            <p className="eyebrow">Sync</p>
-            <p className="settings-sync__state">
-              {!tracker.firebaseConfigured ? "This device" : tracker.syncError ? "Not syncing" : "Up to date"}
-            </p>
-            <p className="hero__meta">
-              {!tracker.firebaseConfigured
+          <SummaryCard
+            className="settings-sync-card"
+            label="Sync"
+            title={!tracker.firebaseConfigured ? "This device" : tracker.syncError ? "Not syncing" : "Up to date"}
+            line={
+              !tracker.firebaseConfigured
                 ? "Everything is saved on this device."
                 : tracker.syncError
                   ? "Your data is still saved on this device."
-                  : "Saved on this device and in your account."}
-            </p>
-          </section>
+                  : "Saved on this device and in your account."
+            }
+            figures={[
+              { value: tracker.state!.goals.length, label: "goals" },
+              { value: tracker.state!.books.length, label: "books" },
+              { value: tracker.state!.workoutSessions.length, label: "workouts logged" },
+            ]}
+          />
           <Group title="Export and import">
             <ul className="group-list">
               <li>

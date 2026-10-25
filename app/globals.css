@@ -5725,3 +5725,57 @@ html[data-style="signal"] .plan-welcome__ghost.is-next { border-color: #ffffff; 
 .plan-start { display: flex; flex-direction: column; gap: 0.75rem; padding: 1.125rem; }
 .plan-start__title { margin: 0; font-size: 1.0625rem; font-weight: 600; }
 .plan-start .plan-note { margin: 0; }
+
+/* ===================================================================
+   One card: every summary card in Today's card anatomy.
+   =================================================================== */
+.summary-card__aside { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.62); white-space: nowrap; }
+.summary-card__aside .text-action, .summary-card__aside button { color: #9ccbff; }
+.summary-card__title { display: -webkit-box; margin: 0; overflow: hidden; font-size: 1.875rem; font-weight: 500; letter-spacing: -0.01em; line-height: 1.15; color: #ffffff; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.summary-card__actions { display: flex; gap: 0.5rem; }
+.summary-card__actions .cds--btn { flex: 1; justify-content: center; min-block-size: 2.625rem; border-radius: var(--r-pill); }
+.summary-card__actions .hero__ghost, .summary-card__actions .pill-link { min-block-size: 2.625rem; background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.summary-card__actions .pill-link--primary { background: var(--button-primary); }
+.summary-card__band-text { overflow: hidden; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.62); text-overflow: ellipsis; white-space: nowrap; }
+.summary-card__band-btn { inline-size: calc(100% + 2.5rem); text-align: start; }
+@media (min-width: 48rem) { .summary-card__band-btn { inline-size: calc(100% + 3rem); } }
+.summary-card .momentum__figures { margin-block-start: 0; }
+.summary-card .momentum__top + .momentum__figures { margin-block-start: 1.125rem; }
+.summary-card:not(:has(.momentum__figures)) { padding-block-end: 1.25rem; }
+.summary-card:not(:has(.momentum__figures)):has(.plan-card__week) { padding-block-end: 0; }
+.summary-card .momentum__value.is-warn { color: #ff7a45; }
+.card-bars { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.card-bars li { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 6px; }
+.card-bars__track { display: flex; align-items: flex-end; inline-size: 100%; block-size: var(--h, 46px); }
+.card-bars__bar { display: block; inline-size: 100%; border-radius: 4px; background: rgba(255, 255, 255, 0.1); transition: block-size 300ms var(--ease); }
+.card-bars li.is-on .card-bars__bar { background: #ffffff; }
+.card-bars li.is-hi .card-bars__bar { background: #2b91ff; box-shadow: 0 0 10px rgba(43, 145, 255, 0.6); }
+.card-bars__label { font-size: 0.6875rem; color: rgba(255, 255, 255, 0.62); }
+.card-bars li.is-hi .card-bars__label { color: #9ccbff; }
+.card-meter { display: block; block-size: 6px; overflow: hidden; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+.card-meter > span { display: block; block-size: 100%; border-radius: 3px; background: #ffffff; transition: inline-size 300ms var(--ease); }
+.card-meter.is-accent > span { background: #2b91ff; }
+html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="signal"] .card-meter.is-accent > span { background: #000000; box-shadow: none; }
+/* Inside a card, the page's tokens turn to the card's: fields, charts and
+   segmented controls read on the near-black card in light mode too. */
+.summary-card {
+  --surface: #0e0e10; --foreground: #ffffff; --muted: rgba(255, 255, 255, 0.62); --faint: rgba(255, 255, 255, 0.35);
+  --separator: rgba(255, 255, 255, 0.08); --default: rgba(255, 255, 255, 0.08); --border-strong: rgba(255, 255, 255, 0.24);
+  --field: #000000; --accent-text: #9ccbff;
+}
+.summary-card .cds--text-input { background: #000000; color: #ffffff; box-shadow: inset 0 0 0 1px #2a2a30; }
+.summary-card .cds--text-input::placeholder { color: rgba(255, 255, 255, 0.35); }
+.summary-card .segmented { background: rgba(255, 255, 255, 0.08); }
+.summary-card .segmented__item { color: rgba(255, 255, 255, 0.62); }
+.summary-card .segmented__item.is-on { background: rgba(255, 255, 255, 0.14); color: #ffffff; }
+.summary-card__aside .weight-now__badge { margin: 0; }
+.summary-card__aside .cds--btn { min-block-size: 0; block-size: auto; padding: 0; background: transparent; color: #9ccbff; font-size: 0.8125rem; box-shadow: none; }
+.summary-card__aside .cds--btn svg { inline-size: 0.875rem; block-size: 0.875rem; fill: currentColor; }
+.weight-form { display: flex; flex: 1; gap: 0.5rem; }
+.weight-spark { display: block; color: #ffffff; }
+.weight-change.is-down { color: #4ade80; }
+.weight-change.is-up { color: #ff7a45; }
+.project-card { display: block; cursor: pointer; border-radius: var(--r-card); }
+.project-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.project-card + .project-card { margin-block-start: 0.875rem; }
+.settings-account-card.is-current { box-shadow: inset 0 0 0 1.5px var(--accent); }
