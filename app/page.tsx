@@ -39,9 +39,12 @@ export default function TodayPage() {
         </div>
         {planned ? (
           <>
-            {restDay ? <NextPlanDay plan={planned} /> : <PlanTimeline tracker={tracker} plan={planned} />}
             <div className="flex flex-col gap-6">
-              <RecurringList tracker={tracker} exclude={plannedKeys(planned)} title="Also this week" />
+              <PlanTimeline tracker={tracker} plan={planned} />
+              {restDay && <NextPlanDay plan={planned} />}
+            </div>
+            <div className="flex flex-col gap-6">
+              <RecurringList tracker={tracker} exclude={plannedKeys(planned, tracker.state!)} title="Also this week" />
               <TodoList tracker={tracker} />
             </div>
           </>

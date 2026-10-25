@@ -23,7 +23,7 @@ import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
-import { toggledPlanTick, type DayPlan, type WeekGoal } from "./plan";
+import { focusElapsed, toggledPlanTick, withSkips, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -1017,6 +1017,35 @@ export function useTracker() {
     /** Ticks a plan step done by hand on a day, or takes the tick back. */
     togglePlanStep: (day: string, stepId: string) =>
       commit((s) => ({ ...s, planTicks: toggledPlanTick(s, day, stepId) })),
+    /** Lets steps from earlier days go from Left from earlier. */
+    skipPlanSteps: (pairs: { day: string; stepId: string }[]) =>
+      commit((s) => ({ ...s, planSkips: withSkips(s, pairs) })),
+
+    /** Starts a focus block; one at a time, so a new one replaces any other. */
+    startFocus: (f: { minutes: number; projectId?: string; stepId?: string; day?: string }) =>
+      commit((s) => ({
+        ...s,
+        activeFocus: { startedAt: Date.now(), pausedMs: 0, minutes: f.minutes, projectId: f.projectId || undefined, stepId: f.stepId, day: f.day ?? dateKey() } satisfies ActiveFocus,
+      })),
+    pauseFocus: () =>
+      commit((s) => (s.activeFocus && !s.activeFocus.pausedAt ? { ...s, activeFocus: { ...s.activeFocus, pausedAt: Date.now() } } : s)),
+    resumeFocus: () =>
+      commit((s) => {
+        const f = s.activeFocus;
+        if (!f?.pausedAt) return s;
+        return { ...s, activeFocus: { ...f, pausedMs: f.pausedMs + (Date.now() - f.pausedAt), pausedAt: undefined } };
+      }),
+    /** Ends the block and logs its minutes, against the day it was for. */
+    finishFocus: () =>
+      commit((s) => {
+        const f = s.activeFocus;
+        if (!f) return s;
+        const minutes = Math.max(1, Math.round(focusElapsed(f) / 60000));
+        const entry = { id: uid(), date: f.day, minutes, at: Date.now(), ...(f.projectId ? { projectId: f.projectId } : {}), ...(f.stepId ? { stepId: f.stepId } : {}) };
+        return { ...s, activeFocus: null, focusSessions: [...(s.focusSessions ?? []), entry] };
+      }),
+    cancelFocus: () => commit((s) => ({ ...s, activeFocus: null })),
+
     setWeekGoals: (week: string, goals: WeekGoal[]) =>
       commit((s) => {
         const all = { ...(s.weekGoals ?? {}) };
