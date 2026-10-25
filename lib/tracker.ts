@@ -23,6 +23,7 @@ import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
+import { toggledPlanTick, type DayPlan, type WeekGoal } from "./plan";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -1011,6 +1012,18 @@ export function useTracker() {
     // ---- weight ----
     /** Sets the weight-loss plan, or clears it. */
     setWeightPlan: (plan: WeightPlan | null) => commit((s) => ({ ...s, weightPlan: plan })),
+
+    setDayPlan: (plan: DayPlan | null) => commit((s) => ({ ...s, dayPlan: plan })),
+    /** Ticks a plan step done by hand on a day, or takes the tick back. */
+    togglePlanStep: (day: string, stepId: string) =>
+      commit((s) => ({ ...s, planTicks: toggledPlanTick(s, day, stepId) })),
+    setWeekGoals: (week: string, goals: WeekGoal[]) =>
+      commit((s) => {
+        const all = { ...(s.weekGoals ?? {}) };
+        if (goals.length) all[week] = goals;
+        else delete all[week];
+        return { ...s, weekGoals: all };
+      }),
 
     addWeight: (kg: number) =>
       commit((s) => {

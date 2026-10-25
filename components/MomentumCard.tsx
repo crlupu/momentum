@@ -52,10 +52,6 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
   const pct = total ? done / total : 0;
   const left = total - done;
 
-  const openTodos = st.todos.filter((t) => !t.done && todoDueBy(t, today)).length;
-  const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
-  const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
-  const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
 
   const allDone = total > 0 && left === 0;
   const next = ordered[done];
@@ -136,23 +132,39 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
         </div>
       )}
 
-      <ul className="momentum__figures">
-        <Figure label="To do" value={openTodos.toLocaleString()} href="#todo" />
-        <Figure
-          label={
-            kcalLeft == null
-              ? "kcal today"
-              : kcalLeft >= 0
-                ? `kcal · ${compact(kcalLeft)} left`
-                : `kcal · ${compact(Math.abs(kcalLeft))} over`
-          }
-          value={kcalToday.toLocaleString()}
-          href="/nutrition"
-          warn={kcalLeft != null && kcalLeft < 0}
-        />
-        <Figure label="kg, latest" value={latestWeight != null ? `${latestWeight}` : "–"} href="/fitness" />
-      </ul>
+      <TodayFigures tracker={tracker} />
     </section>
+  );
+}
+
+/**
+ * The figures from the other sections that change daily, each a link to the
+ * page that holds them: the foot of Today's card.
+ */
+export function TodayFigures({ tracker }: { tracker: Tracker }) {
+  const st = tracker.state!;
+  const today = dateKey();
+  const openTodos = st.todos.filter((t) => !t.done && todoDueBy(t, today)).length;
+  const latestWeight = st.weights.length ? st.weights[st.weights.length - 1].kg : null;
+  const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
+  const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
+  return (
+    <ul className="momentum__figures">
+      <Figure label="To do" value={openTodos.toLocaleString()} href="#todo" />
+      <Figure
+        label={
+          kcalLeft == null
+            ? "kcal today"
+            : kcalLeft >= 0
+              ? `kcal · ${compact(kcalLeft)} left`
+              : `kcal · ${compact(Math.abs(kcalLeft))} over`
+        }
+        value={kcalToday.toLocaleString()}
+        href="/nutrition"
+        warn={kcalLeft != null && kcalLeft < 0}
+      />
+      <Figure label="kg, latest" value={latestWeight != null ? `${latestWeight}` : "–"} href="/fitness" />
+    </ul>
   );
 }
 

@@ -52,20 +52,31 @@ function AreaTile({ kind }: { kind: Routine["kind"] }) {
  * workouts, each ticked as soon as there's activity on it in its period.
  * How often each comes round is set on the goal, book or workout.
  */
-export default function RecurringList({ tracker }: { tracker: Tracker }) {
+export default function RecurringList({
+  tracker,
+  exclude,
+  title = "Routines",
+}: {
+  tracker: Tracker;
+  /** With a day plan: what it already covers ("kind:id"), left out here. */
+  exclude?: Set<string>;
+  title?: string;
+}) {
   const s = tracker.state!;
-  const list = routines(s, dateKey()).sort(byRoutineOrder);
+  const list = routines(s, dateKey())
+    .filter((r) => !exclude?.has(r.key))
+    .sort(byRoutineOrder);
 
   // What's left shows; what's done folds into one row, opened on request.
   const [showDone, setShowDone] = useState(false);
   const doneCount = list.filter((r) => r.done).length;
   const shown = showDone ? list : list.filter((r) => !r.done);
 
-  if (list.length === 0) return <StartHere />;
+  if (list.length === 0) return exclude ? null : <StartHere />;
 
   return (
     <ReadingFlow tracker={tracker}>
-    <Panel title="Routines" bare>
+    <Panel title={title} bare>
       <Card>
         <Card.Content className="px-3 py-3 md:px-4">
             <ul
