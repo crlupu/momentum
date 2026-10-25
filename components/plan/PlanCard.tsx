@@ -2,7 +2,25 @@
 
 import Link from "next/link";
 import { Tracker, dateKey } from "@/lib/tracker";
-import { WEEKDAY_LONG, stepsOn, summarizeWeek, weekNumber, weekOf, weekdayOf, type DayPlan, type GoalProgress } from "@/lib/plan";
+import { useEffect, useState } from "react";
+import {
+  WEEKDAY,
+  WEEKDAY_LONG,
+  focusElapsed,
+  focusMinutes,
+  hours,
+  leftovers,
+  stepsOn,
+  summarizeWeek,
+  weekNumber,
+  weekOf,
+  weekdayOf,
+  type DayPlan,
+  type GoalProgress,
+} from "@/lib/plan";
+import { columnCards } from "@/lib/projects";
+import { Button } from "../ui";
+import { CardMeter, SummaryCard } from "../SummaryCard";
 import { usePending } from "../ActionButton";
 import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
@@ -26,7 +44,11 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
   const next = steps.find((x) => !x.done);
   const allDone = n > 0 && !next;
   const weekday = WEEKDAY_LONG[weekdayOf(today)];
+  const compact = n > 6;
+  const left = leftovers(s, plan, today);
+  const hasFocus = plan.steps.some((st) => (st.same ? [st.pick] : Object.values(st.byDay ?? {})).some((r) => r?.kind === "focus"));
 
+  if (s.activeFocus) return <FocusCard tracker={tracker} plan={plan} />;
   if (n === 0) return <RestDayCard tracker={tracker} weekday={weekday} />;
 
   return (
@@ -52,18 +74,41 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           </p>
           {allDone && <p className="momentum__detail momentum__next">Every step is done. See you tomorrow.</p>}
         </div>
-        <ol className="plan-card__tiles" style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(n, 5), 8)}, minmax(0, 1fr))` }}>
+        {/* Up to six steps carry their names; from seven, every tile stays on
+            one row without them (the list below names them), so nine or
+            twelve steps never wrap into a lonely second line. */}
+        <ol
+          className={"plan-card__tiles" + (compact ? " is-compact" : "")}
+          style={{ gridTemplateColumns: `repeat(${compact ? n : Math.max(n, 5)}, minmax(0, 1fr))` }}
+        >
           {steps.map((x) => (
-            <li key={x.step.id} className="plan-card__cell">
+            <li key={x.step.id} className="plan-card__cell" title={x.step.name}>
               <span className={"momentum__tile" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
                 <PlanGlyph icon={x.step.icon} />
               </span>
-              <span className={"plan-card__label" + (x === next ? " is-next" : "")}>{x.step.name}</span>
-              <span className="sr-only">{x.done ? "done" : "to do"}</span>
+              {!compact && <span className={"plan-card__label" + (x === next ? " is-next" : "")}>{x.step.name}</span>}
+              <span className="sr-only">
+                {x.step.name}, {x.done ? "done" : "to do"}
+              </span>
             </li>
           ))}
         </ol>
+        {!allDone && done > 0 && steps.some((x, i) => !x.done && steps.slice(i + 1).some((y) => y.done)) && (
+          <p className="momentum__detail plan-card__hint">Done in any order; the plan suggests one.</p>
+        )}
       </div>
+      {left.length > 0 ? (
+        <a href="#leftovers" className="plan-card__week">
+          <span className="plan-card__week-label">Earlier</span>
+          <span className="plan-card__week-rings summary-card__band-text">
+            {left.length} step{left.length === 1 ? "" : "s"} left from {[...new Set(left.map((l) => WEEKDAY[weekdayOf(l.day)]))].join(", ")}
+          </span>
+          <span className="plan-card__week-goals">
+            Catch up
+            <ChevronRight aria-hidden />
+          </span>
+        </a>
+      ) : (
       <Link href="/week" className="plan-card__week">
         <span className="plan-card__week-label">Week {weekNumber(week.week)}</span>
         <span className="plan-card__week-rings">
@@ -74,7 +119,8 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           <ChevronRight aria-hidden />
         </span>
       </Link>
-      <TodayFigures tracker={tracker} />
+      )}
+      <TodayFigures tracker={tracker} focus={hasFocus} />
     </section>
   );
 }
@@ -195,5 +241,84 @@ export function PlanWelcome() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** mm:ss, or h:mm:ss past the hour. */
+function clock(ms: number): string {
+  const t = Math.floor(ms / 1000);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const sec = t % 60;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return h ? `${h}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
+}
+
+/**
+ * While a focus block runs, Today's card is its timer, in the same anatomy:
+ * the clock against the block's length, Pause and Finish. Finishing logs the
+ * minutes; the step ticks itself once the block's time is in.
+ */
+export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan | null }) {
+  const s = tracker.state!;
+  const f = s.activeFocus!;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (f.pausedAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [f.pausedAt]);
+  const { pending, run } = usePending();
+  const ms = focusElapsed(f, now);
+  const project = f.projectId ? s.projects.find((p) => p.id === f.projectId) : undefined;
+  const doing = project ? columnCards(project, "doing")[0] : undefined;
+  const today = dateKey();
+  const steps = plan ? stepsOn(s, plan, f.day) : [];
+  const at = steps.findIndex((x) => x.step.id === f.stepId);
+  const weekMin = (s.focusSessions ?? []).filter((x) => x.date >= weekOf(today)).reduce((a, x) => a + x.minutes, 0);
+  const running = Math.round(ms / 60000);
+
+  return (
+    <SummaryCard
+      aria-label="Focus timer"
+      label={`Focus · ${project?.title ?? "Just focus"}`}
+      aside={f.pausedAt ? "Paused" : at >= 0 ? `Step ${at + 1} of ${steps.length}` : undefined}
+      done={ms >= f.minutes * 60000}
+      doneLabel="Time's in"
+      figure={<span role="timer">{clock(ms)}</span>}
+      detail={`of ${f.minutes} min`}
+      line={doing ? `Doing: ${doing.title}` : f.day !== today ? `For ${WEEKDAY_LONG[weekdayOf(f.day)]}` : undefined}
+      actions={
+        <>
+          {f.pausedAt ? (
+            <button type="button" className="hero__ghost flex-1" disabled={pending} onClick={() => void run(() => tracker.resumeFocus())}>
+              Resume
+            </button>
+          ) : (
+            <button type="button" className="hero__ghost flex-1" disabled={pending} onClick={() => void run(() => tracker.pauseFocus())}>
+              Pause
+            </button>
+          )}
+          <Button variant="primary" isDisabled={pending} onPress={() => void run(() => tracker.finishFocus())}>
+            <Check aria-hidden /> Finish
+          </Button>
+        </>
+      }
+      band={{
+        label: "Discard",
+        content: "Stop without logging the time",
+        action: "Discard",
+        onPress: () => {
+          if (window.confirm("Discard this focus block? Its time isn't logged.")) void tracker.cancelFocus();
+        },
+      }}
+      figures={[
+        { value: focusMinutes(s, today) + (f.day === today ? running : 0), label: "min today" },
+        { value: hours(weekMin + running), label: "this week" },
+        { value: (s.focusSessions ?? []).filter((x) => x.date === today).length, label: "sessions today" },
+      ]}
+    >
+      <CardMeter value={ms / (f.minutes * 60000)} accent />
+    </SummaryCard>
   );
 }

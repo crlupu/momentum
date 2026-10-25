@@ -15,9 +15,32 @@
 
 import { dateKey, daysSinceEpoch, goalStatus, uid, type Book, type Goal, type TrackerState, type Workout } from "./model";
 import * as R from "./reading";
+import { columnCards, type Project } from "./projects";
 
-export type PlanKind = "goal" | "book" | "workout";
-export type PlanRef = { kind: PlanKind; id: string };
+/**
+ * What a step points at. A reading step points at a track (the book it has
+ * open is today's); "book" is the old form, read as its track. A focus step
+ * is time: `minutes` on a project (`id`), or on nothing in particular ("").
+ */
+export type PlanKind = "goal" | "book" | "workout" | "track" | "focus";
+export type PlanRef = { kind: PlanKind; id: string; minutes?: number };
+
+/** A stretch of focused work, logged when it ends. */
+export type FocusSession = { id: string; date: string; minutes: number; projectId?: string; stepId?: string; at: number };
+
+/** The focus block under way: its clock, paused time included. */
+export type ActiveFocus = {
+  startedAt: number;
+  /** Time spent paused, in milliseconds, before the current pause. */
+  pausedMs: number;
+  /** Set while paused. */
+  pausedAt?: number;
+  minutes: number;
+  projectId?: string;
+  stepId?: string;
+  /** The plan day the block is for. */
+  day: string;
+};
 export const PLAN_ICONS = ["book", "gym", "video", "learn", "task", "target"] as const;
 export type PlanIcon = (typeof PLAN_ICONS)[number];
 
@@ -103,9 +126,18 @@ export function weekNumber(week: string): number {
 function ref(v: unknown): PlanRef | null {
   if (!v || typeof v !== "object") return null;
   const r = v as Record<string, unknown>;
-  return (r.kind === "goal" || r.kind === "book" || r.kind === "workout") && typeof r.id === "string"
+  if (r.kind === "focus")
+    return { kind: "focus", id: typeof r.id === "string" ? r.id : "", minutes: typeof r.minutes === "number" && r.minutes > 0 ? r.minutes : 50 };
+  return (r.kind === "goal" || r.kind === "book" || r.kind === "workout" || r.kind === "track") && typeof r.id === "string"
     ? { kind: r.kind, id: r.id }
     : null;
+}
+
+/** An old book step reads as its book's track, so Today follows the track. */
+function asTrack(s: TrackerState, r: PlanRef | null): PlanRef | null {
+  if (r?.kind !== "book") return r;
+  const b = s.books.find((x) => x.id === r.id);
+  return b && R.trackOf(s, b.trackId) ? { kind: "track", id: b.trackId! } : r;
 }
 
 /** The plan as saved, made safe to read; null when there is none. */
@@ -118,13 +150,13 @@ export function planOf(s: TrackerState): DayPlan | null {
     .map((x) => {
       const byDay: Record<string, PlanRef | null> = {};
       if (x.byDay && typeof x.byDay === "object")
-        for (const [k, v] of Object.entries(x.byDay as Record<string, unknown>)) byDay[k] = ref(v);
+        for (const [k, v] of Object.entries(x.byDay as Record<string, unknown>)) byDay[k] = asTrack(s, ref(v));
       return {
         id: x.id as string,
         name: typeof x.name === "string" && x.name.trim() ? x.name : "Step",
         icon: (PLAN_ICONS as readonly string[]).includes(x.icon as string) ? (x.icon as PlanIcon) : "task",
         same: x.same !== false,
-        pick: ref(x.pick),
+        pick: asTrack(s, ref(x.pick)),
         byDay,
       };
     });
@@ -163,7 +195,10 @@ export function pickFor(step: PlanStep, weekday: number): PlanRef | null {
 export type Resolved =
   | { kind: "goal"; item: Goal }
   | { kind: "book"; item: Book }
-  | { kind: "workout"; item: Workout };
+  | { kind: "workout"; item: Workout }
+  /** A track, with the book it has open, if any. */
+  | { kind: "track"; item: R.ReadingTrack; book?: Book }
+  | { kind: "focus"; minutes: number; project?: Project };
 
 export function resolve(s: TrackerState, r: PlanRef | null | undefined): Resolved | null {
   if (!r) return null;
@@ -175,6 +210,14 @@ export function resolve(s: TrackerState, r: PlanRef | null | undefined): Resolve
     const b = s.books.find((x) => x.id === r.id);
     return b ? { kind: "book", item: b } : null;
   }
+  if (r.kind === "track") {
+    const t = R.trackOf(s, r.id);
+    return t ? { kind: "track", item: t, book: R.activeBooks(s, t.id)[0] } : null;
+  }
+  if (r.kind === "focus") {
+    const project = r.id ? s.projects.find((p) => p.id === r.id) : undefined;
+    return { kind: "focus", minutes: r.minutes ?? 50, project };
+  }
   const w = s.workouts.find((x) => x.id === r.id);
   return w ? { kind: "workout", item: w } : null;
 }
@@ -182,7 +225,17 @@ export function resolve(s: TrackerState, r: PlanRef | null | undefined): Resolve
 export function refTitle(s: TrackerState, r: PlanRef | null | undefined): string | null {
   const it = resolve(s, r);
   if (!it) return null;
-  return it.kind === "workout" ? it.item.name : it.item.title;
+  if (it.kind === "workout") return it.item.name;
+  if (it.kind === "track") return it.item.name;
+  if (it.kind === "focus") return it.project?.title ?? "Just focus";
+  return it.item.title;
+}
+
+/** Focus minutes logged on a day, on a project or (with none given) on anything. */
+export function focusMinutes(s: TrackerState, day: string, projectId?: string): number {
+  return (s.focusSessions ?? [])
+    .filter((f) => f.date === day && (!projectId || f.projectId === projectId))
+    .reduce((a, f) => a + f.minutes, 0);
 }
 
 /** A goal's next item: its first unticked entry, or one more on its count. */
@@ -201,6 +254,17 @@ export function askOf(s: TrackerState, it: Resolved | null): string {
   if (it.kind === "goal") {
     const n = nextOfGoal(it.item);
     return n ? (n.itemId ? `${n.title} · ${n.of}` : `Session ${n.of}`) : "All done";
+  }
+  if (it.kind === "focus") {
+    const doing = it.project ? columnCards(it.project, "doing")[0] : undefined;
+    return `${it.minutes} min${doing ? ` · Doing: ${doing.title}` : ""}`;
+  }
+  if (it.kind === "track") {
+    const b = it.book;
+    if (!b) return "No book open";
+    const daily = it.item.dailyTarget;
+    if (daily > 0) return `${daily} pages · to p. ${b.pages > 0 ? Math.min(b.pages, b.read + daily) : b.read + daily}`;
+    return b.pages > 0 ? `p. ${b.read} of ${b.pages}` : `p. ${b.read}`;
   }
   if (it.kind === "book") {
     const b = it.item;
@@ -222,6 +286,11 @@ function activityOn(s: TrackerState, r: PlanRef, day: string): boolean {
   if (r.kind === "goal") return (s.learningLog ?? []).some((e) => e.goalId === r.id && e.date === day);
   if (r.kind === "book")
     return s.readingSessions.some((e) => e.bookId === r.id && e.date === day) || s.books.find((b) => b.id === r.id)?.touched === day;
+  if (r.kind === "track") {
+    const ids = new Set(s.books.filter((b) => b.trackId === r.id).map((b) => b.id));
+    return s.readingSessions.some((e) => ids.has(e.bookId) && e.date === day) || s.books.some((b) => ids.has(b.id) && b.touched === day);
+  }
+  if (r.kind === "focus") return focusMinutes(s, day, r.id || undefined) >= (r.minutes ?? 50);
   return s.workoutSessions.some((e) => e.workoutId === r.id && e.date === day);
 }
 
@@ -250,15 +319,59 @@ export function stepsOn(s: TrackerState, plan: DayPlan, day: string): DayStep[] 
   return out;
 }
 
-/** Everything the plan points at on any day, as "kind:id". */
-export function plannedKeys(plan: DayPlan | null): Set<string> {
+/** Everything the plan points at on any day, as routine keys ("kind:id"): a track stands for its books. */
+export function plannedKeys(plan: DayPlan | null, s?: TrackerState): Set<string> {
   const out = new Set<string>();
   if (!plan) return out;
   for (const st of plan.steps) {
     const refs = st.same ? [st.pick] : Object.values(st.byDay ?? {});
-    for (const r of refs) if (r) out.add(`${r.kind}:${r.id}`);
+    for (const r of refs) {
+      if (!r) continue;
+      if (r.kind === "track" && s) for (const b of s.books) if (b.trackId === r.id) out.add(`book:${b.id}`);
+      out.add(`${r.kind}:${r.id}`);
+    }
   }
   return out;
+}
+
+/* ------------------------------------------------------------ leftovers */
+
+export function planSkipsOf(s: TrackerState): Record<string, string[]> {
+  const t = s.planSkips as unknown;
+  return t && typeof t === "object" ? (t as Record<string, string[]>) : {};
+}
+
+/** How far back a step not done waits to be caught up. */
+export const LEFTOVER_DAYS = 7;
+
+export type Leftover = { day: string; x: DayStep };
+
+/** Steps not done on the plan days before today, newest first, unless skipped. */
+export function leftovers(s: TrackerState, plan: DayPlan, today: string = dateKey()): Leftover[] {
+  const skips = planSkipsOf(s);
+  const out: Leftover[] = [];
+  for (let i = 1; i <= LEFTOVER_DAYS; i++) {
+    const day = addDays(today, -i);
+    const skipped = skips[day] ?? [];
+    for (const x of stepsOn(s, plan, day)) if (!x.done && !skipped.includes(x.step.id)) out.push({ day, x });
+  }
+  return out;
+}
+
+/** The skips with some (day, step) pairs added; older ones pruned. */
+export function withSkips(s: TrackerState, pairs: { day: string; stepId: string }[]): Record<string, string[]> {
+  const cut = addDays(dateKey(), -60);
+  const next: Record<string, string[]> = {};
+  for (const [d, ids] of Object.entries(planSkipsOf(s))) if (d >= cut && Array.isArray(ids) && ids.length) next[d] = [...ids];
+  for (const { day, stepId } of pairs) next[day] = [...new Set([...(next[day] ?? []), stepId])];
+  return next;
+}
+
+/* ---------------------------------------------------------------- focus */
+
+/** Milliseconds a focus block has run, pauses left out. */
+export function focusElapsed(f: ActiveFocus, now: number = Date.now()): number {
+  return Math.max(0, (f.pausedAt ?? now) - f.startedAt - f.pausedMs);
 }
 
 /** The plan with one day's hand tick on a step flipped; older ticks pruned. */
@@ -297,6 +410,11 @@ export type GoalProgress = {
   count: string;
 };
 
+/** 90 → "1.5 h", 45 → "45 min". */
+export function hours(minutes: number): string {
+  return minutes >= 60 ? `${Math.round((minutes / 60) * 10) / 10} h` : `${minutes} min`;
+}
+
 function inWeek(day: string, week: string) {
   return day >= week && day <= addDays(week, 6);
 }
@@ -313,6 +431,11 @@ export function progressOf(s: TrackerState, g: WeekGoal, week: string, plan: Day
   else if (g.ref?.kind === "workout") value = s.workoutSessions.filter((e) => e.workoutId === g.ref!.id && inWeek(e.date, week)).length;
   else if (g.ref?.kind === "book")
     value = s.readingSessions.filter((e) => e.bookId === g.ref!.id && inWeek(e.date, week)).reduce((a, e) => a + e.pages, 0);
+  else if (g.ref?.kind === "track") {
+    const ids = new Set(s.books.filter((b) => b.trackId === g.ref!.id).map((b) => b.id));
+    value = s.readingSessions.filter((e) => ids.has(e.bookId) && inWeek(e.date, week)).reduce((a, e) => a + e.pages, 0);
+  } else if (g.ref?.kind === "focus")
+    value = (s.focusSessions ?? []).filter((f) => inWeek(f.date, week) && (!g.ref!.id || f.projectId === g.ref!.id)).reduce((a, f) => a + f.minutes, 0);
   const done = value >= g.target;
 
   // Pace: where it should be by now, over the week's plan days (or all
@@ -331,11 +454,13 @@ export function progressOf(s: TrackerState, g: WeekGoal, week: string, plan: Day
     g.mode === "once" ? g.title || "One-off"
     : g.mode === "page" ? `Read to p. ${g.target}`
     : g.ref?.kind === "workout" ? `${g.target} workout${g.target === 1 ? "" : "s"}`
-    : g.ref?.kind === "book" ? `${g.target} pages`
+    : g.ref?.kind === "book" || g.ref?.kind === "track" ? `${g.target} pages`
+    : g.ref?.kind === "focus" ? `${hours(g.target)} of focus`
     : `${g.target} session${g.target === 1 ? "" : "s"}`;
   const count =
     g.mode === "once" ? (done ? "Done" : "To do")
     : g.mode === "page" ? `p. ${value} of ${g.target}`
+    : g.ref?.kind === "focus" ? `${hours(Math.min(value, g.target))} of ${hours(g.target)}`
     : `${Math.min(value, g.target)} of ${g.target}`;
   return { goal: g, label, sub: g.mode === "once" ? "One-off" : name, value, target: g.target, done, pace, count };
 }
@@ -384,7 +509,7 @@ export function suggestions(s: TrackerState, week: string): Suggestion[] {
   const plan = planOf(s);
   const out: Suggestion[] = [];
   if (plan) {
-    const counts = new Map<string, { ref: PlanRef; days: number[] }>();
+    const counts = new Map<string, { ref: PlanRef; days: number[]; minutes: number }>();
     for (const day of weekDays(week)) {
       const wd = weekdayOf(day);
       if (!plan.days.includes(wd)) continue;
@@ -392,16 +517,22 @@ export function suggestions(s: TrackerState, week: string): Suggestion[] {
         const r = pickFor(st, wd);
         if (!r) continue;
         const k = `${r.kind}:${r.id}`;
-        const c = counts.get(k) ?? { ref: r, days: [] };
+        const c = counts.get(k) ?? { ref: r, days: [], minutes: 0 };
         c.days.push(wd);
+        c.minutes += r.minutes ?? 0;
         counts.set(k, c);
       }
     }
-    for (const [k, { ref: r, days }] of counts) {
+    for (const [k, { ref: r, days, minutes }] of counts) {
       const it = resolve(s, r);
       if (!it) continue;
       const when = days.length === plan.days.length ? "every plan day" : days.map((d) => WEEKDAY[d]).join(", ");
-      if (it.kind === "book") {
+      if (it.kind === "focus") {
+        out.push({ key: k, goal: { id: uid(), mode: "count", ref: { kind: "focus", id: r.id }, target: minutes }, label: `${hours(minutes)} of focus`, why: when });
+      } else if (it.kind === "track") {
+        const pages = (it.item.dailyTarget || 20) * days.length;
+        out.push({ key: k, goal: { id: uid(), mode: "count", ref: r, target: pages }, label: `${pages} pages`, why: `${it.item.dailyTarget || 20} pages × ${days.length}` });
+      } else if (it.kind === "book") {
         const daily = R.trackOf(s, it.item.trackId)?.dailyTarget || 20;
         const to = it.item.pages > 0 ? Math.min(it.item.pages, it.item.read + daily * days.length) : it.item.read + daily * days.length;
         const g: WeekGoal = { id: uid(), mode: "page", ref: r, target: to, from: it.item.read };

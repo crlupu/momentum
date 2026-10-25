@@ -653,6 +653,12 @@ export type TrackerState = {
   planTicks?: Record<string, string[]>;
   /** Each week's goals, by the week's Monday. */
   weekGoals?: Record<string, import("./plan").WeekGoal[]>;
+  /** Plan steps let go from Left from earlier, by day. */
+  planSkips?: Record<string, string[]>;
+  /** Focused work, logged as it ends. */
+  focusSessions?: import("./plan").FocusSession[];
+  /** The focus block under way, if any. */
+  activeFocus?: import("./plan").ActiveFocus | null;
 };
 
 /** One learning session: a count moved on, on a day, perhaps with a line about it. */

@@ -26,6 +26,7 @@ import {
   WEEKDAY,
   WEEKDAY_LONG,
   WEEK_ORDER,
+  nextOfGoal,
   pickFor,
   planOf,
   refTitle,
@@ -38,7 +39,9 @@ import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { Input } from "../ui";
 import { Segmented } from "../books/bits";
-import { ChevronDown, ChevronRight, Plus, ReorderLines } from "../icons";
+import { Check, ChevronDown, ChevronRight, Plus, ReorderLines, Search } from "../icons";
+import * as R from "@/lib/reading";
+import { columnCards, projectFinished } from "@/lib/projects";
 import { PlanGlyph, PlanTile } from "./bits";
 
 const EMPTY: DayPlan = { days: DEFAULT_DAYS, steps: [] };
@@ -242,14 +245,14 @@ function FromRoutines({ tracker, onUse, days }: { tracker: Tracker; onUse: (p: D
   const use = () =>
     onUse({
       days,
-      steps: list.map((r) => ({
-        id: uid(),
-        name: KIND_STEP[r.kind].name,
-        icon: KIND_STEP[r.kind].icon,
-        same: true,
-        pick: { kind: r.kind, id: r.id },
-        byDay: {},
-      })),
+      // A book routine becomes its track's step, once per track.
+      steps: list
+        .map((r) => {
+          const book = r.kind === "book" ? tracker.state!.books.find((b) => b.id === r.id) : undefined;
+          const pick: PlanRef = book?.trackId ? { kind: "track", id: book.trackId } : { kind: r.kind, id: r.id };
+          return { id: uid(), name: KIND_STEP[r.kind].name, icon: KIND_STEP[r.kind].icon, same: true, pick, byDay: {} };
+        })
+        .filter((st, i, all) => all.findIndex((x) => x.pick.kind === st.pick.kind && x.pick.id === st.pick.id) === i),
     });
   return (
     <section className="card plan-start">
@@ -306,22 +309,18 @@ function StepItem({ tracker, plan, step, n, onOpen }: { tracker: Tracker; plan: 
   );
 }
 
-type Option = { ref: PlanRef; title: string; group: string };
+type Kind = "goal" | "track" | "workout" | "focus";
+const KINDS: { kind: Kind; label: string; icon: PlanIcon }[] = [
+  { kind: "goal", label: "Goals", icon: "learn" },
+  { kind: "track", label: "Reading", icon: "book" },
+  { kind: "workout", label: "Gym", icon: "gym" },
+  { kind: "focus", label: "Focus", icon: "target" },
+];
+const KIND_OF = (r: PlanRef | null | undefined): Kind => (!r ? "goal" : r.kind === "book" ? "track" : (r.kind as Kind));
+const MINUTES = [25, 50, 90, 120];
 
-/** What a step can point at: goals not done, books open or queued, workouts. */
-function options(tracker: Tracker): Option[] {
-  const s = tracker.state!;
-  const goals = s.goals
-    .filter((g) => goalStatus(g) === "active" || goalStatus(g) === "queued")
-    .map((g) => ({ ref: { kind: "goal" as const, id: g.id }, title: g.title, group: "Goals" }));
-  const books = s.books
-    .filter((b) => b.status === "active" || b.status === "queued")
-    .map((b) => ({ ref: { kind: "book" as const, id: b.id }, title: b.title, group: "Books" }));
-  const workouts = s.workouts.map((w) => ({ ref: { kind: "workout" as const, id: w.id }, title: w.name, group: "Workouts" }));
-  return [...goals, ...books, ...workouts];
-}
-
-const same = (a?: PlanRef | null, b?: PlanRef | null) => (!a && !b) || (!!a && !!b && a.kind === b.kind && a.id === b.id);
+const same = (a?: PlanRef | null, b?: PlanRef | null) =>
+  (!a && !b) || (!!a && !!b && a.kind === b.kind && a.id === b.id);
 
 function StepForm({
   tracker,
@@ -337,7 +336,7 @@ function StepForm({
   onDelete?: () => Promise<unknown>;
 }) {
   const [name, setName] = useState(step?.name ?? "");
-  const [icon, setIcon] = useState<PlanIcon>(step?.icon ?? "book");
+  const [icon, setIcon] = useState<PlanIcon>(step?.icon ?? "learn");
   const [mode, setMode] = useState<"same" | "day">(step && !step.same ? "day" : "same");
   const [pick, setPick] = useState<PlanRef | null>(step?.pick ?? null);
   const [byDay, setByDay] = useState<Record<string, PlanRef | null>>(() => {
@@ -346,8 +345,12 @@ function StepForm({
     return out;
   });
   const [openDay, setOpenDay] = useState<number | null>(null);
-  const opts = options(tracker);
   const days = WEEK_ORDER.filter((d) => plan.days.includes(d));
+  // A new step takes its kind's icon until one is chosen.
+  const [iconSet, setIconSet] = useState(!!step);
+  const follow = (r: PlanRef | null) => {
+    if (!iconSet && r) setIcon(KINDS.find((k) => k.kind === KIND_OF(r))!.icon);
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -373,7 +376,10 @@ function StepForm({
             aria-checked={icon === x}
             aria-label={ICON_NAME[x]}
             className="plan-icons__icon"
-            onClick={() => setIcon(x)}
+            onClick={() => {
+              setIcon(x);
+              setIconSet(true);
+            }}
           >
             <PlanGlyph icon={x} />
           </button>
@@ -389,9 +395,15 @@ function StepForm({
         ]}
       />
       {mode === "same" ? (
-        <div className="card plan-pick">
-          <PickList opts={opts} value={pick} onPick={setPick} allowNone={false} />
-        </div>
+        <Picker
+          tracker={tracker}
+          value={pick}
+          allowNone={false}
+          onPick={(r) => {
+            setPick(r);
+            follow(r);
+          }}
+        />
       ) : (
         <ul className="card plan-byday">
           {days.map((d) => {
@@ -402,64 +414,227 @@ function StepForm({
                 <button type="button" className="plan-byday__row" aria-expanded={open} onClick={() => setOpenDay(open ? null : d)}>
                   <span className="plan-byday__day">{WEEKDAY[d]}</span>
                   <span className={"plan-byday__value" + (v ? "" : " is-skip")}>
-                    {refTitle(tracker.state!, v) ?? "Nothing · step skipped"}
+                    {v ? (
+                      <>
+                        <span className="plan-byday__title">{refTitle(tracker.state!, v) ?? "Gone"}</span>
+                        <span className="plan-byday__kind">
+                          {KINDS.find((k) => k.kind === KIND_OF(v))!.label}
+                          {v.kind === "focus" ? ` · ${v.minutes} min` : ""}
+                        </span>
+                      </>
+                    ) : (
+                      "Nothing · step skipped"
+                    )}
                   </span>
                   {open ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
                 </button>
                 {open && (
-                  <PickList
-                    opts={opts}
-                    value={v}
-                    allowNone
-                    onPick={(r) => {
-                      setByDay((b) => ({ ...b, [d]: r }));
-                      setOpenDay(null);
-                    }}
-                  />
+                  <div className="plan-byday__pick">
+                    <Picker
+                      tracker={tracker}
+                      value={v}
+                      allowNone
+                      onPick={(r, close = true) => {
+                        setByDay((b) => ({ ...b, [d]: r }));
+                        follow(r);
+                        if (close) setOpenDay(null);
+                      }}
+                    />
+                  </div>
                 )}
               </li>
             );
           })}
         </ul>
       )}
-      <p className="plan-note">Pick a goal, book or workout; Today shows its next item.</p>
       <DialogActions del={onDelete && { what: name || "this step", onDelete }} />
     </form>
   );
 }
 
-function PickList({
-  opts,
+/**
+ * What a step points at, in two taps: the kind first (Goals, Reading, Gym,
+ * Focus), then a short list of only that kind. Goals are the active ones,
+ * grouped by category, with queued ones behind a link and a search when
+ * the list is long; reading is by track; focus is a length of time, on a
+ * project or on nothing in particular.
+ */
+function Picker({
+  tracker,
   value,
   onPick,
   allowNone,
 }: {
-  opts: Option[];
+  tracker: Tracker;
   value: PlanRef | null;
-  onPick: (r: PlanRef | null) => void;
+  /** `close` false: a change that keeps the list open (a focus length). */
+  onPick: (r: PlanRef | null, close?: boolean) => void;
   allowNone: boolean;
 }) {
-  const groups = ["Goals", "Books", "Workouts"].map((g) => ({ g, items: opts.filter((o) => o.group === g) })).filter((x) => x.items.length);
-  return (
-    <div className="plan-picks" role="radiogroup">
-      {groups.map(({ g, items }) => (
-        <div key={g}>
-          <p className="plan-picks__group">{g}</p>
-          {items.map((o) => (
-            <button key={o.ref.kind + o.ref.id} type="button" role="radio" aria-checked={same(value, o.ref)} className="plan-picks__opt" onClick={() => onPick(o.ref)}>
-              <span className="plan-picks__radio" aria-hidden />
-              {o.title}
+  const s = tracker.state!;
+  const [kind, setKind] = useState<Kind>(KIND_OF(value));
+  const [query, setQuery] = useState("");
+  const [queued, setQueued] = useState(false);
+  const [minutes, setMinutes] = useState(value?.kind === "focus" ? value.minutes ?? 50 : 50);
+  const [custom, setCustom] = useState(!MINUTES.includes(value?.kind === "focus" ? value.minutes ?? 50 : 50));
+
+  const choose = (r: PlanRef) => onPick(r);
+  const Opt = ({ r, title, sub, dot }: { r: PlanRef; title: string; sub?: string; dot?: string }) => (
+    <button type="button" role="radio" aria-checked={same(value, r)} className="plan-opt" onClick={() => choose(r)}>
+      {dot && <span className="plan-opt__dot" style={{ background: dot }} aria-hidden />}
+      <span className="plan-opt__text">
+        <span className="plan-opt__title">{title}</span>
+        {sub && <span className="plan-opt__sub">{sub}</span>}
+      </span>
+      <span className="plan-opt__mark" aria-hidden>
+        <Check />
+      </span>
+    </button>
+  );
+
+  let body: React.ReactNode = null;
+  if (kind === "goal") {
+    const q = query.trim().toLowerCase();
+    const all = s.goals.filter((g) => goalStatus(g) === "active" || (queued && goalStatus(g) === "queued"));
+    const found = q ? all.filter((g) => g.title.toLowerCase().includes(q)) : all;
+    const groups = [...s.categories.map((c) => ({ id: c.id, name: c.name, color: c.color })), { id: "", name: "Other", color: "var(--faint)" }]
+      .map((c) => ({ c, goals: found.filter((g) => (s.categories.some((x) => x.id === g.catId) ? g.catId === c.id : c.id === "")) }))
+      .filter((x) => x.goals.length);
+    const queuedCount = s.goals.filter((g) => goalStatus(g) === "queued").length;
+    const activeCount = s.goals.filter((g) => goalStatus(g) === "active").length;
+    body = (
+      <>
+        {all.length > 5 && (
+          <label className="plan-search">
+            <Search aria-hidden />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${all.length} goals`} aria-label="Search goals" />
+          </label>
+        )}
+        {groups.map(({ c, goals }) => (
+          <section key={c.id || "other"}>
+            <p className="plan-group">
+              <span className="plan-group__dot" style={{ background: c.color }} aria-hidden />
+              {c.name}
+              <span className="plan-group__n">{goals.length}</span>
+            </p>
+            <div className="card plan-opts">
+              {goals.map((g) => {
+                const n = nextOfGoal(g);
+                return <Opt key={g.id} r={{ kind: "goal", id: g.id }} title={g.title} sub={goalStatus(g) === "queued" ? "Queued" : n ? `Next: ${n.itemId ? `${n.title} · ${n.of}` : `session ${n.of}`}` : "All done"} />;
+              })}
+            </div>
+          </section>
+        ))}
+        {!groups.length && <p className="plan-note">{q ? "No goal matches." : "No active goals. Set one to Active in Education."}</p>}
+        <p className="plan-picker__foot">
+          <span>{queued ? "Active and queued" : `Only active goals · ${activeCount}`}</span>
+          {queuedCount > 0 && (
+            <button type="button" className="text-action" onClick={() => setQueued((v) => !v)}>
+              {queued ? "Hide queued" : `Show ${queuedCount} queued`}
+            </button>
+          )}
+        </p>
+      </>
+    );
+  } else if (kind === "track") {
+    const tracks = R.liveTracks(s);
+    body = tracks.length ? (
+      <div className="card plan-opts">
+        {tracks.map((t) => {
+          const open = R.activeBooks(s, t.id).length;
+          return (
+            <Opt
+              key={t.id}
+              r={{ kind: "track", id: t.id }}
+              title={t.name}
+              dot={t.color}
+              sub={`${t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : "No daily pages"} · ${open} open`}
+            />
+          );
+        })}
+      </div>
+    ) : (
+      <p className="plan-note">No reading tracks yet. Make one in Education › Library.</p>
+    );
+  } else if (kind === "workout") {
+    body = s.workouts.length ? (
+      <div className="card plan-opts">
+        {s.workouts.map((w) => (
+          <Opt key={w.id} r={{ kind: "workout", id: w.id }} title={w.name} sub={`${w.exercises.length} exercise${w.exercises.length === 1 ? "" : "s"}`} />
+        ))}
+      </div>
+    ) : (
+      <p className="plan-note">No workouts yet. Add one in Health.</p>
+    );
+  } else {
+    const projects = s.projects.filter((p) => !projectFinished(p));
+    const setLength = (m: number) => {
+      setMinutes(m);
+      if (value?.kind === "focus") onPick({ ...value, minutes: m }, false);
+    };
+    body = (
+      <>
+        <p className="plan-group">How long</p>
+        <div className="plan-minutes" role="radiogroup" aria-label="How long">
+          {MINUTES.map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={!custom && minutes === m} onClick={() => (setCustom(false), setLength(m))}>
+              {m} min
             </button>
           ))}
+          <button type="button" role="radio" aria-checked={custom} onClick={() => setCustom(true)}>
+            Other
+          </button>
         </div>
-      ))}
+        {custom && (
+          <Input
+            type="number"
+            inputMode="numeric"
+            aria-label="Minutes"
+            placeholder="Minutes"
+            value={String(minutes)}
+            onChange={(e) => {
+              const m = Math.max(5, Math.min(600, Math.round(Number(e.target.value) || 0)));
+              if (m) setLength(m);
+            }}
+          />
+        )}
+        <p className="plan-group">On</p>
+        <div className="card plan-opts">
+          <Opt r={{ kind: "focus", id: "", minutes }} title="Just focus" sub="Time on whatever matters most" />
+          {projects.map((p) => {
+            const doing = columnCards(p, "doing")[0];
+            return <Opt key={p.id} r={{ kind: "focus", id: p.id, minutes }} title={p.title} sub={doing ? `Project · Doing: ${doing.title}` : "Project"} />;
+          })}
+        </div>
+        <p className="plan-note">Focus is your main work. Start it from Today as a timer; the step ticks itself when the time is in.</p>
+      </>
+    );
+  }
+
+  return (
+    <div className="plan-picker">
+      <div className="plan-kinds" role="tablist" aria-label="What it points at">
+        {KINDS.map((k) => (
+          <button key={k.kind} type="button" role="tab" aria-selected={kind === k.kind} className="plan-kinds__kind" onClick={() => setKind(k.kind)}>
+            <PlanGlyph icon={k.icon} />
+            {k.label}
+          </button>
+        ))}
+      </div>
+      {body}
       {allowNone && (
-        <button type="button" role="radio" aria-checked={!value} className="plan-picks__opt" onClick={() => onPick(null)}>
-          <span className="plan-picks__radio" aria-hidden />
-          Nothing · skip the step
-        </button>
+        <div className="card plan-opts">
+          <button type="button" role="radio" aria-checked={!value} className="plan-opt" onClick={() => onPick(null)}>
+            <span className="plan-opt__text">
+              <span className="plan-opt__title">Nothing</span>
+              <span className="plan-opt__sub">Skip the step this day</span>
+            </span>
+            <span className="plan-opt__mark" aria-hidden>
+              <Check />
+            </span>
+          </button>
+        </div>
       )}
-      {!groups.length && <p className="plan-note">No goals, books or workouts yet. Add one in Education or Health.</p>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Tracker, caloriesLeftThisWeek, dateKey } from "@/lib/tracker";
 import { byRoutineOrder, routines, type Routine, type RoutineKind } from "@/lib/routines";
 import { todoDueBy } from "@/lib/model";
+import { focusMinutes } from "@/lib/plan";
 import { BookOpen, Check, ChevronRight, Dumbbell, School } from "./icons";
 
 /** Past two rows of tiles they'd be too many to read; a bar reads better. */
@@ -153,7 +154,7 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
  * The figures from the other sections that change daily, each a link to the
  * page that holds them: the foot of Today's card.
  */
-export function TodayFigures({ tracker }: { tracker: Tracker }) {
+export function TodayFigures({ tracker, focus }: { tracker: Tracker; focus?: boolean }) {
   const st = tracker.state!;
   const today = dateKey();
   const openTodos = st.todos.filter((t) => !t.done && todoDueBy(t, today)).length;
@@ -161,11 +162,14 @@ export function TodayFigures({ tracker }: { tracker: Tracker }) {
   const kcalToday = st.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
   const kcalLeft = caloriesLeftThisWeek(st.calories, st.calorieBudget);
   return (
-    <ul className="momentum__figures">
+    <ul className={"momentum__figures" + (focus ? " momentum__figures--4" : "")}>
       <Figure label="To do" value={openTodos.toLocaleString()} href="#todo" />
+      {focus && <Figure label="min focus" value={focusMinutes(st, today).toLocaleString()} href="/week" />}
       <Figure
         label={
-          kcalLeft == null
+          focus
+            ? "kcal"
+            : kcalLeft == null
             ? "kcal today"
             : kcalLeft >= 0
               ? `kcal · ${compact(kcalLeft)} left`
