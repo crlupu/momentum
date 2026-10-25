@@ -647,6 +647,12 @@ export type TrackerState = {
   learningV2?: boolean;
   /** The topics as they were before that, kept in case they're wanted back. */
   archivedTopics?: Path[];
+  /** The day plan: ordered steps for the days it runs on. See lib/plan.ts. */
+  dayPlan?: import("./plan").DayPlan | null;
+  /** Plan steps ticked by hand, by day: YYYY-MM-DD → step ids. */
+  planTicks?: Record<string, string[]>;
+  /** Each week's goals, by the week's Monday. */
+  weekGoals?: Record<string, import("./plan").WeekGoal[]>;
 };
 
 /** One learning session: a count moved on, on a day, perhaps with a line about it. */

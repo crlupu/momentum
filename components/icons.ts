@@ -72,6 +72,7 @@ export {
   MdMenuBook as BookOpen,
   MdOutlineMonitorWeight as Scale,
   MdTaskAlt as TaskDone,
+  MdOutlineSmartDisplay as Video,
   MdBarChart as BarChart3,
   MdReceiptLong as ScrollText,
   MdLogout as LogOut,
