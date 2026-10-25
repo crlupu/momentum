@@ -16,6 +16,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { Tracker, dateKey, goalStatus, uid } from "@/lib/tracker";
 import {
   DEFAULT_DAYS,
+  addDays,
+  askOf,
+  resolve,
+  stepsOn,
+  weekOf,
   PLAN_ICONS,
   WEEKDAY,
   WEEKDAY_LONG,
@@ -89,6 +94,8 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
         </div>
       </section>
 
+      <PlanWeekGrid tracker={tracker} plan={plan} onOpen={setEditing} />
+
       <section>
         <h3 className="group-head">Steps · in order</h3>
         <div className="card plan-steps">
@@ -154,6 +161,65 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
         )}
       </Modal>
     </div>
+  );
+}
+
+/**
+ * On a wide screen, the plan as the week: rows are steps, columns are the
+ * plan days, each cell what the step is that day. Today's column shows
+ * what's done and what's next. A cell opens its step.
+ */
+function PlanWeekGrid({ tracker, plan, onOpen }: { tracker: Tracker; plan: DayPlan; onOpen: (s: PlanStep) => void }) {
+  const s = tracker.state!;
+  const today = dateKey();
+  const week = weekOf(today);
+  const days = WEEK_ORDER.filter((d) => plan.days.includes(d));
+  if (!plan.steps.length || !days.length) return null;
+  const todaySteps = stepsOn(s, plan, today);
+  const nextId = todaySteps.find((x) => !x.done)?.step.id;
+  const dateOf = (d: number) => addDays(week, (d + 6) % 7);
+  return (
+    <section className="plan-grid-wrap" aria-label="The week">
+      <h3 className="group-head">The week</h3>
+      <div className="card plan-grid" style={{ gridTemplateColumns: `8.5rem repeat(${days.length}, minmax(0, 1fr))` }}>
+        <span />
+        {days.map((d) => (
+          <span key={d} className={"plan-grid__day" + (dateOf(d) === today ? " is-today" : "")}>
+            {dateOf(d) === today ? "Today" : WEEKDAY[d]}
+          </span>
+        ))}
+        {plan.steps.map((st, i) => (
+          <PlanGridRow key={st.id} st={st} i={i}>
+            {days.map((d) => {
+              const r = pickFor(st, d);
+              const isToday = dateOf(d) === today;
+              const t = todaySteps.find((x) => x.step.id === st.id);
+              const state = isToday && t ? (t.done ? " is-done" : st.id === nextId ? " is-next" : "") : "";
+              const title = refTitle(s, r);
+              return (
+                <button key={d} type="button" className={"plan-grid__cell" + state + (title ? "" : " is-skip")} onClick={() => onOpen(st)}>
+                  <span className="plan-grid__title">{title ?? "Skipped"}</span>
+                  {title && <span className="plan-grid__ask">{askOf(s, resolve(s, r))}</span>}
+                </button>
+              );
+            })}
+          </PlanGridRow>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlanGridRow({ st, i, children }: { st: PlanStep; i: number; children: React.ReactNode }) {
+  return (
+    <>
+      <span className="plan-grid__step">
+        <span className="plan-grid__n">{i + 1}</span>
+        <PlanTile icon={st.icon} />
+        <span className="plan-grid__name">{st.name}</span>
+      </span>
+      {children}
+    </>
   );
 }
 
