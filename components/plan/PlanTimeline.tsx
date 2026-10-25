@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Tracker, dateKey } from "@/lib/tracker";
 import {
   WEEKDAY,
-  askOf,
   leftovers,
   nextOfGoal,
   refTitle,
@@ -155,14 +154,12 @@ function StepRow({
           <span className="area-tile plan-row__tile" aria-hidden>
             <PlanGlyph icon={x.step.icon} />
           </span>
+          {/* One line: what it is. The tile says the kind; the actions say the rest. */}
           <span className="plan-row__text">
-            <span className="plan-row__label">
-              {suggested && !x.done ? "Suggested next · " : ""}
-              {x.step.name}
+            <span className="plan-row__title">
+              {title}
               {running ? " · running" : ""}
             </span>
-            <span className="plan-row__title">{title}</span>
-            <span className="plan-row__meta">{askOf(s, x.it)}</span>
           </span>
         </button>
         {dayLabel && !x.done && (
