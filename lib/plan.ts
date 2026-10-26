@@ -215,24 +215,40 @@ export function isSwapped(s: TrackerState, step: PlanStep, day: string): boolean
   return swapsOf(s)[weekOf(day)]?.[slot(day, step.id)] !== undefined;
 }
 
-export type SwapOption = { day: string; stepId: string; ref: PlanRef; title: string };
+/** The same thing: kind and id, and for focus its length too. */
+export function sameRef(a: PlanRef | null | undefined, b: PlanRef | null | undefined): boolean {
+  return !!a && !!b && a.kind === b.kind && a.id === b.id && (a.kind !== "focus" || (a.minutes ?? 0) === (b.minutes ?? 0));
+}
+
+export type SwapOption = { day: string; stepId: string; ref: PlanRef; title: string; icon: PlanIcon };
 
 /**
- * The workouts a step's workout can be exchanged with: those on this week's
- * other plan days, not done yet and not the same workout.
+ * What a step can be exchanged with: any other activity in this week's plan,
+ * that day's or another's, of any kind, not done yet and not the same thing.
  */
 export function swapOptions(s: TrackerState, plan: DayPlan, day: string, stepId: string): SwapOption[] {
   const step = plan.steps.find((x) => x.id === stepId);
   const mine = step ? pickOn(s, step, day) : null;
   const out: SwapOption[] = [];
   for (const d of weekDays(weekOf(day))) {
-    if (d === day) continue;
     for (const x of stepsOn(s, plan, d)) {
-      if (x.done || x.ref?.kind !== "workout" || x.ref.id === mine?.id) continue;
-      out.push({ day: d, stepId: x.step.id, ref: x.ref, title: refTitle(s, x.ref) ?? "Workout" });
+      if ((d === day && x.step.id === stepId) || x.done || !x.ref || !x.it || sameRef(x.ref, mine)) continue;
+      out.push({ day: d, stepId: x.step.id, ref: x.ref, title: refTitle(s, x.ref) ?? x.name, icon: x.icon });
     }
   }
   return out;
+}
+
+/**
+ * The step a swapped-in pick comes from, for its name and icon: the one
+ * whose plan holds it this week. A row keeps "Gym" and its dumbbell only
+ * while it holds a workout from the plan's Gym step.
+ */
+function donorOf(s: TrackerState, plan: DayPlan, step: PlanStep, day: string, r: PlanRef | null): PlanStep {
+  if (!r || !isSwapped(s, step, day)) return step;
+  const days = weekDays(weekOf(day)).map(weekdayOf);
+  if (days.some((wd) => sameRef(pickFor(step, wd), r))) return step;
+  return plan.steps.find((o) => o.id !== step.id && days.some((wd) => sameRef(pickFor(o, wd), r))) ?? step;
 }
 
 /**
@@ -252,7 +268,7 @@ export function withSwap(s: TrackerState, plan: DayPlan, a: { day: string; stepI
     const w = weekOf(day);
     const m = { ...(next[w] ?? {}) };
     const planned = pickFor(step, weekdayOf(day));
-    if (r && planned && r.kind === planned.kind && r.id === planned.id) delete m[slot(day, step.id)];
+    if (sameRef(r, planned)) delete m[slot(day, step.id)];
     else if (r) m[slot(day, step.id)] = r;
     if (Object.keys(m).length) next[w] = m;
     else delete next[w];
@@ -273,7 +289,7 @@ export function swapPartner(s: TrackerState, plan: DayPlan, day: string, stepId:
     if (d === day && id === stepId) continue;
     const other = plan.steps.find((x) => x.id === id);
     // The partner now holds this slot's planned pick, and planned this one's.
-    if (other && r.kind === planned.kind && r.id === planned.id && pickFor(other, weekdayOf(d))?.id === now.id) return { day: d, stepId: id };
+    if (other && sameRef(r, planned) && sameRef(pickFor(other, weekdayOf(d)), now)) return { day: d, stepId: id };
   }
   return null;
 }
@@ -386,6 +402,9 @@ function activityOn(s: TrackerState, r: PlanRef, day: string): boolean {
 
 export type DayStep = {
   step: PlanStep;
+  /** The step's name and icon, or, when this week's swap brought in another step's pick, that step's. */
+  name: string;
+  icon: PlanIcon;
   ref: PlanRef | null;
   it: Resolved | null;
   done: boolean;
@@ -404,7 +423,8 @@ export function stepsOn(s: TrackerState, plan: DayPlan, day: string): DayStep[] 
     // A day can skip a step: nothing picked for it that day.
     if (!step.same && !r) continue;
     const auto = !!r && activityOn(s, r, day);
-    out.push({ step, ref: r, it: resolve(s, r), done: auto || ticks.includes(step.id), auto });
+    const donor = donorOf(s, plan, step, day, r);
+    out.push({ step, name: donor.name, icon: donor.icon, ref: r, it: resolve(s, r), done: auto || ticks.includes(step.id), auto });
   }
   return out;
 }
