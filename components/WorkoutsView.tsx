@@ -821,9 +821,8 @@ function ExerciseBlock({
             {formatTarget(e.target)}
           </span>
         )}
-        {/* Only offered once there is something to finish. */}
-        {!empty &&
-          (done ? (
+        {/* Reopen sits here once done; finishing is the button under the sets. */}
+        {!empty && done && (
             <Button
               size="sm"
               variant="ghost"
@@ -834,15 +833,7 @@ function ExerciseBlock({
             >
               <CheckCircle2 className="h-4 w-4" />
             </Button>
-          ) : (
-            <button
-              type="button"
-              className={"pill-link exercise__all-done" + (doneCount === e.sets.length ? " is-ready" : "")}
-              onClick={finish}
-            >
-              <Check aria-hidden /> All done
-            </button>
-          ))}
+        )}
       </div>
 
       {done ? (
@@ -887,6 +878,11 @@ function ExerciseBlock({
               <Plus />
             </span>
           </button>
+          {!empty && (
+            <button type="button" className="exercise__finish" onClick={finish}>
+              <Check aria-hidden /> Finish {e.name}
+            </button>
+          )}
           {!empty && (
             <p className="exercise__count">
               <span>
