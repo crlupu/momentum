@@ -1,8 +1,8 @@
 "use client";
 
 import { InsertRow } from "./InsertRow";
-import { CheckRing, IconButton } from "./IconButton";
-import { FormEvent, useEffect, useState } from "react";
+import { IconButton } from "./IconButton";
+import { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -17,14 +17,16 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input } from "./ui";
 import {
-  Minus,
   ReorderLines,
   Check,
   X,
   ChevronRight,
   CheckCircle2,
   Dumbbell,
-  MoreHorizontal } from "./icons";
+  MoreHorizontal,
+  Plus,
+  Trash2,
+  Undo } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -605,13 +607,19 @@ function SetRow({
   exerciseId,
   index,
   set,
-  previous }: {
+  previous,
+  onRemove,
+  nudge }: {
   tracker: Tracker;
   exerciseId: string;
   index: number;
   set: ActiveSet;
   /** The same set number from the last time this exercise was performed. */
   previous?: SetRecord;
+  /** Swiped away (or removed from the hidden button). */
+  onRemove: () => void;
+  /** Peek left once to show the red behind it: the first-time hint. */
+  nudge?: boolean;
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
@@ -622,6 +630,7 @@ function SetRow({
   };
 
   return (
+    <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
     <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}>
       <span className="set-line__no">{index + 1}</span>
       {/* Last time's numbers: reference only, never editable. */}
@@ -648,11 +657,88 @@ function SetRow({
         pressed={done}
         onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
       >
-        <CheckRing on={done} />
+        <span className={"icon-disc set-done" + (done ? " is-on" : "")}>
+          <Check />
+        </span>
       </IconButton>
-      <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
-        <span className="icon-disc icon-disc--danger"><Minus /></span>
-      </IconButton>
+    </div>
+    </SwipeToDelete>
+  );
+}
+
+const SWIPE_HINT_KEY = "momentum:swipe-set-hint";
+
+/**
+ * A row that deletes when swiped left past a third of its width, red with a
+ * bin showing through as it goes. Vertical drags stay scrolls. For keyboards
+ * and screen readers, a visually hidden button does the same.
+ */
+function SwipeToDelete({ label, onDelete, nudge, children }: { label: string; onDelete: () => void; nudge?: boolean; children: ReactNode }) {
+  const [dx, setDx] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const start = useRef<{ x: number; y: number; id: number } | null>(null);
+  const dragging = useRef(false);
+  const width = useRef(1);
+
+  const down = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (leaving || (e.pointerType === "mouse" && e.button !== 0)) return;
+    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    dragging.current = false;
+    width.current = e.currentTarget.offsetWidth || 1;
+  };
+  const move = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const s = start.current;
+    if (!s || s.id !== e.pointerId) return;
+    const mx = e.clientX - s.x;
+    const my = e.clientY - s.y;
+    if (!dragging.current) {
+      if (Math.abs(my) > 10 && Math.abs(my) > Math.abs(mx)) return void (start.current = null);
+      if (mx > -10 || Math.abs(mx) < Math.abs(my)) return;
+      dragging.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      (document.activeElement as HTMLElement | null)?.blur?.();
+    }
+    setDx(Math.min(0, mx));
+  };
+  const up = () => {
+    if (!start.current) return;
+    start.current = null;
+    if (!dragging.current) return;
+    if (-dx > width.current / 3) {
+      setLeaving(true);
+      setDx(-width.current);
+      window.setTimeout(onDelete, 180);
+    } else setDx(0);
+  };
+  // A drag shouldn't also press what it started on.
+  const click = (e: ReactMouseEvent) => {
+    if (dragging.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging.current = false;
+    }
+  };
+
+  const reach = Math.min(1, -dx / (width.current / 3));
+  return (
+    <div className={"swipe-row" + (nudge ? " is-nudging" : "")}>
+      <div className="swipe-row__behind" style={{ opacity: dx ? 0.35 + reach * 0.65 : undefined }} aria-hidden>
+        <Trash2 style={{ transform: `scale(${0.8 + reach * 0.3})` }} />
+      </div>
+      <div
+        className="swipe-row__face"
+        style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: start.current ? "none" : undefined }}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={up}
+        onClickCapture={click}
+      >
+        {children}
+      </div>
+      <button type="button" className="sr-only" onClick={onDelete}>
+        {label}
+      </button>
     </div>
   );
 }
@@ -665,15 +751,58 @@ function SetRow({
 function ExerciseBlock({
   tracker,
   exercise: e,
-  history }: {
+  history,
+  lastSet }: {
   tracker: Tracker;
   exercise: ActiveExercise;
   history: { date: string; sets: SetRecord[] } | null;
+  /** The workout's most recently completed set, for the rest clock. */
+  lastSet: LastSet | null;
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!e.done;
   const doneCount = e.sets.filter((s) => s.done).length;
   const empty = e.sets.length === 0;
+  // The set last swiped away, kept a few seconds for Undo.
+  const [removed, setRemoved] = useState<{ set: ActiveSet; index: number } | null>(null);
+  useEffect(() => {
+    if (!removed) return;
+    const id = window.setTimeout(() => setRemoved(null), 5000);
+    return () => window.clearTimeout(id);
+  }, [removed]);
+  // Until the first swipe, the last open set peeks to show the gesture.
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    try {
+      setHint(!localStorage.getItem(SWIPE_HINT_KEY));
+    } catch {}
+  }, []);
+  const remove = (set: ActiveSet, index: number) => {
+    setRemoved({ set, index });
+    void tracker.removeSet(e.exerciseId, set.id);
+    if (hint) {
+      setHint(false);
+      try {
+        localStorage.setItem(SWIPE_HINT_KEY, "1");
+      } catch {}
+    }
+  };
+  const lastOpen = [...e.sets].reverse().find((x) => !x.done);
+  const undo = removed && (
+    <div className="set-undo" role="status">
+      <span>Set {removed.index + 1} removed</span>
+      <button
+        type="button"
+        className="pill-link"
+        onClick={() => {
+          void tracker.restoreSet(e.exerciseId, removed.set, removed.index);
+          setRemoved(null);
+        }}
+      >
+        <Undo aria-hidden /> Undo
+      </button>
+    </div>
+  );
 
   const finish = () => {
     tap();
@@ -692,9 +821,8 @@ function ExerciseBlock({
             {formatTarget(e.target)}
           </span>
         )}
-        {/* Only offered once there is something to finish. */}
-        {!empty &&
-          (done ? (
+        {/* Reopen sits here once done; finishing is the button under the sets. */}
+        {!empty && done && (
             <Button
               size="sm"
               variant="ghost"
@@ -705,11 +833,7 @@ function ExerciseBlock({
             >
               <CheckCircle2 className="h-4 w-4" />
             </Button>
-          ) : (
-            <Button size="sm" variant="outline" className="shrink-0" onPress={finish}>
-              <Check className="h-3.5 w-3.5" /> All done
-            </Button>
-          ))}
+        )}
       </div>
 
       {done ? (
@@ -730,46 +854,82 @@ function ExerciseBlock({
               <span>kg</span>
               <span>Reps</span>
               <span>Done</span>
-              <span />
             </div>
           )}
           {e.sets.map((s, i) => (
-            <SetRow
-              key={s.id}
-              tracker={tracker}
-              exerciseId={e.exerciseId}
-              set={s}
-              index={i}
-              previous={history?.sets[i]}
-            />
+            <div key={s.id} className="set-slot">
+              {removed?.index === i && undo}
+              <SetRow
+                tracker={tracker}
+                exerciseId={e.exerciseId}
+                set={s}
+                index={i}
+                previous={history?.sets[i]}
+                onRemove={() => remove(s, i)}
+                nudge={hint && s === lastOpen}
+              />
+            </div>
           ))}
-          <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
+          {removed && removed.index >= e.sets.length && undo}
+          {/* The next set, waiting: tapping it adds a copy of the last one. */}
+          <button type="button" className="set-add" onClick={() => void tracker.addSet(e.exerciseId)}>
+            <span className="set-add__label">Add new set</span>
+            <span className="icon-disc set-add__plus" aria-hidden>
+              <Plus />
+            </span>
+          </button>
+          {!empty && (
+            <button type="button" className="exercise__finish" onClick={finish}>
+              <Check aria-hidden /> Finish {e.name}
+            </button>
+          )}
           {!empty && (
             <p className="exercise__count">
-              {doneCount} of {e.sets.length} done
+              <span>
+                {doneCount} of {e.sets.length} done
+              </span>
+              {lastSet && <SinceLastSet last={lastSet} />}
             </p>
           )}
+          {hint && e.sets.length > 0 && <p className="swipe-hint">Swipe a set left to delete it</p>}
         </>
       )}
     </div>
   );
 }
 
-/** How long since the last set was completed, ticking each second. */
-function SinceLastSet({ active }: { active: ActiveWorkout }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  let last: { at: number; set: number; name: string } | null = null;
+type LastSet = { at: number; set: number; name: string };
+
+/** The workout's most recently completed set, if any. */
+function lastSetOf(active: ActiveWorkout): LastSet | null {
+  let last: LastSet | null = null;
   for (const e of active.exercises) {
     e.sets.forEach((x, i) => {
       if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name };
     });
   }
-  if (!last) return null;
-  const l = last as { at: number; set: number; name: string };
+  return last;
+}
+
+/** How long since the last set was completed, ticking each second: the rest. */
+function SinceLastSet({ last }: { last: LastSet }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
+      Rest <span className="font-mono-n tabular-nums">{formatElapsed(now - last.at)}</span>
+    </span>
+  );
+}
+
+/**
+ * The workout so far, without a clock (the title has it, and the rest
+ * runs under the sets): sets done, an exercise per tile, the figures.
+ */
+function WorkoutProgress({ active }: { active: ActiveWorkout }) {
   const setsDone = active.exercises.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0);
   const setsPlanned = active.exercises.reduce((a, e) => a + e.sets.length, 0);
   const exDone = active.exercises.filter((e) => e.sets.length > 0 && e.sets.every((x) => x.done)).length;
@@ -777,25 +937,26 @@ function SinceLastSet({ active }: { active: ActiveWorkout }) {
   return (
     <SummaryCard
       className="since-set-card"
-      aria-label="Time since the last set"
-      label="Since last set"
-      aside={<Elapsed startedAt={active.startedAt} />}
-      figure={<span role="timer">{formatElapsed(now - l.at)}</span>}
-      line={`Set ${l.set} · ${l.name}`}
+      aria-label="Workout progress"
+      label="Workout"
+      aside={current ? `Now · ${current.name}` : undefined}
+      done={setsPlanned > 0 && setsDone === setsPlanned}
+      doneLabel="Every set done"
+      figure={`${setsDone} of ${setsPlanned}`}
+      detail="sets"
       figures={[
-        { value: `${setsDone} of ${setsPlanned}`, label: "sets" },
         { value: exDone, label: `of ${active.exercises.length} exercises` },
-        { value: Math.round((now - active.startedAt) / 60000), label: "min" },
+        { value: setsPlanned - setsDone, label: "sets to go" },
       ]}
     >
       {active.exercises.length > 1 && (
         <CardTiles
+          columns={8}
           items={active.exercises.slice(0, 8).map((e) => {
             const all = e.sets.length > 0 && e.sets.every((x) => x.done);
             return {
               key: e.exerciseId,
               icon: <Dumbbell aria-hidden />,
-              label: e.name,
               title: e.name,
               state: (all ? "done" : e === current ? "next" : "todo") as "done" | "next" | "todo",
             };
@@ -879,7 +1040,7 @@ export function ActiveWorkoutPanel({
         </div>
       )}
 
-      <SinceLastSet active={active} />
+      <WorkoutProgress active={active} />
 
       {/* Circuit blocks are run by the clock rather than filled in by hand, so
           they get the timer instead of set rows. */}
@@ -895,6 +1056,7 @@ export function ActiveWorkoutPanel({
           tracker={tracker}
           exercise={shown}
           history={lastPerformed(sessions, shown.exerciseId)}
+          lastSet={lastSetOf(active)}
         />
       )}
 

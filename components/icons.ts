@@ -27,6 +27,7 @@ export {
   MdDeleteOutline as Trash2,
   MdContentCopy as Copy,
   MdRestore as RotateCcw,
+  MdUndo as Undo,
   MdPlaylistAdd as ListPlus,
   MdPlayArrow as Play,
   MdSettings as Settings,
