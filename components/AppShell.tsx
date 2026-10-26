@@ -71,11 +71,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <PageSkeleton />
             ) : (
               <div className="app-content">
-                {tracker.syncError && (
-                  <div role="alert" className="sync-alert">
-                    {tracker.syncError} Your data is still saved on this device.
-                  </div>
-                )}
                 {children}
               </div>
             )}
