@@ -17,6 +17,7 @@ import {
   type WeightPlan,
   addDays,
   checkpointStatus,
+  expectedOn,
   makePlan,
   mondayOf,
   planSummary,
@@ -83,10 +84,11 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
   return (
     <div className="flex flex-col gap-4">
       <SummaryCard
+        className="weight-plan-card"
         label="Plan"
         aside={`${Math.round(sum.progress * 100)}% of the way`}
         figure={kg1(plan.targetKg)}
-        detail={`kg by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)} kg`}
+        side={{ unit: "kg", hint: `by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)}` }}
         band={{
           label: "Next",
           content: sum.next && sum.next.date !== plan.targetDate ? `${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}` : "The target",
@@ -94,9 +96,9 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
           onPress: onEdit,
         }}
         figures={[
-          { value: pace(sum.neededPace), label: "kg / week needed" },
+          { value: pace(sum.neededPace), label: "kg / week" },
           { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
-          { value: plan.checkpoints.length, label: plan.checkpoints.length === 1 ? "checkpoint" : "checkpoints" },
+          { value: expectedOn(plan, today).toFixed(1), label: "kg expected" },
         ]}
       >
         <CardMeter value={sum.progress} accent />

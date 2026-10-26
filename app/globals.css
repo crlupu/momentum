@@ -5819,3 +5819,11 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 /* The weigh-in's + stays a round button inside a card's actions. */
 .summary-card__actions .weight-form .cds--btn { flex: none; inline-size: 2.75rem; min-inline-size: 2.75rem; block-size: 2.75rem; min-block-size: 2.75rem; padding: 0; border-radius: 50%; justify-content: center; }
 .summary-card__actions .weight-form .cds--text-input { block-size: 2.75rem; }
+.weight-plan-today { color: #ffffff; font-weight: 500; }
+/* A figure's side: the unit, a little larger, over a quiet hint. */
+.momentum__count.has-side { align-items: flex-end; flex-wrap: nowrap; gap: 0.75rem; }
+.summary-card__side { display: inline-flex; min-inline-size: 0; flex-direction: column; gap: 0.25rem; padding-block-end: 0.4rem; }
+.summary-card__unit { font-size: 1.5rem; font-weight: 400; line-height: 1; color: #ffffff; }
+.summary-card__hint { overflow: hidden; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.62); text-overflow: ellipsis; white-space: nowrap; }
+/* The plan card's figure labels stay on one line. */
+.weight-plan-card .momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

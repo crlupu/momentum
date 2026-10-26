@@ -21,6 +21,7 @@ export function SummaryCard({
   doneLabel = "All done",
   figure,
   detail,
+  side,
   title,
   line,
   children,
@@ -39,6 +40,11 @@ export function SummaryCard({
   figure?: ReactNode;
   /** What the figure counts, muted, on its line. */
   detail?: ReactNode;
+  /**
+   * In place of `detail`: two rows beside the figure, the unit a little
+   * larger on top and a quiet hint (a change, a date) under it.
+   */
+  side?: { unit: ReactNode; hint?: ReactNode };
   /** A name in place of a figure: "Pull A", "Step 5". */
   title?: ReactNode;
   line?: ReactNode;
@@ -67,9 +73,16 @@ export function SummaryCard({
         {(figure != null || title != null || line != null) && (
           <div>
             {figure != null ? (
-              <p className="momentum__count">
+              <p className={"momentum__count" + (side ? " has-side" : "")}>
                 <span className="font-mono-n momentum__headline">{figure}</span>
-                {detail != null && <span className="momentum__detail">{detail}</span>}
+                {side ? (
+                  <span className="summary-card__side">
+                    <span className="summary-card__unit">{side.unit}</span>
+                    {side.hint != null && <span className="summary-card__hint">{side.hint}</span>}
+                  </span>
+                ) : (
+                  detail != null && <span className="momentum__detail">{detail}</span>
+                )}
               </p>
             ) : title != null ? (
               <p className="summary-card__title">
