@@ -63,7 +63,7 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
             </span>
           ) : (
             <span className="plan-card__next">
-              Next · <span className="momentum__next-name">{next!.step.name}</span>
+              Next · <span className="momentum__next-name">{next!.name}</span>
             </span>
           )}
         </div>
@@ -82,13 +82,13 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           style={{ gridTemplateColumns: `repeat(${compact ? n : Math.max(n, 5)}, minmax(0, 1fr))` }}
         >
           {steps.map((x) => (
-            <li key={x.step.id} className="plan-card__cell" title={x.step.name}>
+            <li key={x.step.id} className="plan-card__cell" title={x.name}>
               <span className={"momentum__tile" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
-                <PlanGlyph icon={x.step.icon} />
+                <PlanGlyph icon={x.icon} />
               </span>
-              {!compact && <span className={"plan-card__label" + (x === next ? " is-next" : "")}>{x.step.name}</span>}
+              {!compact && <span className={"plan-card__label" + (x === next ? " is-next" : "")}>{x.name}</span>}
               <span className="sr-only">
-                {x.step.name}, {x.done ? "done" : "to do"}
+                {x.name}, {x.done ? "done" : "to do"}
               </span>
             </li>
           ))}

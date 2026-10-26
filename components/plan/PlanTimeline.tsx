@@ -13,11 +13,14 @@ import {
   swapPartner,
   nextOfGoal,
   refTitle,
+  resolve,
   stepsOn,
   weekdayOf,
   type DayPlan,
   type DayStep,
+  type PlanRef,
 } from "@/lib/plan";
+import type { TrackerState } from "@/lib/model";
 import { usePending } from "../ActionButton";
 import { Modal } from "../Modal";
 import { GoalDetail, GoalTitle } from "../GoalDetail";
@@ -159,7 +162,7 @@ function StepRow({
         <button type="button" className="plan-row__open" aria-expanded={!!shown} onClick={() => setOpen((v) => !v)}>
           <span className="plan-row__n">{dayLabel ?? n}</span>
           <span className="area-tile plan-row__tile" aria-hidden>
-            <PlanGlyph icon={x.step.icon} />
+            <PlanGlyph icon={x.icon} />
           </span>
           {/* One line: what it is. The tile says the kind; the actions say the rest. */}
           <span className="plan-row__text">
@@ -184,7 +187,7 @@ function StepRow({
           type="button"
           role="checkbox"
           aria-checked={x.done}
-          aria-label={`${x.step.name}: ${title}${dayLabel ? `, ${dayLabel}` : ""}`}
+          aria-label={`${x.name}: ${title}${dayLabel ? `, ${dayLabel}` : ""}`}
           className={"check" + (x.done ? " check--on" : "")}
           disabled={pending || x.auto}
           title={x.auto ? "Done: logged that day" : undefined}
@@ -219,6 +222,17 @@ function StepActions({
   const flow = useFlow();
   const { pending, run } = usePending();
   const it = x.it;
+  // Any activity can trade places with another in this week's plan.
+  const swap = (
+    <>
+      <button type="button" className="pill-link pill-link--icon" aria-label="Swap" title="Swap with another activity" onClick={() => setSwapping(true)}>
+        <Swap aria-hidden />
+      </button>
+      <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${refTitle(tracker.state!, x.ref) ?? x.name}`}>
+        {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}
+      </Modal>
+    </>
+  );
 
   if (!it)
     return (
@@ -240,12 +254,13 @@ function StepActions({
             disabled={pending}
             onClick={() => void run(() => (nx.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id)))}
           >
-            <Check aria-hidden /> {nx.itemId ? `Done: ${nx.title}` : "Log a session"}
+            <Check aria-hidden /> <span className="pill-link__text">{nx.itemId ? `Done: ${nx.title}` : "Log a session"}</span>
           </button>
         )}
         <button type="button" className="pill-link" onClick={() => onOpenGoal(it.item.id)}>
           Open
         </button>
+        {swap}
       </div>
     );
   }
@@ -267,6 +282,7 @@ function StepActions({
             Open the track
           </Link>
         )}
+        {swap}
       </div>
     );
   }
@@ -286,12 +302,7 @@ function StepActions({
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
         </Link>
-        <button type="button" className="pill-link pill-link--icon" aria-label="Swap" title="Swap with another day" onClick={() => setSwapping(true)}>
-          <Swap aria-hidden />
-        </button>
-        <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${it.item.name}`}>
-          {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}
-        </Modal>
+        {swap}
       </div>
     );
   }
@@ -317,17 +328,19 @@ function StepActions({
       )}
       {it.project && (
         <Link href={`/projects?p=${it.project.id}`} className="pill-link">
-          Open {it.project.title}
+          <span className="pill-link__text">Open {it.project.title}</span>
         </Link>
       )}
+      {swap}
     </div>
   );
 }
 
 /**
- * Exchange a workout with one from another day of this week's plan, for this
- * week only: today takes that day's workout and that day takes today's. Next
- * week the plan is as it was. A swapped step can be swapped back.
+ * Exchange an activity with any other in this week's plan, for this week
+ * only: a workout with another day's, reading with a goal, two steps of the
+ * same day. Each takes the other's place; next week the plan is as it was.
+ * A swapped step can be swapped back.
  */
 function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: DayPlan; x: DayStep; day: string; onDone: () => void }) {
   const s = tracker.state!;
@@ -340,36 +353,56 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
       onDone();
       return ok;
     });
+  const when = (d: string) => (d === day ? "Same day" : d < day ? "Earlier this week" : "Later this week");
+  // The options by day, the step's own day first.
+  const days = [...new Set(options.map((o) => o.day))].sort((a, b) => (a === day ? -1 : b === day ? 1 : a.localeCompare(b)));
   return (
     <div className="flex flex-col gap-4">
-      <p className="plan-note">Swaps with another day of this week&rsquo;s plan, for this week only. Next week the plan is as it was.</p>
+      <p className="plan-note">Trades places with another activity of this week&rsquo;s plan, for this week only. Next week the plan is as it was.</p>
       {partner && (
         <button type="button" className="pill-link" disabled={pending} onClick={() => swap(partner)}>
-          <Swap aria-hidden /> Swap back with {WEEKDAY_LONG[weekdayOf(partner.day)]}
+          <Swap aria-hidden /> Swap back{partner.day === day ? "" : ` with ${WEEKDAY_LONG[weekdayOf(partner.day)]}`}
         </button>
       )}
       {options.length ? (
-        <div className="card plan-opts">
-          {options.map((o) => {
-            const w = s.workouts.find((y) => y.id === o.ref.id);
-            return (
-              <button key={o.day + o.stepId} type="button" className="plan-opt" disabled={pending} onClick={() => swap(o)}>
-                <span className="plan-opt__day">{WEEKDAY[weekdayOf(o.day)]}</span>
-                <span className="plan-opt__text">
-                  <span className="plan-opt__title">{o.title}</span>
-                  <span className="plan-opt__sub">
-                    {w ? `${w.exercises.length} exercise${w.exercises.length === 1 ? "" : "s"} · ` : ""}
-                    {o.day < day ? "earlier this week" : "later this week"}
-                  </span>
-                </span>
-                <Swap className="plan-opt__swap" aria-hidden />
-              </button>
-            );
-          })}
-        </div>
+        days.map((d) => (
+          <section key={d} className="plan-opts-day">
+            <h3 className="plan-opts-day__head">
+              {WEEKDAY_LONG[weekdayOf(d)]}
+              <span className="plan-opts-day__when"> · {when(d)}</span>
+            </h3>
+            <div className="card plan-opts">
+              {options
+                .filter((o) => o.day === d)
+                .map((o) => (
+                  <button key={o.day + o.stepId} type="button" className="plan-opt" disabled={pending} onClick={() => swap(o)}>
+                    <span className="area-tile" aria-hidden>
+                      <PlanGlyph icon={o.icon} />
+                    </span>
+                    <span className="plan-opt__text">
+                      <span className="plan-opt__title">{o.title}</span>
+                      <span className="plan-opt__sub">{optionSub(s, o.ref)}</span>
+                    </span>
+                    <Swap className="plan-opt__swap" aria-hidden />
+                  </button>
+                ))}
+            </div>
+          </section>
+        ))
       ) : (
-        <p className="plan-note">No other workout left in this week&rsquo;s plan to swap with.</p>
+        <p className="plan-note">Nothing else left in this week&rsquo;s plan to swap with.</p>
       )}
     </div>
   );
+}
+
+/** A line under a swap option saying what it is. */
+function optionSub(s: TrackerState, r: PlanRef): string {
+  const it = resolve(s, r);
+  if (!it) return "";
+  if (it.kind === "workout") return `Workout · ${it.item.exercises.length} exercise${it.item.exercises.length === 1 ? "" : "s"}`;
+  if (it.kind === "track") return it.book ? `Reading · ${it.book.title}` : "Reading";
+  if (it.kind === "book") return "Reading";
+  if (it.kind === "focus") return `Focus · ${it.minutes} min`;
+  return s.categories.find((c) => c.id === it.item.catId)?.name ?? "Goal";
 }
