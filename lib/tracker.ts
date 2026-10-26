@@ -66,6 +66,7 @@ import type {
   MacroEntry,
   Path,
   SetRecord,
+  ActiveSet,
   TrackerState,
   WorkoutBlock,
 } from "./model";
@@ -1604,6 +1605,14 @@ export function useTracker() {
 
     removeSet: (exerciseId: string, setId: string) =>
       commit((s) => editSets(s, exerciseId, (sets) => sets.filter((x) => x.id !== setId))),
+
+    /** Puts a removed set back where it was: the undo of a swipe. */
+    restoreSet: (exerciseId: string, set: ActiveSet, index: number) =>
+      commit((s) =>
+        editSets(s, exerciseId, (sets) =>
+          sets.some((x) => x.id === set.id) ? sets : [...sets.slice(0, index), set, ...sets.slice(index)]
+        )
+      ),
 
     setSetWeight: (exerciseId: string, setId: string, weight: number | null) =>
       commit((s) =>

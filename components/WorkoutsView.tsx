@@ -2,7 +2,7 @@
 
 import { InsertRow } from "./InsertRow";
 import { IconButton } from "./IconButton";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -17,14 +17,15 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Input } from "./ui";
 import {
-  Minus,
   ReorderLines,
   Check,
   X,
   ChevronRight,
   CheckCircle2,
   Dumbbell,
-  MoreHorizontal } from "./icons";
+  MoreHorizontal,
+  Trash2,
+  Undo } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -605,13 +606,19 @@ function SetRow({
   exerciseId,
   index,
   set,
-  previous }: {
+  previous,
+  onRemove,
+  nudge }: {
   tracker: Tracker;
   exerciseId: string;
   index: number;
   set: ActiveSet;
   /** The same set number from the last time this exercise was performed. */
   previous?: SetRecord;
+  /** Swiped away (or removed from the hidden button). */
+  onRemove: () => void;
+  /** Peek left once to show the red behind it: the first-time hint. */
+  nudge?: boolean;
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
@@ -622,6 +629,7 @@ function SetRow({
   };
 
   return (
+    <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
     <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}>
       <span className="set-line__no">{index + 1}</span>
       {/* Last time's numbers: reference only, never editable. */}
@@ -652,9 +660,84 @@ function SetRow({
           <Check />
         </span>
       </IconButton>
-      <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
-        <span className="icon-disc icon-disc--danger"><Minus /></span>
-      </IconButton>
+    </div>
+    </SwipeToDelete>
+  );
+}
+
+const SWIPE_HINT_KEY = "momentum:swipe-set-hint";
+
+/**
+ * A row that deletes when swiped left past a third of its width, red with a
+ * bin showing through as it goes. Vertical drags stay scrolls. For keyboards
+ * and screen readers, a visually hidden button does the same.
+ */
+function SwipeToDelete({ label, onDelete, nudge, children }: { label: string; onDelete: () => void; nudge?: boolean; children: ReactNode }) {
+  const [dx, setDx] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const start = useRef<{ x: number; y: number; id: number } | null>(null);
+  const dragging = useRef(false);
+  const width = useRef(1);
+
+  const down = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (leaving || (e.pointerType === "mouse" && e.button !== 0)) return;
+    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    dragging.current = false;
+    width.current = e.currentTarget.offsetWidth || 1;
+  };
+  const move = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const s = start.current;
+    if (!s || s.id !== e.pointerId) return;
+    const mx = e.clientX - s.x;
+    const my = e.clientY - s.y;
+    if (!dragging.current) {
+      if (Math.abs(my) > 10 && Math.abs(my) > Math.abs(mx)) return void (start.current = null);
+      if (mx > -10 || Math.abs(mx) < Math.abs(my)) return;
+      dragging.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      (document.activeElement as HTMLElement | null)?.blur?.();
+    }
+    setDx(Math.min(0, mx));
+  };
+  const up = () => {
+    if (!start.current) return;
+    start.current = null;
+    if (!dragging.current) return;
+    if (-dx > width.current / 3) {
+      setLeaving(true);
+      setDx(-width.current);
+      window.setTimeout(onDelete, 180);
+    } else setDx(0);
+  };
+  // A drag shouldn't also press what it started on.
+  const click = (e: ReactMouseEvent) => {
+    if (dragging.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging.current = false;
+    }
+  };
+
+  const reach = Math.min(1, -dx / (width.current / 3));
+  return (
+    <div className={"swipe-row" + (nudge ? " is-nudging" : "")}>
+      <div className="swipe-row__behind" style={{ opacity: dx ? 0.35 + reach * 0.65 : undefined }} aria-hidden>
+        <Trash2 style={{ transform: `scale(${0.8 + reach * 0.3})` }} />
+      </div>
+      <div
+        className="swipe-row__face"
+        style={{ transform: dx ? `translateX(${dx}px)` : undefined, transition: start.current ? "none" : undefined }}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={up}
+        onClickCapture={click}
+      >
+        {children}
+      </div>
+      <button type="button" className="sr-only" onClick={onDelete}>
+        {label}
+      </button>
     </div>
   );
 }
@@ -679,6 +762,46 @@ function ExerciseBlock({
   const done = !!e.done;
   const doneCount = e.sets.filter((s) => s.done).length;
   const empty = e.sets.length === 0;
+  // The set last swiped away, kept a few seconds for Undo.
+  const [removed, setRemoved] = useState<{ set: ActiveSet; index: number } | null>(null);
+  useEffect(() => {
+    if (!removed) return;
+    const id = window.setTimeout(() => setRemoved(null), 5000);
+    return () => window.clearTimeout(id);
+  }, [removed]);
+  // Until the first swipe, the last open set peeks to show the gesture.
+  const [hint, setHint] = useState(false);
+  useEffect(() => {
+    try {
+      setHint(!localStorage.getItem(SWIPE_HINT_KEY));
+    } catch {}
+  }, []);
+  const remove = (set: ActiveSet, index: number) => {
+    setRemoved({ set, index });
+    void tracker.removeSet(e.exerciseId, set.id);
+    if (hint) {
+      setHint(false);
+      try {
+        localStorage.setItem(SWIPE_HINT_KEY, "1");
+      } catch {}
+    }
+  };
+  const lastOpen = [...e.sets].reverse().find((x) => !x.done);
+  const undo = removed && (
+    <div className="set-undo" role="status">
+      <span>Set {removed.index + 1} removed</span>
+      <button
+        type="button"
+        className="pill-link"
+        onClick={() => {
+          void tracker.restoreSet(e.exerciseId, removed.set, removed.index);
+          setRemoved(null);
+        }}
+      >
+        <Undo aria-hidden /> Undo
+      </button>
+    </div>
+  );
 
   const finish = () => {
     tap();
@@ -735,19 +858,23 @@ function ExerciseBlock({
               <span>kg</span>
               <span>Reps</span>
               <span>Done</span>
-              <span />
             </div>
           )}
           {e.sets.map((s, i) => (
-            <SetRow
-              key={s.id}
-              tracker={tracker}
-              exerciseId={e.exerciseId}
-              set={s}
-              index={i}
-              previous={history?.sets[i]}
-            />
+            <div key={s.id} className="set-slot">
+              {removed?.index === i && undo}
+              <SetRow
+                tracker={tracker}
+                exerciseId={e.exerciseId}
+                set={s}
+                index={i}
+                previous={history?.sets[i]}
+                onRemove={() => remove(s, i)}
+                nudge={hint && s === lastOpen}
+              />
+            </div>
           ))}
+          {removed && removed.index >= e.sets.length && undo}
           <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
           {!empty && (
             <p className="exercise__count">
@@ -757,6 +884,7 @@ function ExerciseBlock({
               {lastSet && <SinceLastSet last={lastSet} />}
             </p>
           )}
+          {hint && e.sets.length > 0 && <p className="swipe-hint">Swipe a set left to delete it</p>}
         </>
       )}
     </div>
