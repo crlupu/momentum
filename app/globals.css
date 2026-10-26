@@ -5827,3 +5827,4 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .summary-card__hint { overflow: hidden; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.62); text-overflow: ellipsis; white-space: nowrap; }
 /* The plan card's figure labels stay on one line. */
 .weight-plan-card .momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weight-week-card .momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

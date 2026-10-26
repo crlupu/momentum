@@ -6,7 +6,7 @@ import { Input, PanelHeader, AddButton } from "./ui";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
-import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, planSummary, validPlan, weeklyMedians } from "@/lib/weight";
+import { type WeightPlan, addDays, expectedOn, latestCheck, mondayOf, planSummary, validPlan, weeklyMedians, weightOnOrBefore } from "@/lib/weight";
 import { SummaryCard, type CardFigure } from "./SummaryCard";
 
 /** Section accent; follows the theme so it stays visible on dark. */
@@ -230,6 +230,23 @@ function WeekChange({ weights }: { weights: WeightEntry[] }) {
   );
 }
 
+/**
+ * The Health summary's figures: where the week started (Monday's weigh-in,
+ * or the last before it), the week's median so far, and what the plan says
+ * for next Monday.
+ */
+function weekFigures(weights: WeightEntry[], plan?: WeightPlan): CardFigure[] {
+  const monday = mondayOf(dateKey());
+  const start = weightOnOrBefore(weights, monday);
+  const median = weeklyMedians(weights).find((m) => m.week === monday);
+  const next = addDays(monday, 7);
+  return [
+    { value: start ? start.kg.toFixed(1) : "–", label: start && start.date !== monday ? `Mon (from ${fmtDateAuto(start.date)})` : "Monday" },
+    { value: median ? median.median.toFixed(1) : "–", label: "week median" },
+    { value: plan ? expectedOn(plan, next).toFixed(1) : "–", label: plan ? "plan, next Mon" : "no plan" },
+  ];
+}
+
 /** What's moving: the week's median, weigh-ins this week, the plan's pace. */
 function weightFigures(weights: WeightEntry[], plan?: WeightPlan): CardFigure[] {
   const median = weeklyMedians(weights).slice(-1)[0];
@@ -310,6 +327,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
         {!latest && <PanelHeader title="Weight" color="var(--sec-fitness)" />}
         {latest ? (
           <SummaryCard
+            className="weight-week-card"
             label="Weight"
             aside={<Standing weights={data} plan={plan} />}
             figure={latest.kg}
@@ -320,7 +338,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
               action: plan ? "Open" : "Set one",
               href: "/fitness?view=weight",
             }}
-            figures={weightFigures(data, plan)}
+            figures={weekFigures(data, plan)}
             actions={weighIn}
           >
             <Sparkline weights={data} wide />
