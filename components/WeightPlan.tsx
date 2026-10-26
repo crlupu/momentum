@@ -84,6 +84,7 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
   return (
     <div className="flex flex-col gap-4">
       <SummaryCard
+        className="weight-plan-card"
         label="Plan"
         aside={`${Math.round(sum.progress * 100)}% of the way`}
         figure={kg1(plan.targetKg)}
@@ -95,9 +96,9 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
           onPress: onEdit,
         }}
         figures={[
-          { value: pace(sum.neededPace), label: "kg / week needed" },
+          { value: pace(sum.neededPace), label: "kg / week" },
           { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
-          { value: expectedOn(plan, today).toFixed(1), label: "kg expected today" },
+          { value: expectedOn(plan, today).toFixed(1), label: "kg expected" },
         ]}
       >
         <CardMeter value={sum.progress} accent />
