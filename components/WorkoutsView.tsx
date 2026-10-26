@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Dumbbell,
   MoreHorizontal,
+  Plus,
   Trash2,
   Undo } from "./icons";
 import { ActionMenu } from "./Menu";
@@ -834,9 +835,13 @@ function ExerciseBlock({
               <CheckCircle2 className="h-4 w-4" />
             </Button>
           ) : (
-            <Button size="sm" variant="outline" className="shrink-0" onPress={finish}>
-              <Check className="h-3.5 w-3.5" /> All done
-            </Button>
+            <button
+              type="button"
+              className={"pill-link exercise__all-done" + (doneCount === e.sets.length ? " is-ready" : "")}
+              onClick={finish}
+            >
+              <Check aria-hidden /> All done
+            </button>
           ))}
       </div>
 
@@ -875,7 +880,13 @@ function ExerciseBlock({
             </div>
           ))}
           {removed && removed.index >= e.sets.length && undo}
-          <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
+          {/* The next set, waiting: tapping it adds a copy of the last one. */}
+          <button type="button" className="set-add" onClick={() => void tracker.addSet(e.exerciseId)}>
+            <span className="set-add__label">Add new set</span>
+            <span className="icon-disc set-add__plus" aria-hidden>
+              <Plus />
+            </span>
+          </button>
           {!empty && (
             <p className="exercise__count">
               <span>
