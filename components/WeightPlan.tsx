@@ -87,7 +87,7 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
         label="Plan"
         aside={`${Math.round(sum.progress * 100)}% of the way`}
         figure={kg1(plan.targetKg)}
-        detail={`kg by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)} kg`}
+        side={{ unit: "kg", hint: `by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)}` }}
         band={{
           label: "Next",
           content: sum.next && sum.next.date !== plan.targetDate ? `${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}` : "The target",
@@ -97,7 +97,7 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
         figures={[
           { value: pace(sum.neededPace), label: "kg / week needed" },
           { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
-          { value: expectedOn(plan, today).toFixed(1), label: "kg plan today" },
+          { value: expectedOn(plan, today).toFixed(1), label: "kg expected today" },
         ]}
       >
         <CardMeter value={sum.progress} accent />

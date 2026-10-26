@@ -214,37 +214,18 @@ function Standing({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan
   return check ? <span className={"weight-now__badge is-" + check.status}>{STANDING[check.status]}</span> : null;
 }
 
-/** "−0.2 kg this week", down in green, up in the warning colour. */
+/** "−0.2 vs last week": against the last weigh-in a week or more before the latest; down in green, up in the warning colour. */
 function WeekChange({ weights }: { weights: WeightEntry[] }) {
   const latest = weights[weights.length - 1];
   const weekAgo = [...weights].reverse().find((w) => w.date <= addDays(latest.date, -7));
-  const d = weekAgo ? Math.round((latest.kg - weekAgo.kg) * 10) / 10 : null;
-  if (d == null) return <>kg</>;
+  if (!weekAgo) return null;
+  const d = Math.round((latest.kg - weekAgo.kg) * 10) / 10;
   return (
     <>
-      kg ·{" "}
       <span className={"weight-change " + (d < 0 ? "is-down" : d > 0 ? "is-up" : "")}>
-        {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} this week
-      </span>
-    </>
-  );
-}
-
-/**
- * Where the plan says today's weight should be, and how far the latest
- * weigh-in is from it: below (or at) in green, above in the warning colour.
- */
-function PlanToday({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
-  if (!plan || !weights.length) return null;
-  const want = Math.round(expectedOn(plan, dateKey()) * 10) / 10;
-  const d = Math.round((weights[weights.length - 1].kg - want) * 10) / 10;
-  return (
-    <>
-      Plan for today: <span className="weight-plan-today">{want.toFixed(1)} kg</span>
-      {" · "}
-      <span className={"weight-change " + (d <= 0 ? "is-down" : "is-up")}>
-        {d === 0 ? "right on it" : `${Math.abs(d).toFixed(1)} ${d < 0 ? "below" : "above"}`}
-      </span>
+        {d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
+      </span>{" "}
+      vs last week
     </>
   );
 }
@@ -332,8 +313,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
             label="Weight"
             aside={<Standing weights={data} plan={plan} />}
             figure={latest.kg}
-            detail={<WeekChange weights={data} />}
-            line={plan ? <PlanToday weights={data} plan={plan} /> : undefined}
+            side={{ unit: "kg", hint: <WeekChange weights={data} /> }}
             band={{
               label: "Plan",
               content: plan ? `${plan.targetKg} kg by ${fmtDateAuto(plan.targetDate)}` : "No plan yet",
@@ -363,27 +343,13 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
         ? Math.max(14, Math.round((Date.now() - new Date(first.date + "T12:00:00").getTime()) / 86400000) + 1)
         : 30
       : RANGES.find((r) => r.id === range)!.days;
-  const since = latest ? [...data].find((w) => w.date >= dateKey(new Date(Date.now() - (days - 1) * 86400000))) : undefined;
-  const moved = latest && since && since.date !== latest.date ? Math.round((latest.kg - since.kg) * 10) / 10 : null;
   return (
     <SummaryCard
       label="Weight"
       aside={<Standing weights={data} plan={plan} />}
       figure={latest ? latest.kg : "–"}
-      line={latest && plan ? <PlanToday weights={data} plan={plan} /> : undefined}
-      detail={
-        latest ? (
-          moved != null && since ? (
-            <>
-              kg · {moved === 0 ? "±0" : `${moved > 0 ? "+" : "−"}${Math.abs(moved).toFixed(1)}`} since {fmtDateAuto(since.date)}
-            </>
-          ) : (
-            "kg"
-          )
-        ) : (
-          "No weigh-ins yet. Log the first from Health."
-        )
-      }
+      side={latest ? { unit: "kg", hint: <WeekChange weights={data} /> } : undefined}
+      detail={latest ? undefined : "No weigh-ins yet. Log the first from Health."}
       figures={latest ? weightFigures(data, plan) : undefined}
     >
       <div>
