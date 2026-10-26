@@ -23,7 +23,7 @@ import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
-import { focusElapsed, toggledPlanTick, withSkips, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
+import { focusElapsed, planOf, toggledPlanTick, withSkips, withSwap, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -93,6 +93,17 @@ export function useTracker() {
   const inflight = useRef(new Set<Promise<unknown>>());
   // skips caching a state change (used for the sign-out reset)
   const suppressPersist = useRef(false);
+  // Offline first. Changes made before the cloud copy has been read wait
+  // here, to be replayed on top of it when it arrives, so nothing another
+  // device saved meanwhile is overwritten.
+  const queued = useRef<Array<(s: TrackerState) => TrackerState>>([]);
+  // The state on this device holds changes the cloud doesn't have yet. Kept
+  // in the cache, so changes made offline survive closing the app.
+  const dirty = useRef(false);
+  // The cloud version those changes were made on top of.
+  const base = useRef(0);
+  // The cache came with changes the cloud never got.
+  const unsentAtLoad = useRef(false);
 
   // ---- load cached copy for first paint ----
   useEffect(() => {
@@ -101,6 +112,9 @@ export function useTracker() {
       const parsed = raw ? JSON.parse(raw) : null;
       const rawState = parsed && parsed.state ? parsed.state : parsed ?? DEFAULT_STATE;
       lastUpdated.current = parsed && typeof parsed.updated === "number" ? parsed.updated : 0;
+      dirty.current = parsed?.dirty === true;
+      unsentAtLoad.current = dirty.current;
+      base.current = parsed && typeof parsed.base === "number" ? parsed.base : lastUpdated.current;
       setState(migrate(rawState));
     } catch {
       setState(DEFAULT_STATE);
@@ -154,12 +168,41 @@ export function useTracker() {
             confirmed.current = migrate(data.state);
             confirmedAt.current = remoteUpdated;
           }
+          // Changes made while connecting: replayed on top of the cloud copy
+          // and sent, so both sides' changes are kept.
+          if (data.state && queued.current.length) {
+            // Unsent changes from an earlier session, and the cloud unchanged
+            // since: this device's copy already holds everything, so it goes.
+            if (unsentAtLoad.current && remoteUpdated <= base.current && stateRef.current) {
+              queued.current = [];
+              unsentAtLoad.current = false;
+              send(stateRef.current);
+              return;
+            }
+            const next = queued.current.reduce((acc, f) => f(acc), migrate(data.state));
+            queued.current = [];
+            stateRef.current = next;
+            setState(next);
+            send(next);
+            return;
+          }
+          // Changes from an earlier session that never reached the cloud: sent
+          // now, unless the cloud has been changed since by something newer.
+          if (dirty.current && stateRef.current) {
+            if (remoteUpdated <= base.current || lastUpdated.current > remoteUpdated) {
+              send(stateRef.current);
+              return;
+            }
+            dirty.current = false;
+          }
           if (data.state && remoteUpdated !== lastUpdated.current) {
+            base.current = remoteUpdated;
             lastUpdated.current = remoteUpdated;
             setState(confirmed.current ?? migrate(data.state));
           }
         } else {
           // no cloud record yet — seed it from whatever is on screen
+          queued.current = [];
           const updated = Date.now();
           const seed = stateRef.current ?? DEFAULT_STATE;
           setDoc(ref, clean({ state: seed, updated }))
@@ -167,6 +210,8 @@ export function useTracker() {
               lastUpdated.current = updated;
               confirmed.current = seed;
               confirmedAt.current = updated;
+              base.current = updated;
+              dirty.current = false;
               setSyncError(null);
             })
             .catch((e) => {
@@ -176,8 +221,9 @@ export function useTracker() {
         }
       },
       (err) => {
+        // Shown only in Settings: the app carries on with this device's copy.
         console.error("snapshot error", err);
-        setSyncError("Can't read your data from the cloud.");
+        setSyncError("Can't reach the cloud right now.");
       }
     );
   }, [user]);
@@ -193,7 +239,7 @@ export function useTracker() {
     const s = stateRef.current;
     if (!s) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify({ state: s, updated: lastUpdated.current }));
+      localStorage.setItem(KEY, JSON.stringify({ state: s, updated: lastUpdated.current, dirty: dirty.current, base: base.current }));
     } catch (e) {
       console.error("cache write failed", e);
     }
@@ -227,66 +273,23 @@ export function useTracker() {
   }, []);
 
   /**
-   * Applies a change: on screen at once, then saved to the cloud behind it.
-   *
-   * Resolves as soon as the change is on screen — true, or false when it was
-   * refused outright (no state yet, or the cloud copy not read yet) — not
-   * when the save lands. Everything that awaits a write (a form clearing its
-   * field, a dialog closing) used to wait out the network round trip, which
-   * on a phone left the page looking frozen for seconds after every tap.
-   *
-   * Every save writes the whole state, so a newer one carries every change
-   * before it. A failed save therefore only matters if nothing newer has been
-   * made since: then the screen goes back to the last state the cloud is
-   * known to hold, and the sync banner says why. When something newer is on
-   * its way, that save decides.
+   * Sends a state to the cloud, after the change has been painted. Every save
+   * writes the whole state, so a newer one carries every change before it:
+   * one already superseded isn't sent. A failed save is never undone on
+   * screen; the change stays on this device, marked as not yet sent, and is
+   * sent again when the connection comes back.
    */
-  const commit = async (fn: (s: TrackerState) => TrackerState): Promise<boolean> => {
-    // The ref is kept in step by an effect, and a child's effect runs before
-    // its parent's — so a write made from a child effect on the render that
-    // first loaded the state found the ref still empty and was refused. The
-    // render's own state is the right answer whenever the ref has not caught
-    // up, and identical to it once it has.
-    const base = stateRef.current ?? state;
-    if (!base) return false;
-    const next = fn(base);
-
-    // Local-only mode (Firebase not configured, or signed out): commit directly.
-    if (!isFirebaseConfigured || !userRef.current) {
-      lastUpdated.current = Date.now();
-      stateRef.current = next;
-      setState(next);
-      return true;
-    }
-
+  const send = (next: TrackerState) => {
     const fb = getFirebase();
-    if (!fb) return false;
-
-    // Don't write until we've read the cloud copy, or we could clobber it.
-    if (!remoteSynced.current) {
-      setSyncError("Still connecting to the cloud — try again in a moment.");
-      return false;
-    }
-
+    const u = userRef.current;
+    if (!fb || !u) return;
     const updated = Date.now();
-    const fallback = { state: confirmed.current ?? base, at: confirmed.current ? confirmedAt.current : lastUpdated.current };
-
-    // The ref is updated synchronously because React state only lands on the
-    // next render, and a second write issued immediately after this one would
-    // otherwise start from the stale state and undo this change.
     lastUpdated.current = updated;
-    stateRef.current = next;
-    setState(next);
-
-    // The save starts once the change has been painted: preparing the
-    // document is work proportional to all the data, and it no longer
-    // delays the frame that shows the tap. Changes made within one frame
-    // are sent as one — the newest state holds them all.
-    const uid = userRef.current.uid;
+    dirty.current = true;
     const save = afterPaint()
       .then(async (): Promise<boolean> => {
         if (stateRef.current !== next) return false; // superseded: the newer save sends it
-        await setDoc(doc(fb.db, "users", uid), clean({ state: next, updated }));
+        await setDoc(doc(fb.db, "users", u.uid), clean({ state: next, updated }));
         return true;
       })
       .then((sent) => {
@@ -295,20 +298,80 @@ export function useTracker() {
           confirmed.current = next;
           confirmedAt.current = updated;
         }
-        if (stateRef.current === next) setSyncError(null);
+        if (stateRef.current === next) {
+          dirty.current = false;
+          base.current = updated;
+          setSyncError(null);
+          // The cache learns it's sent, so a reload doesn't send it again.
+          if (!cacheTimer.current) cacheTimer.current = setTimeout(writeCache, 600);
+        }
       })
       .catch((e) => {
         console.error("save failed", e);
-        if (stateRef.current !== next) return; // a newer save carries this change
-        // Put it back, so the screen never claims something was saved that wasn't.
-        const back = confirmed.current ?? fallback.state;
-        lastUpdated.current = confirmed.current ? confirmedAt.current : fallback.at;
-        stateRef.current = back;
-        setState(back);
-        setSyncError("Couldn't save to the cloud. Your last change was not applied.");
+        // Kept on this device; retried when back online. Settings says so.
+        setSyncError("Not synced yet: saved on this device.");
       })
       .finally(() => inflight.current.delete(save));
     inflight.current.add(save);
+  };
+
+  // Not-yet-sent changes go out when the connection comes back, and every
+  // half minute while they wait.
+  useEffect(() => {
+    const retry = () => {
+      if (dirty.current && remoteSynced.current && userRef.current && stateRef.current && !queued.current.length) send(stateRef.current);
+    };
+    window.addEventListener("online", retry);
+    const id = setInterval(retry, 30000);
+    return () => {
+      window.removeEventListener("online", retry);
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * Applies a change: on screen and on this device at once, then saved to
+   * the cloud behind it.
+   *
+   * Resolves as soon as the change is on screen — true, or false only when
+   * there is no state yet — not when the save lands, so nothing waits on the
+   * network. Offline first: a change made before the cloud copy has been read
+   * is kept and replayed onto it when it arrives; one whose save fails stays
+   * and is sent again later. Nothing is refused or undone for want of a
+   * connection, and no banner says so.
+   */
+  const commit = async (fn: (s: TrackerState) => TrackerState): Promise<boolean> => {
+    // The ref is kept in step by an effect, and a child's effect runs before
+    // its parent's — so a write made from a child effect on the render that
+    // first loaded the state found the ref still empty and was refused. The
+    // render's own state is the right answer whenever the ref has not caught
+    // up, and identical to it once it has.
+    const base0 = stateRef.current ?? state;
+    if (!base0) return false;
+    const next = fn(base0);
+
+    // The ref is updated synchronously because React state only lands on the
+    // next render, and a second write issued immediately after this one would
+    // otherwise start from the stale state and undo this change.
+    stateRef.current = next;
+    setState(next);
+
+    // Local-only mode (Firebase not configured, or signed out).
+    if (!isFirebaseConfigured || !userRef.current) {
+      lastUpdated.current = Date.now();
+      return true;
+    }
+
+    // The cloud copy isn't read yet: keep the change, to replay onto it.
+    if (!remoteSynced.current) {
+      queued.current.push(fn);
+      dirty.current = true;
+      lastUpdated.current = Date.now();
+      return true;
+    }
+
+    send(next);
     return true;
   };
 
@@ -1017,6 +1080,13 @@ export function useTracker() {
     /** Ticks a plan step done by hand on a day, or takes the tick back. */
     togglePlanStep: (day: string, stepId: string) =>
       commit((s) => ({ ...s, planTicks: toggledPlanTick(s, day, stepId) })),
+    /** Exchanges two steps' picks (two days' workouts) for their week only. */
+    swapPlanSteps: (a: { day: string; stepId: string }, b: { day: string; stepId: string }) =>
+      commit((s) => {
+        const plan = planOf(s);
+        return plan ? { ...s, planSwaps: withSwap(s, plan, a, b) } : s;
+      }),
+
     /** Lets steps from earlier days go from Left from earlier. */
     skipPlanSteps: (pairs: { day: string; stepId: string }[]) =>
       commit((s) => ({ ...s, planSkips: withSkips(s, pairs) })),

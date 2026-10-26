@@ -5828,3 +5828,7 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 /* The plan card's figure labels stay on one line. */
 .weight-plan-card .momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .weight-week-card .momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Swapped this week, and the swap sheet. */
+.plan-row__swapped { display: inline-block; inline-size: 1rem; block-size: 1rem; margin-inline-start: 0.375rem; vertical-align: -0.125rem; fill: var(--accent-text); }
+.plan-opt__day { inline-size: 2.25rem; flex: none; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+.plan-opt__swap { inline-size: 1.25rem; block-size: 1.25rem; flex: none; fill: var(--accent-text); }

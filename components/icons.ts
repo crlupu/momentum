@@ -73,6 +73,7 @@ export {
   MdOutlineMonitorWeight as Scale,
   MdTaskAlt as TaskDone,
   MdOutlineSmartDisplay as Video,
+  MdSwapHoriz as Swap,
   MdBarChart as BarChart3,
   MdReceiptLong as ScrollText,
   MdLogout as LogOut,

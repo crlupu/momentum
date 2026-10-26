@@ -232,9 +232,8 @@ function CardioButton({ tracker, compact }: { tracker: Tracker; compact?: boolea
     // on a slow connection, looking like the button had not worked.
     close();
     const ok = await run(() => tracker.addCardio(n));
-    // A refused write is rolled back, so put the dialog back with the number
-    // still in it rather than losing what was typed. The reason why is shown
-    // by the sync banner on the page.
+    // Writes are only refused before anything has loaded; then the dialog
+    // comes back with the number still in it rather than losing what was typed.
     if (ok === false) {
       setMins(String(n));
       setOpen(true);
