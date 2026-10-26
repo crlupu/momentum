@@ -230,6 +230,25 @@ function WeekChange({ weights }: { weights: WeightEntry[] }) {
   );
 }
 
+/**
+ * Where the plan says today's weight should be, and how far the latest
+ * weigh-in is from it: below (or at) in green, above in the warning colour.
+ */
+function PlanToday({ weights, plan }: { weights: WeightEntry[]; plan?: WeightPlan }) {
+  if (!plan || !weights.length) return null;
+  const want = Math.round(expectedOn(plan, dateKey()) * 10) / 10;
+  const d = Math.round((weights[weights.length - 1].kg - want) * 10) / 10;
+  return (
+    <>
+      Plan for today: <span className="weight-plan-today">{want.toFixed(1)} kg</span>
+      {" · "}
+      <span className={"weight-change " + (d <= 0 ? "is-down" : "is-up")}>
+        {d === 0 ? "right on it" : `${Math.abs(d).toFixed(1)} ${d < 0 ? "below" : "above"}`}
+      </span>
+    </>
+  );
+}
+
 /** What's moving: the week's median, weigh-ins this week, the plan's pace. */
 function weightFigures(weights: WeightEntry[], plan?: WeightPlan): CardFigure[] {
   const median = weeklyMedians(weights).slice(-1)[0];
@@ -314,6 +333,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
             aside={<Standing weights={data} plan={plan} />}
             figure={latest.kg}
             detail={<WeekChange weights={data} />}
+            line={plan ? <PlanToday weights={data} plan={plan} /> : undefined}
             band={{
               label: "Plan",
               content: plan ? `${plan.targetKg} kg by ${fmtDateAuto(plan.targetDate)}` : "No plan yet",
@@ -350,6 +370,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
       label="Weight"
       aside={<Standing weights={data} plan={plan} />}
       figure={latest ? latest.kg : "–"}
+      line={latest && plan ? <PlanToday weights={data} plan={plan} /> : undefined}
       detail={
         latest ? (
           moved != null && since ? (

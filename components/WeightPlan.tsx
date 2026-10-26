@@ -17,6 +17,7 @@ import {
   type WeightPlan,
   addDays,
   checkpointStatus,
+  expectedOn,
   makePlan,
   mondayOf,
   planSummary,
@@ -96,7 +97,7 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
         figures={[
           { value: pace(sum.neededPace), label: "kg / week needed" },
           { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
-          { value: plan.checkpoints.length, label: plan.checkpoints.length === 1 ? "checkpoint" : "checkpoints" },
+          { value: expectedOn(plan, today).toFixed(1), label: "kg plan today" },
         ]}
       >
         <CardMeter value={sum.progress} accent />

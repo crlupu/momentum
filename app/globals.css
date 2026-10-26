@@ -5819,3 +5819,4 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 /* The weigh-in's + stays a round button inside a card's actions. */
 .summary-card__actions .weight-form .cds--btn { flex: none; inline-size: 2.75rem; min-inline-size: 2.75rem; block-size: 2.75rem; min-block-size: 2.75rem; padding: 0; border-radius: 50%; justify-content: center; }
 .summary-card__actions .weight-form .cds--text-input { block-size: 2.75rem; }
+.weight-plan-today { color: #ffffff; font-weight: 500; }
