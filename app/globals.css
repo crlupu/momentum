@@ -4603,6 +4603,9 @@ input.todo-add__input::placeholder { color: var(--field-placeholder); }
 .exercise__name { flex: 1 1 auto; min-inline-size: 0; font-size: 1.125rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .exercise__target { flex: none; font-size: 0.875rem; color: var(--muted); }
 .exercise__count { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); }
+.exercise__count { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.exercise__rest { display: inline-flex; align-items: baseline; gap: 0.375rem; color: var(--muted); }
+.exercise__rest .font-mono-n { font-size: 0.9375rem; color: var(--foreground); }
 
 /* A set as a table row. */
 .set-line { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) 4rem 3.5rem 2.75rem 2.75rem; align-items: center; gap: 0.25rem 0.375rem; min-block-size: 3rem; margin-inline: -0.375rem; padding-inline: 0.375rem; border-radius: var(--r-control); }

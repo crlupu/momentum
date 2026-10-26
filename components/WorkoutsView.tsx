@@ -665,10 +665,13 @@ function SetRow({
 function ExerciseBlock({
   tracker,
   exercise: e,
-  history }: {
+  history,
+  lastSet }: {
   tracker: Tracker;
   exercise: ActiveExercise;
   history: { date: string; sets: SetRecord[] } | null;
+  /** The workout's most recently completed set, for the rest clock. */
+  lastSet: LastSet | null;
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!e.done;
@@ -746,7 +749,10 @@ function ExerciseBlock({
           <InsertRow label="Add set" onPress={() => void tracker.addSet(e.exerciseId)} />
           {!empty && (
             <p className="exercise__count">
-              {doneCount} of {e.sets.length} done
+              <span>
+                {doneCount} of {e.sets.length} done
+              </span>
+              {lastSet && <SinceLastSet last={lastSet} />}
             </p>
           )}
         </>
@@ -755,21 +761,38 @@ function ExerciseBlock({
   );
 }
 
-/** How long since the last set was completed, ticking each second. */
-function SinceLastSet({ active }: { active: ActiveWorkout }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  let last: { at: number; set: number; name: string } | null = null;
+type LastSet = { at: number; set: number; name: string };
+
+/** The workout's most recently completed set, if any. */
+function lastSetOf(active: ActiveWorkout): LastSet | null {
+  let last: LastSet | null = null;
   for (const e of active.exercises) {
     e.sets.forEach((x, i) => {
       if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name };
     });
   }
-  if (!last) return null;
-  const l = last as { at: number; set: number; name: string };
+  return last;
+}
+
+/** How long since the last set was completed, ticking each second: the rest. */
+function SinceLastSet({ last }: { last: LastSet }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
+      Rest <span className="font-mono-n tabular-nums">{formatElapsed(now - last.at)}</span>
+    </span>
+  );
+}
+
+/**
+ * The workout so far, without a clock (the title has it, and the rest
+ * runs under the sets): sets done, an exercise per tile, the figures.
+ */
+function WorkoutProgress({ active }: { active: ActiveWorkout }) {
   const setsDone = active.exercises.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0);
   const setsPlanned = active.exercises.reduce((a, e) => a + e.sets.length, 0);
   const exDone = active.exercises.filter((e) => e.sets.length > 0 && e.sets.every((x) => x.done)).length;
@@ -777,15 +800,16 @@ function SinceLastSet({ active }: { active: ActiveWorkout }) {
   return (
     <SummaryCard
       className="since-set-card"
-      aria-label="Time since the last set"
-      label="Since last set"
-      aside={<Elapsed startedAt={active.startedAt} />}
-      figure={<span role="timer">{formatElapsed(now - l.at)}</span>}
-      line={`Set ${l.set} · ${l.name}`}
+      aria-label="Workout progress"
+      label="Workout"
+      aside={current ? `Now · ${current.name}` : undefined}
+      done={setsPlanned > 0 && setsDone === setsPlanned}
+      doneLabel="Every set done"
+      figure={`${setsDone} of ${setsPlanned}`}
+      detail="sets"
       figures={[
-        { value: `${setsDone} of ${setsPlanned}`, label: "sets" },
         { value: exDone, label: `of ${active.exercises.length} exercises` },
-        { value: Math.round((now - active.startedAt) / 60000), label: "min" },
+        { value: setsPlanned - setsDone, label: "sets to go" },
       ]}
     >
       {active.exercises.length > 1 && (
@@ -879,7 +903,7 @@ export function ActiveWorkoutPanel({
         </div>
       )}
 
-      <SinceLastSet active={active} />
+      <WorkoutProgress active={active} />
 
       {/* Circuit blocks are run by the clock rather than filled in by hand, so
           they get the timer instead of set rows. */}
@@ -895,6 +919,7 @@ export function ActiveWorkoutPanel({
           tracker={tracker}
           exercise={shown}
           history={lastPerformed(sessions, shown.exerciseId)}
+          lastSet={lastSetOf(active)}
         />
       )}
 
