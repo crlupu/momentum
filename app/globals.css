@@ -5847,3 +5847,17 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .plan-row__swapped { display: inline-block; inline-size: 1rem; block-size: 1rem; margin-inline-start: 0.375rem; vertical-align: -0.125rem; fill: var(--accent-text); }
 .plan-opt__day { inline-size: 2.25rem; flex: none; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
 .plan-opt__swap { inline-size: 1.25rem; block-size: 1.25rem; flex: none; fill: var(--accent-text); }
+
+/* Live workout set rows: each its own tile, a little apart, and done and
+   delete as twin discs. Done carries a faint tick until it is tapped, then
+   turns solid like a done tile; delete keeps its red minus. */
+.live-workout .set-line:not(.set-line--head) { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
+.live-workout .set-line:not(.set-line--head) + .set-line { margin-block-start: 0.375rem; border-block-start: 0 !important; }
+.live-workout .set-line.is-done { background: var(--default); }
+.live-workout .set-line--head + .set-line { margin-block-start: 0.125rem; }
+.icon-disc.set-done { color: color-mix(in srgb, var(--foreground) 35%, transparent); transition: background-color 160ms ease, color 160ms ease; }
+.icon-disc.set-done svg { inline-size: 1rem; block-size: 1rem; }
+.live-workout .exercise .icon-disc.set-done.is-on, .icon-disc.set-done.is-on { background: var(--foreground); color: var(--background); }
+/* In light, on the row's grey, the discs take the fields' white. */
+.light .live-workout .set-line .icon-disc { background: #ffffff; }
+.light .live-workout .set-line .icon-disc.set-done.is-on { background: var(--foreground); }

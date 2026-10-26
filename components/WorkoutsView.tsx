@@ -1,7 +1,7 @@
 "use client";
 
 import { InsertRow } from "./InsertRow";
-import { CheckRing, IconButton } from "./IconButton";
+import { IconButton } from "./IconButton";
 import { FormEvent, useEffect, useState } from "react";
 import {
   DndContext,
@@ -648,7 +648,9 @@ function SetRow({
         pressed={done}
         onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
       >
-        <CheckRing on={done} />
+        <span className={"icon-disc set-done" + (done ? " is-on" : "")}>
+          <Check />
+        </span>
       </IconButton>
       <IconButton label={`Remove set ${index + 1}`} onPress={() => void tracker.removeSet(exerciseId, set.id)}>
         <span className="icon-disc icon-disc--danger"><Minus /></span>
@@ -814,12 +816,12 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
     >
       {active.exercises.length > 1 && (
         <CardTiles
+          columns={8}
           items={active.exercises.slice(0, 8).map((e) => {
             const all = e.sets.length > 0 && e.sets.every((x) => x.done);
             return {
               key: e.exerciseId,
               icon: <Dumbbell aria-hidden />,
-              label: e.name,
               title: e.name,
               state: (all ? "done" : e === current ? "next" : "todo") as "done" | "next" | "todo",
             };
