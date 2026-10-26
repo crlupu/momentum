@@ -286,8 +286,8 @@ function StepActions({
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
         </Link>
-        <button type="button" className="pill-link" onClick={() => setSwapping(true)}>
-          <Swap aria-hidden /> Swap
+        <button type="button" className="pill-link pill-link--icon" aria-label="Swap" title="Swap with another day" onClick={() => setSwapping(true)}>
+          <Swap aria-hidden />
         </button>
         <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${it.item.name}`}>
           {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}

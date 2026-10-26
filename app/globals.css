@@ -5778,6 +5778,18 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .plan-row__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0 0.75rem 0.875rem 5.125rem; }
 .plan-row__actions .pill-link { min-block-size: 2.25rem; gap: 0.375rem; font-size: 0.875rem; }
 .plan-row__actions .pill-link svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+/* Secondary actions are outlined, so they read as buttons on the row's tint
+   without competing with the one blue action. Swap is a round icon. */
+.plan-row__actions { align-items: center; }
+.plan-row__actions .pill-link { flex: none; white-space: nowrap; }
+.plan-row__actions .pill-link:not(.pill-link--primary) {
+  background: transparent;
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--foreground) 30%, transparent);
+}
+.plan-row__actions .pill-link:not(.pill-link--primary):hover { background: color-mix(in srgb, var(--foreground) 8%, transparent); }
+.plan-row__actions .pill-link--icon { inline-size: 2.25rem; padding: 0; justify-content: center; border-radius: 999px; }
+.plan-row__actions .pill-link--icon svg { inline-size: 1.125rem; block-size: 1.125rem; }
 
 .plan-picker { display: flex; flex-direction: column; gap: 0.75rem; }
 .plan-search { display: flex; align-items: center; gap: 0.5rem; block-size: 2.625rem; padding: 0 0.75rem; border-radius: 12px; background: var(--default); color: var(--faint); }
