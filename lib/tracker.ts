@@ -23,7 +23,7 @@ import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
-import { focusElapsed, toggledPlanTick, withSkips, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
+import { focusElapsed, planOf, toggledPlanTick, withSkips, withSwap, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -1080,6 +1080,13 @@ export function useTracker() {
     /** Ticks a plan step done by hand on a day, or takes the tick back. */
     togglePlanStep: (day: string, stepId: string) =>
       commit((s) => ({ ...s, planTicks: toggledPlanTick(s, day, stepId) })),
+    /** Exchanges two steps' picks (two days' workouts) for their week only. */
+    swapPlanSteps: (a: { day: string; stepId: string }, b: { day: string; stepId: string }) =>
+      commit((s) => {
+        const plan = planOf(s);
+        return plan ? { ...s, planSwaps: withSwap(s, plan, a, b) } : s;
+      }),
+
     /** Lets steps from earlier days go from Left from earlier. */
     skipPlanSteps: (pairs: { day: string; stepId: string }[]) =>
       commit((s) => ({ ...s, planSkips: withSkips(s, pairs) })),

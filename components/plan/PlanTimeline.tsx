@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { Tracker, dateKey } from "@/lib/tracker";
 import {
   WEEKDAY,
+  WEEKDAY_LONG,
+  isSwapped,
   leftovers,
+  swapOptions,
+  swapPartner,
   nextOfGoal,
   refTitle,
   stepsOn,
@@ -19,7 +23,7 @@ import { Modal } from "../Modal";
 import { GoalDetail, GoalTitle } from "../GoalDetail";
 import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
-import { Check, ChevronDown, Play } from "../icons";
+import { Check, ChevronDown, Play, Swap } from "../icons";
 
 const LEFTOVERS_SHOWN = 3;
 import { PlanGlyph } from "./bits";
@@ -55,7 +59,7 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
             </div>
             <ol className="card plan-steps-today">
               {steps.map((x, i) => (
-                <StepRow key={x.step.id} tracker={tracker} x={x} n={i + 1} day={today} suggested={x === next} onOpenGoal={setOpenGoal} />
+                <StepRow key={x.step.id} tracker={tracker} plan={plan} x={x} n={i + 1} day={today} suggested={x === next} onOpenGoal={setOpenGoal} />
               ))}
             </ol>
           </section>
@@ -102,6 +106,7 @@ function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayP
           <StepRow
             key={l.day + l.x.step.id}
             tracker={tracker}
+            plan={plan}
             x={l.x}
             day={l.day}
             dayLabel={WEEKDAY[weekdayOf(l.day)]}
@@ -123,6 +128,7 @@ function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayP
 
 function StepRow({
   tracker,
+  plan,
   x,
   n,
   day,
@@ -131,6 +137,7 @@ function StepRow({
   onOpenGoal,
 }: {
   tracker: Tracker;
+  plan: DayPlan;
   x: DayStep;
   /** Today's steps are numbered; leftovers carry their day instead. */
   n?: number;
@@ -159,6 +166,7 @@ function StepRow({
             <span className="plan-row__title">
               {title}
               {running ? " · running" : ""}
+              {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
             </span>
           </span>
         </button>
@@ -185,7 +193,7 @@ function StepRow({
           <span className="check__ring">{x.done && <Check className="h-4 w-4" aria-hidden />}</span>
         </button>
       </div>
-      {shown && !x.done && <StepActions tracker={tracker} x={x} day={day} onOpenGoal={onOpenGoal} running={running} />}
+      {shown && !x.done && <StepActions tracker={tracker} plan={plan} x={x} day={day} onOpenGoal={onOpenGoal} running={running} />}
     </li>
   );
 }
@@ -193,17 +201,20 @@ function StepRow({
 /** What a step can be done with, by kind: tick the next entry, log pages, start the workout or the focus timer. */
 function StepActions({
   tracker,
+  plan,
   x,
   day,
   onOpenGoal,
   running,
 }: {
   tracker: Tracker;
+  plan: DayPlan;
   x: DayStep;
   day: string;
   onOpenGoal: (id: string) => void;
   running: boolean;
 }) {
+  const [swapping, setSwapping] = useState(false);
   const router = useRouter();
   const flow = useFlow();
   const { pending, run } = usePending();
@@ -275,6 +286,12 @@ function StepActions({
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
         </Link>
+        <button type="button" className="pill-link" onClick={() => setSwapping(true)}>
+          <Swap aria-hidden /> Swap
+        </button>
+        <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${it.item.name}`}>
+          {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}
+        </Modal>
       </div>
     );
   }
@@ -302,6 +319,56 @@ function StepActions({
         <Link href={`/projects?p=${it.project.id}`} className="pill-link">
           Open {it.project.title}
         </Link>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Exchange a workout with one from another day of this week's plan, for this
+ * week only: today takes that day's workout and that day takes today's. Next
+ * week the plan is as it was. A swapped step can be swapped back.
+ */
+function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: DayPlan; x: DayStep; day: string; onDone: () => void }) {
+  const s = tracker.state!;
+  const { pending, run } = usePending();
+  const options = swapOptions(s, plan, day, x.step.id);
+  const partner = isSwapped(s, x.step, day) ? swapPartner(s, plan, day, x.step.id) : null;
+  const swap = (b: { day: string; stepId: string }) =>
+    void run(async () => {
+      const ok = await tracker.swapPlanSteps({ day, stepId: x.step.id }, b);
+      onDone();
+      return ok;
+    });
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="plan-note">Swaps with another day of this week&rsquo;s plan, for this week only. Next week the plan is as it was.</p>
+      {partner && (
+        <button type="button" className="pill-link" disabled={pending} onClick={() => swap(partner)}>
+          <Swap aria-hidden /> Swap back with {WEEKDAY_LONG[weekdayOf(partner.day)]}
+        </button>
+      )}
+      {options.length ? (
+        <div className="card plan-opts">
+          {options.map((o) => {
+            const w = s.workouts.find((y) => y.id === o.ref.id);
+            return (
+              <button key={o.day + o.stepId} type="button" className="plan-opt" disabled={pending} onClick={() => swap(o)}>
+                <span className="plan-opt__day">{WEEKDAY[weekdayOf(o.day)]}</span>
+                <span className="plan-opt__text">
+                  <span className="plan-opt__title">{o.title}</span>
+                  <span className="plan-opt__sub">
+                    {w ? `${w.exercises.length} exercise${w.exercises.length === 1 ? "" : "s"} · ` : ""}
+                    {o.day < day ? "earlier this week" : "later this week"}
+                  </span>
+                </span>
+                <Swap className="plan-opt__swap" aria-hidden />
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="plan-note">No other workout left in this week&rsquo;s plan to swap with.</p>
       )}
     </div>
   );

@@ -188,6 +188,96 @@ export function weekGoalsOf(s: TrackerState, week: string): WeekGoal[] {
 
 /* ------------------------------------------------------- what a step is */
 
+/* ---------------------------------------------------------------- swaps */
+
+/**
+ * This week's exchanges: a step on a day pointing at something else than the
+ * plan says (a workout swapped with another day's), by week, then by
+ * "day:stepId". They last the week; the plan itself is untouched.
+ */
+export type PlanSwaps = Record<string, Record<string, PlanRef>>;
+
+export function swapsOf(s: TrackerState): PlanSwaps {
+  const t = s.planSwaps as unknown;
+  return t && typeof t === "object" ? (t as PlanSwaps) : {};
+}
+
+const slot = (day: string, stepId: string) => `${day}:${stepId}`;
+
+/** What a step points at on a given day: this week's swap if there is one, else the plan. */
+export function pickOn(s: TrackerState, step: PlanStep, day: string): PlanRef | null {
+  const swapped = swapsOf(s)[weekOf(day)]?.[slot(day, step.id)];
+  return swapped !== undefined ? ref(swapped) : pickFor(step, weekdayOf(day));
+}
+
+/** Whether a step's pick on a day comes from a swap. */
+export function isSwapped(s: TrackerState, step: PlanStep, day: string): boolean {
+  return swapsOf(s)[weekOf(day)]?.[slot(day, step.id)] !== undefined;
+}
+
+export type SwapOption = { day: string; stepId: string; ref: PlanRef; title: string };
+
+/**
+ * The workouts a step's workout can be exchanged with: those on this week's
+ * other plan days, not done yet and not the same workout.
+ */
+export function swapOptions(s: TrackerState, plan: DayPlan, day: string, stepId: string): SwapOption[] {
+  const step = plan.steps.find((x) => x.id === stepId);
+  const mine = step ? pickOn(s, step, day) : null;
+  const out: SwapOption[] = [];
+  for (const d of weekDays(weekOf(day))) {
+    if (d === day) continue;
+    for (const x of stepsOn(s, plan, d)) {
+      if (x.done || x.ref?.kind !== "workout" || x.ref.id === mine?.id) continue;
+      out.push({ day: d, stepId: x.step.id, ref: x.ref, title: refTitle(s, x.ref) ?? "Workout" });
+    }
+  }
+  return out;
+}
+
+/**
+ * The swaps with two slots' picks exchanged for their week. A slot that ends
+ * up on what the plan says loses its swap; weeks older than a month go.
+ */
+export function withSwap(s: TrackerState, plan: DayPlan, a: { day: string; stepId: string }, b: { day: string; stepId: string }): PlanSwaps {
+  const stepA = plan.steps.find((x) => x.id === a.stepId);
+  const stepB = plan.steps.find((x) => x.id === b.stepId);
+  const cut = addDays(weekOf(dateKey()), -28);
+  const next: PlanSwaps = {};
+  for (const [w, m] of Object.entries(swapsOf(s))) if (w >= cut) next[w] = { ...m };
+  if (!stepA || !stepB) return next;
+  const ra = pickOn(s, stepA, a.day);
+  const rb = pickOn(s, stepB, b.day);
+  const put = (step: PlanStep, day: string, r: PlanRef | null) => {
+    const w = weekOf(day);
+    const m = { ...(next[w] ?? {}) };
+    const planned = pickFor(step, weekdayOf(day));
+    if (r && planned && r.kind === planned.kind && r.id === planned.id) delete m[slot(day, step.id)];
+    else if (r) m[slot(day, step.id)] = r;
+    if (Object.keys(m).length) next[w] = m;
+    else delete next[w];
+  };
+  put(stepA, a.day, rb);
+  put(stepB, b.day, ra);
+  return next;
+}
+
+/** The slot a swapped step was exchanged with this week, to undo it. */
+export function swapPartner(s: TrackerState, plan: DayPlan, day: string, stepId: string): { day: string; stepId: string } | null {
+  const step = plan.steps.find((x) => x.id === stepId);
+  const now = step ? pickOn(s, step, day) : null;
+  const planned = step ? pickFor(step, weekdayOf(day)) : null;
+  if (!now || !planned) return null;
+  for (const [k, r] of Object.entries(swapsOf(s)[weekOf(day)] ?? {})) {
+    const [d, id] = [k.slice(0, 10), k.slice(11)];
+    if (d === day && id === stepId) continue;
+    const other = plan.steps.find((x) => x.id === id);
+    // The partner now holds this slot's planned pick, and planned this one's.
+    if (other && r.kind === planned.kind && r.id === planned.id && pickFor(other, weekdayOf(d))?.id === now.id) return { day: d, stepId: id };
+  }
+  return null;
+}
+
 export function pickFor(step: PlanStep, weekday: number): PlanRef | null {
   return step.same ? step.pick ?? null : step.byDay?.[String(weekday)] ?? null;
 }
@@ -310,7 +400,7 @@ export function stepsOn(s: TrackerState, plan: DayPlan, day: string): DayStep[] 
   const ticks = planTicksOf(s)[day] ?? [];
   const out: DayStep[] = [];
   for (const step of plan.steps) {
-    const r = pickFor(step, wd);
+    const r = pickOn(s, step, day);
     // A day can skip a step: nothing picked for it that day.
     if (!step.same && !r) continue;
     const auto = !!r && activityOn(s, r, day);
@@ -514,7 +604,7 @@ export function suggestions(s: TrackerState, week: string): Suggestion[] {
       const wd = weekdayOf(day);
       if (!plan.days.includes(wd)) continue;
       for (const st of plan.steps) {
-        const r = pickFor(st, wd);
+        const r = pickOn(s, st, day);
         if (!r) continue;
         const k = `${r.kind}:${r.id}`;
         const c = counts.get(k) ?? { ref: r, days: [], minutes: 0 };

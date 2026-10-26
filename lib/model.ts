@@ -653,6 +653,8 @@ export type TrackerState = {
   planTicks?: Record<string, string[]>;
   /** Each week's goals, by the week's Monday. */
   weekGoals?: Record<string, import("./plan").WeekGoal[]>;
+  /** This week's exchanged picks (a workout swapped with another day's), by week. See lib/plan.ts. */
+  planSwaps?: import("./plan").PlanSwaps;
   /** Plan steps let go from Left from earlier, by day. */
   planSkips?: Record<string, string[]>;
   /** Focused work, logged as it ends. */
