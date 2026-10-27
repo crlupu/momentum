@@ -5916,3 +5916,7 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .plan-row__actions .pill-link { min-inline-size: 0; }
 .plan-row__actions .pill-link:has(.pill-link__text) { flex: 0 1 auto; }
 .pill-link__text { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* One tile size on every card: the same eight-to-a-line grid and gap as
+   Today's, so a step, an exercise and a meal tile all match. */
+.plan-card__tiles, .plan-card__tiles.is-compact { gap: 6px; }

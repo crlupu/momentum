@@ -951,7 +951,6 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
     >
       {active.exercises.length > 1 && (
         <CardTiles
-          columns={8}
           items={active.exercises.slice(0, 8).map((e) => {
             const all = e.sets.length > 0 && e.sets.every((x) => x.done);
             return {

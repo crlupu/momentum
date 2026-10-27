@@ -20,7 +20,7 @@ import {
 } from "@/lib/plan";
 import { columnCards } from "@/lib/projects";
 import { Button } from "../ui";
-import { CardMeter, SummaryCard } from "../SummaryCard";
+import { CardMeter, SummaryCard, TILE_COLUMNS } from "../SummaryCard";
 import { usePending } from "../ActionButton";
 import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
@@ -44,7 +44,8 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
   const next = steps.find((x) => !x.done);
   const allDone = n > 0 && !next;
   const weekday = WEEKDAY_LONG[weekdayOf(today)];
-  const compact = n > 6;
+  // Tiles are Today's size on every card: eight to a line, more only past eight.
+  const cols = Math.max(n, TILE_COLUMNS);
   const left = leftovers(s, plan, today);
   const hasFocus = plan.steps.some((st) => (st.same ? [st.pick] : Object.values(st.byDay ?? {})).some((r) => r?.kind === "focus"));
 
@@ -74,19 +75,13 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           </p>
           {allDone && <p className="momentum__detail momentum__next">Every step is done. See you tomorrow.</p>}
         </div>
-        {/* Up to six steps carry their names; from seven, every tile stays on
-            one row without them (the list below names them), so nine or
-            twelve steps never wrap into a lonely second line. */}
-        <ol
-          className={"plan-card__tiles" + (compact ? " is-compact" : "")}
-          style={{ gridTemplateColumns: `repeat(${compact ? n : Math.max(n, 5)}, minmax(0, 1fr))` }}
-        >
+        {/* One row, the list below names them; past eight they shrink to fit. */}
+        <ol className={"plan-card__tiles" + (cols > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {steps.map((x) => (
             <li key={x.step.id} className="plan-card__cell" title={x.name}>
               <span className={"momentum__tile" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
                 <PlanGlyph icon={x.icon} />
               </span>
-              {!compact && <span className={"plan-card__label" + (x === next ? " is-next" : "")}>{x.name}</span>}
               <span className="sr-only">
                 {x.name}, {x.done ? "done" : "to do"}
               </span>
@@ -224,7 +219,7 @@ export function PlanWelcome() {
             The same steps every workday, in order. Read, gym, a video: each can be one thing, or a different one each day.
           </p>
         </div>
-        <ol className="plan-card__tiles" style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }} aria-hidden>
+        <ol className="plan-card__tiles" style={{ gridTemplateColumns: `repeat(${TILE_COLUMNS}, minmax(0, 1fr))` }} aria-hidden>
           {[1, 2, 3, 4, 5].map((n) => (
             <li key={n} className="plan-card__cell">
               <span className={"plan-welcome__ghost" + (n === 1 ? " is-next" : "")}>{n}</span>
