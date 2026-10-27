@@ -819,9 +819,8 @@ function ExerciseBlock({
         <span className="exercise__name">{e.name}</span>
         {/* Done one side at a time: the kg are for one arm. */}
         {e.oneArm && (
-          <span className="one-arm-tag">
+          <span className="one-arm-tag" role="img" aria-label="One arm" title="One arm">
             <OneArm aria-hidden />
-            One arm
           </span>
         )}
         {e.target && (
@@ -859,7 +858,7 @@ function ExerciseBlock({
             <div className="set-line set-line--head" aria-hidden>
               <span>Set</span>
               <span>Previous</span>
-              <span>{e.oneArm ? "kg / arm" : "kg"}</span>
+              <span>kg</span>
               <span>Reps</span>
               <span>Done</span>
             </div>
