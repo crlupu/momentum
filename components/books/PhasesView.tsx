@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { ChevronRight, ReorderLines } from "../icons";
 import { Tracker, dateKey, type Book } from "@/lib/tracker";
+import type { TrackerState } from "@/lib/model";
 import * as R from "@/lib/reading";
 import { StatusBadge, TrackDot, fmtDate, fmtDateAuto } from "./bits";
 import { useFlow } from "./flowContext";
@@ -97,19 +98,7 @@ function PhaseCard({
   const current = p.start <= today && today <= p.end;
   const span = Math.max(1, R.daysBetween(p.start, p.end));
   const time = today < p.start ? 0 : today > p.end ? 100 : Math.round((R.daysBetween(p.start, today) / span) * 100);
-  const projection = st.projected
-    ? ` At your recent pace it ends around ${fmtDateAuto(st.projected)}${st.assumed ? " (at target pace)" : ""}.`
-    : "";
-  const verdict =
-    st.flag === "done"
-      ? { tone: "is-done", text: "Done." }
-      : st.flag === "behind"
-        ? { tone: "is-behind", text: `Behind.${projection}` }
-        : st.flag === "at-risk"
-          ? { tone: "is-behind", text: `A little behind.${projection}` }
-          : st.flag === "on-track"
-            ? { tone: "is-ahead", text: `On pace.${projection}` }
-            : null;
+  const verdict = phaseVerdict(tracker.state!, p, st, today);
 
   return (
     <>
@@ -145,6 +134,33 @@ function PhaseCard({
     {st.books.length > 0 && <PhaseBooks tracker={tracker} books={st.books} phase={p} today={today} />}
     </>
   );
+}
+
+/**
+ * The phase in words, measured the way its tracks are: pages read against an
+ * even pace from the phase's first day to its last, so the verdict and each
+ * track's "N pages ahead" always agree. The last fortnight's pace only adds
+ * a warning when, kept up, it would finish after the phase ends.
+ */
+function phaseVerdict(s: TrackerState, p: R.ReadingPhase, st: R.PhaseStats, today: string): { tone: string; text: string } | null {
+  if (st.flag === "done") return { tone: "is-done", text: "Done." };
+  if (st.flag === "unknown" || today < p.start) return null;
+  const rows = R.phaseTrackPace(s, p, today);
+  const delta = rows.reduce((a, r) => a + r.delta, 0);
+  const left = rows.reduce((a, r) => a + (r.planned - r.actual), 0);
+  const daysLeft = Math.max(1, R.daysBetween(today, p.end));
+  const perDay = Math.ceil(left / daysLeft);
+  const n = (v: number) => v.toLocaleString();
+  const pages = (v: number) => `${n(Math.abs(v))} page${Math.abs(v) === 1 ? "" : "s"}`;
+  if (today > p.end) return { tone: "is-behind", text: `Past its end with ${pages(left)} to go.` };
+  const late = st.projected && st.projected > p.end;
+  const slowing = late ? ` At the last two weeks\u2019 pace it ends around ${fmtDateAuto(st.projected!)}; ${n(perDay)} pages a day finishes on time.` : "";
+  if (delta >= 0) {
+    return late
+      ? { tone: "is-behind", text: `${delta ? `${pages(delta)} ahead` : "On pace"}, but slowing.${slowing}` }
+      : { tone: "is-ahead", text: delta ? `On pace \u00b7 ${pages(delta)} ahead.` : "On pace." };
+  }
+  return { tone: "is-behind", text: `${pages(delta)} behind. ${n(perDay)} pages a day catches up by ${fmtDateAuto(p.end)}.` };
 }
 
 /** A track's standing in the phase: pages ahead of or behind an even pace. */
