@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Dumbbell,
   MoreHorizontal,
+  OneArm,
   Plus,
   Trash2,
   Undo } from "./icons";
@@ -816,6 +817,13 @@ function ExerciseBlock({
     >
       <div className="exercise__head">
         <span className="exercise__name">{e.name}</span>
+        {/* Done one side at a time: the kg are for one arm. */}
+        {e.oneArm && (
+          <span className="one-arm-tag">
+            <OneArm aria-hidden />
+            One arm
+          </span>
+        )}
         {e.target && (
           <span className="exercise__target" aria-label={`Recommended: ${formatTarget(e.target)}`}>
             {formatTarget(e.target)}
@@ -851,7 +859,7 @@ function ExerciseBlock({
             <div className="set-line set-line--head" aria-hidden>
               <span>Set</span>
               <span>Previous</span>
-              <span>kg</span>
+              <span>{e.oneArm ? "kg / arm" : "kg"}</span>
               <span>Reps</span>
               <span>Done</span>
             </div>
@@ -1032,6 +1040,7 @@ export function ActiveWorkoutPanel({
                 className={"live-chip" + (i === shownIdx ? " is-current" : "") + (e.done ? " is-done" : "")}
                 onClick={() => setPicked(e.exerciseId)}
               >
+                {e.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
                 {e.name} · {d}/{e.sets.length}
               </button>
             );
@@ -1067,7 +1076,10 @@ export function ActiveWorkoutPanel({
         >
           <span className="flex min-w-0 flex-1 flex-col text-start">
             <span className="live-next__label">Up next</span>
-            <span className="live-next__name">{upNext.name}</span>
+            <span className="live-next__name">
+              {upNext.name}
+              {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
+            </span>
           </span>
           {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
           <ChevronRight className="group-row__chev" aria-hidden />

@@ -28,6 +28,7 @@ export {
   MdContentCopy as Copy,
   MdRestore as RotateCcw,
   MdUndo as Undo,
+  MdBackHand as OneArm,
   MdPlaylistAdd as ListPlus,
   MdPlayArrow as Play,
   MdSettings as Settings,
