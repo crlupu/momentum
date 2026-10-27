@@ -4,7 +4,8 @@ import { fmtDate } from "@/lib/dates";
 
 import { memo, useState } from "react";
 
-import { Card, Stat } from "./ui";
+import { Card } from "./ui";
+import { CardBars, SummaryCard } from "./SummaryCard";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 import { routineCompletions } from "@/lib/routines";
 
@@ -86,17 +87,7 @@ function Heatmap({
 /** One figure and its label. Neutral: the three figures are peers, and
  *  giving each its own colour would suggest they meant different things. */
 
-/** Busier days climb the palette ramp instead of every bar being one colour. */
-function rampStep(n: number, max: number): string {
-  if (n <= 0) return "var(--default)";
-  const step = Math.min(5, Math.max(1, Math.ceil((n / max) * 5)));
-  return `var(--scale-${step})`;
-}
 
-/** Bars are filled with the fill-icon gradient, scaled by how busy the day was. */
-function barFill(n: number): string {
-  return n > 0 ? "var(--chart-1)" : "var(--default)";
-}
 
 /* Memoised: its only prop is the tracker, which is now a stable object, so
    this re-renders when the data changes rather than whenever the page does. */
@@ -109,7 +100,6 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const counts = days.map((d) => allMap[dateKey(d)] ?? 0);
-  const max = Math.max(1, ...counts);
 
   const mPrefix = dateKey().slice(0, 7);
   const monthEntries = Object.entries(allMap).filter(([k]) => k.startsWith(mPrefix));
@@ -137,50 +127,21 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <Card.Content className="p-4 md:p-5">
-          <h2 className="mb-3 text-lg font-semibold">
-            {new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-          </h2>
-          <div className="stat-grid stat-grid--3">
-            <Stat value={mTotal} label="Completions" />
-            <Stat
-              value={best ? best[1] : "–"}
-              label={best ? `Best day, ${fmtDate(best[0])}` : "Best day"}
-            />
-            <Stat value={avg} label="Average per active day" />
-          </div>
-
-          <h3 className="group-label mt-4 border-t border-[var(--separator)] pt-3">
-            Each day, last 14 days
-          </h3>
-          <div className="flex h-[150px] items-end gap-1.5 pt-2">
-            {days.map((d, i) => (
-              <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                <span
-                  className="font-mono-n text-[11px] font-semibold"
-                  style={{ color: counts[i] ? "var(--foreground)" : "transparent" }}
-                >
-                  {counts[i] || ""}
-                </span>
-                <div
-                  className="w-full max-w-[34px]"
-                  style={{
-                    height: Math.max(3, (counts[i] / max) * 110),
-                    background: barFill(counts[i]),
-                  }}
-                />
-                <span className="text-[11px] leading-none whitespace-nowrap tabular-nums text-[var(--muted)]">
-                  <span className="md:hidden">{d.getDate()}</span>
-                  <span className="hidden md:inline">
-                    {d.getDate()}/{d.getMonth() + 1}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card.Content>
-      </Card>
+      {/* The month in Today's anatomy: one figure, the last 14 days as bars, three figures. */}
+      <SummaryCard
+        aria-label="This month"
+        label={new Date().toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+        aside="Last 14 days"
+        figure={mTotal}
+        detail={mTotal === 1 ? "completion" : "completions"}
+        figures={[
+          { value: best ? best[1] : "–", label: best ? `best, ${fmtDate(best[0])}` : "best day" },
+          { value: avg, label: "per active day" },
+          { value: counts[counts.length - 1], label: "today" },
+        ]}
+      >
+        <CardBars values={counts} labels={days.map((d) => String(d.getDate()))} highlight={counts.length - 1} height={72} />
+      </SummaryCard>
 
       <Card>
         <Card.Content className="p-4 md:p-5">

@@ -134,10 +134,13 @@ export function PathsView({
       ) : (
         visible.map((sec) => {
           const editing = editingId === sec.id;
-          const open = editing || !collapsed.includes(sec.id);
+          // General alone, with no paths beside it, needs no heading of its own.
+          const lone = !editable && visible.length === 1 && sec.id === GENERAL;
+          const open = editing || lone || !collapsed.includes(sec.id);
           const prog = pathProgress(sec.all);
           return (
             <section key={sec.id} className="path">
+              {!lone && (
               <div className="path__headrow">
                 <button
                   type="button"
@@ -161,6 +164,7 @@ export function PathsView({
                   </button>
                 )}
               </div>
+              )}
               {editing ? (
                 <SectionEdit
                   tracker={tracker}

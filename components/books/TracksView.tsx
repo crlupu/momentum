@@ -405,7 +405,7 @@ export function TrackPageView({ tracker, track }: { tracker: Tracker; track: R.R
                 <QueueLine key={b.id} book={b} perDay={track.dailyTarget} />
               ))}
               <li>
-                <InsertRow label="Add Book" onPress={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })} />
+                <InsertRow label="Add book" onPress={() => flow.open({ kind: "edit", bookId: null, trackId: track.id })} />
               </li>
             </ul>
           </SortableContext>

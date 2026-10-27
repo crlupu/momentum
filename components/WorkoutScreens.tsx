@@ -24,7 +24,7 @@ import { ChevronRight, Minus, Plus, ReorderLines } from "./icons";
 import { usePending } from "./ActionButton";
 import { Tracker, blockExercises, formatTarget, type Exercise, type ExerciseTarget, type Workout } from "@/lib/tracker";
 
-/** Every workout, each a row that opens its page; New Workout at the end. */
+/** Every workout, each a row that opens its page; New workout at the end. */
 export function WorkoutsList({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const [creating, setCreating] = useState(false);
@@ -45,10 +45,10 @@ export function WorkoutsList({ tracker }: { tracker: Tracker }) {
           </li>
         ))}
         <li>
-          <InsertRow label="New Workout" onPress={() => setCreating(true)} />
+          <InsertRow label="New workout" onPress={() => setCreating(true)} />
         </li>
       </ul>
-      <Modal open={creating} onClose={() => setCreating(false)} title="New Workout">
+      <Modal open={creating} onClose={() => setCreating(false)} title="New workout">
         {creating && <NewWorkoutForm tracker={tracker} onDone={() => setCreating(false)} />}
       </Modal>
     </div>
@@ -136,7 +136,7 @@ export function WorkoutScreen({ tracker, workout, onDeleted }: { tracker: Tracke
                 <ExerciseLine key={ex.id} tracker={tracker} workout={workout} exercise={ex} onOpen={() => setSheet(ex)} />
               ))}
               <li>
-                <InsertRow label="Add Exercise" onPress={() => setSheet("new")} />
+                <InsertRow label="Add exercise" onPress={() => setSheet("new")} />
               </li>
             </ul>
           </SortableContext>

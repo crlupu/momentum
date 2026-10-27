@@ -452,7 +452,8 @@ export function planSkipsOf(s: TrackerState): Record<string, string[]> {
 }
 
 /** How far back a step not done waits to be caught up. */
-export const LEFTOVER_DAYS = 7;
+/** How many plan days back leftovers reach: older misses go quietly, the week view keeps them. */
+export const LEFTOVER_DAYS = 2;
 
 export type Leftover = { day: string; x: DayStep };
 
@@ -460,12 +461,25 @@ export type Leftover = { day: string; x: DayStep };
 export function leftovers(s: TrackerState, plan: DayPlan, today: string = dateKey()): Leftover[] {
   const skips = planSkipsOf(s);
   const out: Leftover[] = [];
-  for (let i = 1; i <= LEFTOVER_DAYS; i++) {
+  // The last plan days, not calendar days: Monday still sees Friday.
+  let planDays = 0;
+  for (let i = 1; i <= 7 && planDays < LEFTOVER_DAYS; i++) {
     const day = addDays(today, -i);
+    const steps = stepsOn(s, plan, day);
+    if (!steps.length) continue;
+    planDays++;
     const skipped = skips[day] ?? [];
-    for (const x of stepsOn(s, plan, day)) if (!x.done && !skipped.includes(x.step.id)) out.push({ day, x });
+    for (const x of steps) if (!x.done && !skipped.includes(x.step.id)) out.push({ day, x });
   }
   return out;
+}
+
+/** "Mon", "Fri–Mon": the days leftovers come from, oldest first. */
+export function leftoverDays(days: string[]): string {
+  const u = [...new Set(days)].sort();
+  if (!u.length) return "";
+  const first = WEEKDAY[weekdayOf(u[0])];
+  return u.length === 1 ? first : `${first}\u2013${WEEKDAY[weekdayOf(u[u.length - 1])]}`;
 }
 
 /** The skips with some (day, step) pairs added; older ones pruned. */

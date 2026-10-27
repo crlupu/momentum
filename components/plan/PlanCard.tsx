@@ -4,11 +4,11 @@ import Link from "next/link";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { useEffect, useState } from "react";
 import {
-  WEEKDAY,
   WEEKDAY_LONG,
   focusElapsed,
   focusMinutes,
   hours,
+  leftoverDays,
   leftovers,
   stepsOn,
   summarizeWeek,
@@ -76,7 +76,7 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           {allDone && <p className="momentum__detail momentum__next">Every step is done. See you tomorrow.</p>}
         </div>
         {/* One row, the list below names them; past eight they shrink to fit. */}
-        <ol className={"plan-card__tiles" + (cols > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        <ol className={"plan-card__tiles" + (cols > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, var(--tile-max)))` }}>
           {steps.map((x) => (
             <li key={x.step.id} className="plan-card__cell" title={x.name}>
               <span className={"momentum__tile" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
@@ -93,10 +93,10 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
         <a href="#leftovers" className="plan-card__week">
           <span className="plan-card__week-label">Earlier</span>
           <span className="plan-card__week-rings summary-card__band-text">
-            {left.length} step{left.length === 1 ? "" : "s"} left from {[...new Set(left.map((l) => WEEKDAY[weekdayOf(l.day)]))].join(", ")}
+            {left.length} left from {leftoverDays(left.map((l) => l.day))}
           </span>
           <span className="plan-card__week-goals">
-            Catch up
+            Review
             <ChevronRight aria-hidden />
           </span>
         </a>
@@ -219,7 +219,7 @@ export function PlanWelcome() {
             The same steps every workday, in order. Read, gym, a video: each can be one thing, or a different one each day.
           </p>
         </div>
-        <ol className="plan-card__tiles" style={{ gridTemplateColumns: `repeat(${TILE_COLUMNS}, minmax(0, 1fr))` }} aria-hidden>
+        <ol className="plan-card__tiles" style={{ gridTemplateColumns: `repeat(${TILE_COLUMNS}, minmax(0, var(--tile-max)))` }} aria-hidden>
           {[1, 2, 3, 4, 5].map((n) => (
             <li key={n} className="plan-card__cell">
               <span className={"plan-welcome__ghost" + (n === 1 ? " is-next" : "")}>{n}</span>

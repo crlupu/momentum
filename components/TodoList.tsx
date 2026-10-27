@@ -93,9 +93,6 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
         <Card.Content className="px-3 py-3 md:px-4">
           {/* The add is the list's first row: type and press return. */}
           <form onSubmit={submit} className="todo-add">
-            <span className="todo-add__mark" aria-hidden>
-              <Plus />
-            </span>
             <input
               aria-label="New to-do"
               placeholder="New to-do"
@@ -104,11 +101,9 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
               onChange={(e) => setTitle(e.target.value)}
               className="todo-add__input"
             />
-            {title.trim() && (
-              <button type="submit" className="todo-add__go" disabled={pending}>
-                Add
-              </button>
-            )}
+            <button type="submit" className="icon-disc todo-add__plus" aria-label="Add to-do" disabled={pending || !title.trim()}>
+              <Plus />
+            </button>
           </form>
 
           {open.length === 0 ? (

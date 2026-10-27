@@ -38,10 +38,11 @@ import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { Input } from "../ui";
 import { Segmented } from "../books/bits";
-import { Check, ChevronDown, ChevronRight, Plus, ReorderLines, Search } from "../icons";
+import { Check, ChevronDown, ChevronRight, ReorderLines, Search } from "../icons";
 import * as R from "@/lib/reading";
 import { columnCards, projectFinished } from "@/lib/projects";
 import { PlanGlyph, PlanTile } from "./bits";
+import { InsertRow } from "../InsertRow";
 
 const EMPTY: DayPlan = { days: DEFAULT_DAYS, steps: [] };
 const ICON_NAME: Record<PlanIcon, string> = { book: "Read", gym: "Gym", video: "Video", learn: "Learn", task: "Task", target: "Focus" };
@@ -112,10 +113,9 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
               </ol>
             </SortableContext>
           </DndContext>
-          <button type="button" className="plan-steps__add" onClick={() => setEditing("new")}>
-            <Plus aria-hidden />
-            Add step
-          </button>
+          <div className="plan-steps__add-row">
+            <InsertRow label="Add step" onPress={() => setEditing("new")} />
+          </div>
         </div>
         <p className="plan-note">
           {plan.steps.length > 1 ? "Drag ≡ to reorder. " : ""}Tap a step to change what it is each day.

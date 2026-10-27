@@ -298,7 +298,7 @@ export function GoalRow({
             {meta}
             {due && (
               <>
-                <span aria-hidden>·</span>
+                <span aria-hidden> · </span>
                 <span className="goal-row__due">{due}</span>
               </>
             )}
