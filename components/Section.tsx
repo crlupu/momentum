@@ -2,8 +2,6 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { sectionTitle, type SectionId } from "@/components/sections";
-import { useShell } from "@/components/AppShell";
-import { Apps } from "@/components/icons";
 
 /**
  * The heading that introduces a section: its title, as the page's large
@@ -68,11 +66,10 @@ export function SectionPage({
   subtitle?: ReactNode;
   /** Sits under the large title, before the content: a switch between pages. */
   header?: ReactNode;
-  /** Beside the title, before More: the page's own actions. */
+  /** Beside the title: the page's own actions. (More is in the tab bar.) */
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { openMore } = useShell();
   const titleRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
 
@@ -90,32 +87,16 @@ export function SectionPage({
     return () => io.disconnect();
   }, []);
 
-  const more = (
-    <button type="button" onClick={openMore} aria-label="More" className="more-button lg:hidden">
-      <Apps aria-hidden />
-    </button>
-  );
-
   return (
     <section id={id} className="section-panel">
       {/* Compact bar: phones and tablets, once the large title is gone. */}
       <div className={"nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")} aria-hidden={!compact}>
         <span className="nav-compact__title">{title ?? sectionTitle(id)}</span>
-        <button
-          type="button"
-          onClick={openMore}
-          aria-label="More"
-          tabIndex={compact ? 0 : -1}
-          className="more-button nav-compact__more"
-        >
-          <Apps aria-hidden />
-        </button>
       </div>
 
       <div ref={titleRef}>
         <SectionBand id={id} title={title} size={size} subtitle={subtitle}>
           {actions}
-          {more}
         </SectionBand>
       </div>
       {header}

@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+  IoDocumentTextOutline, IoHeart, IoCalendarClearOutline, IoListOutline, IoContrastOutline, IoEllipsisHorizontal, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
-import { Tracker } from "@/lib/tracker";
+import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
+import { routineCompletions } from "@/lib/routines";
+import { WEEKDAY, planOf, summarizeWeek, weekNumber, weekOf } from "@/lib/plan";
+import type { TrackerState } from "@/lib/model";
+import { useTheme } from "next-themes";
 import {
   NAV, navHolds, navPath, sectionPath, sectionTitle, trimPath, type NavId, type SectionId,
 } from "./sections";
@@ -125,7 +129,7 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
  * Phone and tablet navigation: a tab bar along the bottom, below 1056px.
  * Five tabs, one per section where things get recorded. Always visible.
  */
-export function TabBar() {
+export function TabBar({ onMore }: { onMore: () => void }) {
   const current = useCurrentPath();
   const router = useRouter();
   // Tabs switch on touch-down, as native tab bars do, rather than waiting
@@ -154,10 +158,15 @@ export function TabBar() {
             }}
           >
             <Icon aria-hidden />
-            <span>{title}</span>
+            <span className="tabbar__label">{title}</span>
           </Link>
         );
       })}
+      {/* More: Progress, Log, the week and plan, settings — where the thumb is. */}
+      <span className="tabbar__rule" aria-hidden />
+      <button type="button" className="tabbar__tab tabbar__more" aria-label="More" onClick={onMore}>
+        <IoEllipsisHorizontal aria-hidden />
+      </button>
     </nav>
   );
 }
@@ -202,29 +211,7 @@ export function MoreSheet({
           </button>
         </div>
 
-        <ul className="inset-list">
-          {[...REVIEW, "config" as SectionId].map((id) => {
-            const href = sectionPath(id);
-            const active = trimPath(href) === current;
-            const Icon = ICON[id as "charts" | "log" | "config"];
-            return (
-              <li key={id}>
-                <Link
-                  href={href}
-                  onClick={onClose}
-                  aria-current={active ? "page" : undefined}
-                  className="inset-list__row"
-                >
-                  <span className="inset-list__icon" aria-hidden>
-                    <Icon />
-                  </span>
-                  <span className="flex-1">{sectionTitle(id)}</span>
-                  <ChevronRight className="inset-list__chevron" aria-hidden />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <MoreGroups tracker={tracker} onClose={onClose} current={current} />
 
         {tracker.user && (
           <ul className="inset-list mt-5">
@@ -243,5 +230,84 @@ export function MoreSheet({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** Things done on a day, as the Log lists them. */
+function loggedOn(s: TrackerState, day: string): number {
+  return (
+    s.todos.filter((t) => t.done && t.doneDate === day).length +
+    s.goals.filter((g) => g.done && g.doneDate === day).length +
+    s.completions.filter((c) => c.date === day).length +
+    s.workoutSessions.filter((w) => w.date === day).length +
+    s.calories.filter((c) => c.date === day).length +
+    s.macros.filter((m) => m.date === day && (m.protein || m.fiber)).length +
+    s.cardio.filter((c) => c.date === day).length
+  );
+}
+
+/**
+ * More's places as grouped rows, each with its number on the right, as iOS
+ * Settings does: Look back (Progress, Log), Plan (the Week, the Day plan)
+ * and App (Appearance, Settings).
+ */
+function MoreGroups({ tracker, onClose, current }: { tracker: Tracker; onClose: () => void; current: string }) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const s = tracker.state;
+  if (!s) return null;
+  const today = dateKey();
+  const month = today.slice(0, 7);
+  const byDay = completionsByDate([...s.completions, ...routineCompletions(s)]);
+  const monthDone = Object.entries(byDay).filter(([k]) => k.startsWith(month)).reduce((a, [, n]) => a + n, 0);
+  const week = summarizeWeek(s, weekOf(today), today);
+  const plan = planOf(s);
+  const look = mounted ? (theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System") : "";
+  const groups: { head: string; rows: { href: string; icon: IconType; title: string; value: string }[] }[] = [
+    {
+      head: "Look back",
+      rows: [
+        { href: sectionPath("charts"), icon: IoBarChartOutline, title: "Progress", value: `${monthDone} this month` },
+        { href: sectionPath("log"), icon: IoDocumentTextOutline, title: "Log", value: `${loggedOn(s, today)} today` },
+      ],
+    },
+    {
+      head: "Plan",
+      rows: [
+        { href: "/week", icon: IoCalendarClearOutline, title: `Week ${weekNumber(week.week)}`, value: `${week.daysDone} of ${week.daysPlanned}` },
+        { href: "/plan", icon: IoListOutline, title: "Day plan", value: plan ? `${plan.steps.length} step${plan.steps.length === 1 ? "" : "s"}` : "Make one" },
+      ],
+    },
+    {
+      head: "App",
+      rows: [
+        { href: "/configuration?view=appearance", icon: IoContrastOutline, title: "Appearance", value: look },
+        { href: sectionPath("config"), icon: IoSettingsOutline, title: "Settings", value: "" },
+      ],
+    },
+  ];
+  return (
+    <>
+      {groups.map((g) => (
+        <section key={g.head} className="more-group">
+          <h3 className="more-group__head">{g.head}</h3>
+          <ul className="inset-list">
+            {g.rows.map((r) => (
+              <li key={r.href}>
+                <Link href={r.href} onClick={onClose} aria-current={trimPath(r.href) === current ? "page" : undefined} className="inset-list__row">
+                  <span className="inset-list__icon" aria-hidden>
+                    <r.icon />
+                  </span>
+                  <span className="flex-1">{r.title}</span>
+                  {r.value && <span className="more-value font-mono-n">{r.value}</span>}
+                  <ChevronRight className="inset-list__chevron" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </>
   );
 }
