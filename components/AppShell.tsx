@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </AuthGate>
         </main>
 
-        {!gated && <TabBar />}
+        {!gated && <TabBar onMore={() => setMoreOpen(true)} />}
         <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} tracker={tracker} />
 
         <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
