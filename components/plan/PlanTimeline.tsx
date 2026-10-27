@@ -28,6 +28,7 @@ import { GoalDetail, GoalTitle } from "../GoalDetail";
 import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
 import { Check, ChevronDown, Play, Swap } from "../icons";
+import { doneThisWeek } from "@/lib/weekly";
 
 import { PlanGlyph } from "./bits";
 
@@ -164,7 +165,11 @@ function StepRow({
       <div className="plan-row__main">
         <button type="button" className="plan-row__open" aria-expanded={!!shown} onClick={() => setOpen((v) => !v)}>
           <span className="plan-row__n">{dayLabel ?? n}</span>
-          <span className="area-tile plan-row__tile" aria-hidden>
+          <span
+            className={"area-tile plan-row__tile" + (x.it?.kind === "weekly" ? " weekly-tile" : "")}
+            style={x.it?.kind === "weekly" && x.it.cat ? { ["--cat" as string]: x.it.cat.color } : undefined}
+            aria-hidden
+          >
             <PlanGlyph icon={x.icon} />
           </span>
           {/* One line: what it is. The tile says the kind; the actions say the rest. */}
@@ -323,6 +328,26 @@ function StepActions({
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
         </Link>
+        {swap}
+      </div>
+    );
+  }
+  if (it.kind === "weekly") {
+    // Done for the day it's on; it counts toward the task's week.
+    const n = doneThisWeek(it.item, day);
+    return (
+      <div className="plan-row__actions">
+        <button
+          type="button"
+          className="pill-link pill-link--primary"
+          disabled={pending}
+          onClick={() => void run(() => tracker.toggleWeeklyTask(it.item.id, day))}
+        >
+          <Check aria-hidden /> <span className="pill-link__text">Done for {leftover ? WEEKDAY[weekdayOf(day)] : "today"}</span>
+        </button>
+        <span className="plan-row__note">
+          {n} of {it.item.times} this week
+        </span>
         {swap}
       </div>
     );

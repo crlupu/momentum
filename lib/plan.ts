@@ -13,7 +13,8 @@
  * The week is done when every goal is and every plan day was completed.
  */
 
-import { dateKey, daysSinceEpoch, goalStatus, uid, type Book, type Goal, type TrackerState, type Workout } from "./model";
+import { dateKey, daysSinceEpoch, goalStatus, uid, type Book, type Category, type Goal, type TrackerState, type WeeklyTask, type Workout } from "./model";
+import { categoryIcon, weeklyTasksOf } from "./weekly";
 import * as R from "./reading";
 import { columnCards, type Project } from "./projects";
 
@@ -22,7 +23,7 @@ import { columnCards, type Project } from "./projects";
  * open is today's); "book" is the old form, read as its track. A focus step
  * is time: `minutes` on a project (`id`), or on nothing in particular ("").
  */
-export type PlanKind = "goal" | "book" | "workout" | "track" | "focus";
+export type PlanKind = "goal" | "book" | "workout" | "track" | "focus" | "weekly";
 export type PlanRef = { kind: PlanKind; id: string; minutes?: number };
 
 /** A stretch of focused work, logged when it ends. */
@@ -128,7 +129,7 @@ function ref(v: unknown): PlanRef | null {
   const r = v as Record<string, unknown>;
   if (r.kind === "focus")
     return { kind: "focus", id: typeof r.id === "string" ? r.id : "", minutes: typeof r.minutes === "number" && r.minutes > 0 ? r.minutes : 50 };
-  return (r.kind === "goal" || r.kind === "book" || r.kind === "workout" || r.kind === "track") && typeof r.id === "string"
+  return (r.kind === "goal" || r.kind === "book" || r.kind === "workout" || r.kind === "track" || r.kind === "weekly") && typeof r.id === "string"
     ? { kind: r.kind, id: r.id }
     : null;
 }
@@ -304,7 +305,9 @@ export type Resolved =
   | { kind: "workout"; item: Workout }
   /** A track, with the book it has open, if any. */
   | { kind: "track"; item: R.ReadingTrack; book?: Book }
-  | { kind: "focus"; minutes: number; project?: Project };
+  | { kind: "focus"; minutes: number; project?: Project }
+  /** A weekly task, with its category (whose icon it wears). */
+  | { kind: "weekly"; item: WeeklyTask; cat?: Category };
 
 export function resolve(s: TrackerState, r: PlanRef | null | undefined): Resolved | null {
   if (!r) return null;
@@ -323,6 +326,10 @@ export function resolve(s: TrackerState, r: PlanRef | null | undefined): Resolve
   if (r.kind === "focus") {
     const project = r.id ? s.projects.find((p) => p.id === r.id) : undefined;
     return { kind: "focus", minutes: r.minutes ?? 50, project };
+  }
+  if (r.kind === "weekly") {
+    const t = weeklyTasksOf(s).find((x) => x.id === r.id);
+    return t ? { kind: "weekly", item: t, cat: s.categories.find((c) => c.id === t.catId) } : null;
   }
   const w = s.workouts.find((x) => x.id === r.id);
   return w ? { kind: "workout", item: w } : null;
@@ -381,6 +388,7 @@ export function askOf(s: TrackerState, it: Resolved | null): string {
     }
     return b.pages > 0 ? `p. ${b.read} of ${b.pages}` : `p. ${b.read}`;
   }
+  if (it.kind === "weekly") return `${it.cat?.name ?? "Weekly"} \u00b7 ${it.item.times}\u00d7 a week`;
   const n = it.item.exercises.length;
   return `${n} exercise${n === 1 ? "" : "s"}`;
 }
@@ -400,6 +408,7 @@ function activityCount(s: TrackerState, r: PlanRef, day: string): number {
     return n || (s.books.some((b) => ids.has(b.id) && b.touched === day) ? 1 : 0);
   }
   if (r.kind === "focus") return Math.floor(focusMinutes(s, day, r.id || undefined) / (r.minutes || 50));
+  if (r.kind === "weekly") return weeklyTasksOf(s).find((t) => t.id === r.id)?.ticks.includes(day) ? 1 : 0;
   return s.workoutSessions.filter((e) => e.workoutId === r.id && e.date === day).length;
 }
 
@@ -450,7 +459,10 @@ export function stepsOn(s: TrackerState, plan: DayPlan, day: string): DayStep[] 
     const auto = !!r && activityCount(s, r, day) > (credits[step.id] ?? 0);
     const unticked = unticks.includes(step.id);
     const donor = donorOf(s, plan, step, day, r);
-    out.push({ step, name: donor.name, icon: donor.icon, ref: r, it: resolve(s, r), done: ticks.includes(step.id) || (auto && !unticked), auto: auto && !unticked });
+    // A weekly task wears its category's icon.
+    const it = resolve(s, r);
+    const icon = it?.kind === "weekly" ? categoryIcon(it.cat) : donor.icon;
+    out.push({ step, name: donor.name, icon, ref: r, it, done: ticks.includes(step.id) || (auto && !unticked), auto: auto && !unticked });
   }
   return out;
 }
@@ -735,6 +747,8 @@ export function suggestions(s: TrackerState, week: string): Suggestion[] {
         out.push({ key: k, goal: g, label: `Read to p. ${to}`, why: `${daily} pages × ${days.length}` });
       } else if (it.kind === "workout") {
         out.push({ key: k, goal: { id: uid(), mode: "count", ref: r, target: days.length }, label: `${days.length} workout${days.length === 1 ? "" : "s"}`, why: when });
+      } else if (it.kind === "weekly") {
+        continue;
       } else if (goalStatus(it.item) !== "done") {
         out.push({ key: k, goal: { id: uid(), mode: "count", ref: r, target: days.length }, label: `${days.length} session${days.length === 1 ? "" : "s"}`, why: when });
       }

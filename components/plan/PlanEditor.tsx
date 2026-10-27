@@ -38,11 +38,12 @@ import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { Input } from "../ui";
 import { Segmented } from "../books/bits";
-import { Check, ChevronDown, ChevronRight, ReorderLines, Search } from "../icons";
+import { Check, ChevronDown, ChevronRight, ReorderLines, Repeat, Search } from "../icons";
 import * as R from "@/lib/reading";
 import { columnCards, projectFinished } from "@/lib/projects";
 import { PlanGlyph, PlanTile } from "./bits";
 import { InsertRow } from "../InsertRow";
+import { categoryIcon, weeklyTasksOf } from "@/lib/weekly";
 
 const EMPTY: DayPlan = { days: DEFAULT_DAYS, steps: [] };
 const ICON_NAME: Record<PlanIcon, string> = { book: "Read", gym: "Gym", video: "Video", learn: "Learn", task: "Task", target: "Focus" };
@@ -319,6 +320,7 @@ const KIND_OF_ICON: Record<PlanIcon, Kind> = { book: "track", gym: "workout", vi
 /** Whether a pick belongs to a kind, so changing the icon keeps only picks that still fit. */
 const fits = (r: PlanRef | null, k: Kind) =>
   !r ||
+  r.kind === "weekly" ||
   (k === "track" ? r.kind === "track" || r.kind === "book" : k === "goal" || k === "video" ? r.kind === "goal" : r.kind === k);
 const isVideoCat = (name: string) => /video|talk|watch/i.test(name);
 const MINUTES = [25, 50, 90, 120];
@@ -398,7 +400,7 @@ function StepForm({
         ]}
       />
       {mode === "same" ? (
-        <Picker tracker={tracker} kind={kind} value={pick} allowNone={false} onPick={(r) => setPick(r)} />
+        <Picker tracker={tracker} kind={kind} icon={icon} value={pick} allowNone={false} onPick={(r) => setPick(r)} />
       ) : (
         <ul className="card plan-byday">
           {days.map((d) => {
@@ -425,6 +427,7 @@ function StepForm({
                     <Picker
                       tracker={tracker}
                       kind={kind}
+                      icon={icon}
                       value={v}
                       allowNone
                       onPick={(r, close = true) => {
@@ -454,6 +457,7 @@ function StepForm({
 function Picker({
   tracker,
   kind,
+  icon,
   value,
   onPick,
   allowNone,
@@ -461,6 +465,8 @@ function Picker({
   tracker: Tracker;
   /** What the step's icon says it points at. */
   kind: Kind;
+  /** The step's icon: weekly tasks in categories wearing it are offered first. */
+  icon: PlanIcon;
   value: PlanRef | null;
   /** `close` false: a change that keeps the list open (a focus length). */
   onPick: (r: PlanRef | null, close?: boolean) => void;
@@ -614,8 +620,25 @@ function Picker({
     );
   }
 
+  // Weekly tasks whose category wears the step's icon, above the rest.
+  const weekly = weeklyTasksOf(s).filter((t) => categoryIcon(s.categories.find((c) => c.id === t.catId)) === icon);
   return (
     <div className="plan-picker">
+      {weekly.length > 0 && (
+        <section>
+          <p className="plan-group">
+            <Repeat className="plan-group__icon" aria-hidden />
+            Weekly tasks
+            <span className="plan-group__n">{weekly.length}</span>
+          </p>
+          <div className="card plan-opts">
+            {weekly.map((t) => {
+              const c = s.categories.find((x) => x.id === t.catId);
+              return <Opt key={t.id} r={{ kind: "weekly", id: t.id }} dot={c?.color} title={t.title} sub={`${c?.name ?? "Weekly"} \u00b7 ${t.times}\u00d7 a week`} />;
+            })}
+          </div>
+        </section>
+      )}
       {body}
       {allowNone && (
         <div className="card plan-opts">
