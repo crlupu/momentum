@@ -23,7 +23,8 @@ import { GoalForm } from "./Forms";
 import { Tracker, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
 import { GENERAL, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
 
-const COLLAPSED_KEY = "momentum:paths-collapsed";
+/** The paths opened by hand, per device; every other one starts folded. */
+const OPEN_KEY = "momentum:paths-open";
 
 type Section = { id: string; title: string; color: string; path?: Path; all: Goal[]; shown: Goal[] };
 
@@ -59,22 +60,23 @@ export function PathsView({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newPath, setNewPath] = useState(false);
   const [addingTo, setAddingTo] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<string[]>([]);
+  const [opened, setOpened] = useState<string[]>([]);
   // One Edit for the section; while on, each path shows its own Edit.
   const [arranging, setArranging] = useState(false);
 
-  // Which paths are folded, per device. Only a convenience.
+  // Paths start folded, a progress line each; the ones opened stay open,
+  // per device. Only a convenience.
   useEffect(() => {
     try {
-      const v = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]");
-      if (Array.isArray(v)) setCollapsed(v.filter((x) => typeof x === "string"));
+      const v = JSON.parse(localStorage.getItem(OPEN_KEY) ?? "[]");
+      if (Array.isArray(v)) setOpened(v.filter((x) => typeof x === "string"));
     } catch {}
   }, []);
   const toggle = (id: string) => {
-    const next = collapsed.includes(id) ? collapsed.filter((x) => x !== id) : [...collapsed, id];
-    setCollapsed(next);
+    const next = opened.includes(id) ? opened.filter((x) => x !== id) : [...opened, id];
+    setOpened(next);
     try {
-      localStorage.setItem(COLLAPSED_KEY, JSON.stringify(next));
+      localStorage.setItem(OPEN_KEY, JSON.stringify(next));
     } catch {}
   };
 
@@ -134,13 +136,12 @@ export function PathsView({
       ) : (
         visible.map((sec) => {
           const editing = editingId === sec.id;
-          // General alone, with no paths beside it, needs no heading of its own.
-          const lone = !editable && visible.length === 1 && sec.id === GENERAL;
-          const open = editing || lone || !collapsed.includes(sec.id);
+          // General alone, with no paths beside it, is simply the goals.
+          const lone = visible.length === 1 && sec.id === GENERAL;
+          const open = editing || opened.includes(sec.id);
           const prog = pathProgress(sec.all);
           return (
             <section key={sec.id} className="path">
-              {!lone && (
               <div className="path__headrow">
                 <button
                   type="button"
@@ -148,7 +149,7 @@ export function PathsView({
                   aria-expanded={open}
                   onClick={() => !editing && toggle(sec.id)}
                 >
-                  <span className="path__title">{sec.title}</span>
+                  <span className="path__title">{lone ? "Goals" : sec.title}</span>
                   <span className="path__pct font-mono-n">{prog.pct}%</span>
                   {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
                 </button>
@@ -164,7 +165,6 @@ export function PathsView({
                   </button>
                 )}
               </div>
-              )}
               {editing ? (
                 <SectionEdit
                   tracker={tracker}
@@ -175,7 +175,7 @@ export function PathsView({
                 <div className="card path__card">
                   {/* Open, the rows say how far along it is; folded, this line does. */}
                   {!open && (
-                  <div className="path__summary">
+                  <button type="button" className="path__summary" aria-label={`Show ${lone ? "goals" : sec.title}`} onClick={() => toggle(sec.id)}>
                     <div className="progress-track h-1">
                       <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
                     </div>
@@ -183,7 +183,7 @@ export function PathsView({
                       {prog.done} of {prog.total} items · {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
                       {sec.all.length === 1 ? "goal" : "goals"}
                     </span>
-                  </div>
+                  </button>
                   )}
                   {open && (
                     <ul className="goal-list__rows">
