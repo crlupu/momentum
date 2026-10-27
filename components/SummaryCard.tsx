@@ -155,21 +155,27 @@ function Band({ band }: { band: CardBand }) {
   return <div className="plan-card__week">{inner}</div>;
 }
 
-/** Tiles in a row: the visual for things made of parts (steps, meals, exercises). */
+/** Every tile row in the app is eight to a line, so a tile is the same size on every card. */
+export const TILE_COLUMNS = 8;
+
+/**
+ * Tiles in a row: the visual for things made of parts (steps, meals,
+ * exercises). Always Today's size: eight to a line, more only when there are
+ * more than eight, so they stay on one row. Names go to the tooltip and
+ * screen readers; the card's line or the list under it says them.
+ */
 export function CardTiles({
   items,
-  columns,
 }: {
   items: { key: string; icon: ReactNode; label?: ReactNode; state: "done" | "next" | "todo"; title?: string }[];
-  columns?: number;
 }) {
-  const n = columns ?? Math.min(Math.max(items.length, 5), 8);
+  const n = Math.max(items.length, TILE_COLUMNS);
   return (
-    <ol className="plan-card__tiles" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+    <ol className={"plan-card__tiles" + (n > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
       {items.map((x) => (
         <li key={x.key} className="plan-card__cell" title={x.title}>
           <span className={"momentum__tile" + (x.state === "done" ? " is-done" : x.state === "next" ? " is-next" : "")}>{x.icon}</span>
-          {x.label != null && <span className={"plan-card__label" + (x.state === "next" ? " is-next" : "")}>{x.label}</span>}
+          {x.label != null && <span className="sr-only">{x.label}</span>}
         </li>
       ))}
     </ol>
