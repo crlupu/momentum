@@ -657,6 +657,13 @@ export type TrackerState = {
   planSwaps?: import("./plan").PlanSwaps;
   /** Plan steps let go from Left from earlier, by day. */
   planSkips?: Record<string, string[]>;
+  /** Plan steps unmarked by hand although their activity was logged, by day. */
+  planUnticks?: Record<string, string[]>;
+  /**
+   * Activity a day lent to earlier days' leftovers, by day then step: a
+   * chapter done today from Left from earlier counts for that day, not today.
+   */
+  planCredits?: Record<string, Record<string, number>>;
   /** Focused work, logged as it ends. */
   focusSessions?: import("./plan").FocusSession[];
   /** The focus block under way, if any. */

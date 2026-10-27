@@ -1,11 +1,14 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { Tracker, useTracker } from "@/lib/tracker";
 import { AuthGate } from "./AuthGate";
 import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
+import { TabPanes, isPane } from "./TabPanes";
+import { usePathname } from "next/navigation";
+import { trimPath } from "./sections";
 
 type Shell = {
   tracker: Tracker;
@@ -14,7 +17,7 @@ type Shell = {
   openMore: () => void;
 };
 
-const ShellContext = createContext<Shell | null>(null);
+export const ShellContext = createContext<Shell | null>(null);
 
 /**
  * What every page shares, and what the pages are handed.
@@ -53,12 +56,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   // Behind the sign-in screen there is nothing to navigate to yet.
   const gated = tracker.firebaseConfigured && !tracker.user;
+  const path = trimPath(usePathname() ?? "/");
+  const pane = isPane(path) ? path : null;
 
-  const shell: Shell = {
-    tracker,
-    openGoal: () => setGoalOpen(true),
-    openMore: () => setMoreOpen(true),
-  };
+  // Kept the same object until the tracker changes, so moving between
+  // pages doesn't re-render every page that reads it.
+  const shell = useMemo<Shell>(
+    () => ({ tracker, openGoal: () => setGoalOpen(true), openMore: () => setMoreOpen(true) }),
+    [tracker]
+  );
 
   return (
     <ShellContext.Provider value={shell}>
@@ -71,7 +77,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <PageSkeleton />
             ) : (
               <div className="app-content">
-                {children}
+                {/* The tabs' pages stay mounted; any other page is the route's own. */}
+                <Suspense fallback={null}>
+                  <TabPanes current={pane} />
+                </Suspense>
+                {!pane && children}
               </div>
             )}
           </AuthGate>

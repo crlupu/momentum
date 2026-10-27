@@ -2,8 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { usePageTracker } from "@/components/AppShell";
+import { usePaneParams } from "@/components/TabPanes";
 import { SectionPage } from "@/components/Section";
 import { LearningHub } from "@/components/LearningHub";
 import { ChevronLeft } from "@/components/icons";
@@ -15,7 +15,7 @@ import { ChevronLeft } from "@/components/icons";
  */
 function Education() {
   const tracker = usePageTracker();
-  const params = useSearchParams();
+  const params = usePaneParams();
   const trackId = params.get("track");
   const view = params.get("view");
   const groupId = params.get("goal");
