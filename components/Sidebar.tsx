@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, LogOut, ChevronRight } from "./icons";
@@ -127,17 +127,31 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
  */
 export function TabBar() {
   const current = useCurrentPath();
+  const router = useRouter();
+  // Tabs switch on touch-down, as native tab bars do, rather than waiting
+  // for the finger to lift; the click that follows is then let go.
+  const pressed = useRef<string | null>(null);
   return (
     <nav className="tabbar bar-material" aria-label="Sections">
       {NAV.map(({ id, title }) => {
         const active = navHolds(id, current);
         const Icon = (active ? ICON_ON : ICON)[id];
+        const href = navPath(id);
         return (
           <Link
             key={id}
-            href={navPath(id)}
+            href={href}
             aria-current={active ? "page" : undefined}
             className={"tabbar__tab" + (active ? " is-active" : "")}
+            onPointerDown={(e) => {
+              if (active || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+              pressed.current = href;
+              router.push(href);
+            }}
+            onClick={(e) => {
+              if (pressed.current === href) e.preventDefault();
+              pressed.current = null;
+            }}
           >
             <Icon aria-hidden />
             <span>{title}</span>

@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePageTracker } from "@/components/AppShell";
+import { usePaneParams, usePaneVisible } from "@/components/TabPanes";
 import { SectionPage } from "@/components/Section";
 import { HealthSwitch } from "@/components/HealthSwitch";
 import WeightTracker, { WeeklyMedians } from "@/components/WeightTracker";
@@ -20,16 +21,17 @@ import { ActiveWorkoutPanel, LiveActions } from "@/components/WorkoutsView";
  */
 function Fitness() {
   const tracker = usePageTracker();
-  const params = useSearchParams();
+  const params = usePaneParams();
   const view = params.get("view");
   const id = params.get("id");
   const router = useRouter();
   // Finishing or cancelling the live workout ends it; its screen goes back
   // to Health rather than standing empty.
   const live = view === "live" && !!tracker.state?.activeWorkout;
+  const shown = usePaneVisible();
   useEffect(() => {
-    if (view === "live" && !live) router.replace("/fitness");
-  }, [view, live, router]);
+    if (shown && view === "live" && !live) router.replace("/fitness");
+  }, [shown, view, live, router]);
   const back = (
     <Link href="/fitness" className="back-link">
       <ChevronLeft aria-hidden />

@@ -1,8 +1,9 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePageTracker } from "@/components/AppShell";
+import { usePaneParams, usePaneVisible } from "@/components/TabPanes";
 import { SectionPage } from "@/components/Section";
 import { BackToProjects, ProjectList, ProjectPage } from "@/components/ProjectsView";
 
@@ -14,14 +15,15 @@ import { BackToProjects, ProjectList, ProjectPage } from "@/components/ProjectsV
 function Projects() {
   const tracker = usePageTracker();
   const router = useRouter();
-  const params = useSearchParams();
+  const params = usePaneParams();
   const openId = params.get("p");
   const project = openId ? tracker.state?.projects.find((p) => p.id === openId) : undefined;
 
   // A project that no longer exists (deleted, or a stale link): back to the list.
+  const shown = usePaneVisible();
   useEffect(() => {
-    if (openId && tracker.state && !project) router.replace("/projects");
-  }, [openId, project, tracker.state, router]);
+    if (shown && openId && tracker.state && !project) router.replace("/projects");
+  }, [shown, openId, project, tracker.state, router]);
 
   if (project) {
     return (
