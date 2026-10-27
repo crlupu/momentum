@@ -388,16 +388,37 @@ export function askOf(s: TrackerState, it: Resolved | null): string {
 /* ------------------------------------------------------------- activity */
 
 /** Activity on what a ref points at, by day: sessions, pages, workouts. */
-function activityOn(s: TrackerState, r: PlanRef, day: string): boolean {
-  if (r.kind === "goal") return (s.learningLog ?? []).some((e) => e.goalId === r.id && e.date === day);
-  if (r.kind === "book")
-    return s.readingSessions.some((e) => e.bookId === r.id && e.date === day) || s.books.find((b) => b.id === r.id)?.touched === day;
-  if (r.kind === "track") {
-    const ids = new Set(s.books.filter((b) => b.trackId === r.id).map((b) => b.id));
-    return s.readingSessions.some((e) => ids.has(e.bookId) && e.date === day) || s.books.some((b) => ids.has(b.id) && b.touched === day);
+/**
+ * How many times a step's thing was done on a day: sessions logged on the
+ * goal, reading sessions in the track, workouts, or whole focus blocks.
+ */
+function activityCount(s: TrackerState, r: PlanRef, day: string): number {
+  if (r.kind === "goal") return (s.learningLog ?? []).filter((e) => e.goalId === r.id && e.date === day).length;
+  if (r.kind === "book" || r.kind === "track") {
+    const ids = r.kind === "book" ? new Set([r.id]) : new Set(s.books.filter((b) => b.trackId === r.id).map((b) => b.id));
+    const n = s.readingSessions.filter((e) => ids.has(e.bookId) && e.date === day).length;
+    return n || (s.books.some((b) => ids.has(b.id) && b.touched === day) ? 1 : 0);
   }
-  if (r.kind === "focus") return focusMinutes(s, day, r.id || undefined) >= (r.minutes ?? 50);
-  return s.workoutSessions.some((e) => e.workoutId === r.id && e.date === day);
+  if (r.kind === "focus") return Math.floor(focusMinutes(s, day, r.id || undefined) / (r.minutes || 50));
+  return s.workoutSessions.filter((e) => e.workoutId === r.id && e.date === day).length;
+}
+
+export function planUnticksOf(s: TrackerState): Record<string, string[]> {
+  const t = s.planUnticks as unknown;
+  return t && typeof t === "object" ? (t as Record<string, string[]>) : {};
+}
+
+export function planCreditsOf(s: TrackerState): Record<string, Record<string, number>> {
+  const t = s.planCredits as unknown;
+  return t && typeof t === "object" ? (t as Record<string, Record<string, number>>) : {};
+}
+
+/** A by-day record with entries older than 60 days dropped. */
+function pruned<T>(all: Record<string, T>, day: string): Record<string, T> {
+  const cut = addDays(day, -60);
+  const next: Record<string, T> = {};
+  for (const [d, v] of Object.entries(all)) if (d >= cut) next[d] = v;
+  return next;
 }
 
 export type DayStep = {
@@ -408,7 +429,7 @@ export type DayStep = {
   ref: PlanRef | null;
   it: Resolved | null;
   done: boolean;
-  /** Done by activity, which a tick can't undo. */
+  /** Done by what was logged that day (and not unmarked). */
   auto: boolean;
 };
 
@@ -417,14 +438,19 @@ export function stepsOn(s: TrackerState, plan: DayPlan, day: string): DayStep[] 
   const wd = weekdayOf(day);
   if (!plan.days.includes(wd) || (plan.since && day < plan.since)) return [];
   const ticks = planTicksOf(s)[day] ?? [];
+  const unticks = planUnticksOf(s)[day] ?? [];
+  const credits = planCreditsOf(s)[day] ?? {};
   const out: DayStep[] = [];
   for (const step of plan.steps) {
     const r = pickOn(s, step, day);
     // A day can skip a step: nothing picked for it that day.
     if (!step.same && !r) continue;
-    const auto = !!r && activityOn(s, r, day);
+    // Done by what was logged that day, less what earlier days' leftovers
+    // borrowed from it, unless unmarked by hand; or ticked by hand.
+    const auto = !!r && activityCount(s, r, day) > (credits[step.id] ?? 0);
+    const unticked = unticks.includes(step.id);
     const donor = donorOf(s, plan, step, day, r);
-    out.push({ step, name: donor.name, icon: donor.icon, ref: r, it: resolve(s, r), done: auto || ticks.includes(step.id), auto });
+    out.push({ step, name: donor.name, icon: donor.icon, ref: r, it: resolve(s, r), done: ticks.includes(step.id) || (auto && !unticked), auto: auto && !unticked });
   }
   return out;
 }
@@ -496,6 +522,52 @@ export function withSkips(s: TrackerState, pairs: { day: string; stepId: string 
 /** Milliseconds a focus block has run, pauses left out. */
 export function focusElapsed(f: ActiveFocus, now: number = Date.now()): number {
   return Math.max(0, (f.pausedAt ?? now) - f.startedAt - f.pausedMs);
+}
+
+/**
+ * A step's check flipped by hand, whatever made it done: off, a hand tick
+ * goes and logged activity is unmarked; on, an unmark goes (if that brings
+ * the logged activity back) or a hand tick is added.
+ */
+export function toggledPlanStep(s: TrackerState, plan: DayPlan, day: string, stepId: string): Pick<TrackerState, "planTicks" | "planUnticks"> {
+  const ticks = pruned(planTicksOf(s), day);
+  const unticks = pruned(planUnticksOf(s), day);
+  const set = (all: Record<string, string[]>, id: string, on: boolean) => {
+    const now = (all[day] ?? []).filter((x) => x !== id);
+    if (on) now.push(id);
+    if (now.length) all[day] = now;
+    else delete all[day];
+  };
+  const x = stepsOn(s, plan, day).find((y) => y.step.id === stepId);
+  if (x?.done) {
+    set(ticks, stepId, false);
+    if (x.auto) set(unticks, stepId, true);
+  } else {
+    const wasUnticked = (unticks[day] ?? []).includes(stepId);
+    set(unticks, stepId, false);
+    // Removing the unmark is enough when something was logged that day.
+    const back = wasUnticked && stepsOn({ ...s, planUnticks: unticks }, plan, day).find((y) => y.step.id === stepId)?.done;
+    if (!back) set(ticks, stepId, true);
+  }
+  return { planTicks: ticks, planUnticks: unticks };
+}
+
+/**
+ * A leftover done now: it's ticked for its own day, and today lends it the
+ * activity about to be logged, so the same chapter or workout doesn't also
+ * complete today's step.
+ */
+export function creditedLeftover(s: TrackerState, plan: DayPlan, day: string, stepId: string, today: string): Pick<TrackerState, "planTicks" | "planCredits"> {
+  const ticks = pruned(planTicksOf(s), today);
+  if (!(ticks[day] ?? []).includes(stepId)) ticks[day] = [...(ticks[day] ?? []), stepId];
+  const credits = pruned(planCreditsOf(s), today);
+  const step = plan.steps.find((x) => x.id === stepId);
+  const r = step ? pickOn(s, step, day) : null;
+  // Today's step for the same thing (a swap may have moved it).
+  const mine = r ? stepsOn(s, plan, today).find((x) => sameRef(x.ref, r)) : undefined;
+  // Only when today's own hasn't been done yet: then it's today's to keep.
+  if (mine && !mine.done) credits[today] = { ...(credits[today] ?? {}), [mine.step.id]: (credits[today]?.[mine.step.id] ?? 0) + 1 };
+  return { planTicks: ticks, planCredits: credits };
 }
 
 /** The plan with one day's hand tick on a step flipped; older ticks pruned. */

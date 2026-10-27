@@ -192,8 +192,8 @@ function StepRow({
           aria-checked={x.done}
           aria-label={`${x.name}: ${title}${dayLabel ? `, ${dayLabel}` : ""}`}
           className={"check" + (x.done ? " check--on" : "")}
-          disabled={pending || x.auto}
-          title={x.auto ? "Done: logged that day" : undefined}
+          disabled={pending}
+          title={x.auto ? "Done: logged that day. Tap to unmark." : undefined}
           onClick={() => void run(() => tracker.togglePlanStep(day, x.step.id))}
         >
           <span className="check__ring">{x.done && <Check className="h-4 w-4" aria-hidden />}</span>
@@ -225,6 +225,11 @@ function StepActions({
   const flow = useFlow();
   const { pending, run } = usePending();
   const it = x.it;
+  // Done from Left from earlier, it counts for its own day: ticked there, and
+  // today lends it the activity, so today's step isn't done by it as well.
+  // (Focus blocks already log to their step's day.)
+  const leftover = day !== dateKey();
+  const credit = () => (leftover ? tracker.creditLeftover(day, x.step.id) : Promise.resolve(true));
   // Any activity can trade places with another in this week's plan.
   const swap = (
     <>
@@ -255,7 +260,12 @@ function StepActions({
             type="button"
             className="pill-link pill-link--primary"
             disabled={pending}
-            onClick={() => void run(() => (nx.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id)))}
+            onClick={() =>
+              void run(async () => {
+                await credit();
+                return nx.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id);
+              })
+            }
           >
             <Check aria-hidden /> <span className="pill-link__text">{nx.itemId ? `Done: ${nx.title}` : "Log a session"}</span>
           </button>
@@ -273,7 +283,14 @@ function StepActions({
       <div className="plan-row__actions">
         {book ? (
           <>
-            <button type="button" className="pill-link pill-link--primary" onClick={() => flow.open({ kind: "log", bookId: book.id })}>
+            <button
+              type="button"
+              className="pill-link pill-link--primary"
+              onClick={() => {
+                void credit();
+                flow.open({ kind: "log", bookId: book.id });
+              }}
+            >
               Log pages
             </button>
             <button type="button" className="pill-link" onClick={() => flow.open({ kind: "detail", bookId: book.id })}>
@@ -296,6 +313,7 @@ function StepActions({
           type="button"
           className="pill-link pill-link--primary"
           onClick={() => {
+            void credit();
             void tracker.startWorkout(it.item.id);
             router.push("/fitness?view=live");
           }}
