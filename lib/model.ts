@@ -16,7 +16,28 @@ import type {
   ReadingTrack,
   StatusChange,
 } from "./reading";
-export type Category = { id: string; name: string; color: string };
+export type Category = {
+  id: string;
+  name: string;
+  color: string;
+  /** Its icon, worn by its weekly tasks (here and in the day plan). Absent: guessed from the name. */
+  icon?: import("./plan").PlanIcon;
+};
+
+/**
+ * Something that repeats every week without being a goal or a path: a talk
+ * to watch, a call to make. It belongs to a category and wears its icon.
+ */
+export type WeeklyTask = {
+  id: string;
+  title: string;
+  catId: string;
+  /** Times a week it's meant to be done, 1 to 7. */
+  times: number;
+  /** The days it was done, YYYY-MM-DD: once a day at most. */
+  ticks: string[];
+  createdAt: number;
+};
 
 export type Frequency = "daily" | "weekly" | "biweekly" | "monthly";
 export const FREQUENCIES: Frequency[] = ["daily", "weekly", "biweekly", "monthly"];
@@ -657,6 +678,8 @@ export type TrackerState = {
   planSwaps?: import("./plan").PlanSwaps;
   /** Plan steps let go from Left from earlier, by day. */
   planSkips?: Record<string, string[]>;
+  /** Tasks that repeat weekly outside any goal. See WeeklyTask. */
+  weeklyTasks?: WeeklyTask[];
   /** Plan steps unmarked by hand although their activity was logged, by day. */
   planUnticks?: Record<string, string[]>;
   /**

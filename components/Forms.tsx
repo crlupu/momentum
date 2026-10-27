@@ -9,6 +9,10 @@ import { useConfigEditing, useSetConfigEditing } from "./ConfigCard";
 import { usePending } from "./ActionButton";
 import { MenuSelect } from "./Menu";
 import { readableText } from "@/lib/color";
+import { PlanGlyph } from "./plan/bits";
+import { categoryIcon } from "@/lib/weekly";
+import type { PlanIcon } from "@/lib/plan";
+import type { Category } from "@/lib/model";
 import { Tracker, caloriesLeftThisWeek, CAT_COLORS, nextCategoryColor } from "@/lib/tracker";
 
 export function CatPicker({
@@ -198,6 +202,8 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
             <li key={c.id} className="cfg-row">
               <span className="cfg-dot" style={{ background: c.color }} aria-hidden />
               <span className="cfg-label">{c.name}</span>
+              {/* The icon its weekly tasks wear, on Today and in the plan. */}
+              <CategoryIconPicker tracker={tracker} cat={c} />
               {editing && (
                 <span className="cfg-actions">
                   <RowActions
@@ -229,6 +235,33 @@ export function CategoriesCard({ tracker }: { tracker: Tracker }) {
       </form>
       )}
     </div>
+  );
+}
+
+const CAT_ICONS: PlanIcon[] = ["task", "video", "learn", "gym", "book", "target"];
+const CAT_ICON_NAME: Record<PlanIcon, string> = { task: "Task", video: "Video", learn: "Learn", gym: "Gym", book: "Read", target: "Focus" };
+
+function CategoryIconPicker({ tracker, cat }: { tracker: Tracker; cat: Category }) {
+  const current = categoryIcon(cat);
+  const { pending, run } = usePending();
+  return (
+    <span className="cat-icons" role="radiogroup" aria-label={`${cat.name}'s icon`} style={{ ["--cat" as string]: cat.color }}>
+      {CAT_ICONS.map((i) => (
+        <button
+          key={i}
+          type="button"
+          role="radio"
+          aria-checked={i === current}
+          aria-label={CAT_ICON_NAME[i]}
+          title={CAT_ICON_NAME[i]}
+          className="cat-icon"
+          disabled={pending}
+          onClick={() => i !== current && void run(() => tracker.setCategoryIcon(cat.id, i))}
+        >
+          <PlanGlyph icon={i} />
+        </button>
+      ))}
+    </span>
   );
 }
 

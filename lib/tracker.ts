@@ -23,7 +23,8 @@ import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
 import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
-import { creditedLeftover, focusElapsed, planOf, toggledPlanStep, toggledPlanTick, withSkips, withSwap, type ActiveFocus, type DayPlan, type WeekGoal } from "./plan";
+import { creditedLeftover, focusElapsed, pickOn, planOf, toggledPlanStep, toggledPlanTick, withSkips, withSwap, type ActiveFocus, type DayPlan, type PlanIcon, type WeekGoal } from "./plan";
+import { toggledWeeklyTick, weeklyTasksOf } from "./weekly";
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -903,6 +904,34 @@ export function useTracker() {
     setGoalCategory: (id: string, catId: string) =>
       commit((s) => ({ ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, catId } : g)) })),
 
+    // ---- weekly tasks ----
+    addWeeklyTask: (title: string, catId: string, times: number) =>
+      commit((s) => ({
+        ...s,
+        weeklyTasks: [...weeklyTasksOf(s), { id: uid(), title: title.trim(), catId, times: Math.min(7, Math.max(1, times)), ticks: [], createdAt: Date.now() }],
+      })),
+    updateWeeklyTask: (id: string, patch: { title?: string; catId?: string; times?: number }) =>
+      commit((s) => ({
+        ...s,
+        weeklyTasks: weeklyTasksOf(s).map((t) =>
+          t.id !== id
+            ? t
+            : {
+                ...t,
+                ...(patch.title != null ? { title: patch.title.trim() } : {}),
+                ...(patch.catId ? { catId: patch.catId } : {}),
+                ...(patch.times != null ? { times: Math.min(7, Math.max(1, patch.times)) } : {}),
+              }
+        ),
+      })),
+    deleteWeeklyTask: (id: string) => commit((s) => ({ ...s, weeklyTasks: weeklyTasksOf(s).filter((t) => t.id !== id) })),
+    /** Done (or not) on a day: once a day at most. */
+    toggleWeeklyTask: (id: string, day: string = dateKey()) =>
+      commit((s) => ({ ...s, weeklyTasks: weeklyTasksOf(s).map((t) => (t.id === id ? { ...t, ticks: toggledWeeklyTick(t, day) } : t)) })),
+    /** The icon a category's weekly tasks wear. */
+    setCategoryIcon: (catId: string, icon: PlanIcon) =>
+      commit((s) => ({ ...s, categories: s.categories.map((c) => (c.id === catId ? { ...c, icon } : c)) })),
+
     // ---- recurring ----
     addRecurring: (title: string, catId: string, freq: Frequency, groupId?: string) =>
       commit((s) => ({
@@ -1082,6 +1111,12 @@ export function useTracker() {
     togglePlanStep: (day: string, stepId: string) =>
       commit((s) => {
         const plan = planOf(s);
+        // A weekly task's step is its tick for the day, so the task and the
+        // plan agree.
+        const step = plan?.steps.find((x) => x.id === stepId);
+        const r = plan && step ? pickOn(s, step, day) : null;
+        if (r?.kind === "weekly")
+          return { ...s, weeklyTasks: weeklyTasksOf(s).map((t) => (t.id === r.id ? { ...t, ticks: toggledWeeklyTick(t, day) } : t)) };
         return plan ? { ...s, ...toggledPlanStep(s, plan, day, stepId) } : { ...s, planTicks: toggledPlanTick(s, day, stepId) };
       }),
     /** A leftover being done now: counted for its own day, not today. Call before logging the activity. */

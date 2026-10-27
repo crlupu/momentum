@@ -10,6 +10,9 @@ import { BookOpen, Check, ChevronDown, ChevronRight, Dumbbell, School } from "./
 import { Tracker, dateKey } from "@/lib/tracker";
 import { REPEAT_LABEL, byRoutineOrder, routines, type Routine } from "@/lib/routines";
 import { ReadingFlow } from "./books/flow";
+import { InsertRow } from "./InsertRow";
+import { WeeklyTaskRow, WeeklyTaskSheet } from "./WeeklyTasks";
+import { doneThisWeek, weeklyTasksOf } from "@/lib/weekly";
 
 function RoutineCheckbox({ tracker, r }: { tracker: Tracker; r: Routine }) {
   const { pending, run } = usePending();
@@ -67,12 +70,21 @@ export default function RecurringList({
     .filter((r) => !exclude?.has(r.key))
     .sort(byRoutineOrder);
 
+  // Weekly tasks, unless the plan already holds them; one that has had its
+  // times this week folds away with what's done.
+  const today = dateKey();
+  const weekly = weeklyTasksOf(s).filter((t) => !exclude?.has(`weekly:${t.id}`));
+  const weeklyFull = (t: (typeof weekly)[number]) => doneThisWeek(t, today) >= t.times;
+  const [editing, setEditing] = useState<string | "new" | null>(null);
+  const editingTask = editing && editing !== "new" ? weekly.find((t) => t.id === editing) ?? weeklyTasksOf(s).find((t) => t.id === editing) : undefined;
+
   // What's left shows; what's done folds into one row, opened on request.
   const [showDone, setShowDone] = useState(false);
-  const doneCount = list.filter((r) => r.done).length;
+  const doneCount = list.filter((r) => r.done).length + weekly.filter(weeklyFull).length;
   const shown = showDone ? list : list.filter((r) => !r.done);
+  const shownWeekly = showDone ? weekly : weekly.filter((t) => !weeklyFull(t));
 
-  if (list.length === 0) return exclude ? null : <StartHere />;
+  if (list.length === 0 && weekly.length === 0 && !exclude) return <StartHere />;
 
   return (
     <ReadingFlow tracker={tracker}>
@@ -84,6 +96,9 @@ export default function RecurringList({
               // folds away below, so it stays short.
               className="routine-list list-none p-0"
             >
+              {shownWeekly.map((t) => (
+                <WeeklyTaskRow key={`weekly:${t.id}`} tracker={tracker} task={t} onEdit={() => setEditing(t.id)} />
+              ))}
               {shown.map((r) => (
                 <li key={r.key} className="task-row task-row--area">
                   <AreaTile kind={r.kind} />
@@ -127,8 +142,10 @@ export default function RecurringList({
               {showDone ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
             </button>
           )}
+          <InsertRow label="Add weekly task" onPress={() => setEditing("new")} />
         </Card.Content>
       </Card>
+      <WeeklyTaskSheet tracker={tracker} task={editingTask} open={editing !== null} onClose={() => setEditing(null)} />
     </Panel>
     </ReadingFlow>
   );
