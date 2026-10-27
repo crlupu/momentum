@@ -6020,3 +6020,4 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 .tabbar__rule { flex: none; inline-size: 1px; block-size: 1.625rem; margin-inline: 0.125rem; background: color-mix(in srgb, var(--foreground) 16%, transparent); }
 button.tabbar__more { border: 0; background: transparent; cursor: pointer; }
 .tabbar__more svg { inline-size: 1.375rem; block-size: 1.375rem; fill: currentColor; }
+button.path__summary { inline-size: 100%; border: 0; background: transparent; color: var(--foreground); text-align: start; cursor: pointer; }
