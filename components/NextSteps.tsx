@@ -13,7 +13,7 @@ export function learningFigures(tracker: Tracker): CardFigure[] {
   return [
     { value: s.goals.filter((g) => goalStatus(g) === "active").length, label: "goals active" },
     { value: s.books.filter((b) => b.status === "active").length, label: "books open" },
-    { value: (s.learningLog ?? []).filter((e) => e.date >= from).length, label: "sessions this week" },
+    { value: (s.learningLog ?? []).filter((e) => e.date >= from).length, label: "sessions" },
   ];
 }
 import { usePending } from "./ActionButton";

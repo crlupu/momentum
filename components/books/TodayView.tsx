@@ -235,6 +235,7 @@ export function OpenBook({
                   <span className="font-mono-n shrink-0">
                     {book.pages > 0 ? `p. ${book.read} of ${book.pages}` : `p. ${book.read}`}
                   </span>
+                  {book.author && <span className="book-row__author"> · {book.author}</span>}
                 </>
               )}
             </span>

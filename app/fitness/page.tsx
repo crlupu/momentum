@@ -9,7 +9,7 @@ import { HealthSwitch } from "@/components/HealthSwitch";
 import WeightTracker, { WeeklyMedians } from "@/components/WeightTracker";
 import WeightPlanCard from "@/components/WeightPlan";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
-import { ChevronLeft, ChevronRight } from "@/components/icons";
+import { ChevronLeft } from "@/components/icons";
 import { UpNextWorkout } from "@/components/UpNextWorkout";
 import { WorkoutScreen, WorkoutsList } from "@/components/WorkoutScreens";
 import { ActiveWorkoutPanel, LiveActions } from "@/components/WorkoutsView";
@@ -107,22 +107,6 @@ function Fitness() {
         <UpNextWorkout tracker={tracker} />
         <WeightTracker tracker={tracker} summary />
         <WorkoutVolumeChart tracker={tracker} summary />
-        {/* The pages behind the summary, as one list of rows. */}
-        <nav className="group-list" aria-label="More in Fitness">
-          <Link href="/fitness?view=weight" className="group-row">
-            <span className="flex-1">Weight and plan</span>
-            <ChevronRight className="group-row__chev" aria-hidden />
-          </Link>
-          <Link href="/fitness?view=training" className="group-row">
-            <span className="flex-1">Volume by workout</span>
-            <ChevronRight className="group-row__chev" aria-hidden />
-          </Link>
-          <Link href="/fitness?view=workouts" className="group-row">
-            <span className="flex-1">Workouts</span>
-            <span className="group-row__value">{tracker.state?.workouts.length ?? 0}</span>
-            <ChevronRight className="group-row__chev" aria-hidden />
-          </Link>
-        </nav>
       </div>
     </SectionPage>
   );

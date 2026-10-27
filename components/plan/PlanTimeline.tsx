@@ -8,6 +8,7 @@ import {
   WEEKDAY,
   WEEKDAY_LONG,
   isSwapped,
+  leftoverDays,
   leftovers,
   swapOptions,
   swapPartner,
@@ -28,7 +29,6 @@ import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
 import { Check, ChevronDown, Play, Swap } from "../icons";
 
-const LEFTOVERS_SHOWN = 3;
 import { PlanGlyph } from "./bits";
 
 /**
@@ -47,7 +47,6 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
   return (
     <ReadingFlow tracker={tracker}>
       <div className="flex flex-col gap-6">
-        <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
         {steps.length > 0 && (
           <section>
             <div className="panel-head">
@@ -67,6 +66,8 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
             </ol>
           </section>
         )}
+        {/* Today first; what earlier days left waits under it, folded. */}
+        <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
       </div>
       <Modal
         open={!!goal}
@@ -81,50 +82,52 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
   );
 }
 
-/** Steps not done on the plan days before today: tick to count them for their day, or let them go. */
+/**
+ * Steps not done on the last two plan days: one folded row under today's
+ * plan, opened to review them by day, each tickable for its day or skipped,
+ * a step or a day at a time.
+ */
 function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayPlan; onOpenGoal: (id: string) => void }) {
   const list = leftovers(tracker.state!, plan);
   const { pending, run } = usePending();
-  const [all, setAll] = useState(false);
+  const [open, setOpen] = useState(false);
   if (!list.length) return null;
-  // A few at a time, so a missed day doesn't push today's plan off the screen.
-  const shown = all ? list : list.slice(0, LEFTOVERS_SHOWN);
+  const days = [...new Set(list.map((l) => l.day))].sort();
+  const skip = (ls: typeof list) => void run(() => tracker.skipPlanSteps(ls.map((l) => ({ day: l.day, stepId: l.x.step.id }))));
   return (
     <section id="leftovers" className="scroll-mt-20">
-      <div className="panel-head">
-        <h2 className="panel-head__title">Left from earlier · {list.length}</h2>
-        <div className="panel-head__side">
-          <button
-            type="button"
-            className="text-action"
-            disabled={pending}
-            onClick={() => void run(() => tracker.skipPlanSteps(list.map((l) => ({ day: l.day, stepId: l.x.step.id }))))}
-          >
-            Skip all
-          </button>
-        </div>
+      <div className="card leftovers">
+        <button type="button" className="leftovers__head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          <span className="leftovers__count font-mono-n">{list.length}</span>
+          <span className="leftovers__text">
+            <span className="leftovers__title">Left from earlier</span>
+            <span className="leftovers__sub">From {leftoverDays(days)}</span>
+          </span>
+          <span className="leftovers__action">
+            {open ? "Hide" : "Review"}
+            <ChevronDown className={open ? "rotate-180" : undefined} aria-hidden />
+          </span>
+        </button>
+        {open &&
+          days.map((d) => {
+            const ofDay = list.filter((l) => l.day === d);
+            return (
+              <div key={d} className="leftovers__day">
+                <div className="leftovers__day-head">
+                  <span>{WEEKDAY_LONG[weekdayOf(d)]}</span>
+                  <button type="button" className="text-action" disabled={pending} onClick={() => skip(ofDay)}>
+                    Skip day
+                  </button>
+                </div>
+                <ol className="plan-steps-today">
+                  {ofDay.map((l) => (
+                    <StepRow key={l.day + l.x.step.id} tracker={tracker} plan={plan} x={l.x} day={l.day} dayLabel={WEEKDAY[weekdayOf(l.day)]} onOpenGoal={onOpenGoal} />
+                  ))}
+                </ol>
+              </div>
+            );
+          })}
       </div>
-      <ol className="card plan-steps-today">
-        {shown.map((l) => (
-          <StepRow
-            key={l.day + l.x.step.id}
-            tracker={tracker}
-            plan={plan}
-            x={l.x}
-            day={l.day}
-            dayLabel={WEEKDAY[weekdayOf(l.day)]}
-            onOpenGoal={onOpenGoal}
-          />
-        ))}
-        {list.length > LEFTOVERS_SHOWN && (
-          <li>
-            <button type="button" className="next-steps__more" aria-expanded={all} onClick={() => setAll((v) => !v)}>
-              <span className="flex-1">{all ? "Show fewer" : `Show ${list.length - LEFTOVERS_SHOWN} more`}</span>
-              <ChevronDown className={all ? "rotate-180" : undefined} aria-hidden />
-            </button>
-          </li>
-        )}
-      </ol>
     </section>
   );
 }

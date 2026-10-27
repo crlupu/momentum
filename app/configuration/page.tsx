@@ -170,7 +170,7 @@ function SettingsHome({ tracker, current }: { tracker: Tracker; current: PageId 
             aside={tracker.user ? "Signed in" : "Signed out"}
             title={tracker.user ? "Your account" : "This device"}
             line={tracker.user ? tracker.user.email ?? "Signed in" : "Not signed in · saved on this device"}
-            band={{ label: "Data and sync", content: tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "This device only", action: "Open", href: "/configuration?view=account" }}
+            band={{ label: "Sync", content: tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "This device only", action: "Open", href: "/configuration?view=account" }}
           />
           {(["areas", "app"] as const).map((g) => (
             <section key={g}>

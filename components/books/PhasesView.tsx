@@ -57,11 +57,11 @@ export function PhasesView({ tracker }: { tracker: Tracker }) {
         <h3 className="group-head">{phases.length ? "Later" : "Plan"}</h3>
         <ul className="group-list">
           <li>
-            <InsertRow label="New Phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
+            <InsertRow label="New phase" onPress={() => flow.open({ kind: "phase", phaseId: null })} />
           </li>
           {phases.length === 0 && (
             <li>
-              <InsertRow label="Import a Plan" onPress={() => flow.open({ kind: "import" })} />
+              <InsertRow label="Import a plan" onPress={() => flow.open({ kind: "import" })} />
             </li>
           )}
         </ul>

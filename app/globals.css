@@ -5920,3 +5920,75 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 /* One tile size on every card: the same eight-to-a-line grid and gap as
    Today's, so a step, an exercise and a meal tile all match. */
 .plan-card__tiles, .plan-card__tiles.is-compact { gap: 6px; }
+
+/* ---- UI audit fixes ---------------------------------------------------- */
+
+/* #1 A tile is at most 44px: eight to a line on a phone (35px), and no
+   bigger on a wide card. */
+:root { --tile-max: 2.75rem; }
+.momentum__tiles { grid-template-columns: repeat(8, minmax(0, var(--tile-max))); }
+
+/* #2 Leftovers: one folded row under today's plan, opened by day. */
+.leftovers { overflow: hidden; }
+.leftovers__head { display: flex; align-items: center; gap: 0.875rem; inline-size: 100%; min-block-size: 3.5rem; padding: 0.625rem 1rem; text-align: start; color: var(--foreground); }
+.leftovers__count { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: 50%; background: color-mix(in srgb, var(--warning, #ffb547) 18%, transparent); color: var(--warning, #ffb547); font-size: 0.9375rem; font-weight: 600; }
+.leftovers__text { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; }
+.leftovers__title { font-size: 1rem; font-weight: 500; }
+.leftovers__sub { font-size: 0.8125rem; color: var(--muted); }
+.leftovers__action { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: var(--muted); }
+.leftovers__action svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; transition: transform 160ms ease; }
+.leftovers__day { border-block-start: 1px solid var(--separator); }
+.leftovers__day-head { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1rem 0.25rem; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+.leftovers .plan-steps-today { margin: 0; padding: 0; list-style: none; }
+
+/* #3 One add: a ringed row with the label on the left and a blue + on the
+   right, wherever a list grows (steps, cards, workouts, sets, to-dos). */
+.insert-row, .insert-row + .insert-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; inline-size: auto; min-block-size: 3rem; margin: 0.5rem 0; padding: 0 0.375rem 0 0.875rem; border: 0; border-radius: var(--r-control); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--foreground) 14%, transparent); color: color-mix(in srgb, var(--foreground) 82%, transparent); font-size: 0.9375rem; font-weight: 500; text-align: start; }
+.group-list .insert-row, .group-list > li > .insert-row { margin: 0.5rem; padding-inline: 0.875rem 0.375rem; }
+.insert-row__label { flex: 1 1 auto; min-inline-size: 0; }
+.insert-row .icon-disc.insert-row__plus, .insert-row .icon-disc { flex: none; inline-size: 2rem; block-size: 2rem; border-radius: 50%; background: var(--accent); color: #fff; }
+.insert-row .icon-disc svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+@media (hover: hover) { .insert-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); } }
+.plan-steps__add-row { padding: 0 0.5rem 0.25rem; }
+.todo-add { display: flex; align-items: center; gap: 0.5rem; min-block-size: 3rem; padding: 0 0.375rem 0 0.875rem; margin-block-end: 0.5rem; border: 0; border-radius: var(--r-control); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--foreground) 14%, transparent); }
+.todo-add__input { flex: 1 1 auto; min-inline-size: 0; }
+.icon-disc.todo-add__plus { flex: none; inline-size: 2rem; block-size: 2rem; border-radius: 50%; background: var(--accent); color: #fff; }
+.icon-disc.todo-add__plus:disabled { opacity: 0.35; }
+.icon-disc.todo-add__plus svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+
+/* #4 Health's switch is the same segmented control as Education's and
+   Projects': the raised neutral thumb, not a light grey one. */
+.health-switch .seg__btn[aria-current="page"] { font-weight: 600; background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
+.dark .health-switch .seg__btn[aria-current="page"] { background: var(--surface-tertiary); box-shadow: none; }
+.health-switch { margin-block: 1.25rem 0; }
+
+/* #7 One tick: the set row's disc everywhere a thing is ticked (plan steps,
+   to-dos, routines, goal items). A grey disc with a faint tick, solid when
+   done. 28px in lists; the set rows keep 32px. */
+.check__ring { position: relative; inline-size: 1.75rem; block-size: 1.75rem; border: 0; background: color-mix(in srgb, var(--foreground) 9%, transparent); }
+.check:not(.check--on) .check__ring::after { content: ""; inline-size: 0.625rem; block-size: 0.3125rem; margin-block-start: -0.1875rem; border-inline-start: 2px solid; border-block-end: 2px solid; color: color-mix(in srgb, var(--foreground) 30%, transparent); transform: rotate(-45deg); }
+.check--on .check__ring { background: var(--foreground); border: 0; }
+.check--on { color: var(--background); }
+.check--on .check__ring svg { fill: currentColor; }
+@media (hover: hover) { .check:hover:not(.check--on) .check__ring { background: color-mix(in srgb, var(--foreground) 15%, transparent); } }
+
+/* #8 A figure's label is one line: short words, cut with … if a number pushes it. */
+.momentum__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.macro-add { display: flex; gap: 0.5rem; padding: 0.75rem; }
+
+/* #12 Only finished cards fill a project's bar; a card in Doing is an
+   outlined segment, so 0% never looks half done. */
+.momentum__seg.is-doing { background: transparent; box-shadow: inset 0 0 0 1.5px #2b91ff; }
+
+/* #13 A book without a cover: the track's colour, filled, with a white
+   initial; one-line titles, the author after the page. */
+.book-cover--sm.book-cover--drawn, .dark .book-cover--sm.book-cover--drawn { padding: 0; background: var(--book); color: #ffffff; }
+.book-cover--sm.book-cover--drawn::before { display: none; }
+.book-cover--sm .book-cover__mono { color: #ffffff; }
+.book-row__cover + .goal-row__text .goal-row__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-row__cover + .goal-row__text .book-row__meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-row__author { color: var(--muted); }
+.insert-row, .insert-row + .insert-row { box-sizing: border-box; inline-size: 100%; }
+.group-list .insert-row, .group-list > li > .insert-row { inline-size: calc(100% - 1rem); }
+.board-col__foot .insert-row { flex: 1 1 auto; inline-size: 100%; margin: 0.5rem 0; }
+.board--one .board-col__foot { padding-inline: 0.5rem; }

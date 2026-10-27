@@ -22,7 +22,7 @@ function weekFigures(tracker: Tracker): CardFigure[] {
   const kg = sessions.reduce((a, x) => a + (x.total || 0), 0);
   const cardio = s.cardio.filter((c) => c.date >= from).reduce((a, c) => a + c.minutes, 0);
   return [
-    { value: sessions.length, label: "workouts this week", href: "/fitness?view=workouts" },
+    { value: sessions.length, label: "workouts", href: "/fitness?view=workouts" },
     { value: kg.toLocaleString(), label: "kg lifted", href: "/fitness?view=training" },
     { value: cardio, label: "min cardio", href: "/fitness?view=training" },
   ];
@@ -108,6 +108,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
           )}
         </>
       }
+      band={{ label: "Workouts", content: `${s.workouts.length} saved`, action: "Open", href: "/fitness?view=workouts" }}
       figures={weekFigures(tracker)}
     >
       <CardTiles

@@ -126,7 +126,7 @@ function ProjectTile({
           (total <= 16 ? (
             <span className="momentum__segments" aria-hidden>
               {[...columnCards(p, "done"), ...columnCards(p, "doing"), ...columnCards(p, "todo")].map((c) => (
-                <span key={c.id} className={"momentum__seg" + (c.status === "done" ? " is-done" : c.status === "doing" ? " is-next" : "")} />
+                <span key={c.id} className={"momentum__seg" + (c.status === "done" ? " is-done" : c.status === "doing" ? " is-doing" : "")} />
               ))}
             </span>
           ) : (

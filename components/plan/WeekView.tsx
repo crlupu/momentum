@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, ReactNode, useState } from "react";
 import { Tracker, dateKey, uid } from "@/lib/tracker";
 import {
   addDays,
@@ -45,11 +45,21 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
   const behind = open.filter((g) => g.pace === "behind").length;
   const onPace = open.filter((g) => g.pace === "on").length;
   const daysLeft = 7 - sum.days.findIndex((d) => d.day === today);
+  const weekLine: ReactNode[] | string = sum.done
+    ? "Every goal and every plan day, done."
+    : [
+        onPace ? `${onPace} on pace` : null,
+        behind ? <span key="b" className="week-hero__behind">{behind} behind</span> : null,
+        // The figure already counts plan days when there are no goals.
+        sum.goals.length && sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
+      ]
+        .filter(Boolean)
+        .flatMap((x, i) => (i ? [" · ", x] : [x]));
 
   return (
     <div className="flex flex-col gap-6">
       <p className="week-dates">
-        {fmt(week)} – {fmt(addDays(week, 6))} · {daysLeft === 1 ? "last day" : `${daysLeft} days left`}
+        {fmt(week)} – {fmt(addDays(week, 6))}
       </p>
       <SummaryCard
         className="week-hero"
@@ -60,19 +70,12 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
         doneLabel="Week done"
         figure={sum.goals.length ? `${sum.goalsDone} of ${sum.goals.length}` : `${sum.daysDone} of ${sum.daysPlanned}`}
         detail={sum.goals.length ? "week goals" : "plan days"}
-        line={
-          sum.done
-            ? "Every goal and every plan day, done."
-            : [
-                onPace ? `${onPace} on pace` : null,
-                behind ? <span key="b" className="week-hero__behind">{behind} behind</span> : null,
-                sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
-              ]
-                .filter(Boolean)
-                .flatMap((x, i) => (i ? [" · ", x] : [x]))
-        }
+        line={weekLine.length ? weekLine : undefined}
         figures={[
-          { value: `${sum.daysDone} of ${sum.daysPlanned}`, label: "plan days" },
+          {
+            value: `${sum.days.reduce((a, d) => a + (d.planned ? d.done : 0), 0)} of ${sum.days.reduce((a, d) => a + (d.planned ? d.total : 0), 0)}`,
+            label: "steps done",
+          },
           { value: s.workoutSessions.filter((x) => x.date >= week).length + (s.learningLog ?? []).filter((e) => e.date >= week).length, label: "sessions" },
           { value: s.readingSessions.filter((x) => x.date >= week).reduce((a, x) => a + x.pages, 0), label: "pages read" },
         ]}

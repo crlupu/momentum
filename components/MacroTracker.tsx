@@ -38,28 +38,9 @@ function Legend({ color, name }: { color: string; name: string }) {
   );
 }
 
-/** Today's total against its target, as a row: name, figure, then its bar. */
-function TargetRow({ label, value, target, fill }: { label: string; value: number; target?: number; fill: string }) {
-  const pct = target ? Math.round((value / target) * 100) : 0;
-  return (
-    <div className="macro-row">
-      <div className="macro-row__head">
-        <span>{label}</span>
-        <span className="font-mono-n">
-          <b>{value}</b>
-          <span className="text-[var(--muted)]">{target ? ` / ${target} g` : " g"}</span>
-        </span>
-      </div>
-      <div className="macro-row__track" role="img" aria-label={target ? `${pct}% of the ${label.toLowerCase()} target` : `${value} g ${label.toLowerCase()}`}>
-        {target ? <span style={{ inlineSize: `${Math.min(100, pct)}%`, background: fill }} /> : null}
-      </div>
-    </div>
-  );
-}
-
 /**
- * Protein and fibre. `today` is a card of two rows, today against each
- * target, with the add fields beneath; `trends` the last two weeks as bars.
+ * Protein and fibre. `today` is the add fields alone (today's grams are
+ * the Nutrition card's figures); `trends` the last two weeks as bars.
  */
 export default function MacroTracker({ tracker, view = "today" }: { tracker: Tracker; view?: "today" | "trends" }) {
   const s = tracker.state!;
@@ -67,8 +48,6 @@ export default function MacroTracker({ tracker, view = "today" }: { tracker: Tra
   const [fiber, setFiber] = useState("");
 
   const totals = macroTotalsByDate(s.macros);
-  const today = dateKey();
-  const todayTotals = totals[today] ?? { protein: 0, fiber: 0 };
 
   const days = Array.from({ length: 14 }, (_, i) => offsetDate(13 - i));
   const series = days.map((d) => totals[dateKey(d)] ?? { protein: 0, fiber: 0 });
@@ -105,34 +84,28 @@ export default function MacroTracker({ tracker, view = "today" }: { tracker: Tra
     }
   };
 
+  // Today's grams are the Nutrition card's figures; here is only the add.
   if (view === "today") {
     return (
-      <div>
-        <PanelHeader title="Protein & fibre" color="var(--sec-nutrition)" />
-        <div className="card p-4 md:p-5">
-          <TargetRow label="Protein" value={todayTotals.protein} target={s.proteinTarget} fill={PROTEIN} />
-          <TargetRow label="Fibre" value={todayTotals.fiber} target={s.fiberTarget} fill={FIBER} />
-          <form onSubmit={submit} className="mt-4 flex gap-2">
-            <Input
-              type="number"
-              aria-label="Protein in grams"
-              placeholder="Protein g"
-              value={protein}
-              onChange={(e) => setProtein(e.target.value)}
-              className="min-w-0 flex-1"
-            />
-            <Input
-              type="number"
-              aria-label="Fibre in grams"
-              placeholder="Fibre g"
-              value={fiber}
-              onChange={(e) => setFiber(e.target.value)}
-              className="min-w-0 flex-1"
-            />
-            <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
-          </form>
-        </div>
-      </div>
+      <form onSubmit={submit} className="card macro-add" aria-label="Add protein and fibre">
+        <Input
+          type="number"
+          aria-label="Protein in grams"
+          placeholder="Protein, g"
+          value={protein}
+          onChange={(e) => setProtein(e.target.value)}
+          className="min-w-0 flex-1"
+        />
+        <Input
+          type="number"
+          aria-label="Fibre in grams"
+          placeholder="Fibre, g"
+          value={fiber}
+          onChange={(e) => setFiber(e.target.value)}
+          className="min-w-0 flex-1"
+        />
+        <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
+      </form>
     );
   }
 

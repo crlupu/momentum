@@ -945,7 +945,7 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
       figure={`${setsDone} of ${setsPlanned}`}
       detail="sets"
       figures={[
-        { value: exDone, label: `of ${active.exercises.length} exercises` },
+        { value: exDone, label: `of ${active.exercises.length} done` },
         { value: setsPlanned - setsDone, label: "sets to go" },
       ]}
     >

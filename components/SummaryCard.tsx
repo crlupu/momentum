@@ -171,7 +171,7 @@ export function CardTiles({
 }) {
   const n = Math.max(items.length, TILE_COLUMNS);
   return (
-    <ol className={"plan-card__tiles" + (n > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+    <ol className={"plan-card__tiles" + (n > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, var(--tile-max)))` }}>
       {items.map((x) => (
         <li key={x.key} className="plan-card__cell" title={x.title}>
           <span className={"momentum__tile" + (x.state === "done" ? " is-done" : x.state === "next" ? " is-next" : "")}>{x.icon}</span>
