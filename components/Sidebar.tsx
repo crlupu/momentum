@@ -8,10 +8,14 @@ import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+  IoDocumentTextOutline, IoHeart, IoCalendarClearOutline, IoListOutline, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
-import { Tracker } from "@/lib/tracker";
+import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
+import { routineCompletions } from "@/lib/routines";
+import { WEEKDAY, planOf, summarizeWeek, weekNumber, weekOf } from "@/lib/plan";
+import type { TrackerState } from "@/lib/model";
+import { ThemeSwitch } from "./ThemeSwitch";
 import {
   NAV, navHolds, navPath, sectionPath, sectionTitle, trimPath, type NavId, type SectionId,
 } from "./sections";
@@ -202,28 +206,24 @@ export function MoreSheet({
           </button>
         </div>
 
-        <ul className="inset-list">
-          {[...REVIEW, "config" as SectionId].map((id) => {
-            const href = sectionPath(id);
-            const active = trimPath(href) === current;
-            const Icon = ICON[id as "charts" | "log" | "config"];
-            return (
-              <li key={id}>
-                <Link
-                  href={href}
-                  onClick={onClose}
-                  aria-current={active ? "page" : undefined}
-                  className="inset-list__row"
-                >
-                  <span className="inset-list__icon" aria-hidden>
-                    <Icon />
-                  </span>
-                  <span className="flex-1">{sectionTitle(id)}</span>
-                  <ChevronRight className="inset-list__chevron" aria-hidden />
-                </Link>
-              </li>
-            );
-          })}
+        <MoreTiles tracker={tracker} onClose={onClose} current={current} />
+        <ThemeSwitch className="more-theme" />
+        <ul className="inset-list mt-3">
+          <li>
+            <Link
+              href={sectionPath("config")}
+              onClick={onClose}
+              aria-current={trimPath(sectionPath("config")) === current ? "page" : undefined}
+              className="inset-list__row"
+            >
+              <span className="inset-list__icon" aria-hidden>
+                <IoSettingsOutline />
+              </span>
+              <span className="flex-1">Settings</span>
+              <span className="more-value">{tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "This device only"}</span>
+              <ChevronRight className="inset-list__chevron" aria-hidden />
+            </Link>
+          </li>
         </ul>
 
         {tracker.user && (
@@ -243,5 +243,60 @@ export function MoreSheet({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** Things done on a day, as the Log lists them. */
+function loggedOn(s: TrackerState, day: string): number {
+  return (
+    s.todos.filter((t) => t.done && t.doneDate === day).length +
+    s.goals.filter((g) => g.done && g.doneDate === day).length +
+    s.completions.filter((c) => c.date === day).length +
+    s.workoutSessions.filter((w) => w.date === day).length +
+    s.calories.filter((c) => c.date === day).length +
+    s.macros.filter((m) => m.date === day && (m.protein || m.fiber)).length +
+    s.cardio.filter((c) => c.date === day).length
+  );
+}
+
+/**
+ * More's places as tiles, each with its number, in the cards' anatomy:
+ * Progress and Log to look back, the Week and the Day plan to look ahead.
+ */
+function MoreTiles({ tracker, onClose, current }: { tracker: Tracker; onClose: () => void; current: string }) {
+  const s = tracker.state;
+  if (!s) return null;
+  const today = dateKey();
+  const month = today.slice(0, 7);
+  const byDay = completionsByDate([...s.completions, ...routineCompletions(s)]);
+  const monthDone = Object.entries(byDay).filter(([k]) => k.startsWith(month)).reduce((a, [, n]) => a + n, 0);
+  const week = summarizeWeek(s, weekOf(today), today);
+  const plan = planOf(s);
+  const days = plan ? [...plan.days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)) : [];
+  const span = days.length ? (days.length === 1 ? WEEKDAY[days[0]] : `${WEEKDAY[days[0]]}\u2013${WEEKDAY[days[days.length - 1]]}`) : "";
+  const tiles: { href: string; icon: IconType; figure: string; title: string; sub: string }[] = [
+    { href: sectionPath("charts"), icon: IoBarChartOutline, figure: String(monthDone), title: "Progress", sub: "completions this month" },
+    { href: sectionPath("log"), icon: IoDocumentTextOutline, figure: String(loggedOn(s, today)), title: "Log", sub: "done today" },
+    { href: "/week", icon: IoCalendarClearOutline, figure: `${week.daysDone}/${week.daysPlanned}`, title: `Week ${weekNumber(week.week)}`, sub: "plan days" },
+    { href: "/plan", icon: IoListOutline, figure: plan ? String(plan.steps.length) : "\u2013", title: "Day plan", sub: plan ? `steps, ${span}` : "make a plan" },
+  ];
+  return (
+    <ul className="more-tiles">
+      {tiles.map((t) => (
+        <li key={t.href}>
+          <Link href={t.href} onClick={onClose} className="more-tile" aria-current={trimPath(t.href) === current ? "page" : undefined}>
+            <span className="more-tile__top">
+              <span className="more-tile__icon" aria-hidden>
+                <t.icon />
+              </span>
+              <ChevronRight className="more-tile__chev" aria-hidden />
+            </span>
+            <span className="more-tile__figure font-mono-n">{t.figure}</span>
+            <span className="more-tile__title">{t.title}</span>
+            <span className="more-tile__sub">{t.sub}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
