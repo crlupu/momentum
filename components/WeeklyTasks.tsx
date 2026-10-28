@@ -22,7 +22,7 @@ function WeekDots({ done, of }: { done: number; of: number }) {
 }
 
 /**
- * A weekly task in This week: its category's icon and colour, how far the
+ * A weekly task in This week: its category's icon, how far the
  * week has got, and a tick for today. Tapping its name opens it to edit.
  */
 export function WeeklyTaskRow({ tracker, task, onEdit }: { tracker: Tracker; task: WeeklyTask; onEdit: () => void }) {
@@ -35,7 +35,7 @@ export function WeeklyTaskRow({ tracker, task, onEdit }: { tracker: Tracker; tas
   const full = n >= task.times;
   return (
     <li className="task-row task-row--area">
-      <span className="area-tile weekly-tile" style={{ ["--cat" as string]: cat?.color ?? "var(--accent)" }} aria-hidden>
+      <span className="area-tile" aria-hidden>
         <PlanGlyph icon={categoryIcon(cat)} />
       </span>
       <button type="button" className="task-row__text weekly-row__open" onClick={onEdit}>
@@ -99,7 +99,6 @@ function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; task?: We
               role="radio"
               aria-checked={c.id === catId}
               className="weekly-cat"
-              style={{ ["--cat" as string]: c.color }}
               onClick={() => setCatId(c.id)}
             >
               <PlanGlyph icon={categoryIcon(c)} />

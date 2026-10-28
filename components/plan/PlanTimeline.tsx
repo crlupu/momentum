@@ -165,11 +165,7 @@ function StepRow({
       <div className="plan-row__main">
         <button type="button" className="plan-row__open" aria-expanded={!!shown} onClick={() => setOpen((v) => !v)}>
           <span className="plan-row__n">{dayLabel ?? n}</span>
-          <span
-            className={"area-tile plan-row__tile" + (x.it?.kind === "weekly" ? " weekly-tile" : "")}
-            style={x.it?.kind === "weekly" && x.it.cat ? { ["--cat" as string]: x.it.cat.color } : undefined}
-            aria-hidden
-          >
+          <span className="area-tile plan-row__tile" aria-hidden>
             <PlanGlyph icon={x.icon} />
           </span>
           {/* One line: what it is. The tile says the kind; the actions say the rest. */}

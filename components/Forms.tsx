@@ -245,7 +245,7 @@ function CategoryIconPicker({ tracker, cat }: { tracker: Tracker; cat: Category 
   const current = categoryIcon(cat);
   const { pending, run } = usePending();
   return (
-    <span className="cat-icons" role="radiogroup" aria-label={`${cat.name}'s icon`} style={{ ["--cat" as string]: cat.color }}>
+    <span className="cat-icons" role="radiogroup" aria-label={`${cat.name}'s icon`}>
       {CAT_ICONS.map((i) => (
         <button
           key={i}
