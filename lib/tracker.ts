@@ -904,6 +904,9 @@ export function useTracker() {
     setGoalCategory: (id: string, catId: string) =>
       commit((s) => ({ ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, catId } : g)) })),
 
+    /** Puts back what an action changed, from a snapshot taken before it: Undo. */
+    restore: (patch: Partial<TrackerState>) => commit((s) => ({ ...s, ...patch })),
+
     // ---- weekly tasks ----
     addWeeklyTask: (title: string, catId: string, times: number) =>
       commit((s) => ({

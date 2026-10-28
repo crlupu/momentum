@@ -1,0 +1,360 @@
+"use client";
+
+import { FormEvent, ReactNode, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Modal } from "./Modal";
+import { Input } from "./ui";
+import { usePending } from "./ActionButton";
+import { useFlow } from "./books/flowContext";
+import { PlanGlyph } from "./plan/bits";
+import { Apple, BookOpen, Check, ChevronLeft, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
+import { Tracker, dateKey } from "@/lib/tracker";
+import { nextOfGoal, planOf, stepsOn } from "@/lib/plan";
+import * as R from "@/lib/reading";
+import { routines } from "@/lib/routines";
+import { categoryIcon, doneThisWeek, weeklyTasksOf } from "@/lib/weekly";
+import type { TrackerState } from "@/lib/model";
+
+/** What a logged thing was, and how to take it back for a few seconds. */
+export type Toast = { text: string; undo?: Partial<TrackerState> };
+
+type View = "menu" | "todo" | "weight" | "meal" | "weekly";
+
+/**
+ * The tab bar's +: log anything from any screen without leaving it. The
+ * next step of today's plan first, one tap to start; then six quick adds,
+ * each with a hint of what it'll log. The small ones (a to-do, a weight, a
+ * meal, a weekly task) are a form in the sheet itself; pages and workouts
+ * open where they're logged.
+ */
+export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker; open: boolean; onClose: () => void; onToast: (t: Toast) => void }) {
+  const [view, setView] = useState<View>("menu");
+  const close = () => {
+    onClose();
+    setView("menu");
+  };
+  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks" };
+  return (
+    <Modal open={open} onClose={close} title={titles[view]}>
+      {open && tracker.state && (
+        <div className="quick">
+          {view !== "menu" && (
+            <button type="button" className="text-action quick__back" onClick={() => setView("menu")}>
+              <ChevronLeft aria-hidden /> All
+            </button>
+          )}
+          {view === "menu" && <Menu tracker={tracker} onView={setView} onClose={close} onToast={onToast} />}
+          {view === "todo" && <TodoForm tracker={tracker} onDone={close} onToast={onToast} />}
+          {view === "weight" && <WeightForm tracker={tracker} onDone={close} onToast={onToast} />}
+          {view === "meal" && <MealForm tracker={tracker} onDone={close} onToast={onToast} />}
+          {view === "weekly" && <WeeklyList tracker={tracker} />}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView: (v: View) => void; onClose: () => void; onToast: (t: Toast) => void }) {
+  const s = tracker.state!;
+  const router = useRouter();
+  const flow = useFlow();
+  const today = dateKey();
+  const lastKg = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).pop()?.kg;
+  const book = R.liveTracks(s).map((t) => R.activeBooks(s, t.id)[0]).find(Boolean);
+  const workout = nextWorkout(s, today);
+  const kcalToday = s.calories.filter((c) => c.date === today).reduce((a, c) => a + c.kcal, 0);
+  const weekly = weeklyTasksOf(s);
+  const goWorkout = () => {
+    onClose();
+    if (!s.activeWorkout && workout) void tracker.startWorkout(workout.id);
+    router.push("/fitness?view=live");
+  };
+  const tiles: { icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
+    { icon: <TaskDone />, title: "To-do", onPress: () => onView("todo") },
+    { icon: <Scale />, title: "Weigh-in", hint: lastKg ? `${lastKg} last` : undefined, onPress: () => onView("weight") },
+    {
+      icon: <BookOpen />,
+      title: "Pages",
+      hint: book ? shortTitle(book.title) : "No book open",
+      disabled: !book,
+      onPress: () => {
+        onClose();
+        if (book) flow.open({ kind: "log", bookId: book.id });
+      },
+    },
+    { icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
+    { icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
+    {
+      icon: <Repeat />,
+      title: "Weekly task",
+      hint: weekly.length ? `${weekly.filter((t) => doneThisWeek(t, today) >= t.times).length} of ${weekly.length} done` : "None yet",
+      disabled: !weekly.length,
+      onPress: () => onView("weekly"),
+    },
+  ];
+  return (
+    <>
+      <NextStep tracker={tracker} onClose={onClose} onToast={onToast} />
+      <ul className="quick__grid">
+        {tiles.map((t) => (
+          <li key={t.title}>
+            <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
+              <span className="quick__icon" aria-hidden>
+                {t.icon}
+              </span>
+              <span className="quick__title">{t.title}</span>
+              {t.hint && <span className="quick__hint">{t.hint}</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** The next step of today's plan, one tap from done or started. */
+function NextStep({ tracker, onClose, onToast }: { tracker: Tracker; onClose: () => void; onToast: (t: Toast) => void }) {
+  const s = tracker.state!;
+  const router = useRouter();
+  const flow = useFlow();
+  const { pending, run } = usePending();
+  const plan = planOf(s);
+  const today = dateKey();
+  if (!plan) return null;
+  const steps = stepsOn(s, plan, today);
+  const i = steps.findIndex((x) => !x.done && x.it);
+  if (i < 0) return null;
+  const x = steps[i];
+  const it = x.it!;
+  let label = "Done";
+  let act: () => void = () => {};
+  let sub = `Step ${i + 1} of ${steps.length}`;
+  if (it.kind === "workout") {
+    label = "Start";
+    sub += ` · ${it.item.exercises.length} exercises`;
+    act = () => {
+      onClose();
+      if (!s.activeWorkout) void tracker.startWorkout(it.item.id);
+      router.push("/fitness?view=live");
+    };
+  } else if (it.kind === "focus") {
+    label = "Start";
+    sub += ` · ${it.minutes} min`;
+    act = () => {
+      onClose();
+      void tracker.startFocus({ minutes: it.minutes, projectId: it.project?.id, stepId: x.step.id, day: today });
+      router.push("/");
+    };
+  } else if (it.kind === "track" || it.kind === "book") {
+    const book = it.kind === "track" ? it.book : it.item;
+    label = "Log pages";
+    act = () => {
+      onClose();
+      if (book) flow.open({ kind: "log", bookId: book.id });
+    };
+  } else if (it.kind === "goal") {
+    const nx = nextOfGoal(it.item);
+    if (nx) sub += ` · ${nx.itemId ? nx.title : "a session"}`;
+    act = () =>
+      void run(async () => {
+        const ok = await (nx?.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id));
+        if (ok) {
+          onToast({ text: `Done: ${nx?.itemId ? nx.title : it.item.title}` });
+          onClose();
+        }
+        return ok;
+      });
+  } else if (it.kind === "weekly") {
+    act = () =>
+      void run(async () => {
+        const ok = await tracker.toggleWeeklyTask(it.item.id, today);
+        if (ok) {
+          onToast({ text: `Done: ${it.item.title}` });
+          onClose();
+        }
+        return ok;
+      });
+  }
+  const title = it.kind === "workout" || it.kind === "track" ? it.item.name : it.kind === "focus" ? it.project?.title ?? "Just focus" : it.item.title;
+  return (
+    <div className="quick__next">
+      <span className="quick__next-icon" aria-hidden>
+        <PlanGlyph icon={x.icon} />
+      </span>
+      <span className="quick__next-text">
+        <span className="quick__next-label">Next in your plan</span>
+        <span className="quick__next-title">{title}</span>
+        <span className="quick__next-sub">{sub}</span>
+      </span>
+      <button type="button" className="pill-link pill-link--primary" disabled={pending} onClick={act}>
+        {label === "Start" ? <Play aria-hidden /> : label === "Done" ? <Check aria-hidden /> : null}
+        {label}
+      </button>
+    </div>
+  );
+}
+
+function TodoForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () => void; onToast: (t: Toast) => void }) {
+  const { pending, run } = usePending();
+  const [title, setTitle] = useState("");
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    const before = tracker.state!.todos;
+    void run(async () => {
+      const ok = await tracker.addTodo(title);
+      if (ok) {
+        onToast({ text: `Added: ${title.trim()}`, undo: { todos: before } });
+        onDone();
+      }
+      return ok;
+    });
+  };
+  return (
+    <form onSubmit={submit} className="quick__form">
+      <Input aria-label="New to-do" placeholder="What needs doing?" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !title.trim()}>
+        Add to-do
+      </button>
+    </form>
+  );
+}
+
+function WeightForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () => void; onToast: (t: Toast) => void }) {
+  const s = tracker.state!;
+  const { pending, run } = usePending();
+  const last = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).pop();
+  const [kg, setKg] = useState(last ? String(last.kg) : "");
+  const n = Number(kg.replace(",", "."));
+  const nudge = (d: number) => setKg((v) => (Math.round(((Number(v.replace(",", ".")) || last?.kg || 0) + d) * 10) / 10).toFixed(1));
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!(n > 0)) return;
+    const before = s.weights;
+    void run(async () => {
+      const ok = await tracker.addWeight(n);
+      if (ok) {
+        onToast({ text: `Logged ${n} kg`, undo: { weights: before } });
+        onDone();
+      }
+      return ok;
+    });
+  };
+  const diff = last && n > 0 ? Math.round((n - last.kg) * 10) / 10 : null;
+  return (
+    <form onSubmit={submit} className="quick__form">
+      <label className="quick__big">
+        <input className="quick__big-input font-mono-n" inputMode="decimal" aria-label="Weight in kg" value={kg} onChange={(e) => setKg(e.target.value)} autoFocus />
+        <span>kg</span>
+      </label>
+      {diff != null && last && <p className="quick__note">{diff === 0 ? "Same as" : `${diff > 0 ? "+" : "−"}${Math.abs(diff)} from`} {last.date === dateKey() ? "earlier today" : "last time"}</p>}
+      <div className="quick__nudges">
+        <button type="button" className="pill-link" onClick={() => nudge(-0.1)} aria-label="Less 0.1 kg">
+          <Minus aria-hidden /> 0.1
+        </button>
+        <button type="button" className="pill-link" onClick={() => nudge(0.1)} aria-label="More 0.1 kg">
+          <Plus aria-hidden /> 0.1
+        </button>
+      </div>
+      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
+        Log {n > 0 ? `${n} kg` : "weight"}
+      </button>
+    </form>
+  );
+}
+
+function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () => void; onToast: (t: Toast) => void }) {
+  const s = tracker.state!;
+  const { pending, run } = usePending();
+  const [kcal, setKcal] = useState("");
+  const [tagId, setTagId] = useState<string | undefined>(s.mealTags[0]?.id);
+  const n = Math.round(Number(kcal));
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!(n > 0)) return;
+    const before = s.calories;
+    void run(async () => {
+      const ok = await tracker.addCalories(n, tagId);
+      if (ok) {
+        const tag = s.mealTags.find((t) => t.id === tagId);
+        onToast({ text: `Logged ${n.toLocaleString()} kcal${tag ? ` · ${tag.name}` : ""}`, undo: { calories: before } });
+        onDone();
+      }
+      return ok;
+    });
+  };
+  return (
+    <form onSubmit={submit} className="quick__form">
+      <label className="quick__big">
+        <input className="quick__big-input font-mono-n" inputMode="numeric" aria-label="Calories" placeholder="0" value={kcal} onChange={(e) => setKcal(e.target.value)} autoFocus />
+        <span>kcal</span>
+      </label>
+      <div className="quick__chips" role="radiogroup" aria-label="Meal">
+        {s.mealTags.map((t) => (
+          <button key={t.id} type="button" role="radio" aria-checked={t.id === tagId} className="weekly-cat" onClick={() => setTagId(t.id)}>
+            {t.name}
+          </button>
+        ))}
+      </div>
+      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
+        Log meal
+      </button>
+    </form>
+  );
+}
+
+function WeeklyList({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const { pending, run } = usePending();
+  const today = dateKey();
+  return (
+    <ul className="card quick__weekly">
+      {weeklyTasksOf(s).map((t) => {
+        const cat = s.categories.find((c) => c.id === t.catId);
+        const on = t.ticks.includes(today);
+        return (
+          <li key={t.id} className="task-row task-row--area">
+            <span className="area-tile" aria-hidden>
+              <PlanGlyph icon={categoryIcon(cat)} />
+            </span>
+            <span className="task-row__text">
+              <span className="task-row__title">{t.title}</span>
+              <span className="task-row__sub">
+                {doneThisWeek(t, today)} of {t.times} this week
+              </span>
+            </span>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={on}
+              aria-label={`${t.title}, done today`}
+              disabled={pending}
+              className={"check" + (on ? " check--on" : "")}
+              onClick={() => void run(() => tracker.toggleWeeklyTask(t.id, today))}
+            >
+              <span className="check__ring">{on && <Check className="h-4 w-4" aria-hidden />}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** The workout due next, as Health's Up next picks it. */
+function nextWorkout(s: TrackerState, today: string) {
+  const startable = s.workouts.filter((w) => w.exercises.length > 0);
+  if (!startable.length) return undefined;
+  const lastDone = (id: string) => s.workoutSessions.filter((x) => x.workoutId === id).map((x) => x.date).sort().pop() ?? "";
+  const due = routines(s, today)
+    .filter((r) => r.kind === "workout" && !r.done)
+    .map((r) => startable.find((w) => w.id === r.id))
+    .filter((w): w is (typeof startable)[number] => !!w)
+    .sort((a, b) => lastDone(a.id).localeCompare(lastDone(b.id)));
+  return due[0] ?? startable[0];
+}
+
+/** A book's title without its subtitle, short enough for a hint. */
+function shortTitle(t: string): string {
+  return t.split(/\s*[:|—–]\s+|:\s*/)[0].trim() || t;
+}

@@ -7,6 +7,9 @@ import { MoreSheet, Sidebar, TabBar } from "./Sidebar";
 import { Modal } from "./Modal";
 import { GoalForm } from "./Forms";
 import { TabPanes, isPane } from "./TabPanes";
+import { QuickAdd, type Toast } from "./QuickAdd";
+import { ReadingFlow } from "./books/flow";
+import { Check } from "./icons";
 import { usePathname } from "next/navigation";
 import { trimPath } from "./sections";
 
@@ -54,6 +57,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
   const [goalOpen, setGoalOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  // What the + just logged, with Undo for a few seconds.
+  const [toast, setToast] = useState<Toast | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 5000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+  const showToast = (t: Toast) => setToast(t);
   // Behind the sign-in screen there is nothing to navigate to yet.
   const gated = tracker.firebaseConfigured && !tracker.user;
   const path = trimPath(usePathname() ?? "/");
@@ -87,7 +99,32 @@ export function AppShell({ children }: { children: ReactNode }) {
           </AuthGate>
         </main>
 
-        {!gated && <TabBar onMore={() => setMoreOpen(true)} />}
+        {!gated && <TabBar onAdd={() => setAddOpen(true)} />}
+        {!gated && tracker.state && (
+          <ReadingFlow tracker={tracker}>
+            <QuickAdd tracker={tracker} open={addOpen} onClose={() => setAddOpen(false)} onToast={showToast} />
+          </ReadingFlow>
+        )}
+        {toast && (
+          <div className="toast" role="status">
+            <span className="toast__mark" aria-hidden>
+              <Check />
+            </span>
+            <span className="toast__text">{toast.text}</span>
+            {toast.undo && (
+              <button
+                type="button"
+                className="toast__undo"
+                onClick={() => {
+                  void tracker.restore(toast.undo!);
+                  setToast(null);
+                }}
+              >
+                Undo
+              </button>
+            )}
+          </div>
+        )}
         <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} tracker={tracker} />
 
         <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
