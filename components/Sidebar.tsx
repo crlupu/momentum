@@ -8,7 +8,7 @@ import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoCalendarClearOutline, IoListOutline, IoContrastOutline, IoEllipsisHorizontal, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+  IoDocumentTextOutline, IoHeart, IoCalendarClearOutline, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
 import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
@@ -129,44 +129,47 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
  * Phone and tablet navigation: a tab bar along the bottom, below 1056px.
  * Five tabs, one per section where things get recorded. Always visible.
  */
-export function TabBar({ onMore }: { onMore: () => void }) {
+export function TabBar({ onAdd }: { onAdd: () => void }) {
   const current = useCurrentPath();
   const router = useRouter();
   // Tabs switch on touch-down, as native tab bars do, rather than waiting
   // for the finger to lift; the click that follows is then let go.
   const pressed = useRef<string | null>(null);
+  const tab = ({ id, title }: (typeof NAV)[number]) => {
+    const active = navHolds(id, current);
+    const Icon = (active ? ICON_ON : ICON)[id];
+    const href = navPath(id);
+    return (
+      <Link
+        key={id}
+        href={href}
+        aria-current={active ? "page" : undefined}
+        className={"tabbar__tab" + (active ? " is-active" : "")}
+        onPointerDown={(e) => {
+          if (active || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+          pressed.current = href;
+          router.push(href);
+        }}
+        onClick={(e) => {
+          if (pressed.current === href) e.preventDefault();
+          pressed.current = null;
+        }}
+      >
+        <Icon aria-hidden />
+        <span className="tabbar__label">{title}</span>
+      </Link>
+    );
+  };
+  // Four named tabs around one +: log anything from any screen.
   return (
-    <nav className="tabbar bar-material" aria-label="Sections">
-      {NAV.map(({ id, title }) => {
-        const active = navHolds(id, current);
-        const Icon = (active ? ICON_ON : ICON)[id];
-        const href = navPath(id);
-        return (
-          <Link
-            key={id}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={"tabbar__tab" + (active ? " is-active" : "")}
-            onPointerDown={(e) => {
-              if (active || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-              pressed.current = href;
-              router.push(href);
-            }}
-            onClick={(e) => {
-              if (pressed.current === href) e.preventDefault();
-              pressed.current = null;
-            }}
-          >
-            <Icon aria-hidden />
-            <span className="tabbar__label">{title}</span>
-          </Link>
-        );
-      })}
-      {/* More: Progress, Log, the week and plan, settings — where the thumb is. */}
-      <span className="tabbar__rule" aria-hidden />
-      <button type="button" className="tabbar__tab tabbar__more" aria-label="More" onClick={onMore}>
-        <IoEllipsisHorizontal aria-hidden />
-      </button>
+    <nav className="tabbar tabbar--classic bar-material" aria-label="Sections">
+      {NAV.slice(0, 2).map(tab)}
+      <span className="tabbar__add-slot">
+        <button type="button" className="tabbar__add" aria-label="Add" onClick={onAdd}>
+          <IoAdd aria-hidden />
+        </button>
+      </span>
+      {NAV.slice(2).map(tab)}
     </nav>
   );
 }
