@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Modal } from "./Modal";
 import { Input } from "./ui";
 import { usePending } from "./ActionButton";
@@ -92,53 +92,27 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
       onPress: () => onView("weekly"),
     },
   ];
-  // What belongs to the tab you're on comes first, big; the rest after.
-  const ctx = contextOf(usePathname() ?? "/");
-  const here = ctx ? (ctx.keys.map((k) => tiles.find((t) => t.key === k)).filter(Boolean) as typeof tiles) : [];
-  const rest = tiles.filter((t) => !here.includes(t));
-  const grid = (list: typeof tiles, big: boolean) => (
-    <ul className={"quick__grid" + (big ? " is-big" : "")} style={{ gridTemplateColumns: `repeat(${big ? Math.min(3, list.length) : 3}, minmax(0, 1fr))` }}>
-      {list.map((t) => (
-        <li key={t.key}>
-          <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
-            <span className="quick__icon" aria-hidden>
-              {t.icon}
-            </span>
-            <span className="quick__title">{t.title}</span>
-            {t.hint && <span className="quick__hint">{t.hint}</span>}
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
   return (
     <>
       <NextStep tracker={tracker} onClose={onClose} onToast={onToast} />
-      {here.length > 0 ? (
-        <>
-          <p className="quick__group">On {ctx!.name}</p>
-          {grid(here, true)}
-          <p className="quick__group">Everything else</p>
-          {grid(rest, false)}
-        </>
-      ) : (
-        grid(tiles, false)
-      )}
+      <ul className="quick__grid">
+        {tiles.map((t) => (
+          <li key={t.key}>
+            <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
+              <span className="quick__icon" aria-hidden>
+                {t.icon}
+              </span>
+              <span className="quick__title">{t.title}</span>
+              {t.hint && <span className="quick__hint">{t.hint}</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }
 
 type AddKey = "todo" | "weight" | "pages" | "workout" | "meal" | "weekly";
-
-/** The adds that belong to the page you're on, and its name. */
-function contextOf(path: string): { name: string; keys: AddKey[] } | null {
-  const p = path.length > 1 ? path.replace(/\/+$/, "") : path;
-  if (p === "/" || p === "/week" || p === "/plan") return { name: "Today", keys: ["todo", "weekly"] };
-  if (p === "/education" || p === "/learning" || p === "/books") return { name: "Education", keys: ["pages"] };
-  if (p === "/projects") return { name: "Projects", keys: ["todo"] };
-  if (p === "/fitness" || p === "/nutrition") return { name: "Health", keys: ["weight", "meal", "workout"] };
-  return null;
-}
 
 /** The books open now, the one the plan reads next first. */
 function openBooks(s: TrackerState) {
