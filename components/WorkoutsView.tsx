@@ -629,8 +629,9 @@ function SetRow({
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
-  // While resting the row itself fills, "Resting" in place of its numbers;
-  // full, the numbers come back outlined: ready. A tap shows them early.
+  // While resting the row itself fills, "Resting" in place of last time's
+  // numbers and this set's greyed out; full, they come back outlined: ready.
+  // A tap on "Resting" brings them back early.
   const now = useNow(!!rest);
   const [peeked, setPeeked] = useState<number | null>(null);
   const fill = rest ? Math.min(1, Math.max(0, now - rest.at) / (rest.rest * 1000)) : 0;
@@ -648,19 +649,27 @@ function SetRow({
       {resting && <span className="set-line__fill" style={{ inlineSize: `${fill * 100}%` }} aria-hidden />}
       <span className="set-line__no">{index + 1}</span>
       {resting ? (
-        <button
-          type="button"
-          className="set-line__resting"
-          role="progressbar"
-          aria-label={`Resting before set ${index + 1}; tap to show its numbers`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(fill * 100)}
-          onClick={() => setPeeked(rest!.at)}
-        >
-          <Hourglass aria-hidden />
-          Resting
-        </button>
+        <>
+          <button
+            type="button"
+            className="set-line__resting"
+            role="progressbar"
+            aria-label={`Resting before set ${index + 1}; tap to show its numbers`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(fill * 100)}
+            onClick={() => setPeeked(rest!.at)}
+          >
+            <Hourglass aria-hidden />
+            Resting
+          </button>
+          <span className="set-line__ghost font-mono-n" aria-hidden>
+            {set.weight ?? previous?.weight ?? "kg"}
+          </span>
+          <span className="set-line__ghost font-mono-n" aria-hidden>
+            {set.reps ?? previous?.reps ?? "reps"}
+          </span>
+        </>
       ) : (
         <>
       {/* Last time's numbers: reference only, never editable. */}
