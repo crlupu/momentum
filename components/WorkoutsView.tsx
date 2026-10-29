@@ -612,7 +612,8 @@ function SetRow({
   set,
   previous,
   onRemove,
-  nudge }: {
+  nudge,
+  rest }: {
   tracker: Tracker;
   exerciseId: string;
   index: number;
@@ -623,9 +624,18 @@ function SetRow({
   onRemove: () => void;
   /** Peek left once to show the red behind it: the first-time hint. */
   nudge?: boolean;
+  /** The next set to do, while the rest before it runs. */
+  rest?: LastSet;
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
+  // While resting the row itself fills, "Resting" in place of its numbers;
+  // full, the numbers come back outlined: ready. A tap shows them early.
+  const now = useNow(!!rest);
+  const [peeked, setPeeked] = useState<number | null>(null);
+  const fill = rest ? Math.min(1, Math.max(0, now - rest.at) / (rest.rest * 1000)) : 0;
+  const resting = !!rest && fill < 1 && peeked !== rest.at;
+  const ready = !!rest && fill >= 1;
 
   const complete = () => {
     tap();
@@ -634,8 +644,25 @@ function SetRow({
 
   return (
     <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
-    <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}>
+    <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : "", resting ? "is-resting" : "", ready ? "is-ready" : ""].filter(Boolean).join(" ")}>
+      {resting && <span className="set-line__fill" style={{ inlineSize: `${fill * 100}%` }} aria-hidden />}
       <span className="set-line__no">{index + 1}</span>
+      {resting ? (
+        <button
+          type="button"
+          className="set-line__resting"
+          role="progressbar"
+          aria-label={`Resting before set ${index + 1}; tap to show its numbers`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(fill * 100)}
+          onClick={() => setPeeked(rest!.at)}
+        >
+          <Hourglass aria-hidden />
+          Resting
+        </button>
+      ) : (
+        <>
       {/* Last time's numbers: reference only, never editable. */}
       <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
         {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
@@ -655,6 +682,8 @@ function SetRow({
         locked={done}
         onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
       />
+        </>
+      )}
       <IconButton
         label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
         pressed={done}
@@ -791,7 +820,7 @@ function ExerciseBlock({
     }
   };
   const lastOpen = [...e.sets].reverse().find((x) => !x.done);
-  // The rest sits where the pause is: just before the next set to do.
+  // The rest shows on the next set to do: its row fills while it runs.
   const nextIndex = e.sets.findIndex((x) => !x.done);
   const undo = removed && (
     <div className="set-undo" role="status">
@@ -870,7 +899,6 @@ function ExerciseBlock({
           {e.sets.map((s, i) => (
             <div key={s.id} className="set-slot">
               {removed?.index === i && undo}
-              {i === nextIndex && lastSet && lastSet.rest > 0 && <RestRow last={lastSet} next={i + 1} />}
               <SetRow
                 tracker={tracker}
                 exerciseId={e.exerciseId}
@@ -879,6 +907,7 @@ function ExerciseBlock({
                 previous={history?.sets[i]}
                 onRemove={() => remove(s, i)}
                 nudge={hint && s === lastOpen}
+                rest={i === nextIndex && lastSet && lastSet.rest > 0 ? lastSet : undefined}
               />
             </div>
           ))}
@@ -928,13 +957,15 @@ function lastSetOf(active: ActiveWorkout, definition?: Workout): LastSet | null 
   return last;
 }
 
-/** Ticks once a second while shown. */
-function useNow() {
+/** The time, ticking once a second while on. */
+function useNow(on = true) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
+    if (!on) return;
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [on]);
   return now;
 }
 
@@ -948,33 +979,6 @@ function SinceLastSet({ last }: { last: LastSet }) {
   );
 }
 
-/**
- * The pause, between the set just done and the next: "Resting", what comes
- * next and the time left, filling blue left to right. Once the rest is over
- * it turns white and says go; ticking the next set moves it on.
- */
-function RestRow({ last, next }: { last: LastSet; next: number }) {
-  const now = useNow();
-  const goal = last.rest * 1000;
-  const ms = Math.max(0, now - last.at);
-  const full = ms >= goal;
-  return (
-    <div
-      className={"rest-row" + (full ? " is-full" : "")}
-      role="progressbar"
-      aria-label={`Rest before set ${next}`}
-      aria-valuemin={0}
-      aria-valuemax={last.rest}
-      aria-valuenow={Math.min(last.rest, Math.floor(ms / 1000))}
-      aria-valuetext={full ? "Rest over" : `${formatElapsed(goal - ms)} left`}
-    >
-      <span className="rest-row__bar" style={{ inlineSize: `${Math.min(100, (ms / goal) * 100)}%` }} aria-hidden />
-      <Hourglass className="rest-row__icon" aria-hidden />
-      <span className="rest-row__label">{full ? `Rest over · go for set ${next}` : `Resting · set ${next} next`}</span>
-      {!full && <span className="rest-row__left font-mono-n tabular-nums">{formatElapsed(goal - ms + 999)} left</span>}
-    </div>
-  );
-}
 
 /**
  * The workout so far, without a clock (the title has it, and the rest
