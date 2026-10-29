@@ -160,16 +160,14 @@ export function TabBar({ onAdd }: { onAdd: () => void }) {
       </Link>
     );
   };
-  // Four named tabs around one +: log anything from any screen.
+  // A glass group of four icon tabs on the left, the + apart on the right
+  // under the thumb: log anything from any screen.
   return (
-    <nav className="tabbar tabbar--classic bar-material" aria-label="Sections">
-      {NAV.slice(0, 2).map(tab)}
-      <span className="tabbar__add-slot">
-        <button type="button" className="tabbar__add" aria-label="Add" onClick={onAdd}>
-          <IoAdd aria-hidden />
-        </button>
-      </span>
-      {NAV.slice(2).map(tab)}
+    <nav className="tabbar tabbar--split" aria-label="Sections">
+      <span className="tabbar__group">{NAV.map(tab)}</span>
+      <button type="button" className="tabbar__add" aria-label="Add" onClick={onAdd}>
+        <IoAdd aria-hidden />
+      </button>
     </nav>
   );
 }
