@@ -25,6 +25,7 @@ import {
   Dumbbell,
   MoreHorizontal,
   OneArm,
+  Hourglass,
   Plus,
   Trash2,
   Undo } from "./icons";
@@ -790,6 +791,8 @@ function ExerciseBlock({
     }
   };
   const lastOpen = [...e.sets].reverse().find((x) => !x.done);
+  // The rest sits where the pause is: just before the next set to do.
+  const nextIndex = e.sets.findIndex((x) => !x.done);
   const undo = removed && (
     <div className="set-undo" role="status">
       <span>Set {removed.index + 1} removed</span>
@@ -867,6 +870,7 @@ function ExerciseBlock({
           {e.sets.map((s, i) => (
             <div key={s.id} className="set-slot">
               {removed?.index === i && undo}
+              {i === nextIndex && lastSet && lastSet.rest > 0 && <RestRow last={lastSet} next={i + 1} />}
               <SetRow
                 tracker={tracker}
                 exerciseId={e.exerciseId}
@@ -896,7 +900,7 @@ function ExerciseBlock({
               <span>
                 {doneCount} of {e.sets.length} done
               </span>
-              {lastSet && <SinceLastSet last={lastSet} />}
+              {lastSet && !lastSet.rest && <SinceLastSet last={lastSet} />}
             </p>
           )}
           {hint && e.sets.length > 0 && <p className="swipe-hint">Swipe a set left to delete it</p>}
@@ -924,44 +928,51 @@ function lastSetOf(active: ActiveWorkout, definition?: Workout): LastSet | null 
   return last;
 }
 
-/**
- * The rest since the last set, ticking each second. With a rest set, a
- * capsule fills blue towards it and turns white once it's done; with the
- * rest off, just the time since.
- */
-function SinceLastSet({ last }: { last: LastSet }) {
+/** Ticks once a second while shown. */
+function useNow() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const ms = Math.max(0, now - last.at);
-  if (!last.rest) {
-    return (
-      <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
-        Rest <span className="font-mono-n tabular-nums">{formatElapsed(ms)}</span>
-      </span>
-    );
-  }
+  return now;
+}
+
+/** With the rest off: how long since the last set, counting up. */
+function SinceLastSet({ last }: { last: LastSet }) {
+  const now = useNow();
+  return (
+    <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
+      Rest <span className="font-mono-n tabular-nums">{formatElapsed(now - last.at)}</span>
+    </span>
+  );
+}
+
+/**
+ * The pause, between the set just done and the next: "Resting", what comes
+ * next and the time left, filling blue left to right. Once the rest is over
+ * it turns white and says go; ticking the next set moves it on.
+ */
+function RestRow({ last, next }: { last: LastSet; next: number }) {
+  const now = useNow();
   const goal = last.rest * 1000;
+  const ms = Math.max(0, now - last.at);
   const full = ms >= goal;
   return (
-    <span
-      className={"rest-fill" + (full ? " is-full" : "")}
+    <div
+      className={"rest-row" + (full ? " is-full" : "")}
       role="progressbar"
-      aria-label={`Rest after set ${last.set} of ${last.name}`}
+      aria-label={`Rest before set ${next}`}
       aria-valuemin={0}
       aria-valuemax={last.rest}
       aria-valuenow={Math.min(last.rest, Math.floor(ms / 1000))}
-      aria-valuetext={full ? "Rest done" : `${formatElapsed(ms)} of ${formatElapsed(goal)}`}
+      aria-valuetext={full ? "Rest over" : `${formatElapsed(goal - ms)} left`}
     >
-      <span className="rest-fill__bar" style={{ inlineSize: `${Math.min(100, (ms / goal) * 100)}%` }} aria-hidden />
-      <span className="rest-fill__text">
-        {full ? "Rest done" : "Rest"}{" "}
-        <span className="font-mono-n tabular-nums">{full ? formatElapsed(goal) : formatElapsed(ms)}</span>
-        {!full && <span className="rest-fill__goal"> / {formatElapsed(goal)}</span>}
-      </span>
-    </span>
+      <span className="rest-row__bar" style={{ inlineSize: `${Math.min(100, (ms / goal) * 100)}%` }} aria-hidden />
+      <Hourglass className="rest-row__icon" aria-hidden />
+      <span className="rest-row__label">{full ? `Rest over · go for set ${next}` : `Resting · set ${next} next`}</span>
+      {!full && <span className="rest-row__left font-mono-n tabular-nums">{formatElapsed(goal - ms + 999)} left</span>}
+    </div>
   );
 }
 

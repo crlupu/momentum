@@ -29,6 +29,7 @@ export {
   MdRestore as RotateCcw,
   MdUndo as Undo,
   MdBackHand as OneArm,
+  MdHourglassBottom as Hourglass,
   MdPlaylistAdd as ListPlus,
   MdPlayArrow as Play,
   MdSettings as Settings,
