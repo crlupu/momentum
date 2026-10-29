@@ -1086,9 +1086,14 @@ export function ActiveWorkoutPanel({
       )}
 
       <div className="live-workout__foot live-workout__dock">
+        {/* The running time leads, so it stays in view however far down. */}
         <span className="live-workout__tally">
-          {sets} of {planned} {planned === 1 ? "set" : "sets"}
-          <span className="font-mono-n">{total.toLocaleString()} kg</span>
+          <span className="live-workout__time">
+            <Elapsed startedAt={active.startedAt} />
+          </span>
+          <span>
+            {sets} of {planned} {planned === 1 ? "set" : "sets"} · {total.toLocaleString()} kg
+          </span>
         </span>
         <Button
           variant="primary"

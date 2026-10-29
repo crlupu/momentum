@@ -13,7 +13,7 @@ import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 import { ChevronLeft } from "@/components/icons";
 import { UpNextWorkout } from "@/components/UpNextWorkout";
 import { WorkoutScreen, WorkoutsList } from "@/components/WorkoutScreens";
-import { ActiveWorkoutPanel, LiveActions } from "@/components/WorkoutsView";
+import { ActiveWorkoutPanel, Elapsed, LiveActions } from "@/components/WorkoutsView";
 
 /**
  * Fitness, as Apple Health lays it out: a short summary of weight and
@@ -46,6 +46,7 @@ function Fitness() {
         title={active?.name ?? "Workout"}
         subtitle={back}
         actions={active ? <LiveActions tracker={tracker} active={active} /> : undefined}
+        compactAside={active ? <span className="nav-compact__clock"><Elapsed startedAt={active.startedAt} /></span> : undefined}
       >
         {active ? (
           <ActiveWorkoutPanel tracker={tracker} active={active} />

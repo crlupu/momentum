@@ -59,6 +59,7 @@ export function SectionPage({
   subtitle,
   header,
   actions,
+  compactAside,
   children,
 }: {
   id: SectionId;
@@ -70,6 +71,8 @@ export function SectionPage({
   header?: ReactNode;
   /** Beside the title, before More: the page's own actions. */
   actions?: ReactNode;
+  /** Beside the title in the compact bar, once the large title is gone. */
+  compactAside?: ReactNode;
   children: ReactNode;
 }) {
   const { openMore } = useShell();
@@ -95,6 +98,7 @@ export function SectionPage({
       {/* Compact bar: phones and tablets, once the large title is gone. */}
       <div className={"nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")} aria-hidden={!compact}>
         <span className="nav-compact__title">{title ?? sectionTitle(id)}</span>
+        {compactAside}
         <button
           type="button"
           onClick={openMore}
