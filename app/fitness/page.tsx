@@ -29,9 +29,12 @@ function Fitness() {
   // to Health rather than standing empty.
   const live = view === "live" && !!tracker.state?.activeWorkout;
   const shown = usePaneVisible();
+  // Done in place rather than through the router: only the query changes,
+  // and a router move fetches the page anew, which after a deploy meant a
+  // full reload, and a blank screen, the moment a workout was finished.
   useEffect(() => {
-    if (shown && view === "live" && !live) router.replace("/fitness");
-  }, [shown, view, live, router]);
+    if (shown && view === "live" && !live) window.history.replaceState(null, "", window.location.pathname);
+  }, [shown, view, live]);
   const back = (
     <Link href="/fitness" className="back-link">
       <ChevronLeft aria-hidden />

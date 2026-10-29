@@ -74,16 +74,31 @@ import type {
 
 export * from "./model";
 
+/** Set while this device is signed in; lets the app open before sign-in reports. */
+export const SIGNED_IN_KEY = "momentum:signed-in";
+
 export function useTracker() {
   const [state, setState] = useState<TrackerState | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(!isFirebaseConfigured);
+  // Signed in on this device last time, read after the first paint (the page
+  // is prerendered without storage): the app opens from the local copy while
+  // sign-in restores, instead of a blank wait.
+  const [signedInBefore, setSignedInBefore] = useState(false);
+  useEffect(() => {
+    try {
+      setSignedInBefore(localStorage.getItem(SIGNED_IN_KEY) === "1");
+    } catch {}
+  }, []);
   const [authError, setAuthError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const loaded = useRef(false);
   const stateRef = useRef<TrackerState | null>(null);
   const userRef = useRef<User | null>(null);
+  // Whether sign-in has reported yet: until then a change can't be called
+  // local-only, as the cloud copy may still be on its way.
+  const authReadyRef = useRef(!isFirebaseConfigured);
   const lastUpdated = useRef(0);
   // true once this signed-in user's cloud doc has been read at least once
   const remoteSynced = useRef(false);
@@ -137,6 +152,7 @@ export function useTracker() {
     if (!isFirebaseConfigured) return;
     const fb = getFirebase();
     if (!fb) {
+      authReadyRef.current = true;
       setAuthReady(true);
       return;
     }
@@ -144,6 +160,15 @@ export function useTracker() {
       setAuthError(friendlyAuthError((e as { code?: string }).code ?? ""))
     );
     return onAuthStateChanged(fb.auth, (u) => {
+      // Remembered so the next open can show the app from this device's copy
+      // straight away, rather than waiting on sign-in with a blank screen.
+      try {
+        if (u) localStorage.setItem(SIGNED_IN_KEY, "1");
+        else localStorage.removeItem(SIGNED_IN_KEY);
+      } catch {}
+      // Signed out: changes held for a cloud copy have none to land on.
+      if (!u) queued.current = [];
+      authReadyRef.current = true;
       setUser(u);
       setAuthReady(true);
     });
@@ -360,13 +385,14 @@ export function useTracker() {
     setState(next);
 
     // Local-only mode (Firebase not configured, or signed out).
-    if (!isFirebaseConfigured || !userRef.current) {
+    if (!isFirebaseConfigured || (!userRef.current && authReadyRef.current)) {
       lastUpdated.current = Date.now();
       return true;
     }
 
-    // The cloud copy isn't read yet: keep the change, to replay onto it.
-    if (!remoteSynced.current) {
+    // The cloud copy isn't read yet, or sign-in itself is still restoring:
+    // keep the change, to replay onto it.
+    if (!userRef.current || !remoteSynced.current) {
       queued.current.push(fn);
       dirty.current = true;
       lastUpdated.current = Date.now();
@@ -396,6 +422,8 @@ export function useTracker() {
     firebaseConfigured: isFirebaseConfigured,
     user,
     authReady,
+    /** Sign-in hasn't reported yet, but this device was signed in last time. */
+    opening: isFirebaseConfigured && !authReady && signedInBefore,
     authError,
     syncError,
     clearAuthError: () => setAuthError(null),
@@ -1812,7 +1840,7 @@ export function useTracker() {
         fiberTarget:
           grams != null && Number.isFinite(grams) && grams > 0 ? Math.round(grams) : undefined,
       })),
-  }), [state, user, authReady, authError, syncError]);
+  }), [state, user, authReady, signedInBefore, authError, syncError]);
 }
 
 export type Tracker = ReturnType<typeof useTracker>;

@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [toast]);
   const showToast = (t: Toast) => setToast(t);
   // Behind the sign-in screen there is nothing to navigate to yet.
-  const gated = tracker.firebaseConfigured && !tracker.user;
+  const gated = tracker.firebaseConfigured && !tracker.user && !tracker.opening;
   const path = trimPath(usePathname() ?? "/");
   const pane = isPane(path) ? path : null;
 
