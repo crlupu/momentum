@@ -33,8 +33,8 @@ export default function TodayPage() {
 
   return (
     <SectionPage id="tasks" subtitle={subtitle}>
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="md:col-span-2">
           {planned ? <PlanCard tracker={tracker} plan={planned} /> : fresh ? <PlanWelcome /> : <MomentumCard tracker={tracker} />}
         </div>
         {planned ? (

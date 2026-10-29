@@ -96,7 +96,7 @@ function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current
  * their own pages, next to the lists they join, and today's figures live on
  * Today. Icons are monochrome; the current page is marked in electric blue.
  */
-export function Sidebar({ tracker }: { tracker: Tracker }) {
+export function Sidebar({ tracker, onAdd }: { tracker: Tracker; onAdd: () => void }) {
   const current = useCurrentPath();
   return (
     <aside className="sidebar bar-material" aria-label="Sections">
@@ -104,6 +104,12 @@ export function Sidebar({ tracker }: { tracker: Tracker }) {
         <Logo className="h-5 w-auto" />
         <span>Momentum</span>
       </Link>
+
+      {/* Where the sidebar shows, the tab bar's + doesn't: Add lives here. */}
+      <button type="button" className="sidebar__add" onClick={onAdd}>
+        <IoAdd aria-hidden />
+        Add
+      </button>
 
       <nav className="sidebar__nav">
         {NAV.map((n) => <NavLink key={n.id} id={n.id} current={current} />)}

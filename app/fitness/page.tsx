@@ -107,8 +107,10 @@ function Fitness() {
     <SectionPage id="fitness" title="Health" header={<HealthSwitch current="fitness" />}>
       <div className="space-y-5">
         <UpNextWorkout tracker={tracker} />
-        <WeightTracker tracker={tracker} summary />
-        <WorkoutVolumeChart tracker={tracker} summary />
+        <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
+          <WeightTracker tracker={tracker} summary />
+          <WorkoutVolumeChart tracker={tracker} summary />
+        </div>
       </div>
     </SectionPage>
   );

@@ -139,33 +139,35 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
           ) : (
             <NextSteps tracker={tracker} onOpen={setOpenId} />
           )}
-          <Panel title="Reading" bare>
-            {reading.length === 0 ? (
-              <EmptyState icon={<BookOpen />} title="No book open">
-                Start one from Library; its page and pace show here.
-              </EmptyState>
-            ) : (
-              <div className="card goal-list">
-                <ul className="goal-list__rows">
-                  {reading.map((b) => (
-                    <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Panel>
-          <Panel title="Learning" bare>
-            <PathsView
-              tracker={tracker}
-              statuses={["active"]}
-              onOpen={setOpenId}
-              empty={
-                <EmptyState icon={<School />} title="No goals active">
-                  Set a goal to Active and its progress ring appears here.
+          <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
+            <Panel title="Reading" bare>
+              {reading.length === 0 ? (
+                <EmptyState icon={<BookOpen />} title="No book open">
+                  Start one from Library; its page and pace show here.
                 </EmptyState>
-              }
-            />
-          </Panel>
+              ) : (
+                <div className="card goal-list">
+                  <ul className="goal-list__rows">
+                    {reading.map((b) => (
+                      <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Panel>
+            <Panel title="Learning" bare>
+              <PathsView
+                tracker={tracker}
+                statuses={["active"]}
+                onOpen={setOpenId}
+                empty={
+                  <EmptyState icon={<School />} title="No goals active">
+                    Set a goal to Active and its progress ring appears here.
+                  </EmptyState>
+                }
+              />
+            </Panel>
+          </div>
         </>
       ) : (
         <>
