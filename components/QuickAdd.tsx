@@ -352,11 +352,13 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   };
   return (
     <form onSubmit={submit} className="quick__form">
-      {/* The same three fields as Log a meal on Nutrition. */}
+      {/* The same fields as Log a meal on Nutrition: calories large, protein and fibre under them. */}
       <div className="meal-log__fields">
-        <MacroField label="kcal" unit="" whole ariaLabel="Calories" value={kcal} onChange={setKcal} className="macro-field--kcal" autoFocus />
-        <MacroField label="Protein" value={protein} onChange={setProtein} />
-        <MacroField label="Fibre" value={fiber} onChange={setFiber} />
+        <MacroField label="Calories" unit="kcal" whole ariaLabel="Calories" value={kcal} onChange={setKcal} className="macro-field--big" autoFocus />
+        <div className="meal-log__pair">
+          <MacroField label="Protein" value={protein} onChange={setProtein} />
+          <MacroField label="Fibre" value={fiber} onChange={setFiber} />
+        </div>
       </div>
       <p className="quick__note">
         {[left != null ? (left >= 0 ? `${left.toLocaleString()} left today` : `${(-left).toLocaleString()} over today`) : null, `${of(sum("protein"), s.proteinTarget)} protein`]

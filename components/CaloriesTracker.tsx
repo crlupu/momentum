@@ -136,9 +136,9 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
           {s.calorieBudget ? <CardMeter value={todayTotal / s.calorieBudget} accent /> : null}
         </SummaryCard>
 
-        {/* One card logs the meal: kcal, protein and fibre side by side, the
-            day (only worth reading when it isn't today), the meal, and a
-            button that says exactly what it will log. */}
+        {/* One card logs the meal: calories large, protein and fibre under
+            them, the day (only worth reading when it isn't today), the meal,
+            and a button that says exactly what it will log. */}
         <form onSubmit={submit} className="card meal-log" aria-label="Log a meal">
           <div className="meal-log__head">
             <h3 className="meal-log__title">Log a meal</h3>
@@ -151,9 +151,11 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             </span>
           </div>
           <div className="meal-log__fields">
-            <MacroField label="kcal" unit="" whole value={kcal} onChange={setKcal} className="macro-field--kcal" />
-            <MacroField label="Protein" value={proteinIn} onChange={setProteinIn} />
-            <MacroField label="Fibre" value={fiberIn} onChange={setFiberIn} />
+            <MacroField label="Calories" unit="kcal" whole ariaLabel="Calories" value={kcal} onChange={setKcal} className="macro-field--big" />
+            <div className="meal-log__pair">
+              <MacroField label="Protein" value={proteinIn} onChange={setProteinIn} />
+              <MacroField label="Fibre" value={fiberIn} onChange={setFiberIn} />
+            </div>
           </div>
           {s.mealTags.length > 0 && (
             <div className="meal-log__chips" role="radiogroup" aria-label="Meal">
