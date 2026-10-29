@@ -6110,3 +6110,41 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
 @media (min-width: 66rem) { .toast { inset-block-end: 1.5rem; } }
 .quick__big-input.quick__big-input { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+
+/* Quick-add fields: every one in a dark well with room on each side, the
+   big numbers too, so a focus ring never touches the text. */
+.quick input:not(.quick__big-input) { min-block-size: 3rem; padding-inline: 1rem !important; border-radius: 0.75rem; }
+.quick__big-input.quick__big-input { min-inline-size: 9rem; inline-size: auto; max-inline-size: 12rem; block-size: 4.75rem; padding: 0 1.125rem !important; border-radius: 1rem; background: var(--field-bg, #000) !important; field-sizing: content; }
+.dark .quick__big-input.quick__big-input { background: #000 !important; }
+.quick__big-input:focus { box-shadow: inset 0 0 0 2px var(--accent) !important; }
+.quick__pair { display: flex; gap: 0.625rem; }
+.quick__field { display: flex; flex: 1 1 0; flex-direction: column; gap: 0.375rem; min-inline-size: 0; }
+.quick__field-label { font-size: 0.75rem; color: var(--muted); }
+.quick__well { display: flex; align-items: center; min-block-size: 3rem; padding-inline: 1rem 0.875rem; border-radius: 0.75rem; background: var(--field-bg, #000); color: var(--muted); font-size: 0.8125rem; }
+.dark .quick__well { background: #000; }
+.quick__well:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.quick .quick__well input { flex: 1 1 auto; min-inline-size: 0; min-block-size: 0; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; color: var(--foreground); font-size: 1.125rem; outline: none; box-shadow: none !important; }
+.light .quick__well, .light .quick__big-input.quick__big-input, .light .quick input:not(.quick__big-input) { background: color-mix(in srgb, var(--foreground) 6%, transparent) !important; }
+.light .quick .quick__well input.quick__well-input, .light .quick .quick__well input { background: transparent !important; }
+
+/* Pages: which book. */
+.quick__books { margin: 0; padding: 0.25rem; list-style: none; }
+.quick__books li + li { border-block-start: 1px solid var(--separator); }
+.quick__book { display: flex; align-items: center; gap: 0.75rem; inline-size: 100%; min-block-size: 3.75rem; padding: 0.5rem 0.625rem; border: 0; background: transparent; color: var(--foreground); text-align: start; cursor: pointer; }
+.quick__book .quick__icon { flex: none; inline-size: 2.25rem; block-size: 2.25rem; }
+.quick__book .quick__icon svg { inline-size: 1.125rem; block-size: 1.125rem; }
+.quick__book-text { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; }
+.quick__book-title { overflow: hidden; font-size: 0.9375rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.quick__book-sub { font-size: 0.75rem; color: var(--muted); }
+.quick__chev { flex: none; inline-size: 1rem; block-size: 1rem; fill: var(--muted); }
+
+/* Tab bar, split: a frosted group of icon tabs with the + just beside it, centred. */
+.tabbar.tabbar--split { inset-inline: 0; inset-block-end: 0; inline-size: auto; margin: 0; display: flex; align-items: center; justify-content: center; gap: 0.625rem; padding: 0 max(1rem, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 0.75rem) max(1rem, env(safe-area-inset-left)); border: 0; border-radius: 0; background: transparent; box-shadow: none; pointer-events: none; }
+.tabbar--split > * { pointer-events: auto; }
+.tabbar__group { display: flex; gap: 0.125rem; padding: 0.3125rem; border-radius: var(--r-pill); background: color-mix(in srgb, color-mix(in srgb, var(--foreground) 12%, var(--background)) 42%, transparent); -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%); box-shadow: inset 0 0.5px 0 color-mix(in srgb, #fff 30%, transparent), inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent), 0 8px 28px rgba(0, 0, 0, 0.25); }
+.tabbar--split .tabbar__tab { flex: none; inline-size: 3.5rem; block-size: 2.875rem; min-block-size: 0; padding: 0; border-radius: var(--r-pill); background: transparent; color: color-mix(in srgb, var(--foreground) 58%, transparent); }
+.tabbar--split .tabbar__tab svg { inline-size: 1.4375rem; block-size: 1.4375rem; fill: currentColor; }
+.tabbar--split .tabbar__tab .tabbar__label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tabbar--split .tabbar__tab.is-active { inline-size: 3.5rem; padding: 0; background: color-mix(in srgb, var(--foreground) 15%, transparent); color: var(--foreground); }
+.tabbar--split .tabbar__add { flex: none; inline-size: 3.5rem; block-size: 3.5rem; margin: 0; box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent); }
+@media (min-width: 42rem) { .tabbar--split .tabbar__tab { flex-direction: column; } }

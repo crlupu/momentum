@@ -7,7 +7,7 @@ import { Input } from "./ui";
 import { usePending } from "./ActionButton";
 import { useFlow } from "./books/flowContext";
 import { PlanGlyph } from "./plan/bits";
-import { Apple, BookOpen, Check, ChevronLeft, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
+import { Apple, BookOpen, Check, ChevronLeft, ChevronRight, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { nextOfGoal, planOf, stepsOn } from "@/lib/plan";
 import * as R from "@/lib/reading";
@@ -18,7 +18,7 @@ import type { TrackerState } from "@/lib/model";
 /** What a logged thing was, and how to take it back for a few seconds. */
 export type Toast = { text: string; undo?: Partial<TrackerState> };
 
-type View = "menu" | "todo" | "weight" | "meal" | "weekly";
+type View = "menu" | "todo" | "weight" | "meal" | "weekly" | "books";
 
 /**
  * The tab bar's +: log anything from any screen without leaving it. The
@@ -33,7 +33,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
     onClose();
     setView("menu");
   };
-  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks" };
+  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks", books: "Which book?" };
   return (
     <Modal open={open} onClose={close} title={titles[view]}>
       {open && tracker.state && (
@@ -48,6 +48,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
           {view === "weight" && <WeightForm tracker={tracker} onDone={close} onToast={onToast} />}
           {view === "meal" && <MealForm tracker={tracker} onDone={close} onToast={onToast} />}
           {view === "weekly" && <WeeklyList tracker={tracker} />}
+          {view === "books" && <BookPicker tracker={tracker} onClose={close} />}
         </div>
       )}
     </Modal>
@@ -57,10 +58,9 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
 function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView: (v: View) => void; onClose: () => void; onToast: (t: Toast) => void }) {
   const s = tracker.state!;
   const router = useRouter();
-  const flow = useFlow();
   const today = dateKey();
   const lastKg = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).pop()?.kg;
-  const book = R.liveTracks(s).map((t) => R.activeBooks(s, t.id)[0]).find(Boolean);
+  const books = openBooks(s);
   const workout = nextWorkout(s, today);
   const kcalToday = s.calories.filter((c) => c.date === today).reduce((a, c) => a + c.kcal, 0);
   const weekly = weeklyTasksOf(s);
@@ -69,22 +69,22 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
     if (!s.activeWorkout && workout) void tracker.startWorkout(workout.id);
     router.push("/fitness?view=live");
   };
-  const tiles: { icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
-    { icon: <TaskDone />, title: "To-do", onPress: () => onView("todo") },
-    { icon: <Scale />, title: "Weigh-in", hint: lastKg ? `${lastKg} last` : undefined, onPress: () => onView("weight") },
+  const tiles: { key: AddKey; icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
+    { key: "todo", icon: <TaskDone />, title: "To-do", onPress: () => onView("todo") },
+    { key: "weight", icon: <Scale />, title: "Weigh-in", hint: lastKg ? `${lastKg} last` : undefined, onPress: () => onView("weight") },
     {
+      key: "pages",
       icon: <BookOpen />,
       title: "Pages",
-      hint: book ? shortTitle(book.title) : "No book open",
-      disabled: !book,
-      onPress: () => {
-        onClose();
-        if (book) flow.open({ kind: "log", bookId: book.id });
-      },
+      hint: books.length ? (books.length === 1 ? shortTitle(books[0].title) : `${books.length} books open`) : "No book open",
+      disabled: !books.length,
+      // Which book first, then its page log.
+      onPress: () => onView("books"),
     },
-    { icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
-    { icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
+    { key: "workout", icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
+    { key: "meal", icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
     {
+      key: "weekly",
       icon: <Repeat />,
       title: "Weekly task",
       hint: weekly.length ? `${weekly.filter((t) => doneThisWeek(t, today) >= t.times).length} of ${weekly.length} done` : "None yet",
@@ -97,7 +97,7 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
       <NextStep tracker={tracker} onClose={onClose} onToast={onToast} />
       <ul className="quick__grid">
         {tiles.map((t) => (
-          <li key={t.title}>
+          <li key={t.key}>
             <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
               <span className="quick__icon" aria-hidden>
                 {t.icon}
@@ -108,6 +108,58 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
           </li>
         ))}
       </ul>
+    </>
+  );
+}
+
+type AddKey = "todo" | "weight" | "pages" | "workout" | "meal" | "weekly";
+
+/** The books open now, the one the plan reads next first. */
+function openBooks(s: TrackerState) {
+  const all = R.liveTracks(s).flatMap((t) => R.activeBooks(s, t.id));
+  const plan = planOf(s);
+  const next = plan ? stepsOn(s, plan, dateKey()).find((x) => !x.done && (x.it?.kind === "track" || x.it?.kind === "book")) : undefined;
+  const first = next?.it?.kind === "track" ? next.it.book?.id : next?.it?.kind === "book" ? next.it.item.id : undefined;
+  return first ? [...all.filter((b) => b.id === first), ...all.filter((b) => b.id !== first)] : all;
+}
+
+/** Pages: which book, then its page log. */
+function BookPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => void }) {
+  const s = tracker.state!;
+  const flow = useFlow();
+  const books = openBooks(s);
+  return (
+    <>
+      <ul className="card quick__books">
+        {books.map((b) => {
+          const track = R.trackOf(s, b.trackId);
+          return (
+            <li key={b.id}>
+              <button
+                type="button"
+                className="quick__book"
+                onClick={() => {
+                  onClose();
+                  flow.open({ kind: "log", bookId: b.id });
+                }}
+              >
+                <span className="quick__icon" aria-hidden>
+                  <BookOpen />
+                </span>
+                <span className="quick__book-text">
+                  <span className="quick__book-title">{b.title}</span>
+                  <span className="quick__book-sub">
+                    {track?.name ?? "No track"} · p. {b.read}
+                    {b.pages > 0 ? ` of ${b.pages}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="quick__chev" aria-hidden />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {books.length > 1 && <p className="quick__note">The book your plan reads next comes first.</p>}
     </>
   );
 }
@@ -267,17 +319,30 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   const s = tracker.state!;
   const { pending, run } = usePending();
   const [kcal, setKcal] = useState("");
+  const [protein, setProtein] = useState("");
+  const [fiber, setFiber] = useState("");
   const [tagId, setTagId] = useState<string | undefined>(s.mealTags[0]?.id);
-  const n = Math.round(Number(kcal));
+  const num = (v: string) => Math.round(Number(v.replace(",", "."))) || 0;
+  const k = num(kcal);
+  const p = num(protein);
+  const f = num(fiber);
+  // Today's grams so far, against the targets when there are any.
+  const today = dateKey();
+  const sum = (key: "protein" | "fiber") => s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0);
+  const of = (n: number, target?: number) => (target ? `${n} / ${target} g` : `${n} g`);
+  // The button says exactly what will be logged.
+  const parts = [k > 0 ? `${k.toLocaleString()} kcal` : null, p > 0 ? `${p} g protein` : null, f > 0 ? `${f} g fibre` : null].filter(Boolean) as string[];
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!(n > 0)) return;
-    const before = s.calories;
+    if (!parts.length) return;
+    const before = { calories: s.calories, macros: s.macros };
     void run(async () => {
-      const ok = await tracker.addCalories(n, tagId);
+      let ok = true;
+      if (k > 0) ok = (await tracker.addCalories(k, tagId)) !== false && ok;
+      if (p > 0 || f > 0) ok = (await tracker.addMacros(p || null, f || null)) !== false && ok;
       if (ok) {
-        const tag = s.mealTags.find((t) => t.id === tagId);
-        onToast({ text: `Logged ${n.toLocaleString()} kcal${tag ? ` · ${tag.name}` : ""}`, undo: { calories: before } });
+        const tag = k > 0 ? s.mealTags.find((t) => t.id === tagId) : undefined;
+        onToast({ text: `Logged ${parts.join(" \u00b7 ")}${tag ? ` \u00b7 ${tag.name}` : ""}`, undo: before });
         onDone();
       }
       return ok;
@@ -296,8 +361,28 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
           </button>
         ))}
       </div>
-      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
-        Log meal
+      {/* Protein and fibre with the meal, or on their own with kcal empty. */}
+      <div className="quick__pair">
+        <label className="quick__field">
+          <span className="quick__field-label">Protein, optional</span>
+          <span className="quick__well">
+            <input inputMode="decimal" aria-label="Protein in grams" placeholder="0" value={protein} onChange={(e) => setProtein(e.target.value)} />
+            <span>g</span>
+          </span>
+        </label>
+        <label className="quick__field">
+          <span className="quick__field-label">Fibre, optional</span>
+          <span className="quick__well">
+            <input inputMode="decimal" aria-label="Fibre in grams" placeholder="0" value={fiber} onChange={(e) => setFiber(e.target.value)} />
+            <span>g</span>
+          </span>
+        </label>
+      </div>
+      <p className="quick__note">
+        Today: {of(sum("protein"), s.proteinTarget)} protein · {of(sum("fiber"), s.fiberTarget)} fibre
+      </p>
+      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !parts.length}>
+        {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
       </button>
     </form>
   );
