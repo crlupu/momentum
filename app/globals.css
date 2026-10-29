@@ -5931,7 +5931,7 @@ html[data-style="signal"] .card-bars li.is-hi .card-bars__bar, html[data-style="
 /* #2 Leftovers: one folded row under today's plan, opened by day. */
 .leftovers { overflow: hidden; }
 .leftovers__head { display: flex; align-items: center; gap: 0.875rem; inline-size: 100%; min-block-size: 3.5rem; padding: 0.625rem 1rem; text-align: start; color: var(--foreground); }
-.leftovers__count { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: 50%; background: color-mix(in srgb, var(--warning, #ffb547) 18%, transparent); color: var(--warning, #ffb547); font-size: 0.9375rem; font-weight: 600; }
+.leftovers__count { display: grid; place-items: center; inline-size: 2.25rem; block-size: 2.25rem; border-radius: 50%; background: var(--default); color: var(--foreground); font-size: 0.9375rem; font-weight: 600; }
 .leftovers__text { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; }
 .leftovers__title { font-size: 1rem; font-weight: 500; }
 .leftovers__sub { font-size: 0.8125rem; color: var(--muted); }
@@ -6188,3 +6188,29 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .auth-splash__logo { inline-size: auto; block-size: 2.5rem; opacity: 0; animation: auth-splash-in 400ms ease-out 300ms forwards; }
 @keyframes auth-splash-in { to { opacity: 0.9; } }
 @media (prefers-reduced-motion: reduce) { .auth-splash__logo { animation: none; opacity: 0.9; } }
+
+/* Focus, full screen: over everything, nothing else of the app in view. */
+.focus-screen { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; padding: calc(env(safe-area-inset-top) + 1.25rem) 1.25rem calc(env(safe-area-inset-bottom) + 2rem); background: var(--background); color: var(--foreground); animation: focus-in 220ms ease-out; }
+@keyframes focus-in { from { opacity: 0; transform: translateY(1.5rem); } }
+@media (prefers-reduced-motion: reduce) { .focus-screen { animation: none; } }
+.focus-screen__top { display: flex; justify-content: space-between; inline-size: 100%; }
+.focus-screen__icon { display: grid; place-items: center; inline-size: 2.75rem; block-size: 2.75rem; border: 0; border-radius: 50%; background: var(--default); color: var(--foreground); cursor: pointer; }
+.focus-screen__icon svg { inline-size: 1.5rem; block-size: 1.5rem; fill: currentColor; }
+.focus-screen__what { margin-block-start: clamp(1.5rem, 6vh, 3.5rem); text-align: center; }
+.focus-screen__label { margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.focus-screen__doing { margin: 0.375rem 0 0; font-size: 1rem; color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.focus-screen__ring { position: relative; inline-size: min(72vw, 18rem); aspect-ratio: 1; margin-block-start: clamp(1.5rem, 6vh, 3.5rem); }
+.focus-screen__ring svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+.focus-screen__track { fill: none; stroke: var(--default); stroke-width: 8; }
+.focus-screen__arc { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dasharray 1s linear; }
+.focus-screen__ring.is-done .focus-screen__arc { stroke: var(--foreground); }
+.focus-screen__clock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.focus-screen__clock [role="timer"] { font-size: clamp(2.75rem, 14vw, 3.75rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; }
+.focus-screen__of { font-size: 0.875rem; color: var(--muted); }
+.focus-screen__ring.is-done .focus-screen__of { color: var(--foreground); font-weight: 600; }
+.focus-screen__foot { margin: 1.5rem 0 0; font-size: 0.875rem; color: var(--muted); text-align: center; }
+.focus-screen__actions { display: flex; gap: 0.75rem; inline-size: 100%; max-inline-size: 26rem; margin-block-start: auto; }
+.focus-screen__btn { display: flex; flex: 1 1 0; align-items: center; justify-content: center; gap: 0.375rem; min-block-size: 3.5rem; border: 0; border-radius: var(--r-pill); background: var(--default); color: var(--foreground); font-size: 1.0625rem; font-weight: 600; cursor: pointer; }
+.focus-screen__btn svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
+.focus-screen__btn--primary { background: var(--accent); color: #fff; }
+.focus-screen__btn:disabled { opacity: 0.6; }

@@ -26,6 +26,7 @@ import { ReadingFlow } from "../books/flow";
 import { useFlow } from "../books/flowContext";
 import { Check, ChevronRight } from "../icons";
 import { TodayFigures } from "../MomentumCard";
+import { useShell } from "../AppShell";
 import { PlanGlyph, WeekRings } from "./bits";
 
 /**
@@ -248,7 +249,8 @@ function clock(ms: number): string {
 
 /**
  * While a focus block runs, Today's card is its timer, in the same anatomy:
- * the clock against the block's length, Pause and Finish. Finishing logs the
+ * the clock against the block's length, Pause and Finish, and Open for the
+ * full screen once it's been tucked away. Finishing logs the
  * minutes; the step ticks itself once the block's time is in.
  */
 export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan | null }) {
@@ -261,6 +263,7 @@ export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan 
     return () => clearInterval(id);
   }, [f.pausedAt]);
   const { pending, run } = usePending();
+  const { openFocus } = useShell();
   const ms = focusElapsed(f, now);
   const project = f.projectId ? s.projects.find((p) => p.id === f.projectId) : undefined;
   const doing = project ? columnCards(project, "doing")[0] : undefined;
@@ -282,6 +285,9 @@ export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan 
       line={doing ? `Doing: ${doing.title}` : f.day !== today ? `For ${WEEKDAY_LONG[weekdayOf(f.day)]}` : undefined}
       actions={
         <>
+          <button type="button" className="hero__ghost" onClick={openFocus}>
+            Open
+          </button>
           {f.pausedAt ? (
             <button type="button" className="hero__ghost flex-1" disabled={pending} onClick={() => void run(() => tracker.resumeFocus())}>
               Resume
