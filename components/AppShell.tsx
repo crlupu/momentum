@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <ShellContext.Provider value={shell}>
       <div className={"app-frame min-h-screen" + (gated ? " is-gated" : "")}>
-        {!gated && <Sidebar tracker={tracker} />}
+        {!gated && <Sidebar tracker={tracker} onAdd={() => setAddOpen(true)} />}
 
         <main className="app-main">
           <AuthGate tracker={tracker}>
