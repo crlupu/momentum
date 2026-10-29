@@ -1,11 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Input, AddButton } from "./ui";
 import { fmtDateAuto } from "@/lib/dates";
 import { Apple, CalendarDays, MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
-import { CardMeter, CardTiles, SummaryCard } from "./SummaryCard";
+import { CardMeter, SummaryCard } from "./SummaryCard";
+import { MacroField } from "./QuickAdd";
 import { usePending } from "./ActionButton";
 import { Tracker, dateKey, CalorieEntry, UNTAGGED_COLOR } from "@/lib/tracker";
 import { caloriesLeftThisWeek } from "@/lib/model";
@@ -71,16 +71,37 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
   // icon needs to draw attention to itself.
   const loggingToday = !date || date === today;
 
+  const [proteinIn, setProteinIn] = useState("");
+  const [fiberIn, setFiberIn] = useState("");
+  // A comma is a decimal point too: phones in many locales type one.
+  const num = (v: string) => Number(v.replace(",", ".")) || 0;
+  const k = Math.round(num(kcal));
+  const p = Math.round(num(proteinIn) * 10) / 10;
+  const f = Math.round(num(fiberIn) * 10) / 10;
+  const parts = [k > 0 ? `${k.toLocaleString()} kcal` : null, p > 0 ? `${p} g protein` : null, f > 0 ? `${f} g fibre` : null].filter(Boolean) as string[];
+
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const v = Number(kcal);
-    if (!Number.isFinite(v) || v <= 0 || pending) return;
+    if (!parts.length || pending) return;
+    const typed = { kcal, proteinIn, fiberIn };
     setKcal("");
+    setProteinIn("");
+    setFiberIn("");
     // An empty picker means today rather than nothing: the date is optional,
     // and a cleared field should not stop an entry being logged.
-    const ok = await run(() => tracker.addCalories(v, tagId || undefined, date || today));
-    if (!ok) setKcal(String(v));
+    const day = date || today;
+    const ok = await run(async () => {
+      let done = true;
+      if (k > 0) done = (await tracker.addCalories(k, tagId || undefined, day)) !== false && done;
+      if (p > 0 || f > 0) done = (await tracker.addMacros(p || null, f || null, day)) !== false && done;
+      return done;
+    });
+    if (!ok) {
+      setKcal(typed.kcal);
+      setProteinIn(typed.proteinIn);
+      setFiberIn(typed.fiberIn);
+    }
   };
 
   if (view === "today") {
@@ -107,86 +128,53 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             href: "/nutrition?view=trends",
           }}
           figures={[
-            { value: protein, label: s.proteinTarget ? `/ ${s.proteinTarget} g protein` : "g protein" },
-            { value: fiber, label: s.fiberTarget ? `/ ${s.fiberTarget} g fibre` : "g fibre" },
+            { value: Math.round(protein * 10) / 10, label: s.proteinTarget ? `/ ${s.proteinTarget} g protein` : "g protein" },
+            { value: Math.round(fiber * 10) / 10, label: s.fiberTarget ? `/ ${s.fiberTarget} g fibre` : "g fibre" },
             { value: todaysMeals.length, label: todaysMeals.length === 1 ? "meal" : "meals" },
           ]}
         >
           {s.calorieBudget ? <CardMeter value={todayTotal / s.calorieBudget} accent /> : null}
-          {todaysMeals.length > 0 && (
-            <CardTiles
-              items={todaysMeals.slice(0, 8).map((m) => ({
-                key: m.id,
-                icon: <Apple aria-hidden />,
-                label: s.mealTags.find((t) => t.id === m.tagId)?.name ?? "Meal",
-                state: "done" as const,
-              }))}
-            />
-          )}
         </SummaryCard>
 
-        <div className="card p-4">
-          <form onSubmit={submit} className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                inputMode="numeric"
-                aria-label="Calories to add"
-                placeholder="Add kcal"
-                value={kcal}
-                onChange={(e) => setKcal(e.target.value)}
-                className="min-w-0 flex-1"
-              />
-              {/* Just the icon. A date field spells out a date that is almost
-                  always today, taking a third of the row to say so; the icon
-                  turns accent-coloured on the days it is not, which is the only
-                  time the date is worth reading.
-
-                  The real input lies over the icon at zero opacity rather than
-                  beside it. Tapping it opens the platform's own date picker —
-                  the wheel on a phone — which is what makes this work without
-                  showPicker(), whose support is patchier than a tap's. */}
-              <span className="relative shrink-0">
-                <span
-                  className="flex h-10 w-10 items-center justify-center rounded-[var(--r-control)] [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
-                  style={{
-                    background: loggingToday ? "var(--default)" : "var(--accent-soft)",
-                    color: loggingToday ? "var(--muted)" : "var(--accent-text)" }}
-                  aria-hidden
+        {/* One card logs the meal: kcal, protein and fibre side by side, the
+            day (only worth reading when it isn't today), the meal, and a
+            button that says exactly what it will log. */}
+        <form onSubmit={submit} className="card meal-log" aria-label="Log a meal">
+          <div className="meal-log__head">
+            <h3 className="meal-log__title">Log a meal</h3>
+            {/* The real input lies over the icon at zero opacity, so a tap
+                opens the platform's own date picker. */}
+            <span className={"meal-log__date" + (loggingToday ? "" : " is-set")}>
+              <CalendarDays aria-hidden />
+              {!loggingToday && <span>{new Date(date + "T12:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}</span>}
+              <input type="date" aria-label="Date to log against" value={date} max={today} onChange={(e) => setDate(e.target.value)} />
+            </span>
+          </div>
+          <div className="meal-log__fields">
+            <MacroField label="kcal" unit="" whole value={kcal} onChange={setKcal} className="macro-field--kcal" />
+            <MacroField label="Protein" value={proteinIn} onChange={setProteinIn} />
+            <MacroField label="Fibre" value={fiberIn} onChange={setFiberIn} />
+          </div>
+          {s.mealTags.length > 0 && (
+            <div className="meal-log__chips" role="radiogroup" aria-label="Meal">
+              {s.mealTags.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="radio"
+                  onClick={() => setTagId(tagId === m.id ? "" : m.id)}
+                  className="weekly-cat"
+                  aria-checked={tagId === m.id}
                 >
-                  <CalendarDays className="h-4 w-4" />
-                </span>
-                <input
-                  type="date"
-                  aria-label="Date to log against"
-                  value={date}
-                  max={today}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-              </span>
-              <AddButton type="submit" aria-label="Add" isDisabled={pending} />
+                  {m.name}
+                </button>
+              ))}
             </div>
-            {s.mealTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Meal">
-                {s.mealTags.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    role="radio"
-                    onClick={() => setTagId(tagId === m.id ? "" : m.id)}
-                    className="cat-chip meal-chip"
-                    style={{ ["--chip-color" as string]: m.color }}
-                    aria-checked={tagId === m.id}
-                  >
-                    <span className="cat-chip__dot" aria-hidden />
-                    {m.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </form>
-        </div>
+          )}
+          <button type="submit" className="pill-link pill-link--primary meal-log__save" disabled={pending || !parts.length}>
+            {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
+          </button>
+        </form>
 
         {todayEntries.length > 0 && (
           <section>

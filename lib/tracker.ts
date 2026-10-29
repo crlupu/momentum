@@ -1403,12 +1403,14 @@ export function useTracker() {
     removeMacroEntry: (id: string) =>
       commit((s) => ({ ...s, macros: s.macros.filter((e) => e.id !== id) })),
 
-    addMacros: (protein: number | null, fiber: number | null) =>
+    /** Grams of protein and fibre, kept to a tenth (14.6 g stays 14.6 g). */
+    addMacros: (protein: number | null, fiber: number | null, date?: string) =>
       commit((s) => {
-        const p = protein != null && Number.isFinite(protein) && protein > 0 ? Math.round(protein) : undefined;
-        const f = fiber != null && Number.isFinite(fiber) && fiber > 0 ? Math.round(fiber) : undefined;
+        const tenth = (n: number) => Math.round(n * 10) / 10;
+        const p = protein != null && Number.isFinite(protein) && protein > 0 ? tenth(protein) : undefined;
+        const f = fiber != null && Number.isFinite(fiber) && fiber > 0 ? tenth(fiber) : undefined;
         if (p === undefined && f === undefined) return s;
-        const entry: MacroEntry = { id: uid(), date: dateKey(), at: Date.now() };
+        const entry: MacroEntry = { id: uid(), date: date ?? dateKey(), at: Date.now() };
         if (p !== undefined) entry.protein = p;
         if (f !== undefined) entry.fiber = f;
         return { ...s, macros: [...s.macros, entry] };

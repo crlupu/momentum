@@ -32,7 +32,7 @@ function Nutrition() {
       >
         <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
           <CaloriesTracker tracker={tracker} view="trends" />
-          <MacroTracker tracker={tracker} view="trends" />
+          <MacroTracker tracker={tracker} />
         </div>
       </SectionPage>
     );
@@ -42,7 +42,6 @@ function Nutrition() {
       <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
         <CaloriesTracker tracker={tracker} />
         <div className="space-y-5">
-          <MacroTracker tracker={tracker} />
           <nav className="group-list" aria-label="More in Nutrition">
             <Link href="/nutrition?view=trends" className="group-row">
               <span className="flex-1">History and trends</span>

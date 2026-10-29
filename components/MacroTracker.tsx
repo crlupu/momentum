@@ -1,8 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { Input, PanelHeader, AddButton } from "./ui";
-import { usePending } from "./ActionButton";
+import { PanelHeader } from "./ui";
 import { Tracker, dateKey, macroTotalsByDate } from "@/lib/tracker";
 
 const LABEL = "var(--muted)";
@@ -42,10 +40,9 @@ function Legend({ color, name }: { color: string; name: string }) {
  * Protein and fibre. `today` is the add fields alone (today's grams are
  * the Nutrition card's figures); `trends` the last two weeks as bars.
  */
-export default function MacroTracker({ tracker, view = "today" }: { tracker: Tracker; view?: "today" | "trends" }) {
+/** Protein and fibre over the last two weeks; they are logged with the meal, in Nutrition's one card. */
+export default function MacroTracker({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const [protein, setProtein] = useState("");
-  const [fiber, setFiber] = useState("");
 
   const totals = macroTotalsByDate(s.macros);
 
@@ -66,48 +63,6 @@ export default function MacroTracker({ tracker, view = "today" }: { tracker: Tra
   const max = asPercent
     ? Math.max(100, ...pctSeries.map((v) => Math.max(v.protein, v.fiber)))
     : Math.max(1, ...series.map((v) => Math.max(v.protein, v.fiber)));
-
-  const { pending, run } = usePending();
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (pending) return;
-    const p = protein.trim() === "" ? null : Number(protein);
-    const f = fiber.trim() === "" ? null : Number(fiber);
-    if (p == null && f == null) return;
-    const typed = { protein, fiber };
-    setProtein("");
-    setFiber("");
-    const ok = await run(() => tracker.addMacros(p, f));
-    if (!ok) {
-      setProtein(typed.protein);
-      setFiber(typed.fiber);
-    }
-  };
-
-  // Today's grams are the Nutrition card's figures; here is only the add.
-  if (view === "today") {
-    return (
-      <form onSubmit={submit} className="card macro-add" aria-label="Add protein and fibre">
-        <Input
-          type="number"
-          aria-label="Protein in grams"
-          placeholder="Protein, g"
-          value={protein}
-          onChange={(e) => setProtein(e.target.value)}
-          className="min-w-0 flex-1"
-        />
-        <Input
-          type="number"
-          aria-label="Fibre in grams"
-          placeholder="Fibre, g"
-          value={fiber}
-          onChange={(e) => setFiber(e.target.value)}
-          className="min-w-0 flex-1"
-        />
-        <AddButton type="submit" aria-label="Add protein and fibre" isDisabled={pending} />
-      </form>
-    );
-  }
 
   return (
     <section aria-label="Protein and fibre, last two weeks">

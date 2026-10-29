@@ -296,7 +296,7 @@ function WeightForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: ()
   return (
     <form onSubmit={submit} className="quick__form">
       <label className="quick__big">
-        <input className="quick__big-input font-mono-n" inputMode="decimal" aria-label="Weight in kg" value={kg} onChange={(e) => setKg(e.target.value)} autoFocus />
+        <input className="quick__big-input font-mono-n" inputMode="decimal" aria-label="Weight in kg" value={kg} onChange={(e) => setKg(e.target.value)} style={digitsWide(kg)} autoFocus />
         <span>kg</span>
       </label>
       {diff != null && last && <p className="quick__note">{diff === 0 ? "Same as" : `${diff > 0 ? "+" : "−"}${Math.abs(diff)} from`} {last.date === dateKey() ? "earlier today" : "last time"}</p>}
@@ -315,6 +315,13 @@ function WeightForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: ()
   );
 }
 
+/** A big number field as wide as what's typed, so its unit sits right beside it. */
+const digitsWide = (v: string) => {
+  // A digit is one ch wide; a decimal point or comma about a third of one.
+  const points = (v.match(/[.,]/g) ?? []).length;
+  return { inlineSize: `${Math.max(1, v.length - points) + points * 0.35 + 0.1}ch` };
+};
+
 function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () => void; onToast: (t: Toast) => void }) {
   const s = tracker.state!;
   const { pending, run } = usePending();
@@ -322,13 +329,16 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   const [protein, setProtein] = useState("");
   const [fiber, setFiber] = useState("");
   const [tagId, setTagId] = useState<string | undefined>(s.mealTags[0]?.id);
-  const num = (v: string) => Math.round(Number(v.replace(",", "."))) || 0;
-  const k = num(kcal);
-  const p = num(protein);
-  const f = num(fiber);
+  // A comma is a decimal point too: phones in many locales type one.
+  const num = (v: string) => Number(v.replace(",", ".")) || 0;
+  const k = Math.round(num(kcal));
+  const p = Math.round(num(protein) * 10) / 10;
+  const f = Math.round(num(fiber) * 10) / 10;
   // Today's grams so far, against the targets when there are any.
   const today = dateKey();
-  const sum = (key: "protein" | "fiber") => s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0);
+  const sum = (key: "protein" | "fiber") => Math.round(s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0) * 10) / 10;
+  const eaten = s.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
+  const left = s.calorieBudget ? s.calorieBudget - eaten - k : null;
   const of = (n: number, target?: number) => (target ? `${n} / ${target} g` : `${n} g`);
   // The button says exactly what will be logged.
   const parts = [k > 0 ? `${k.toLocaleString()} kcal` : null, p > 0 ? `${p} g protein` : null, f > 0 ? `${f} g fibre` : null].filter(Boolean) as string[];
@@ -351,9 +361,12 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   return (
     <form onSubmit={submit} className="quick__form">
       <label className="quick__big">
-        <input className="quick__big-input font-mono-n" inputMode="numeric" aria-label="Calories" placeholder="0" value={kcal} onChange={(e) => setKcal(e.target.value)} autoFocus />
+        <input className="quick__big-input font-mono-n" inputMode="numeric" aria-label="Calories" placeholder="0" value={kcal} onChange={(e) => setKcal(e.target.value)} style={digitsWide(kcal)} autoFocus />
         <span>kcal</span>
       </label>
+      {left != null && (
+        <p className="quick__note">{left >= 0 ? `${left.toLocaleString()} left today` : `${(-left).toLocaleString()} over today`}</p>
+      )}
       <div className="quick__chips" role="radiogroup" aria-label="Meal">
         {s.mealTags.map((t) => (
           <button key={t.id} type="button" role="radio" aria-checked={t.id === tagId} className="weekly-cat" onClick={() => setTagId(t.id)}>
@@ -363,20 +376,8 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
       </div>
       {/* Protein and fibre with the meal, or on their own with kcal empty. */}
       <div className="quick__pair">
-        <label className="quick__field">
-          <span className="quick__field-label">Protein, optional</span>
-          <span className="quick__well">
-            <input inputMode="decimal" aria-label="Protein in grams" placeholder="0" value={protein} onChange={(e) => setProtein(e.target.value)} />
-            <span>g</span>
-          </span>
-        </label>
-        <label className="quick__field">
-          <span className="quick__field-label">Fibre, optional</span>
-          <span className="quick__well">
-            <input inputMode="decimal" aria-label="Fibre in grams" placeholder="0" value={fiber} onChange={(e) => setFiber(e.target.value)} />
-            <span>g</span>
-          </span>
-        </label>
+        <MacroField label="Protein" value={protein} onChange={setProtein} />
+        <MacroField label="Fibre" value={fiber} onChange={setFiber} />
       </div>
       <p className="quick__note">
         Today: {of(sum("protein"), s.proteinTarget)} protein · {of(sum("fiber"), s.fiberTarget)} fibre
@@ -385,6 +386,40 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
         {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
       </button>
     </form>
+  );
+}
+
+/** A number field with its label inside, "–" while empty, the unit at the end. */
+export function MacroField({
+  label,
+  value,
+  onChange,
+  unit = "g",
+  whole,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  unit?: string;
+  /** Whole numbers only (kcal): the numeric keypad, no decimal point. */
+  whole?: boolean;
+  className?: string;
+}) {
+  return (
+    <label className={"macro-field " + className}>
+      <span className="macro-field__label">{label}</span>
+      <span className="macro-field__row">
+        <input
+          inputMode={whole ? "numeric" : "decimal"}
+          aria-label={unit === "g" ? `${label} in grams` : label}
+          placeholder="–"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {unit && <span aria-hidden>{unit}</span>}
+      </span>
+    </label>
   );
 }
 
