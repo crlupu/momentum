@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Button, Card, Input } from "./ui";
 import { Tracker } from "@/lib/tracker";
+import { Logo } from "./Logo";
 
 function GoogleIcon() {
   return (
@@ -42,9 +43,16 @@ export function AuthGate({
   // Local-only mode (Firebase not set up yet): just run the app.
   if (!tracker.firebaseConfigured) return <>{children}</>;
 
-  // Waiting for Firebase to report auth state.
+  // Waiting for Firebase to report auth state. Signed in here last time: the
+  // app opens from this device's copy at once and syncs when sign-in lands
+  // (after a reload mid-workout, say). Otherwise a quiet splash.
   if (!tracker.authReady) {
-    return <p className="pt-10 text-center text-[var(--muted)]">Connecting…</p>;
+    if (tracker.opening) return <>{children}</>;
+    return (
+      <div className="auth-splash" role="status" aria-label="Opening Momentum">
+        <Logo className="auth-splash__logo" />
+      </div>
+    );
   }
 
   // Signed in: show the app.

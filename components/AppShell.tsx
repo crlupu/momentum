@@ -9,6 +9,7 @@ import { GoalForm } from "./Forms";
 import { TabPanes, isPane } from "./TabPanes";
 import { QuickAdd, type Toast } from "./QuickAdd";
 import { ReadingFlow } from "./books/flow";
+import { FocusScreen } from "./FocusScreen";
 import { Check } from "./icons";
 import { usePathname } from "next/navigation";
 import { trimPath } from "./sections";
@@ -18,6 +19,8 @@ type Shell = {
   openGoal: () => void;
   /** The phone's More sheet: Progress, Log, Settings, appearance. */
   openMore: () => void;
+  /** Brings a tucked-away focus block back to full screen. */
+  openFocus: () => void;
 };
 
 export const ShellContext = createContext<Shell | null>(null);
@@ -66,15 +69,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(id);
   }, [toast]);
   const showToast = (t: Toast) => setToast(t);
+  // A running focus block takes the whole screen. Tucked away, it stays so
+  // until the block changes or the app is opened again.
+  const focusAt = tracker.state?.activeFocus?.startedAt ?? null;
+  const [tuckedAt, setTuckedAt] = useState<number | null>(null);
+  useEffect(() => {
+    const back = () => document.visibilityState === "visible" && setTuckedAt(null);
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, []);
   // Behind the sign-in screen there is nothing to navigate to yet.
-  const gated = tracker.firebaseConfigured && !tracker.user;
+  const gated = tracker.firebaseConfigured && !tracker.user && !tracker.opening;
   const path = trimPath(usePathname() ?? "/");
   const pane = isPane(path) ? path : null;
 
   // Kept the same object until the tracker changes, so moving between
   // pages doesn't re-render every page that reads it.
   const shell = useMemo<Shell>(
-    () => ({ tracker, openGoal: () => setGoalOpen(true), openMore: () => setMoreOpen(true) }),
+    () => ({ tracker, openGoal: () => setGoalOpen(true), openMore: () => setMoreOpen(true), openFocus: () => setTuckedAt(null) }),
     [tracker]
   );
 
@@ -125,6 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </div>
         )}
+        {!gated && focusAt != null && tuckedAt !== focusAt && <FocusScreen tracker={tracker} onTuck={() => setTuckedAt(focusAt)} />}
         <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} tracker={tracker} />
 
         <Modal open={goalOpen} onClose={() => setGoalOpen(false)} title="New goal">
