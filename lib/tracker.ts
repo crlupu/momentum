@@ -1419,7 +1419,7 @@ export function useTracker() {
       name: string,
       weight: number | null,
       oneArm = false,
-      extra?: { seconds?: number | null; note?: string; blockId?: string; target?: ExerciseTarget | null }
+      extra?: { seconds?: number | null; note?: string; blockId?: string; target?: ExerciseTarget | null; restSeconds?: number | null }
     ) =>
       commit((s) => {
         const clean = name.trim();
@@ -1431,6 +1431,7 @@ export function useTracker() {
         if (extra?.seconds != null && extra.seconds > 0) ex.seconds = Math.round(extra.seconds);
         if (extra?.note?.trim()) ex.note = extra.note.trim();
         if (extra?.blockId) ex.blockId = extra.blockId;
+        if (extra?.restSeconds != null && extra.restSeconds >= 0) ex.restSeconds = Math.round(extra.restSeconds);
         return {
           ...s,
           workouts: s.workouts.map((w) =>
@@ -1445,7 +1446,7 @@ export function useTracker() {
       name: string,
       weight: number | null,
       oneArm = false,
-      extra?: { seconds?: number | null; note?: string; target?: ExerciseTarget | null }
+      extra?: { seconds?: number | null; note?: string; target?: ExerciseTarget | null; restSeconds?: number | null }
     ) =>
       commit((s) => {
         const clean = name.trim();
@@ -1478,6 +1479,14 @@ export function useTracker() {
                               : {}
                             : e.target
                               ? { target: e.target }
+                              : {}),
+                          // Likewise: kept unless given; null goes back to the default.
+                          ...(extra && "restSeconds" in extra
+                            ? extra.restSeconds != null && extra.restSeconds >= 0
+                              ? { restSeconds: Math.round(extra.restSeconds) }
+                              : {}
+                            : e.restSeconds != null
+                              ? { restSeconds: e.restSeconds }
                               : {}),
                           ...(e.blockId ? { blockId: e.blockId } : {}),
                         }

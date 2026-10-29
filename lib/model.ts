@@ -382,6 +382,9 @@ export function formatTarget(t: ExerciseTarget): string {
   return reps ? `${t.sets} × ${reps}` : `${t.sets} sets`;
 }
 
+/** Rest between sets for an exercise that hasn't set its own. */
+export const DEFAULT_REST = 90;
+
 export type Exercise = {
   id: string;
   name: string;
@@ -408,6 +411,11 @@ export type Exercise = {
   note?: string;
   /** What's recommended: sets and a rep range. Shown while working out. */
   target?: ExerciseTarget;
+  /**
+   * Seconds of rest between its sets: the live workout fills a bar for this
+   * long after each one. 0 turns the bar off; left out, DEFAULT_REST applies.
+   */
+  restSeconds?: number;
   /**
    * The block it belongs to, or undefined for the workout's main body. The
    * exercise list stays flat and in order — blocks group it rather than own
