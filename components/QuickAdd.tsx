@@ -267,17 +267,30 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   const s = tracker.state!;
   const { pending, run } = usePending();
   const [kcal, setKcal] = useState("");
+  const [protein, setProtein] = useState("");
+  const [fiber, setFiber] = useState("");
   const [tagId, setTagId] = useState<string | undefined>(s.mealTags[0]?.id);
-  const n = Math.round(Number(kcal));
+  const num = (v: string) => Math.round(Number(v.replace(",", "."))) || 0;
+  const k = num(kcal);
+  const p = num(protein);
+  const f = num(fiber);
+  // Today's grams so far, against the targets when there are any.
+  const today = dateKey();
+  const sum = (key: "protein" | "fiber") => s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0);
+  const of = (n: number, target?: number) => (target ? `${n} / ${target} g` : `${n} g`);
+  // The button says exactly what will be logged.
+  const parts = [k > 0 ? `${k.toLocaleString()} kcal` : null, p > 0 ? `${p} g protein` : null, f > 0 ? `${f} g fibre` : null].filter(Boolean) as string[];
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!(n > 0)) return;
-    const before = s.calories;
+    if (!parts.length) return;
+    const before = { calories: s.calories, macros: s.macros };
     void run(async () => {
-      const ok = await tracker.addCalories(n, tagId);
+      let ok = true;
+      if (k > 0) ok = (await tracker.addCalories(k, tagId)) !== false && ok;
+      if (p > 0 || f > 0) ok = (await tracker.addMacros(p || null, f || null)) !== false && ok;
       if (ok) {
-        const tag = s.mealTags.find((t) => t.id === tagId);
-        onToast({ text: `Logged ${n.toLocaleString()} kcal${tag ? ` · ${tag.name}` : ""}`, undo: { calories: before } });
+        const tag = k > 0 ? s.mealTags.find((t) => t.id === tagId) : undefined;
+        onToast({ text: `Logged ${parts.join(" \u00b7 ")}${tag ? ` \u00b7 ${tag.name}` : ""}`, undo: before });
         onDone();
       }
       return ok;
@@ -296,8 +309,28 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
           </button>
         ))}
       </div>
-      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
-        Log meal
+      {/* Protein and fibre with the meal, or on their own with kcal empty. */}
+      <div className="quick__pair">
+        <label className="quick__field">
+          <span className="quick__field-label">Protein, optional</span>
+          <span className="quick__well">
+            <input inputMode="decimal" aria-label="Protein in grams" placeholder="0" value={protein} onChange={(e) => setProtein(e.target.value)} />
+            <span>g</span>
+          </span>
+        </label>
+        <label className="quick__field">
+          <span className="quick__field-label">Fibre, optional</span>
+          <span className="quick__well">
+            <input inputMode="decimal" aria-label="Fibre in grams" placeholder="0" value={fiber} onChange={(e) => setFiber(e.target.value)} />
+            <span>g</span>
+          </span>
+        </label>
+      </div>
+      <p className="quick__note">
+        Today: {of(sum("protein"), s.proteinTarget)} protein · {of(sum("fiber"), s.fiberTarget)} fibre
+      </p>
+      <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !parts.length}>
+        {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
       </button>
     </form>
   );
