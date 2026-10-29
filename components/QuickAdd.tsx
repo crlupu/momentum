@@ -3,7 +3,7 @@
 import { FormEvent, ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "./Modal";
-import { Input } from "./ui";
+
 import { usePending } from "./ActionButton";
 import { useFlow } from "./books/flowContext";
 import { PlanGlyph } from "./plan/bits";
@@ -264,7 +264,7 @@ function TodoForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   };
   return (
     <form onSubmit={submit} className="quick__form">
-      <Input aria-label="New to-do" placeholder="What needs doing?" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+      <MacroField label="To-do" text unit="" ariaLabel="New to-do" placeholder="What needs doing?" value={title} onChange={setTitle} autoFocus />
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !title.trim()}>
         Add to-do
       </button>
@@ -295,19 +295,18 @@ function WeightForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: ()
   const diff = last && n > 0 ? Math.round((n - last.kg) * 10) / 10 : null;
   return (
     <form onSubmit={submit} className="quick__form">
-      <label className="quick__big">
-        <input className="quick__big-input font-mono-n" inputMode="decimal" aria-label="Weight in kg" value={kg} onChange={(e) => setKg(e.target.value)} autoFocus />
-        <span>kg</span>
-      </label>
+      {/* One wide field, − and + at its end for tenths. */}
+      <MacroField label="Weight" unit="kg" ariaLabel="Weight in kg" value={kg} onChange={setKg} className="macro-field--big" autoFocus>
+        <span className="macro-field__steps">
+          <button type="button" onClick={() => nudge(-0.1)} aria-label="Less 0.1 kg">
+            <Minus aria-hidden />
+          </button>
+          <button type="button" onClick={() => nudge(0.1)} aria-label="More 0.1 kg">
+            <Plus aria-hidden />
+          </button>
+        </span>
+      </MacroField>
       {diff != null && last && <p className="quick__note">{diff === 0 ? "Same as" : `${diff > 0 ? "+" : "−"}${Math.abs(diff)} from`} {last.date === dateKey() ? "earlier today" : "last time"}</p>}
-      <div className="quick__nudges">
-        <button type="button" className="pill-link" onClick={() => nudge(-0.1)} aria-label="Less 0.1 kg">
-          <Minus aria-hidden /> 0.1
-        </button>
-        <button type="button" className="pill-link" onClick={() => nudge(0.1)} aria-label="More 0.1 kg">
-          <Plus aria-hidden /> 0.1
-        </button>
-      </div>
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
         Log {n > 0 ? `${n} kg` : "weight"}
       </button>
@@ -322,13 +321,16 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   const [protein, setProtein] = useState("");
   const [fiber, setFiber] = useState("");
   const [tagId, setTagId] = useState<string | undefined>(s.mealTags[0]?.id);
-  const num = (v: string) => Math.round(Number(v.replace(",", "."))) || 0;
-  const k = num(kcal);
-  const p = num(protein);
-  const f = num(fiber);
+  // A comma is a decimal point too: phones in many locales type one.
+  const num = (v: string) => Number(v.replace(",", ".")) || 0;
+  const k = Math.round(num(kcal));
+  const p = Math.round(num(protein) * 10) / 10;
+  const f = Math.round(num(fiber) * 10) / 10;
   // Today's grams so far, against the targets when there are any.
   const today = dateKey();
-  const sum = (key: "protein" | "fiber") => s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0);
+  const sum = (key: "protein" | "fiber") => Math.round(s.macros.filter((m) => m.date === today).reduce((a, m) => a + (m[key] ?? 0), 0) * 10) / 10;
+  const eaten = s.calories.filter((e) => e.date === today).reduce((a, e) => a + e.kcal, 0);
+  const left = s.calorieBudget ? s.calorieBudget - eaten - k : null;
   const of = (n: number, target?: number) => (target ? `${n} / ${target} g` : `${n} g`);
   // The button says exactly what will be logged.
   const parts = [k > 0 ? `${k.toLocaleString()} kcal` : null, p > 0 ? `${p} g protein` : null, f > 0 ? `${f} g fibre` : null].filter(Boolean) as string[];
@@ -350,41 +352,84 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
   };
   return (
     <form onSubmit={submit} className="quick__form">
-      <label className="quick__big">
-        <input className="quick__big-input font-mono-n" inputMode="numeric" aria-label="Calories" placeholder="0" value={kcal} onChange={(e) => setKcal(e.target.value)} autoFocus />
-        <span>kcal</span>
-      </label>
-      <div className="quick__chips" role="radiogroup" aria-label="Meal">
+      {/* The same fields as Log a meal on Nutrition: calories large, protein and fibre under them. */}
+      <div className="meal-log__fields">
+        <MacroField label="Calories" unit="kcal" whole ariaLabel="Calories" value={kcal} onChange={setKcal} className="macro-field--big" autoFocus />
+        <div className="meal-log__pair">
+          <MacroField label="Protein" value={protein} onChange={setProtein} />
+          <MacroField label="Fibre" value={fiber} onChange={setFiber} />
+        </div>
+      </div>
+      <p className="quick__note">
+        {[left != null ? (left >= 0 ? `${left.toLocaleString()} left today` : `${(-left).toLocaleString()} over today`) : null, `${of(sum("protein"), s.proteinTarget)} protein`]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+      <div className="meal-log__chips" role="radiogroup" aria-label="Meal">
         {s.mealTags.map((t) => (
           <button key={t.id} type="button" role="radio" aria-checked={t.id === tagId} className="weekly-cat" onClick={() => setTagId(t.id)}>
             {t.name}
           </button>
         ))}
       </div>
-      {/* Protein and fibre with the meal, or on their own with kcal empty. */}
-      <div className="quick__pair">
-        <label className="quick__field">
-          <span className="quick__field-label">Protein, optional</span>
-          <span className="quick__well">
-            <input inputMode="decimal" aria-label="Protein in grams" placeholder="0" value={protein} onChange={(e) => setProtein(e.target.value)} />
-            <span>g</span>
-          </span>
-        </label>
-        <label className="quick__field">
-          <span className="quick__field-label">Fibre, optional</span>
-          <span className="quick__well">
-            <input inputMode="decimal" aria-label="Fibre in grams" placeholder="0" value={fiber} onChange={(e) => setFiber(e.target.value)} />
-            <span>g</span>
-          </span>
-        </label>
-      </div>
-      <p className="quick__note">
-        Today: {of(sum("protein"), s.proteinTarget)} protein · {of(sum("fiber"), s.fiberTarget)} fibre
-      </p>
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !parts.length}>
         {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
       </button>
     </form>
+  );
+}
+
+/**
+ * The app's logging field: its label inside, "–" while empty, the unit at
+ * the end, soft grey with a thin white ring while typing. Used for food on
+ * Nutrition and in every Add sheet.
+ */
+export function MacroField({
+  label,
+  value,
+  onChange,
+  unit = "g",
+  whole,
+  text,
+  placeholder = "–",
+  ariaLabel,
+  autoFocus,
+  className = "",
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  unit?: string;
+  /** Whole numbers only (kcal): the numeric keypad, no decimal point. */
+  whole?: boolean;
+  /** Words rather than a number (a to-do). */
+  text?: boolean;
+  placeholder?: string;
+  ariaLabel?: string;
+  autoFocus?: boolean;
+  className?: string;
+  /** Controls at the field's end, after the unit (− and + for a weight). */
+  children?: ReactNode;
+}) {
+  return (
+    <div className={"macro-field " + className}>
+      <label className="macro-field__main">
+        <span className="macro-field__label">{label}</span>
+        <span className="macro-field__row">
+          <input
+            inputMode={text ? "text" : whole ? "numeric" : "decimal"}
+            aria-label={ariaLabel ?? (unit === "g" ? `${label} in grams` : label)}
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            autoFocus={autoFocus}
+          />
+          {unit && <span aria-hidden>{unit}</span>}
+        </span>
+      </label>
+      {children}
+    </div>
   );
 }
 
