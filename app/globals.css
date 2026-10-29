@@ -6126,3 +6126,22 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .quick .quick__well input { flex: 1 1 auto; min-inline-size: 0; min-block-size: 0; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; color: var(--foreground); font-size: 1.125rem; outline: none; box-shadow: none !important; }
 .light .quick__well, .light .quick__big-input.quick__big-input, .light .quick input:not(.quick__big-input) { background: color-mix(in srgb, var(--foreground) 6%, transparent) !important; }
 .light .quick .quick__well input.quick__well-input, .light .quick .quick__well input { background: transparent !important; }
+
+/* Add: the tab's own adds first, big; everything else smaller. */
+.quick__group { margin: 0.125rem 0.25rem -0.25rem; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.quick__grid:not(.is-big) .quick__tile { min-block-size: 5.25rem; padding-block: 0.625rem; gap: 0.3125rem; }
+.quick__grid:not(.is-big) .quick__icon { inline-size: 2.25rem; block-size: 2.25rem; }
+.quick__grid:not(.is-big) .quick__icon svg { inline-size: 1.125rem; block-size: 1.125rem; }
+.quick__grid.is-big .quick__tile { min-block-size: 7rem; }
+.quick__grid.is-big .quick__title { font-size: 0.875rem; }
+
+/* Pages: which book. */
+.quick__books { margin: 0; padding: 0.25rem; list-style: none; }
+.quick__books li + li { border-block-start: 1px solid var(--separator); }
+.quick__book { display: flex; align-items: center; gap: 0.75rem; inline-size: 100%; min-block-size: 3.75rem; padding: 0.5rem 0.625rem; border: 0; background: transparent; color: var(--foreground); text-align: start; cursor: pointer; }
+.quick__book .quick__icon { flex: none; inline-size: 2.25rem; block-size: 2.25rem; }
+.quick__book .quick__icon svg { inline-size: 1.125rem; block-size: 1.125rem; }
+.quick__book-text { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; }
+.quick__book-title { overflow: hidden; font-size: 0.9375rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.quick__book-sub { font-size: 0.75rem; color: var(--muted); }
+.quick__chev { flex: none; inline-size: 1rem; block-size: 1rem; fill: var(--muted); }

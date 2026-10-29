@@ -1,13 +1,13 @@
 "use client";
 
 import { FormEvent, ReactNode, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Modal } from "./Modal";
 import { Input } from "./ui";
 import { usePending } from "./ActionButton";
 import { useFlow } from "./books/flowContext";
 import { PlanGlyph } from "./plan/bits";
-import { Apple, BookOpen, Check, ChevronLeft, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
+import { Apple, BookOpen, Check, ChevronLeft, ChevronRight, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { nextOfGoal, planOf, stepsOn } from "@/lib/plan";
 import * as R from "@/lib/reading";
@@ -18,7 +18,7 @@ import type { TrackerState } from "@/lib/model";
 /** What a logged thing was, and how to take it back for a few seconds. */
 export type Toast = { text: string; undo?: Partial<TrackerState> };
 
-type View = "menu" | "todo" | "weight" | "meal" | "weekly";
+type View = "menu" | "todo" | "weight" | "meal" | "weekly" | "books";
 
 /**
  * The tab bar's +: log anything from any screen without leaving it. The
@@ -33,7 +33,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
     onClose();
     setView("menu");
   };
-  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks" };
+  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks", books: "Which book?" };
   return (
     <Modal open={open} onClose={close} title={titles[view]}>
       {open && tracker.state && (
@@ -48,6 +48,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
           {view === "weight" && <WeightForm tracker={tracker} onDone={close} onToast={onToast} />}
           {view === "meal" && <MealForm tracker={tracker} onDone={close} onToast={onToast} />}
           {view === "weekly" && <WeeklyList tracker={tracker} />}
+          {view === "books" && <BookPicker tracker={tracker} onClose={close} />}
         </div>
       )}
     </Modal>
@@ -57,10 +58,9 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
 function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView: (v: View) => void; onClose: () => void; onToast: (t: Toast) => void }) {
   const s = tracker.state!;
   const router = useRouter();
-  const flow = useFlow();
   const today = dateKey();
   const lastKg = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).pop()?.kg;
-  const book = R.liveTracks(s).map((t) => R.activeBooks(s, t.id)[0]).find(Boolean);
+  const books = openBooks(s);
   const workout = nextWorkout(s, today);
   const kcalToday = s.calories.filter((c) => c.date === today).reduce((a, c) => a + c.kcal, 0);
   const weekly = weeklyTasksOf(s);
@@ -69,22 +69,22 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
     if (!s.activeWorkout && workout) void tracker.startWorkout(workout.id);
     router.push("/fitness?view=live");
   };
-  const tiles: { icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
-    { icon: <TaskDone />, title: "To-do", onPress: () => onView("todo") },
-    { icon: <Scale />, title: "Weigh-in", hint: lastKg ? `${lastKg} last` : undefined, onPress: () => onView("weight") },
+  const tiles: { key: AddKey; icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
+    { key: "todo", icon: <TaskDone />, title: "To-do", onPress: () => onView("todo") },
+    { key: "weight", icon: <Scale />, title: "Weigh-in", hint: lastKg ? `${lastKg} last` : undefined, onPress: () => onView("weight") },
     {
+      key: "pages",
       icon: <BookOpen />,
       title: "Pages",
-      hint: book ? shortTitle(book.title) : "No book open",
-      disabled: !book,
-      onPress: () => {
-        onClose();
-        if (book) flow.open({ kind: "log", bookId: book.id });
-      },
+      hint: books.length ? (books.length === 1 ? shortTitle(books[0].title) : `${books.length} books open`) : "No book open",
+      disabled: !books.length,
+      // Which book first, then its page log.
+      onPress: () => onView("books"),
     },
-    { icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
-    { icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
+    { key: "workout", icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
+    { key: "meal", icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
     {
+      key: "weekly",
       icon: <Repeat />,
       title: "Weekly task",
       hint: weekly.length ? `${weekly.filter((t) => doneThisWeek(t, today) >= t.times).length} of ${weekly.length} done` : "None yet",
@@ -92,22 +92,100 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
       onPress: () => onView("weekly"),
     },
   ];
+  // What belongs to the tab you're on comes first, big; the rest after.
+  const ctx = contextOf(usePathname() ?? "/");
+  const here = ctx ? (ctx.keys.map((k) => tiles.find((t) => t.key === k)).filter(Boolean) as typeof tiles) : [];
+  const rest = tiles.filter((t) => !here.includes(t));
+  const grid = (list: typeof tiles, big: boolean) => (
+    <ul className={"quick__grid" + (big ? " is-big" : "")} style={{ gridTemplateColumns: `repeat(${big ? Math.min(3, list.length) : 3}, minmax(0, 1fr))` }}>
+      {list.map((t) => (
+        <li key={t.key}>
+          <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
+            <span className="quick__icon" aria-hidden>
+              {t.icon}
+            </span>
+            <span className="quick__title">{t.title}</span>
+            {t.hint && <span className="quick__hint">{t.hint}</span>}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <>
       <NextStep tracker={tracker} onClose={onClose} onToast={onToast} />
-      <ul className="quick__grid">
-        {tiles.map((t) => (
-          <li key={t.title}>
-            <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
-              <span className="quick__icon" aria-hidden>
-                {t.icon}
-              </span>
-              <span className="quick__title">{t.title}</span>
-              {t.hint && <span className="quick__hint">{t.hint}</span>}
-            </button>
-          </li>
-        ))}
+      {here.length > 0 ? (
+        <>
+          <p className="quick__group">On {ctx!.name}</p>
+          {grid(here, true)}
+          <p className="quick__group">Everything else</p>
+          {grid(rest, false)}
+        </>
+      ) : (
+        grid(tiles, false)
+      )}
+    </>
+  );
+}
+
+type AddKey = "todo" | "weight" | "pages" | "workout" | "meal" | "weekly";
+
+/** The adds that belong to the page you're on, and its name. */
+function contextOf(path: string): { name: string; keys: AddKey[] } | null {
+  const p = path.length > 1 ? path.replace(/\/+$/, "") : path;
+  if (p === "/" || p === "/week" || p === "/plan") return { name: "Today", keys: ["todo", "weekly"] };
+  if (p === "/education" || p === "/learning" || p === "/books") return { name: "Education", keys: ["pages"] };
+  if (p === "/projects") return { name: "Projects", keys: ["todo"] };
+  if (p === "/fitness" || p === "/nutrition") return { name: "Health", keys: ["weight", "meal", "workout"] };
+  return null;
+}
+
+/** The books open now, the one the plan reads next first. */
+function openBooks(s: TrackerState) {
+  const all = R.liveTracks(s).flatMap((t) => R.activeBooks(s, t.id));
+  const plan = planOf(s);
+  const next = plan ? stepsOn(s, plan, dateKey()).find((x) => !x.done && (x.it?.kind === "track" || x.it?.kind === "book")) : undefined;
+  const first = next?.it?.kind === "track" ? next.it.book?.id : next?.it?.kind === "book" ? next.it.item.id : undefined;
+  return first ? [...all.filter((b) => b.id === first), ...all.filter((b) => b.id !== first)] : all;
+}
+
+/** Pages: which book, then its page log. */
+function BookPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => void }) {
+  const s = tracker.state!;
+  const flow = useFlow();
+  const books = openBooks(s);
+  return (
+    <>
+      <ul className="card quick__books">
+        {books.map((b) => {
+          const track = R.trackOf(s, b.trackId);
+          return (
+            <li key={b.id}>
+              <button
+                type="button"
+                className="quick__book"
+                onClick={() => {
+                  onClose();
+                  flow.open({ kind: "log", bookId: b.id });
+                }}
+              >
+                <span className="quick__icon" aria-hidden>
+                  <BookOpen />
+                </span>
+                <span className="quick__book-text">
+                  <span className="quick__book-title">{b.title}</span>
+                  <span className="quick__book-sub">
+                    {track?.name ?? "No track"} · p. {b.read}
+                    {b.pages > 0 ? ` of ${b.pages}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="quick__chev" aria-hidden />
+              </button>
+            </li>
+          );
+        })}
       </ul>
+      {books.length > 1 && <p className="quick__note">The book your plan reads next comes first.</p>}
     </>
   );
 }
