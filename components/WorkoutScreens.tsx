@@ -22,7 +22,7 @@ import { RepeatSelect } from "./RepeatSelect";
 import { AddBlockRow, BlockSection } from "./WorkoutsView";
 import { ChevronRight, Minus, Plus, ReorderLines } from "./icons";
 import { usePending } from "./ActionButton";
-import { Tracker, blockExercises, formatTarget, type Exercise, type ExerciseTarget, type Workout } from "@/lib/tracker";
+import { DEFAULT_REST, Tracker, blockExercises, formatTarget, type Exercise, type ExerciseTarget, type Workout } from "@/lib/tracker";
 
 /** Every workout, each a row that opens its page; New workout at the end. */
 export function WorkoutsList({ tracker }: { tracker: Tracker }) {
@@ -228,9 +228,12 @@ function ExerciseLine({
   );
 }
 
+/** Rest choices, in seconds; 0 is off. */
+const REST_CHOICES = [0, 30, 60, 90, 120, 180];
+
 /**
  * Adding or editing an exercise: its name, sets with − and +, the rep
- * range, and whether it's done one arm at a time. Delete sits at the
+ * range, the rest between sets, and whether it's done one arm at a time. Delete sits at the
  * bottom when editing.
  */
 function ExerciseSheet({
@@ -250,6 +253,7 @@ function ExerciseSheet({
   const [repsMin, setRepsMin] = useState(t?.repsMin ? String(t.repsMin) : "");
   const [repsMax, setRepsMax] = useState(t?.repsMax ? String(t.repsMax) : "");
   const [oneArm, setOneArm] = useState(!!exercise?.oneArm);
+  const [rest, setRest] = useState(exercise?.restSeconds ?? DEFAULT_REST);
   const { pending, run } = usePending();
 
   const target = (): ExerciseTarget | null => {
@@ -267,8 +271,8 @@ function ExerciseSheet({
     onDone();
     await run(() =>
       exercise
-        ? tracker.updateExercise(workout.id, exercise.id, name, null, oneArm, { target: target() })
-        : tracker.addExercise(workout.id, name, null, oneArm, { target: target() })
+        ? tracker.updateExercise(workout.id, exercise.id, name, null, oneArm, { target: target(), restSeconds: rest })
+        : tracker.addExercise(workout.id, name, null, oneArm, { target: target(), restSeconds: rest })
     );
   };
 
@@ -310,6 +314,20 @@ function ExerciseSheet({
             <input aria-label="Most reps" inputMode="numeric" placeholder="12" value={repsMax} onChange={(e) => setRepsMax(e.target.value.replace(/\D/g, ""))} className="mini-field" />
           </div>
         </div>
+      </section>
+
+      <section>
+        <h3 className="group-head">Rest between sets</h3>
+        <div className="rest-choice" role="radiogroup" aria-label="Rest between sets">
+          {REST_CHOICES.map((sec) => (
+            <button key={sec} type="button" role="radio" aria-checked={rest === sec} onClick={() => setRest(sec)} className="rest-choice__opt">
+              {sec === 0 ? "Off" : `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`}
+            </button>
+          ))}
+        </div>
+        <p className="rest-choice__note">
+          {rest ? "In a workout, the rest fills up for this long after each set." : "No rest bar; just the time since the last set."}
+        </p>
       </section>
 
       <section>

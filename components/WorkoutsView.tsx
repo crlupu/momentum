@@ -45,6 +45,7 @@ import {
   ActiveWorkout,
   ActiveSet,
   ActiveExercise,
+  DEFAULT_REST,
   SetRecord,
   activeWorkoutVolume,
   activeWorkoutSets,
@@ -905,29 +906,61 @@ function ExerciseBlock({
   );
 }
 
-type LastSet = { at: number; set: number; name: string };
+type LastSet = { at: number; set: number; name: string; rest: number };
 
-/** The workout's most recently completed set, if any. */
-function lastSetOf(active: ActiveWorkout): LastSet | null {
+/**
+ * The workout's most recently completed set, if any, with the rest its
+ * exercise asks for, read from the definition so a change made mid-session
+ * applies at once.
+ */
+function lastSetOf(active: ActiveWorkout, definition?: Workout): LastSet | null {
   let last: LastSet | null = null;
   for (const e of active.exercises) {
+    const rest = definition?.exercises.find((d) => d.id === e.exerciseId)?.restSeconds ?? DEFAULT_REST;
     e.sets.forEach((x, i) => {
-      if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name };
+      if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name, rest };
     });
   }
   return last;
 }
 
-/** How long since the last set was completed, ticking each second: the rest. */
+/**
+ * The rest since the last set, ticking each second. With a rest set, a
+ * capsule fills blue towards it and turns white once it's done; with the
+ * rest off, just the time since.
+ */
 function SinceLastSet({ last }: { last: LastSet }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+  const ms = Math.max(0, now - last.at);
+  if (!last.rest) {
+    return (
+      <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
+        Rest <span className="font-mono-n tabular-nums">{formatElapsed(ms)}</span>
+      </span>
+    );
+  }
+  const goal = last.rest * 1000;
+  const full = ms >= goal;
   return (
-    <span className="exercise__rest" role="timer" aria-label={`Since set ${last.set} of ${last.name}`}>
-      Rest <span className="font-mono-n tabular-nums">{formatElapsed(now - last.at)}</span>
+    <span
+      className={"rest-fill" + (full ? " is-full" : "")}
+      role="progressbar"
+      aria-label={`Rest after set ${last.set} of ${last.name}`}
+      aria-valuemin={0}
+      aria-valuemax={last.rest}
+      aria-valuenow={Math.min(last.rest, Math.floor(ms / 1000))}
+      aria-valuetext={full ? "Rest done" : `${formatElapsed(ms)} of ${formatElapsed(goal)}`}
+    >
+      <span className="rest-fill__bar" style={{ inlineSize: `${Math.min(100, (ms / goal) * 100)}%` }} aria-hidden />
+      <span className="rest-fill__text">
+        {full ? "Rest done" : "Rest"}{" "}
+        <span className="font-mono-n tabular-nums">{full ? formatElapsed(goal) : formatElapsed(ms)}</span>
+        {!full && <span className="rest-fill__goal"> / {formatElapsed(goal)}</span>}
+      </span>
     </span>
   );
 }
@@ -1063,7 +1096,7 @@ export function ActiveWorkoutPanel({
           tracker={tracker}
           exercise={shown}
           history={lastPerformed(sessions, shown.exerciseId)}
-          lastSet={lastSetOf(active)}
+          lastSet={lastSetOf(active, definition)}
         />
       )}
 
