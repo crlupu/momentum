@@ -6209,3 +6209,41 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .focus-screen__btn svg { inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; }
 .focus-screen__btn--primary { background: var(--accent); color: #fff; }
 .focus-screen__btn:disabled { opacity: 0.6; }
+
+/*
+ * Everything clickable shows the hand on desktop. The reset leaves buttons on
+ * the arrow, and only some components set it back, so it's set once here, in
+ * the base layer: any component that wants another cursor (a grab handle, a
+ * static row) still wins. Disabled controls get the arrow.
+ */
+@layer base {
+  a[href],
+  button,
+  summary,
+  select,
+  label[for],
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"],
+  [role="button"],
+  [role="tab"],
+  [role="radio"],
+  [role="checkbox"],
+  [role="switch"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="menuitemcheckbox"],
+  [role="option"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: default;
+  }
+}
