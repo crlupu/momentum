@@ -160,8 +160,8 @@ export function TabBar({ onAdd }: { onAdd: () => void }) {
       </Link>
     );
   };
-  // A glass group of four icon tabs on the left, the + apart on the right
-  // under the thumb: log anything from any screen.
+  // A glass group of four icon tabs with the + just beside it: log
+  // anything from any screen.
   return (
     <nav className="tabbar tabbar--split" aria-label="Sections">
       <span className="tabbar__group">{NAV.map(tab)}</span>

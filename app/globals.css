@@ -6138,8 +6138,8 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .quick__book-sub { font-size: 0.75rem; color: var(--muted); }
 .quick__chev { flex: none; inline-size: 1rem; block-size: 1rem; fill: var(--muted); }
 
-/* Tab bar, split: a frosted group of icon tabs on the left, the + apart on the right. */
-.tabbar.tabbar--split { inset-inline: 0; inset-block-end: 0; inline-size: auto; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0 max(1rem, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 0.75rem) max(1rem, env(safe-area-inset-left)); border: 0; border-radius: 0; background: transparent; box-shadow: none; pointer-events: none; }
+/* Tab bar, split: a frosted group of icon tabs with the + just beside it, centred. */
+.tabbar.tabbar--split { inset-inline: 0; inset-block-end: 0; inline-size: auto; margin: 0; display: flex; align-items: center; justify-content: center; gap: 0.625rem; padding: 0 max(1rem, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 0.75rem) max(1rem, env(safe-area-inset-left)); border: 0; border-radius: 0; background: transparent; box-shadow: none; pointer-events: none; }
 .tabbar--split > * { pointer-events: auto; }
 .tabbar__group { display: flex; gap: 0.125rem; padding: 0.3125rem; border-radius: var(--r-pill); background: color-mix(in srgb, color-mix(in srgb, var(--foreground) 12%, var(--background)) 42%, transparent); -webkit-backdrop-filter: blur(18px) saturate(190%); backdrop-filter: blur(18px) saturate(190%); box-shadow: inset 0 0.5px 0 color-mix(in srgb, #fff 30%, transparent), inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent), 0 8px 28px rgba(0, 0, 0, 0.25); }
 .tabbar--split .tabbar__tab { flex: none; inline-size: 3.5rem; block-size: 2.875rem; min-block-size: 0; padding: 0; border-radius: var(--r-pill); background: transparent; color: color-mix(in srgb, var(--foreground) 58%, transparent); }
