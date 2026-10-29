@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Tracker, dateKey } from "@/lib/tracker";
-import { focusElapsed, focusMinutes, planOf, stepsOn } from "@/lib/plan";
-import { columnCards } from "@/lib/projects";
+import { Tracker } from "@/lib/tracker";
+import { focusElapsed } from "@/lib/plan";
 import { usePending } from "./ActionButton";
 import { ActionMenu } from "./Menu";
 import { Check, ChevronDown, MoreHorizontal } from "./icons";
@@ -22,8 +21,9 @@ const R = 108;
 const C = 2 * Math.PI * R;
 
 /**
- * A focus block, full screen: what it's for, a ring filling round the clock,
- * Pause and Finish. Nothing else of the app shows, so nothing else pulls.
+ * A focus block, full screen and nearly wordless: the project, a ring
+ * filling round the clock (white once the time is in), Pause and Finish.
+ * Nothing else of the app shows, so nothing else pulls.
  * The chevron tucks it away (Today's card keeps the timer); Discard is in
  * the menu, out of the thumb's way.
  */
@@ -52,15 +52,6 @@ export function FocusScreen({ tracker, onTuck }: { tracker: Tracker; onTuck: () 
   const goal = f.minutes * 60000;
   const done = ms >= goal;
   const project = f.projectId ? s.projects.find((p) => p.id === f.projectId) : undefined;
-  const doing = project ? columnCards(project, "doing")[0] : undefined;
-  const today = dateKey();
-  const plan = planOf(s);
-  const steps = plan ? stepsOn(s, plan, f.day) : [];
-  const at = steps.findIndex((x) => x.step.id === f.stepId);
-  const minutesToday = focusMinutes(s, today) + (f.day === today ? Math.round(ms / 60000) : 0);
-  const foot = done
-    ? `Keep going, or Finish to log ${Math.round(ms / 60000)} min`
-    : [at >= 0 ? `Step ${at + 1} of ${steps.length}` : null, `${minutesToday} min today`].filter(Boolean).join(" · ");
 
   return createPortal(
     <div className="focus-screen" role="dialog" aria-modal="true" aria-label="Focus">
@@ -85,12 +76,16 @@ export function FocusScreen({ tracker, onTuck }: { tracker: Tracker; onTuck: () 
         </ActionMenu>
       </div>
 
-      <div className="focus-screen__what">
-        <p className="focus-screen__label">{f.pausedAt ? "Paused" : "Focus"} · {project?.title ?? "Just focus"}</p>
-        {doing && <p className="focus-screen__doing">Doing: {doing.title}</p>}
-      </div>
+      <p className="focus-screen__label">{f.pausedAt ? "Paused" : project?.title ?? "Focus"}</p>
 
-      <div className={"focus-screen__ring" + (done ? " is-done" : "")}>
+      <div
+        className={"focus-screen__ring" + (done ? " is-done" : "")}
+        role="progressbar"
+        aria-label={done ? "Time's in" : `${clock(ms)} of ${f.minutes} minutes`}
+        aria-valuemin={0}
+        aria-valuemax={f.minutes}
+        aria-valuenow={Math.min(f.minutes, Math.floor(ms / 60000))}
+      >
         <svg viewBox="0 0 232 232" aria-hidden>
           <circle cx="116" cy="116" r={R} className="focus-screen__track" />
           <circle
@@ -102,15 +97,10 @@ export function FocusScreen({ tracker, onTuck }: { tracker: Tracker; onTuck: () 
             transform="rotate(-90 116 116)"
           />
         </svg>
-        <div className="focus-screen__clock">
-          <span role="timer" className="font-mono-n tabular-nums">
-            {clock(ms)}
-          </span>
-          <span className="focus-screen__of">{done ? "Time's in" : `of ${f.minutes} min`}</span>
-        </div>
+        <span className="focus-screen__clock font-mono-n tabular-nums" role="timer">
+          {clock(ms)}
+        </span>
       </div>
-
-      <p className="focus-screen__foot">{foot}</p>
 
       <div className="focus-screen__actions">
         {f.pausedAt ? (
