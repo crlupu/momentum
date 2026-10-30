@@ -71,7 +71,7 @@ export function WeeklyTaskSheet({ tracker, task, open, onClose }: { tracker: Tra
   );
 }
 
-function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; task?: WeeklyTask; onDone: () => void }) {
+export function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; task?: WeeklyTask; onDone: () => void }) {
   const s = tracker.state!;
   const { pending, run } = usePending();
   const [title, setTitle] = useState(task?.title ?? "");

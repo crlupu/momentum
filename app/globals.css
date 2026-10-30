@@ -6278,3 +6278,228 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .day-bars__day.is-today .day-bars__bar > span { background: var(--accent); }
 .day-bars__label { font-size: 0.59375rem; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, 0.4); }
 .day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
+
+/*
+ * One field everywhere. Every text, number, date and search box, Carbon's
+ * included, takes the logging field's look: a soft grey fill with no edge, a
+ * thin ring in the text colour while typing, and the accent only in the
+ * caret. Fields with their own look (the logging field's bare input, row
+ * inputs, mini fields) are left out.
+ */
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input) {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  border: 0;
+  border-radius: 0.875rem;
+  box-shadow: none;
+  caret-color: var(--accent);
+}
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input):focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--foreground);
+}
+/* Inside the dark top cards the field is a light tint on black, whatever the theme. */
+.summary-card :is(.cds--text-input, input:is([type="text"], [type="number"], :not([type]))):not(.macro-field__row input) { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.summary-card .macro-field { background: rgba(255, 255, 255, 0.08); }
+.summary-card .macro-field__row input { color: #fff; }
+.summary-card .macro-field:focus-within { box-shadow: inset 0 0 0 1.5px #fff; }
+/* Weight in its card: the field and a Log button beside it. */
+.weight-form { align-items: stretch; }
+.weight-form .macro-field { flex: 1 1 auto; }
+.weight-form__log { flex: none; min-block-size: 3.5rem; padding-inline: 1.25rem; }
+.macro-field__row > span { white-space: nowrap; }
+/* The new to-do row is itself the field: grey fill, the text-colour ring while typing. */
+.todo-add.todo-add { box-shadow: none; background: color-mix(in srgb, var(--foreground) 7%, transparent); border-radius: 0.875rem; }
+.todo-add.todo-add:focus-within { box-shadow: inset 0 0 0 1.5px var(--foreground); }
+input.todo-add__input { caret-color: var(--accent); }
+
+/*
+ * One colour rule. Blue is the next step and the primary action; white is
+ * done or selected; grey is everything else. States that used green, amber,
+ * orange, red or a tinted blue now say themselves in words and weight.
+ */
+.weight-now__badge, .weight-now__badge.is-ahead, .weight-now__badge.is-on-track, .weight-now__badge.is-close, .weight-now__badge.is-behind { background: var(--default); color: var(--foreground); }
+.summary-card .weight-now__badge { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.card-aside-btn { color: inherit; }
+.weight-now__badge::before { display: none; }
+.weight-change.is-down, .weight-change.is-up { color: inherit; font-weight: 600; }
+.plan-opt[aria-checked="true"] { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.plan-opt[aria-checked="true"] .plan-opt__mark { border-color: var(--foreground); background: var(--foreground); color: var(--background); }
+.plan-icons__icon[aria-checked="true"], .plan-icons .plan-icons__icon[aria-checked="true"] { background: var(--default); color: var(--foreground); box-shadow: inset 0 0 0 1.5px var(--foreground); }
+.plan-icons .plan-icons__icon[aria-checked="true"] svg { fill: var(--foreground); }
+.log-sheet__jump { background: var(--default); color: var(--foreground); border-radius: var(--r-pill); }
+@media (hover: hover) { .log-sheet__jump:hover { background: color-mix(in srgb, var(--foreground) 14%, transparent); } }
+.week-history__w.is-current .week-history__cell { background: var(--default); box-shadow: inset 0 0 0 1.5px var(--foreground); color: var(--foreground); }
+.week-history__w.is-current .week-history__label { color: var(--foreground); }
+.week-goal__pace.is-on, .week-goal__pace.is-behind { background: var(--default); color: var(--foreground); }
+.week-goal__bar.is-behind > span { background: color-mix(in srgb, var(--foreground) 45%, transparent); }
+.week-hero__behind { color: inherit; font-weight: 600; }
+
+/* A workout under way: no tab bar, the Finish card at the bottom of the screen. */
+html.is-working-out .tabbar { display: none; }
+html.is-working-out .live-workout__dock { inset-block-end: calc(env(safe-area-inset-bottom) + 1rem); }
+
+/* Audit 4 · One way to draw the week: the hero's day bars, a size up. */
+.day-bars--big { gap: 0.625rem; margin-block-start: 0.5rem; }
+.day-bars--big .day-bars__bar { inline-size: 1.375rem; block-size: 1.875rem; border-radius: 0.4375rem; }
+.day-bars--big .day-bars__label { font-size: 0.6875rem; }
+
+/* Audit 5 · An add is a row, not a button: no ring, a grey + tile where the
+   list's items keep theirs, the words beside it. Blue stays for the next step. */
+.insert-row, .insert-row + .insert-row, .set-add { justify-content: flex-start; gap: 0.75rem; box-shadow: none; color: color-mix(in srgb, var(--foreground) 72%, transparent); font-weight: 500; }
+.insert-row, .insert-row + .insert-row { padding-inline: 0.375rem; }
+.group-list .insert-row, .group-list > li > .insert-row { padding-inline: 0.375rem; }
+.set-add { padding-inline: 0.375rem; }
+.insert-row .icon-disc.insert-row__plus, .insert-row .icon-disc,
+.live-workout .exercise .icon-disc.set-add__plus, .light .live-workout .icon-disc.set-add__plus, .set-add__plus { inline-size: 2rem; block-size: 2rem; margin: 0; border-radius: var(--r-control); background: var(--default); color: var(--foreground); }
+.insert-row__label, .set-add__label { flex: 1 1 auto; }
+
+/* Audit 6 · Hero cards follow the theme: in light they are light cards with
+   dark ink, like every other card; the white details inside turn black. */
+html.light:not([data-style="signal"]) { --hero-bg: var(--surface); --hero-fg: var(--foreground); --hero-muted: var(--muted); --hero-shape: transparent; }
+html.light:not([data-style="signal"]) .momentum__shape--low { background: linear-gradient(0deg, transparent, rgba(0, 0, 0, 0.05)); }
+html.light:not([data-style="signal"]) .momentum__shape--square { background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent); }
+html.light:not([data-style="signal"]) .momentum__seg { background: rgba(0, 0, 0, 0.14); }
+html.light:not([data-style="signal"]) .momentum__seg.is-done { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__bar { background: rgba(0, 0, 0, 0.14); }
+html.light:not([data-style="signal"]) .momentum__bar span { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__figures > li + li { box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .hero::after { background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent); }
+html.light:not([data-style="signal"]) .hero .since-set__label { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .hero__ghost { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .hero .up-next__name { color: #000000; }
+html.light:not([data-style="signal"]) .kcal-hero__week { border-block-start: 1px solid rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .since-set.hero .since-set__time { color: #000000; }
+html.light:not([data-style="signal"]) .since-set.hero .since-set__what { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .momentum__start { color: #000000; }
+html.light:not([data-style="signal"]) .momentum .eyebrow { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .momentum__badge { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .momentum--done { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 0 40px rgba(43, 145, 255, 0.25); }
+html.light:not([data-style="signal"]) .momentum--done .momentum__seg.is-done { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__next-name { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .momentum__tile.is-done { background: #000000; color: #ffffff; }
+html.light:not([data-style="signal"]) .momentum__tile.is-next { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .plan-card__next { color: var(--hero-muted, rgba(0, 0, 0, 0.62)); }
+html.light:not([data-style="signal"]) .plan-card__label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__label.is-next { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .plan-card__week-label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__week-goals svg { fill: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__strong { color: #000000; }
+html.light:not([data-style="signal"]) .momentum__plan-hint { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card__aside { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card__aside .text-action, html.light:not([data-style="signal"]) .summary-card__aside button { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .summary-card__title { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__actions .hero__ghost, html.light:not([data-style="signal"]) .summary-card__actions .pill-link { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__band-text { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card .cds--text-input { background: #ffffff; color: #000000; box-shadow: inset 0 0 0 1px #d4d6db; }
+html.light:not([data-style="signal"]) .summary-card .cds--text-input::placeholder { color: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .summary-card .segmented { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .summary-card .segmented__item { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card .segmented__item.is-on { background: rgba(0, 0, 0, 0.14); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__aside .cds--btn { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .summary-card__unit { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__hint { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .day-bars__bar { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .day-bars__bar > span { background: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__bar > span { background: #000000; }
+html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.4); }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card :is(.cds--text-input, input:is([type="text"], [type="number"], :not([type]))):not(.macro-field__row input) { background: rgba(0, 0, 0, 0.08); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card .macro-field { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .summary-card .macro-field__row input { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card .macro-field:focus-within { box-shadow: inset 0 0 0 1.5px #000000; }
+html.light:not([data-style="signal"]) .summary-card .weight-now__badge { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .hero .eyebrow, html.light:not([data-style="signal"]) .hero .up-next__label, html.light:not([data-style="signal"]) .hero .since-set__label { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .up-next__meta, html.light:not([data-style="signal"]) .hero__meta { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .cds--btn--ghost, html.light:not([data-style="signal"]) .hero .up-next__pick, html.light:not([data-style="signal"]) .hero .hero__ghost { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .momentum__tile { background: rgba(0, 0, 0, 0.06); color: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .plan-card__week { border-block-start: 1px solid rgba(0, 0, 0, 0.08); color: #000000; }
+html.light:not([data-style="signal"]) .card-bars__bar { background: rgba(0, 0, 0, 0.1); }
+html.light:not([data-style="signal"]) .card-bars li.is-on .card-bars__bar { background: #000000; }
+html.light:not([data-style="signal"]) .card-bars__label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .card-bars li.is-hi .card-bars__label { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .card-bars li.is-hi .card-bars__bar { background: var(--accent); box-shadow: none; }
+html.light:not([data-style="signal"]) .card-meter { background: rgba(0, 0, 0, 0.12); }
+html.light:not([data-style="signal"]) .card-meter > span { background: #000000; }
+html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --foreground: inherit; --muted: inherit; --faint: inherit; --separator: inherit; --default: inherit; --border-strong: inherit; --field: inherit; --accent-text: inherit; }
+
+/* Audit 8 · One section-header style: a path's name is its card's first row,
+   not a bold heading floating between the section eyebrow and the card. */
+.path__card > .path__headrow { margin: 0; padding: 0.625rem 0.75rem 0 1rem; }
+.path__card > .path__headrow .path__head { padding: 0.25rem 0; }
+.path__card > .path__headrow .path__title { font-size: 1rem; font-weight: 500; }
+.path__card > .path__headrow + .goal-list__rows { margin-block-start: 0.375rem; border-block-start: 0.5px solid var(--separator); }
+.path__card > .path__headrow + .path__summary { padding-block-start: 0.375rem; }
+
+/* Audit 9 · Ticks on the right: a later step reads like Today's plan rows,
+   a tile, the words, then the tick. */
+.next-step { gap: 0.75rem; padding-inline: 0.75rem 0.625rem; }
+
+/* Audit 10 · Small details: the day bars' letters are readable. */
+.day-bars__label { font-size: 0.6875rem; color: rgba(255, 255, 255, 0.6); }
+html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.6); }
+.day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000; }
+
+/* Big screens B1 · The live workout in two columns: the exercise on the left,
+   the workout's standing, Up next and Finish held beside it. On a phone the
+   wrappers dissolve and the order is the one column's. */
+.live-workout__main, .live-workout__side { display: contents; }
+.live-workout__chips { order: -2; }
+.live-workout__side > :first-child { order: -1; }
+@media (min-width: 66rem) {
+  .live-workout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem); align-items: start; gap: 1rem 1.25rem; }
+  .live-workout__chips { grid-column: 1 / -1; margin-inline: 0; padding-inline: 0; flex-wrap: wrap; }
+  .live-workout__main { display: flex; flex-direction: column; gap: 0.875rem; min-inline-size: 0; }
+  .live-workout__side { position: sticky; inset-block-start: 1.5rem; display: flex; flex-direction: column; gap: 0.875rem; }
+  .live-workout__side > :first-child { order: 0; }
+  .live-workout__side .live-workout__dock { position: static; flex-wrap: wrap; margin: 0; padding: 1rem; border-radius: var(--r-card); }
+  .live-workout__side .live-workout__dock .cds--btn { flex: 1 1 100%; max-inline-size: none; justify-content: center; }
+}
+
+/* Big screens B2 · A primary button stops at a thumb's width, not the card's:
+   past 48rem it caps at 22.5rem and sits at the start, its partner beside it. */
+@media (min-width: 48rem) {
+  .summary-card__actions .cds--btn--primary, .summary-card__actions .pill-link--primary { flex: 0 1 22.5rem; }
+  .summary-card__actions .weight-form__log { flex: none; }
+  .exercise__finish { inline-size: max-content; min-inline-size: min(22.5rem, 100%); max-inline-size: 100%; margin-inline: 0; }
+}
+
+/* Big screens B3 · Read from arm's length: past 66rem the whole type scale
+   (and the rem spacing with it) steps up one notch, 16px → 17px. */
+@media (min-width: 66rem) { html { font-size: 106.25%; } }
+
+/* Big screens B5 · Everything clickable answers the pointer: rows light the
+   whole row (not just the words), tiles and chips lift a shade. Pointer
+   devices only, so a tap never leaves a row lit. */
+@media (hover: hover) and (pointer: fine) {
+  :is(li, .plan-row, .task-row, .next-step, .week-goal):has(> :is(.plan-row__open, .plan-row__main, .plan-steps__open, .next-step__open, .book-line__open, .exercise-line__open, .week-goal__main, .task-row__open):hover),
+  .inset-list__row:hover, .live-next:hover, .path__summary:hover, .project-card:hover > .summary-card {
+    background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  .quick__tile:not(:disabled):hover, .live-chip:not(.is-current):hover, .cat-chip:not([aria-checked="true"]):hover, .weekly-cat:not([aria-checked="true"]):hover,
+  .hero__ghost:hover, .pill-link:not(.pill-link--primary):hover {
+    background-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+  .pill-link--primary:hover { background-color: var(--button-primary-hover); }
+  .path__head:hover .path__title, .text-action:hover { opacity: 0.8; }
+  .project-card { cursor: pointer; }
+}
+
+/* Big screens B6 · The sidebar shows each shortcut, quietly, at the row's end. */
+.side-link__key { margin-inline-start: auto; min-inline-size: 1.25rem; padding: 0.0625rem 0.3125rem; border-radius: 0.3125rem; background: color-mix(in srgb, var(--foreground) 8%, transparent); color: var(--muted); font: 600 0.6875rem/1.4 var(--font-sans, inherit); text-align: center; opacity: 0; transition: opacity 150ms; }
+.sidebar:hover .side-link__key, .sidebar:focus-within .side-link__key { opacity: 1; }
+.sidebar__add .side-link__key { margin-inline-start: 0.25rem; background: rgba(255, 255, 255, 0.2); color: #fff; }
+@media (hover: none) { .side-link__key { display: none; } }
+
+/* Big screens B7 · The month grid stretches with its card (to a calendar's
+   comfortable 30rem), square days with their date. */
+.heatmap { inline-size: 100%; max-inline-size: 30rem; }
+.heatmap__day { position: relative; aspect-ratio: 1; border-radius: 6px; }
+.heatmap__date { position: absolute; inset-block-start: 0.25rem; inset-inline-start: 0.3125rem; font-size: 0.625rem; line-height: 1; color: var(--muted); }
+.heatmap__day.is-full .heatmap__date { color: var(--background); }
+@media (max-width: 30rem) { .heatmap__date { display: none; } }
+
+/* Big screens B8 · Two-column Today: Left from earlier heads the right
+   column (beside the plan it belongs to) instead of trailing the left one. */
+.today-leftovers { display: none; }
+@media (min-width: 42rem) { .today-leftovers:has(.leftovers) { display: block; } }

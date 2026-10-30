@@ -140,39 +140,47 @@ export function PathsView({
           const lone = visible.length === 1 && sec.id === GENERAL;
           const open = editing || opened.includes(sec.id);
           const prog = pathProgress(sec.all);
-          return (
-            <section key={sec.id} className="path">
-              <div className="path__headrow">
+          // The path's name, how far along and its fold: the first row of its
+          // card, as every list's title sits; above the editor while editing.
+          const headRow = (
+            <div className="path__headrow">
+              <button
+                type="button"
+                className="path__head"
+                aria-expanded={open}
+                onClick={() => !editing && toggle(sec.id)}
+              >
+                <span className="path__title">{lone ? "Goals" : sec.title}</span>
+                <span className="path__pct font-mono-n">{prog.pct}%</span>
+                {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
+              </button>
+              {editable && arranging && (
                 <button
                   type="button"
-                  className="path__head"
-                  aria-expanded={open}
-                  onClick={() => !editing && toggle(sec.id)}
+                  className="text-action text-action--sm"
+                  aria-pressed={editing}
+                  aria-label={editing ? `Done editing ${sec.title}` : `Edit ${sec.title}`}
+                  onClick={() => setEditingId(editing ? null : sec.id)}
                 >
-                  <span className="path__title">{lone ? "Goals" : sec.title}</span>
-                  <span className="path__pct font-mono-n">{prog.pct}%</span>
-                  {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
+                  {editing ? "Done" : "Edit"}
                 </button>
-                {editable && arranging && (
-                  <button
-                    type="button"
-                    className="text-action text-action--sm"
-                    aria-pressed={editing}
-                    aria-label={editing ? `Done editing ${sec.title}` : `Edit ${sec.title}`}
-                    onClick={() => setEditingId(editing ? null : sec.id)}
-                  >
-                    {editing ? "Done" : "Edit"}
-                  </button>
-                )}
-              </div>
+              )}
+            </div>
+          );
+          return (
+            <section key={sec.id} className="path">
               {editing ? (
-                <SectionEdit
-                  tracker={tracker}
-                  section={sec}
-                  onDeleted={() => setEditingId(null)}
-                />
+                <>
+                  {headRow}
+                  <SectionEdit
+                    tracker={tracker}
+                    section={sec}
+                    onDeleted={() => setEditingId(null)}
+                  />
+                </>
               ) : (
                 <div className="card path__card">
+                  {headRow}
                   {/* Open, the rows say how far along it is; folded, this line does. */}
                   {!open && (
                   <button type="button" className="path__summary" aria-label={`Show ${lone ? "goals" : sec.title}`} onClick={() => toggle(sec.id)}>

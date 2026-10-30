@@ -7,7 +7,7 @@ import { MomentumCard } from "@/components/MomentumCard";
 import RecurringList from "@/components/RecurringList";
 import TodoList from "@/components/TodoList";
 import { PlanCard, PlanWelcome } from "@/components/plan/PlanCard";
-import { PlanTimeline } from "@/components/plan/PlanTimeline";
+import { PlanLeftovers, PlanTimeline } from "@/components/plan/PlanTimeline";
 import { PlanGlyph } from "@/components/plan/bits";
 import { addDays, planOf, plannedKeys, stepsOn, WEEKDAY_LONG, weekdayOf, type DayPlan } from "@/lib/plan";
 import { dateKey } from "@/lib/tracker";
@@ -44,6 +44,9 @@ export default function TodayPage() {
               {restDay && <NextPlanDay plan={planned} />}
             </div>
             <div className="flex flex-col gap-6">
+              <div className="today-leftovers">
+                <PlanLeftovers tracker={tracker} plan={planned} />
+              </div>
               <RecurringList tracker={tracker} exclude={plannedKeys(planned, tracker.state!)} title="Also this week" />
               <TodoList tracker={tracker} />
             </div>

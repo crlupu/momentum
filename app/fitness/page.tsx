@@ -35,6 +35,13 @@ function Fitness() {
   useEffect(() => {
     if (shown && view === "live" && !live) window.history.replaceState(null, "", window.location.pathname);
   }, [shown, view, live]);
+  // While lifting, the tab bar steps aside, as it does for focus: the
+  // Finish card is the bottom of the screen.
+  useEffect(() => {
+    if (!(shown && live)) return;
+    document.documentElement.classList.add("is-working-out");
+    return () => document.documentElement.classList.remove("is-working-out");
+  }, [shown, live]);
   const back = (
     <Link href="/fitness" className="back-link">
       <ChevronLeft aria-hidden />

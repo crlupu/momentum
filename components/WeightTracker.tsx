@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useWidth } from "./useWidth";
-import { Input, PanelHeader, AddButton } from "./ui";
+import { PanelHeader } from "./ui";
+import { MacroField } from "./QuickAdd";
 import { fmtDate, fmtDateAuto } from "@/lib/dates";
 import { usePending } from "./ActionButton";
 import { Tracker, WeightEntry, dateKey } from "@/lib/tracker";
@@ -299,7 +300,7 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
   const { pending, run } = usePending();
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const v = Number(kg);
+    const v = Number(kg.replace(",", "."));
     if (!Number.isFinite(v) || v <= 0 || pending) return;
     const ok = await run(() => tracker.addWeight(v));
     if (ok) setKg("");
@@ -308,16 +309,10 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
   // Weighed in from the summary only: one place to add a weight.
   const weighIn = (
     <form onSubmit={submit} className="weight-form">
-      <Input
-        type="number"
-        step="0.1"
-        aria-label="Weight in kg"
-        placeholder="Weight, kg"
-        value={kg}
-        onChange={(e) => setKg(e.target.value)}
-        className="flex-1"
-      />
-      <AddButton type="submit" aria-label="Add weight" isDisabled={pending} />
+      <MacroField label="Weight" unit="kg" ariaLabel="Weight in kg" value={kg} onChange={setKg} />
+      <button type="submit" className="pill-link pill-link--primary weight-form__log" disabled={pending || !(Number(kg.replace(",", ".")) > 0)}>
+        Log
+      </button>
     </form>
   );
 
@@ -431,7 +426,7 @@ export function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
               <span className="font-mono-n font-semibold">{m.median.toFixed(1)}</span>
               <span
                 className="weight-medians__change font-mono-n"
-                style={{ color: d == null || d === 0 ? "var(--muted)" : d < 0 ? "var(--success)" : "var(--warning)" }}
+                style={{ color: d == null || d === 0 ? "var(--muted)" : "var(--foreground)" }}
               >
                 {d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
               </span>

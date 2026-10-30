@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { fmtDateAuto } from "@/lib/dates";
+import { fmtDateAuto, fmtTime } from "@/lib/dates";
 import { Apple, CalendarDays, MoreHorizontal } from "./icons";
 import { ActionMenu } from "./Menu";
 import { CardMeter, SummaryCard } from "./SummaryCard";
@@ -116,7 +116,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             s.calorieBudget
               ? todayTotal <= s.calorieBudget
                 ? `${(s.calorieBudget - todayTotal).toLocaleString()} left`
-                : <span className="text-[#ff7a45]">{(todayTotal - s.calorieBudget).toLocaleString()} over</span>
+                : `${(todayTotal - s.calorieBudget).toLocaleString()} over`
               : undefined
           }
           figure={todayTotal.toLocaleString()}
@@ -183,7 +183,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             <h3 className="group-head">Today</h3>
             <ul className="group-list">
               {todayEntries.map((e) => {
-                const time = e.at ? new Date(e.at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : null;
+                const time = e.at ? fmtTime(e.at) : null;
                 const name = tagOf(e.tagId)?.name ?? time ?? "Meal";
                 return (
                   <li key={e.id} className="group-row">

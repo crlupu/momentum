@@ -7,6 +7,8 @@ import { Modal } from "./Modal";
 import { usePending } from "./ActionButton";
 import { useFlow } from "./books/flowContext";
 import { PlanGlyph } from "./plan/bits";
+import { InsertRow } from "./InsertRow";
+import { WeeklyTaskForm } from "./WeeklyTasks";
 import { Apple, BookOpen, Check, ChevronLeft, ChevronRight, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { nextOfGoal, planOf, stepsOn } from "@/lib/plan";
@@ -87,8 +89,7 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
       key: "weekly",
       icon: <Repeat />,
       title: "Weekly task",
-      hint: weekly.length ? `${weekly.filter((t) => doneThisWeek(t, today) >= t.times).length} of ${weekly.length} done` : "None yet",
-      disabled: !weekly.length,
+      hint: weekly.length ? `${weekly.filter((t) => doneThisWeek(t, today) >= t.times).length} of ${weekly.length} done` : "Add one",
       onPress: () => onView("weekly"),
     },
   ];
@@ -433,10 +434,14 @@ export function MacroField({
   );
 }
 
+/** This week's weekly tasks to tick, and an add; with none yet, straight to making one. */
 function WeeklyList({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const { pending, run } = usePending();
   const today = dateKey();
+  const none = weeklyTasksOf(s).length === 0;
+  const [adding, setAdding] = useState(none);
+  if (adding) return <WeeklyTaskForm tracker={tracker} onDone={() => setAdding(false)} />;
   return (
     <ul className="card quick__weekly">
       {weeklyTasksOf(s).map((t) => {
@@ -467,6 +472,9 @@ function WeeklyList({ tracker }: { tracker: Tracker }) {
           </li>
         );
       })}
+      <li>
+        <InsertRow label="Add weekly task" onPress={() => setAdding(true)} />
+      </li>
     </ul>
   );
 }

@@ -479,9 +479,8 @@ function Picker({
   const [custom, setCustom] = useState(!MINUTES.includes(value?.kind === "focus" ? value.minutes ?? 50 : 50));
 
   const choose = (r: PlanRef) => onPick(r);
-  const Opt = ({ r, title, sub, dot }: { r: PlanRef; title: string; sub?: string; dot?: string }) => (
+  const Opt = ({ r, title, sub }: { r: PlanRef; title: string; sub?: string }) => (
     <button type="button" role="radio" aria-checked={same(value, r)} className="plan-opt" onClick={() => choose(r)}>
-      {dot && <span className="plan-opt__dot" style={{ background: dot }} aria-hidden />}
       <span className="plan-opt__text">
         <span className="plan-opt__title">{title}</span>
         {sub && <span className="plan-opt__sub">{sub}</span>}
@@ -556,7 +555,6 @@ function Picker({
               key={t.id}
               r={{ kind: "track", id: t.id }}
               title={t.name}
-              dot={t.color}
               sub={`${t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : "No daily pages"} · ${open} open`}
             />
           );
@@ -634,7 +632,7 @@ function Picker({
           <div className="card plan-opts">
             {weekly.map((t) => {
               const c = s.categories.find((x) => x.id === t.catId);
-              return <Opt key={t.id} r={{ kind: "weekly", id: t.id }} dot={c?.color} title={t.title} sub={`${c?.name ?? "Weekly"} \u00b7 ${t.times}\u00d7 a week`} />;
+              return <Opt key={t.id} r={{ kind: "weekly", id: t.id }} title={t.title} sub={`${c?.name ?? "Weekly"} \u00b7 ${t.times}\u00d7 a week`} />;
             })}
           </div>
         </section>

@@ -105,7 +105,7 @@ function ProjectTile({
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(p.id))}
     >
       <SummaryCard
-        label="Project"
+        label={total ? `${total} card${total === 1 ? "" : "s"}` : "Empty board"}
         aside={`${pct}%`}
         done={projectFinished(p)}
         doneLabel="Finished"

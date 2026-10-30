@@ -12,6 +12,7 @@ import { BookDetail } from "./BookDetail";
 import { BookForm } from "./BookForm";
 import { BulkAddForm, ImportPlanForm, PhaseForm, TrackForm } from "./forms";
 import { Minus, Plus } from "../icons";
+import { MacroField } from "../QuickAdd";
 
 /** The book has reached its last page but hasn't been marked finished. */
 function atEnd(b: Book | undefined): boolean {
@@ -304,33 +305,29 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
   return (
     <form onSubmit={submit} className="log-sheet">
       <p className="log-sheet__book">{book.title}</p>
-      <div className="log-sheet__dial">
-        <button type="button" className="log-sheet__step" aria-label="One page back" onClick={() => set(page - 1)}>
-          <Minus aria-hidden />
-        </button>
-        <label className="log-sheet__field">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={book.pages > 0 ? book.pages : undefined}
-            aria-label="Page you're on"
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              setError(null);
-            }}
-            onFocus={(e) => e.currentTarget.select()}
-            className="log-sheet__input"
-          />
-          <span className="log-sheet__of">
-            {book.pages > 0 ? `of ${book.pages} · ` : ""}was {book.read}
-          </span>
-        </label>
-        <button type="button" className="log-sheet__step" aria-label="One page forward" onClick={() => set(page + 1)}>
-          <Plus aria-hidden />
-        </button>
-      </div>
+      {/* The app's logging field: the page, its total, − and + at the end. */}
+      <MacroField
+        label="Page"
+        unit={book.pages > 0 ? `of ${book.pages}` : ""}
+        whole
+        ariaLabel="Page you're on"
+        value={value}
+        onChange={(v) => {
+          setValue(v);
+          setError(null);
+        }}
+        className="macro-field--big"
+        autoFocus
+      >
+        <span className="macro-field__steps">
+          <button type="button" aria-label="One page back" onClick={() => set(page - 1)}>
+            <Minus aria-hidden />
+          </button>
+          <button type="button" aria-label="One page forward" onClick={() => set(page + 1)}>
+            <Plus aria-hidden />
+          </button>
+        </span>
+      </MacroField>
       <div className="log-sheet__jumps">
         {JUMPS.map((n) => (
           <button key={n} type="button" className="log-sheet__jump" onClick={() => set(book.read + n)}>
@@ -346,7 +343,7 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
               ? `Back ${-diff} page${diff === -1 ? "" : "s"}: a correction, nothing is logged`
               : "\u00a0")}
       </p>
-      <DialogActions primary={{ label: "Save", disabled: pending || !valid || diff === 0 }} />
+      <DialogActions primary={{ label: diff !== 0 ? `Save page ${page}` : "Save", disabled: pending || !valid || diff === 0 }} />
     </form>
   );
 }

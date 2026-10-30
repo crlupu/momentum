@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -130,9 +131,9 @@ function SettingsHome({ tracker, current }: { tracker: Tracker; current: PageId 
   const hits = query ? INDEX.filter((x) => `${x.label} ${x.words}`.toLowerCase().includes(query)) : [];
   const style = useStyleName();
   const value: Partial<Record<PageId, string>> = {
-    // The style alone: light or dark is on its page, and the row stays short.
+    // The style and light or dark, short, as its page sets them.
     appearance: style,
-    data: !tracker.firebaseConfigured ? "This device" : tracker.syncError ? "Not syncing" : "Up to date",
+    data: !tracker.firebaseConfigured ? "Off" : tracker.syncError ? "Not syncing" : "Up to date",
   };
   return (
     <div className="flex flex-col gap-5">
@@ -167,10 +168,9 @@ function SettingsHome({ tracker, current }: { tracker: Tracker; current: PageId 
           <SummaryCard
             className={"settings-account-card" + (current === "account" ? " is-current" : "")}
             label="Account"
-            aside={tracker.user ? "Signed in" : "Signed out"}
-            title={tracker.user ? "Your account" : "This device"}
-            line={tracker.user ? tracker.user.email ?? "Signed in" : "Not signed in · saved on this device"}
-            band={{ label: "Sync", content: tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "This device only", action: "Open", href: "/configuration?view=account" }}
+            title={tracker.user ? "Your account" : "Not signed in"}
+            line={tracker.user ? tracker.user.email ?? "Signed in" : "Everything is saved on this device."}
+            band={{ label: "Sync", content: tracker.syncError ? "Not syncing" : tracker.user ? "Up to date" : "Off", action: "Open", href: "/configuration?view=account" }}
           />
           {(["areas", "app"] as const).map((g) => (
             <section key={g}>
@@ -447,14 +447,16 @@ function exportData(t: Tracker) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/** The style, from <html data-style>, once mounted. */
+/** The style and the theme, as the Appearance page names them: "Volt · System". */
 function useStyleName(): string {
   const [name, setName] = useState("");
+  const { theme } = useTheme();
   useEffect(() => {
     const st = document.documentElement.dataset.style;
-    setName(st === "signal" ? "Signal Blue" : st === "neutral" ? "Neutral" : "Signal Volt");
+    setName(st === "signal" ? "Blue" : st === "neutral" ? "Neutral" : "Volt");
   }, []);
-  return name;
+  if (!name) return "";
+  return `${name} · ${theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}`;
 }
 
 export default function ConfigurationPage() {

@@ -4,7 +4,7 @@ import { fmtDate } from "@/lib/dates";
 
 import { memo, useState } from "react";
 
-import { Card } from "./ui";
+import { Card, PanelHeader } from "./ui";
 import { CardBars, SummaryCard } from "./SummaryCard";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 import { routineCompletions } from "@/lib/routines";
@@ -13,14 +13,6 @@ function offsetDate(days: number): Date {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d;
-}
-
-function hexToRgba(hex: string, a: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
 // Current calendar month laid out as week columns (Mon-first rows); null = pad.
@@ -40,45 +32,43 @@ function buildMonthCells(): (string | null)[] {
 function Heatmap({
   cells,
   map,
-  color,
 }: {
   cells: (string | null)[];
   map: Record<string, number>;
-  color: string;
 }) {
+  // Shades of the text colour, not a category's hue: colour is kept for the
+  // next step and the primary action.
+  const mix = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
   const shade = (n: number) => {
     if (n === 0) return "var(--default)";
-    if (n === 1) return hexToRgba(color, 0.35);
-    if (n === 2) return hexToRgba(color, 0.55);
-    if (n <= 4) return hexToRgba(color, 0.8);
-    return hexToRgba(color, 1);
+    if (n === 1) return mix(30);
+    if (n === 2) return mix(50);
+    if (n <= 4) return mix(75);
+    return mix(100);
   };
-  const CELL = 32;
   const WD = ["M", "T", "W", "T", "F", "S", "S"];
+  // Fluid: the month fills the card's width up to a calendar's comfortable
+  // size, square days, the date small in each.
+  const cols = { gridTemplateColumns: "repeat(7, minmax(0, 1fr))" };
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="w-max">
-        <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
-          {WD.map((d, i) => (
-            <div key={i} className="text-center text-[11px] font-medium text-[var(--muted)]">
-              {d}
+    <div className="heatmap">
+      <div className="mb-1 grid gap-1" style={cols}>
+        {WD.map((d, i) => (
+          <div key={i} className="text-center text-[11px] font-medium text-[var(--muted)]">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-1" style={cols}>
+        {cells.map((k, i) => {
+          if (k === null) return <div key={`pad-${i}`} className="heatmap__day" />;
+          const n = map[k] ?? 0;
+          return (
+            <div key={k} title={`${k} — ${n} done`} className={"heatmap__day" + (n >= 3 ? " is-full" : "")} style={{ background: shade(n) }}>
+              <span className="heatmap__date">{Number(k.slice(8))}</span>
             </div>
-          ))}
-        </div>
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
-          {cells.map((k, i) => {
-            if (k === null) return <div key={`pad-${i}`} style={{ width: CELL, height: CELL }} />;
-            const n = map[k] ?? 0;
-            return (
-              <div
-                key={k}
-                title={`${k} — ${n} done`}
-                className="rounded-[6px]"
-                style={{ width: CELL, height: CELL, background: shade(n) }}
-              />
-            );
-          })}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -143,52 +133,49 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
         <CardBars values={counts} labels={days.map((d) => String(d.getDate()))} highlight={counts.length - 1} height={72} />
       </SummaryCard>
 
-      <Card>
-        <Card.Content className="p-4 md:p-5">
-          <h2 className="mb-1 text-lg font-semibold">
-            Completions by category
-          </h2>
-          <p className="mb-3 text-[13px] text-[var(--muted)]">This month. Pick a category, or see them all.</p>
-          {perCat.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
-              Check off some recurring tasks to see activity.
-            </p>
-          ) : (
-            (() => {
-              // One calendar, as Fitness shows one month: all categories
-              // together, or one picked from the chips above it.
-              const picked = perCat.find((x) => x.c.id === catPick);
-              const map = picked ? picked.map : monthAll;
-              return (
-                <>
-                  <div className="cat-chips" role="radiogroup" aria-label="Category">
-                    <button type="button" role="radio" aria-checked={!picked} className="cat-chip" onClick={() => setCatPick(null)}>
-                      All <span className="font-mono-n text-[var(--muted)]">{mTotal}</span>
-                    </button>
-                    {perCat.map(({ c, total }) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={picked?.c.id === c.id}
-                        className="cat-chip"
-                        onClick={() => setCatPick(c.id)}
-                      >
-                        <span className="cat-dot" style={{ background: c.color }} aria-hidden />
-                        {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
+      <section>
+        <PanelHeader title="By category · this month" />
+        <Card>
+          <Card.Content className="p-4 md:p-5">
+            {perCat.length === 0 ? (
+              <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
+                Check off some recurring tasks to see activity.
+              </p>
+            ) : (
+              (() => {
+                // One calendar, as Fitness shows one month: all categories
+                // together, or one picked from the chips above it.
+                const picked = perCat.find((x) => x.c.id === catPick);
+                const map = picked ? picked.map : monthAll;
+                return (
+                  <>
+                    <div className="cat-chips" role="radiogroup" aria-label="Category">
+                      <button type="button" role="radio" aria-checked={!picked} className="cat-chip" onClick={() => setCatPick(null)}>
+                        All <span className="font-mono-n text-[var(--muted)]">{mTotal}</span>
                       </button>
-                    ))}
-                  </div>
-                  <div className="mt-3 max-w-[22rem]">
-                    <Heatmap cells={cells} map={map} color={picked?.c.color ?? "#0A84FF"} />
-                  </div>
-                </>
-              );
-            })()
-          )}
-        </Card.Content>
-      </Card>
-
+                      {perCat.map(({ c, total }) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={picked?.c.id === c.id}
+                          className="cat-chip"
+                          onClick={() => setCatPick(c.id)}
+                        >
+                          {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-3">
+                      <Heatmap cells={cells} map={map} />
+                    </div>
+                  </>
+                );
+              })()
+            )}
+          </Card.Content>
+        </Card>
+      </section>
     </div>
   );
 });
