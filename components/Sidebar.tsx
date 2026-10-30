@@ -67,6 +67,7 @@ function NavLink({ id, current }: { id: NavId; current: string }) {
         <Icon />
       </span>
       {NAV.find((n) => n.id === id)!.title}
+      <kbd className="side-link__key">{NAV.findIndex((n) => n.id === id) + 1}</kbd>
     </Link>
   );
 }
@@ -85,6 +86,7 @@ function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current
         <Icon />
       </span>
       {sectionTitle(id)}
+      {id === "config" && <kbd className="side-link__key">/</kbd>}
     </Link>
   );
 }
@@ -123,6 +125,7 @@ export function Sidebar({ tracker, onAdd }: { tracker: Tracker; onAdd: () => voi
       <button type="button" className="sidebar__add" onClick={onAdd}>
         <IoAdd aria-hidden />
         Add
+        <kbd className="side-link__key">N</kbd>
       </button>
 
       <nav className="sidebar__nav">

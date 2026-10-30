@@ -11,8 +11,8 @@ import { QuickAdd, type Toast } from "./QuickAdd";
 import { ReadingFlow } from "./books/flow";
 import { FocusScreen } from "./FocusScreen";
 import { Check } from "./icons";
-import { usePathname } from "next/navigation";
-import { trimPath } from "./sections";
+import { usePathname, useRouter } from "next/navigation";
+import { NAV, navPath, sectionPath, trimPath } from "./sections";
 
 type Shell = {
   tracker: Tracker;
@@ -82,6 +82,41 @@ export function AppShell({ children }: { children: ReactNode }) {
   const gated = tracker.firebaseConfigured && !tracker.user && !tracker.opening;
   const path = trimPath(usePathname() ?? "/");
   const pane = isPane(path) ? path : null;
+
+  // Keyboard, for a desk: N adds, 1–4 open the areas, / searches Settings.
+  // Never while typing, with a modifier held, or over an open sheet.
+  const router = useRouter();
+  useEffect(() => {
+    if (gated) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+      const k = e.key.toLowerCase();
+      if (k === "n") {
+        e.preventDefault();
+        setAddOpen(true);
+      } else if (/^[1-4]$/.test(k)) {
+        e.preventDefault();
+        router.push(navPath(NAV[Number(k) - 1].id));
+      } else if (k === "/") {
+        e.preventDefault();
+        const config = sectionPath("config");
+        if (path !== trimPath(config)) router.push(config);
+        // The page may still be on its way: look for the field for a moment.
+        let tries = 0;
+        const find = () => {
+          const field = document.querySelector<HTMLInputElement>(".tab-pane:not([hidden]) .settings-search input, .settings-search input");
+          if (field) field.focus();
+          else if (tries++ < 60) requestAnimationFrame(find);
+        };
+        find();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [gated, router, path]);
 
   // Kept the same object until the tracker changes, so moving between
   // pages doesn't re-render every page that reads it.
