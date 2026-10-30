@@ -67,24 +67,29 @@ export function DayRing({ status, today, size = 34 }: { status: DayStatus; today
 
 /** The week's days as rings, Monday first, today marked. */
 /**
- * This week's plan days, one letter each: a white disc for a day where
- * every step got done, a ring for today, faint for a day missed or still
- * ahead. Only which days were finished, nothing more.
+ * This week's plan days, a short bar each filled by how much of the day got
+ * done: white once every step is, blue for today so far, grey for the rest.
+ * The day's letter sits under its bar.
  */
 export function DayMarks({ days, today }: { days: DayStatus[]; today: string }) {
   const planned = days.filter((d) => d.planned);
   const full = planned.filter((d) => d.done === d.total);
   return (
-    <ol className="day-marks" aria-label={`${full.length} of ${planned.length} plan days finished this week`}>
+    <ol className="day-bars" aria-label={`${full.length} of ${planned.length} plan days finished this week`}>
       {planned.map((d) => {
         const wd = new Date(d.day + "T12:00:00").getDay();
         const done = d.done === d.total;
-        const state = done ? "is-done" : d.day === today ? "is-today" : d.day < today ? "is-missed" : "is-ahead";
+        const state = done ? "is-done" : d.day === today ? "is-today" : d.day < today ? "is-past" : "is-ahead";
         return (
-          <li key={d.day} className={"day-marks__day " + state} title={WEEKDAY[wd]}>
-            <span aria-hidden>{WEEKDAY[wd][0]}</span>
+          <li key={d.day} className={"day-bars__day " + state} title={`${WEEKDAY[wd]} · ${d.done} of ${d.total}`}>
+            <span className="day-bars__bar" aria-hidden>
+              <span style={{ blockSize: `${(d.done / d.total) * 100}%` }} />
+            </span>
+            <span className="day-bars__label" aria-hidden>
+              {WEEKDAY[wd][0]}
+            </span>
             <span className="sr-only">
-              {WEEKDAY[wd]}, {done ? "finished" : d.day === today ? "today" : d.day < today ? "not finished" : "ahead"}
+              {WEEKDAY[wd]}, {d.done} of {d.total} done{done ? ", finished" : ""}
             </span>
           </li>
         );
