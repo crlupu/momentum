@@ -8,7 +8,7 @@ import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoCalendarClearOutline, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+  IoDocumentTextOutline, IoHeart, IoCalendarClear, IoCalendarClearOutline, IoList, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
 import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
@@ -89,6 +89,20 @@ function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current
   );
 }
 
+/** The plan's two pages, the Week and the Day plan, which a phone reaches from More. */
+function PlanLink({ href, title, icon, iconOn, current }: { href: string; title: string; icon: IconType; iconOn: IconType; current: string }) {
+  const active = trimPath(href) === current;
+  const Icon = active ? iconOn : icon;
+  return (
+    <Link href={href} aria-current={active ? "page" : undefined} className={"side-link" + (active ? " is-active" : "")}>
+      <span className="side-link__icon" aria-hidden>
+        <Icon />
+      </span>
+      {title}
+    </Link>
+  );
+}
+
 /**
  * Desktop navigation: a sidebar that is always there, from 1056px up.
  *
@@ -113,6 +127,9 @@ export function Sidebar({ tracker, onAdd }: { tracker: Tracker; onAdd: () => voi
 
       <nav className="sidebar__nav">
         {NAV.map((n) => <NavLink key={n.id} id={n.id} current={current} />)}
+        <div className="sidebar__gap" />
+        <PlanLink href="/week" title="Week" icon={IoCalendarClearOutline} iconOn={IoCalendarClear} current={current} />
+        <PlanLink href="/plan" title="Day plan" icon={IoListOutline} iconOn={IoList} current={current} />
         <div className="sidebar__gap" />
         <SectionLink id="charts" current={current} />
         <SectionLink id="log" current={current} />
