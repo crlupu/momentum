@@ -66,6 +66,33 @@ export function DayRing({ status, today, size = 34 }: { status: DayStatus; today
 }
 
 /** The week's days as rings, Monday first, today marked. */
+/**
+ * This week's plan days, one letter each: a white disc for a day where
+ * every step got done, a ring for today, faint for a day missed or still
+ * ahead. Only which days were finished, nothing more.
+ */
+export function DayMarks({ days, today }: { days: DayStatus[]; today: string }) {
+  const planned = days.filter((d) => d.planned);
+  const full = planned.filter((d) => d.done === d.total);
+  return (
+    <ol className="day-marks" aria-label={`${full.length} of ${planned.length} plan days finished this week`}>
+      {planned.map((d) => {
+        const wd = new Date(d.day + "T12:00:00").getDay();
+        const done = d.done === d.total;
+        const state = done ? "is-done" : d.day === today ? "is-today" : d.day < today ? "is-missed" : "is-ahead";
+        return (
+          <li key={d.day} className={"day-marks__day " + state} title={WEEKDAY[wd]}>
+            <span aria-hidden>{WEEKDAY[wd][0]}</span>
+            <span className="sr-only">
+              {WEEKDAY[wd]}, {done ? "finished" : d.day === today ? "today" : d.day < today ? "not finished" : "ahead"}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export function WeekRings({
   days,
   today,
