@@ -6433,3 +6433,9 @@ html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --fore
 /* Audit 9 · Ticks on the right: a later step reads like Today's plan rows,
    a tile, the words, then the tick. */
 .next-step { gap: 0.75rem; padding-inline: 0.75rem 0.625rem; }
+
+/* Audit 10 · Small details: the day bars' letters are readable. */
+.day-bars__label { font-size: 0.6875rem; color: rgba(255, 255, 255, 0.6); }
+html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.6); }
+.day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000; }
