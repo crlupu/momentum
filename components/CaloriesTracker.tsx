@@ -116,7 +116,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             s.calorieBudget
               ? todayTotal <= s.calorieBudget
                 ? `${(s.calorieBudget - todayTotal).toLocaleString()} left`
-                : <span className="text-[#ff7a45]">{(todayTotal - s.calorieBudget).toLocaleString()} over</span>
+                : `${(todayTotal - s.calorieBudget).toLocaleString()} over`
               : undefined
           }
           figure={todayTotal.toLocaleString()}

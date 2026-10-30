@@ -426,7 +426,7 @@ export function WeeklyMedians({ weights }: { weights: WeightEntry[] }) {
               <span className="font-mono-n font-semibold">{m.median.toFixed(1)}</span>
               <span
                 className="weight-medians__change font-mono-n"
-                style={{ color: d == null || d === 0 ? "var(--muted)" : d < 0 ? "var(--success)" : "var(--warning)" }}
+                style={{ color: d == null || d === 0 ? "var(--muted)" : "var(--foreground)" }}
               >
                 {d == null ? "–" : d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`}
               </span>

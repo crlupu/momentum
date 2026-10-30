@@ -6311,3 +6311,25 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .todo-add.todo-add { box-shadow: none; background: color-mix(in srgb, var(--foreground) 7%, transparent); border-radius: 0.875rem; }
 .todo-add.todo-add:focus-within { box-shadow: inset 0 0 0 1.5px var(--foreground); }
 input.todo-add__input { caret-color: var(--accent); }
+
+/*
+ * One colour rule. Blue is the next step and the primary action; white is
+ * done or selected; grey is everything else. States that used green, amber,
+ * orange, red or a tinted blue now say themselves in words and weight.
+ */
+.weight-now__badge, .weight-now__badge.is-ahead, .weight-now__badge.is-on-track, .weight-now__badge.is-close, .weight-now__badge.is-behind { background: var(--default); color: var(--foreground); }
+.summary-card .weight-now__badge { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.card-aside-btn { color: inherit; }
+.weight-now__badge::before { display: none; }
+.weight-change.is-down, .weight-change.is-up { color: inherit; font-weight: 600; }
+.plan-opt[aria-checked="true"] { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.plan-opt[aria-checked="true"] .plan-opt__mark { border-color: var(--foreground); background: var(--foreground); color: var(--background); }
+.plan-icons__icon[aria-checked="true"], .plan-icons .plan-icons__icon[aria-checked="true"] { background: var(--default); color: var(--foreground); box-shadow: inset 0 0 0 1.5px var(--foreground); }
+.plan-icons .plan-icons__icon[aria-checked="true"] svg { fill: var(--foreground); }
+.log-sheet__jump { background: var(--default); color: var(--foreground); border-radius: var(--r-pill); }
+@media (hover: hover) { .log-sheet__jump:hover { background: color-mix(in srgb, var(--foreground) 14%, transparent); } }
+.week-history__w.is-current .week-history__cell { background: var(--default); box-shadow: inset 0 0 0 1.5px var(--foreground); color: var(--foreground); }
+.week-history__w.is-current .week-history__label { color: var(--foreground); }
+.week-goal__pace.is-on, .week-goal__pace.is-behind { background: var(--default); color: var(--foreground); }
+.week-goal__bar.is-behind > span { background: color-mix(in srgb, var(--foreground) 45%, transparent); }
+.week-hero__behind { color: inherit; font-weight: 600; }

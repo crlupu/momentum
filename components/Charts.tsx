@@ -15,14 +15,6 @@ function offsetDate(days: number): Date {
   return d;
 }
 
-function hexToRgba(hex: string, a: number): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
-
 // Current calendar month laid out as week columns (Mon-first rows); null = pad.
 function buildMonthCells(): (string | null)[] {
   const now = new Date();
@@ -40,18 +32,19 @@ function buildMonthCells(): (string | null)[] {
 function Heatmap({
   cells,
   map,
-  color,
 }: {
   cells: (string | null)[];
   map: Record<string, number>;
-  color: string;
 }) {
+  // Shades of the text colour, not a category's hue: colour is kept for the
+  // next step and the primary action.
+  const mix = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
   const shade = (n: number) => {
     if (n === 0) return "var(--default)";
-    if (n === 1) return hexToRgba(color, 0.35);
-    if (n === 2) return hexToRgba(color, 0.55);
-    if (n <= 4) return hexToRgba(color, 0.8);
-    return hexToRgba(color, 1);
+    if (n === 1) return mix(30);
+    if (n === 2) return mix(50);
+    if (n <= 4) return mix(75);
+    return mix(100);
   };
   const CELL = 32;
   const WD = ["M", "T", "W", "T", "F", "S", "S"];
@@ -174,13 +167,12 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
                         className="cat-chip"
                         onClick={() => setCatPick(c.id)}
                       >
-                        <span className="cat-dot" style={{ background: c.color }} aria-hidden />
                         {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
                       </button>
                     ))}
                   </div>
                   <div className="mt-3 max-w-[22rem]">
-                    <Heatmap cells={cells} map={map} color={picked?.c.color ?? "#0A84FF"} />
+                    <Heatmap cells={cells} map={map} />
                   </div>
                 </>
               );
