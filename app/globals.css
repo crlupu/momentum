@@ -6490,3 +6490,11 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
 .sidebar:hover .side-link__key, .sidebar:focus-within .side-link__key { opacity: 1; }
 .sidebar__add .side-link__key { margin-inline-start: 0.25rem; background: rgba(255, 255, 255, 0.2); color: #fff; }
 @media (hover: none) { .side-link__key { display: none; } }
+
+/* Big screens B7 · The month grid stretches with its card (to a calendar's
+   comfortable 30rem), square days with their date. */
+.heatmap { inline-size: 100%; max-inline-size: 30rem; }
+.heatmap__day { position: relative; aspect-ratio: 1; border-radius: 6px; }
+.heatmap__date { position: absolute; inset-block-start: 0.25rem; inset-inline-start: 0.3125rem; font-size: 0.625rem; line-height: 1; color: var(--muted); }
+.heatmap__day.is-full .heatmap__date { color: var(--background); }
+@media (max-width: 30rem) { .heatmap__date { display: none; } }

@@ -46,32 +46,29 @@ function Heatmap({
     if (n <= 4) return mix(75);
     return mix(100);
   };
-  const CELL = 32;
   const WD = ["M", "T", "W", "T", "F", "S", "S"];
+  // Fluid: the month fills the card's width up to a calendar's comfortable
+  // size, square days, the date small in each.
+  const cols = { gridTemplateColumns: "repeat(7, minmax(0, 1fr))" };
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="w-max">
-        <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
-          {WD.map((d, i) => (
-            <div key={i} className="text-center text-[11px] font-medium text-[var(--muted)]">
-              {d}
+    <div className="heatmap">
+      <div className="mb-1 grid gap-1" style={cols}>
+        {WD.map((d, i) => (
+          <div key={i} className="text-center text-[11px] font-medium text-[var(--muted)]">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-1" style={cols}>
+        {cells.map((k, i) => {
+          if (k === null) return <div key={`pad-${i}`} className="heatmap__day" />;
+          const n = map[k] ?? 0;
+          return (
+            <div key={k} title={`${k} — ${n} done`} className={"heatmap__day" + (n >= 3 ? " is-full" : "")} style={{ background: shade(n) }}>
+              <span className="heatmap__date">{Number(k.slice(8))}</span>
             </div>
-          ))}
-        </div>
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}>
-          {cells.map((k, i) => {
-            if (k === null) return <div key={`pad-${i}`} style={{ width: CELL, height: CELL }} />;
-            const n = map[k] ?? 0;
-            return (
-              <div
-                key={k}
-                title={`${k} — ${n} done`}
-                className="rounded-[6px]"
-                style={{ width: CELL, height: CELL, background: shade(n) }}
-              />
-            );
-          })}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -169,7 +166,7 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
                         </button>
                       ))}
                     </div>
-                    <div className="mt-3 max-w-[22rem]">
+                    <div className="mt-3">
                       <Heatmap cells={cells} map={map} />
                     </div>
                   </>
