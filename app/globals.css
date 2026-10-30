@@ -6337,3 +6337,8 @@ input.todo-add__input { caret-color: var(--accent); }
 /* A workout under way: no tab bar, the Finish card at the bottom of the screen. */
 html.is-working-out .tabbar { display: none; }
 html.is-working-out .live-workout__dock { inset-block-end: calc(env(safe-area-inset-bottom) + 1rem); }
+
+/* Audit 4 · One way to draw the week: the hero's day bars, a size up. */
+.day-bars--big { gap: 0.625rem; margin-block-start: 0.5rem; }
+.day-bars--big .day-bars__bar { inline-size: 1.375rem; block-size: 1.875rem; border-radius: 0.4375rem; }
+.day-bars--big .day-bars__label { font-size: 0.6875rem; }

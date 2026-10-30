@@ -24,7 +24,7 @@ import { useFlow } from "../books/flowContext";
 import { Check, ChevronRight } from "../icons";
 import { TodayFigures } from "../MomentumCard";
 import { useShell } from "../AppShell";
-import { DayMarks, PlanGlyph, WeekRings } from "./bits";
+import { DayMarks, PlanGlyph } from "./bits";
 
 /**
  * Today's card when there is a day plan: the day's count, one tile per step
@@ -146,7 +146,7 @@ function RestDayCard({ tracker, weekday }: { tracker: Tracker; weekday: string }
                   : "Weekends are rest days. Turn them on in the plan to give them steps."}
           </p>
         </div>
-        <WeekRings days={week.days} today={today} size={30} />
+        <DayMarks days={week.days} today={today} big />
         <div className="plan-card__actions">
           {left.length === 1 && left[0].goal.ref ? (
             <ReadingFlow tracker={tracker}>

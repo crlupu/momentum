@@ -23,7 +23,7 @@ import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { EmptyState } from "../EmptyState";
 import { Check, ChevronDown, ChevronRight, Minus, Plus, Target, X } from "../icons";
-import { PlanTile, WeekRings } from "./bits";
+import { DayMarks, PlanTile } from "./bits";
 import { SummaryCard } from "../SummaryCard";
 
 const iconOf = (g: WeekGoal): PlanIcon =>
@@ -31,7 +31,7 @@ const iconOf = (g: WeekGoal): PlanIcon =>
 
 /**
  * This week: its goals with how far each has got and whether it's on pace,
- * the plan days as rings, and the weeks before it, done or not.
+ * the plan days as bars, and the weeks before it, done or not.
  */
 export function WeekView({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
@@ -80,7 +80,7 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
           { value: s.readingSessions.filter((x) => x.date >= week).reduce((a, x) => a + x.pages, 0), label: "pages read" },
         ]}
       >
-        <WeekRings days={sum.days} today={today} size={40} />
+        <DayMarks days={sum.days} today={today} big />
       </SummaryCard>
 
       <section>
