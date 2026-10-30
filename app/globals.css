@@ -6455,3 +6455,11 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
   .live-workout__side .live-workout__dock { position: static; flex-wrap: wrap; margin: 0; padding: 1rem; border-radius: var(--r-card); }
   .live-workout__side .live-workout__dock .cds--btn { flex: 1 1 100%; max-inline-size: none; justify-content: center; }
 }
+
+/* Big screens B2 · A primary button stops at a thumb's width, not the card's:
+   past 48rem it caps at 22.5rem and sits at the start, its partner beside it. */
+@media (min-width: 48rem) {
+  .summary-card__actions .cds--btn--primary, .summary-card__actions .pill-link--primary { flex: 0 1 22.5rem; }
+  .summary-card__actions .weight-form__log { flex: none; }
+  .exercise__finish { inline-size: max-content; min-inline-size: min(22.5rem, 100%); max-inline-size: 100%; margin-inline: 0; }
+}
