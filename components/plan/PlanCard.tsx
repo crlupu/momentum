@@ -8,11 +8,8 @@ import {
   focusElapsed,
   focusMinutes,
   hours,
-  leftoverDays,
-  leftovers,
   stepsOn,
   summarizeWeek,
-  weekNumber,
   weekOf,
   weekdayOf,
   type DayPlan,
@@ -27,12 +24,12 @@ import { useFlow } from "../books/flowContext";
 import { Check, ChevronRight } from "../icons";
 import { TodayFigures } from "../MomentumCard";
 import { useShell } from "../AppShell";
-import { PlanGlyph, WeekRings } from "./bits";
+import { DayMarks, PlanGlyph, WeekRings } from "./bits";
 
 /**
  * Today's card when there is a day plan: the day's count, one tile per step
  * in the plan's order (done white, the next ringed blue), and a band with
- * the week's days as rings and its goals, opening the week. On a day the
+ * the days this week where every step got done, opening the week. On a day the
  * plan doesn't run, the week leads instead.
  */
 export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
@@ -47,7 +44,8 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
   const weekday = WEEKDAY_LONG[weekdayOf(today)];
   // Tiles are Today's size on every card: eight to a line, more only past eight.
   const cols = Math.max(n, TILE_COLUMNS);
-  const left = leftovers(s, plan, today);
+  const planDays = week.days.filter((d) => d.planned).length;
+  const fullDays = week.days.filter((d) => d.planned && d.done === d.total).length;
   const hasFocus = plan.steps.some((st) => (st.same ? [st.pick] : Object.values(st.byDay ?? {})).some((r) => r?.kind === "focus"));
 
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={plan} />;
@@ -90,29 +88,17 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
           ))}
         </ol>
       </div>
-      {left.length > 0 ? (
-        <a href="#leftovers" className="plan-card__week">
-          <span className="plan-card__week-label">Earlier</span>
-          <span className="plan-card__week-rings summary-card__band-text">
-            {left.length} left from {leftoverDays(left.map((l) => l.day))}
-          </span>
-          <span className="plan-card__week-goals">
-            Review
-            <ChevronRight aria-hidden />
-          </span>
-        </a>
-      ) : (
+      {/* The days this week where everything got done, opening the week. */}
       <Link href="/week" className="plan-card__week">
-        <span className="plan-card__week-label">Week {weekNumber(week.week)}</span>
+        <span className="plan-card__week-label">This week</span>
         <span className="plan-card__week-rings">
-          <WeekRings days={week.days} today={today} size={20} labels={false} />
+          <DayMarks days={week.days} today={today} />
         </span>
         <span className="plan-card__week-goals">
-          {week.goals.length ? `${week.goalsDone} of ${week.goals.length} goals` : "Set goals"}
+          {fullDays} of {planDays} days
           <ChevronRight aria-hidden />
         </span>
       </Link>
-      )}
       <TodayFigures tracker={tracker} focus={hasFocus} />
     </section>
   );
