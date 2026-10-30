@@ -135,6 +135,7 @@ function NextHero({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onO
   );
 }
 
+/** A later step: its tile, what it is and where from (opens the goal), the tick on the right as on Today. */
 function StepRow({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onOpen: (id: string) => void }) {
   const { pending, run } = usePending();
   const tick = () =>
@@ -143,6 +144,13 @@ function StepRow({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onOp
     );
   return (
     <li className="next-step">
+      <span className="area-tile" aria-hidden>
+        <School />
+      </span>
+      <button type="button" className="next-step__open" onClick={() => onOpen(step.goal.id)}>
+        <span className="next-step__title">{step.title}</span>
+        <span className="next-step__sub">{step.sub}</span>
+      </button>
       <button
         type="button"
         role="checkbox"
@@ -153,10 +161,6 @@ function StepRow({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onOp
         className="check"
       >
         <span className="check__ring">{pending && <Check className="h-4 w-4" aria-hidden />}</span>
-      </button>
-      <button type="button" className="next-step__open" onClick={() => onOpen(step.goal.id)}>
-        <span className="next-step__title">{step.title}</span>
-        <span className="next-step__sub">{step.sub}</span>
       </button>
     </li>
   );

@@ -6429,3 +6429,7 @@ html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --fore
 .path__card > .path__headrow .path__title { font-size: 1rem; font-weight: 500; }
 .path__card > .path__headrow + .goal-list__rows { margin-block-start: 0.375rem; border-block-start: 0.5px solid var(--separator); }
 .path__card > .path__headrow + .path__summary { padding-block-start: 0.375rem; }
+
+/* Audit 9 · Ticks on the right: a later step reads like Today's plan rows,
+   a tile, the words, then the tick. */
+.next-step { gap: 0.75rem; padding-inline: 0.75rem 0.625rem; }
