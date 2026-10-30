@@ -4,7 +4,7 @@ import { fmtDate } from "@/lib/dates";
 
 import { memo, useState } from "react";
 
-import { Card } from "./ui";
+import { Card, PanelHeader } from "./ui";
 import { CardBars, SummaryCard } from "./SummaryCard";
 import { Tracker, Completion, catCompletionsByDate, completionsByDate, dateKey } from "@/lib/tracker";
 import { routineCompletions } from "@/lib/routines";
@@ -136,51 +136,49 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
         <CardBars values={counts} labels={days.map((d) => String(d.getDate()))} highlight={counts.length - 1} height={72} />
       </SummaryCard>
 
-      <Card>
-        <Card.Content className="p-4 md:p-5">
-          <h2 className="mb-1 text-lg font-semibold">
-            Completions by category
-          </h2>
-          <p className="mb-3 text-[13px] text-[var(--muted)]">This month. Pick a category, or see them all.</p>
-          {perCat.length === 0 ? (
-            <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
-              Check off some recurring tasks to see activity.
-            </p>
-          ) : (
-            (() => {
-              // One calendar, as Fitness shows one month: all categories
-              // together, or one picked from the chips above it.
-              const picked = perCat.find((x) => x.c.id === catPick);
-              const map = picked ? picked.map : monthAll;
-              return (
-                <>
-                  <div className="cat-chips" role="radiogroup" aria-label="Category">
-                    <button type="button" role="radio" aria-checked={!picked} className="cat-chip" onClick={() => setCatPick(null)}>
-                      All <span className="font-mono-n text-[var(--muted)]">{mTotal}</span>
-                    </button>
-                    {perCat.map(({ c, total }) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={picked?.c.id === c.id}
-                        className="cat-chip"
-                        onClick={() => setCatPick(c.id)}
-                      >
-                        {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
+      <section>
+        <PanelHeader title="By category · this month" />
+        <Card>
+          <Card.Content className="p-4 md:p-5">
+            {perCat.length === 0 ? (
+              <p className="px-1 py-2 text-[15px] text-[var(--muted)]">
+                Check off some recurring tasks to see activity.
+              </p>
+            ) : (
+              (() => {
+                // One calendar, as Fitness shows one month: all categories
+                // together, or one picked from the chips above it.
+                const picked = perCat.find((x) => x.c.id === catPick);
+                const map = picked ? picked.map : monthAll;
+                return (
+                  <>
+                    <div className="cat-chips" role="radiogroup" aria-label="Category">
+                      <button type="button" role="radio" aria-checked={!picked} className="cat-chip" onClick={() => setCatPick(null)}>
+                        All <span className="font-mono-n text-[var(--muted)]">{mTotal}</span>
                       </button>
-                    ))}
-                  </div>
-                  <div className="mt-3 max-w-[22rem]">
-                    <Heatmap cells={cells} map={map} />
-                  </div>
-                </>
-              );
-            })()
-          )}
-        </Card.Content>
-      </Card>
-
+                      {perCat.map(({ c, total }) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={picked?.c.id === c.id}
+                          className="cat-chip"
+                          onClick={() => setCatPick(c.id)}
+                        >
+                          {c.name} <span className="font-mono-n text-[var(--muted)]">{total}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-3 max-w-[22rem]">
+                      <Heatmap cells={cells} map={map} />
+                    </div>
+                  </>
+                );
+              })()
+            )}
+          </Card.Content>
+        </Card>
+      </section>
     </div>
   );
 });

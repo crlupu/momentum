@@ -6421,3 +6421,11 @@ html.light:not([data-style="signal"]) .card-bars li.is-hi .card-bars__bar { back
 html.light:not([data-style="signal"]) .card-meter { background: rgba(0, 0, 0, 0.12); }
 html.light:not([data-style="signal"]) .card-meter > span { background: #000000; }
 html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --foreground: inherit; --muted: inherit; --faint: inherit; --separator: inherit; --default: inherit; --border-strong: inherit; --field: inherit; --accent-text: inherit; }
+
+/* Audit 8 · One section-header style: a path's name is its card's first row,
+   not a bold heading floating between the section eyebrow and the card. */
+.path__card > .path__headrow { margin: 0; padding: 0.625rem 0.75rem 0 1rem; }
+.path__card > .path__headrow .path__head { padding: 0.25rem 0; }
+.path__card > .path__headrow .path__title { font-size: 1rem; font-weight: 500; }
+.path__card > .path__headrow + .goal-list__rows { margin-block-start: 0.375rem; border-block-start: 0.5px solid var(--separator); }
+.path__card > .path__headrow + .path__summary { padding-block-start: 0.375rem; }
