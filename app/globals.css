@@ -6278,3 +6278,36 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .day-bars__day.is-today .day-bars__bar > span { background: var(--accent); }
 .day-bars__label { font-size: 0.59375rem; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, 0.4); }
 .day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
+
+/*
+ * One field everywhere. Every text, number, date and search box, Carbon's
+ * included, takes the logging field's look: a soft grey fill with no edge, a
+ * thin ring in the text colour while typing, and the accent only in the
+ * caret. Fields with their own look (the logging field's bare input, row
+ * inputs, mini fields) are left out.
+ */
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input) {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  border: 0;
+  border-radius: 0.875rem;
+  box-shadow: none;
+  caret-color: var(--accent);
+}
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input):focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--foreground);
+}
+/* Inside the dark top cards the field is a light tint on black, whatever the theme. */
+.summary-card :is(.cds--text-input, input:is([type="text"], [type="number"], :not([type]))):not(.macro-field__row input) { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.summary-card .macro-field { background: rgba(255, 255, 255, 0.08); }
+.summary-card .macro-field__row input { color: #fff; }
+.summary-card .macro-field:focus-within { box-shadow: inset 0 0 0 1.5px #fff; }
+/* Weight in its card: the field and a Log button beside it. */
+.weight-form { align-items: stretch; }
+.weight-form .macro-field { flex: 1 1 auto; }
+.weight-form__log { flex: none; min-block-size: 3.5rem; padding-inline: 1.25rem; }
+.macro-field__row > span { white-space: nowrap; }
+/* The new to-do row is itself the field: grey fill, the text-colour ring while typing. */
+.todo-add.todo-add { box-shadow: none; background: color-mix(in srgb, var(--foreground) 7%, transparent); border-radius: 0.875rem; }
+.todo-add.todo-add:focus-within { box-shadow: inset 0 0 0 1.5px var(--foreground); }
+input.todo-add__input { caret-color: var(--accent); }
