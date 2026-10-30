@@ -6463,3 +6463,7 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
   .summary-card__actions .weight-form__log { flex: none; }
   .exercise__finish { inline-size: max-content; min-inline-size: min(22.5rem, 100%); max-inline-size: 100%; margin-inline: 0; }
 }
+
+/* Big screens B3 · Read from arm's length: past 66rem the whole type scale
+   (and the rem spacing with it) steps up one notch, 16px → 17px. */
+@media (min-width: 66rem) { html { font-size: 106.25%; } }
