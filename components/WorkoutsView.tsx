@@ -923,10 +923,10 @@ function ExerciseBlock({
           {removed && removed.index >= e.sets.length && undo}
           {/* The next set, waiting: tapping it adds a copy of the last one. */}
           <button type="button" className="set-add" onClick={() => void tracker.addSet(e.exerciseId)}>
-            <span className="set-add__label">Add new set</span>
             <span className="icon-disc set-add__plus" aria-hidden>
               <Plus />
             </span>
+            <span className="set-add__label">Add new set</span>
           </button>
           {!empty && (
             <button type="button" className="exercise__finish" onClick={finish}>
