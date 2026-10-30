@@ -6467,3 +6467,20 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
 /* Big screens B3 · Read from arm's length: past 66rem the whole type scale
    (and the rem spacing with it) steps up one notch, 16px → 17px. */
 @media (min-width: 66rem) { html { font-size: 106.25%; } }
+
+/* Big screens B5 · Everything clickable answers the pointer: rows light the
+   whole row (not just the words), tiles and chips lift a shade. Pointer
+   devices only, so a tap never leaves a row lit. */
+@media (hover: hover) and (pointer: fine) {
+  :is(li, .plan-row, .task-row, .next-step, .week-goal):has(> :is(.plan-row__open, .plan-row__main, .plan-steps__open, .next-step__open, .book-line__open, .exercise-line__open, .week-goal__main, .task-row__open):hover),
+  .inset-list__row:hover, .live-next:hover, .path__summary:hover, .project-card:hover > .summary-card {
+    background-color: color-mix(in srgb, var(--foreground) 5%, transparent);
+  }
+  .quick__tile:not(:disabled):hover, .live-chip:not(.is-current):hover, .cat-chip:not([aria-checked="true"]):hover, .weekly-cat:not([aria-checked="true"]):hover,
+  .hero__ghost:hover, .pill-link:not(.pill-link--primary):hover {
+    background-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+  .pill-link--primary:hover { background-color: var(--button-primary-hover); }
+  .path__head:hover .path__title, .text-action:hover { opacity: 0.8; }
+  .project-card { cursor: pointer; }
+}
