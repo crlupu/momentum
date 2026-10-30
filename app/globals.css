@@ -6439,3 +6439,19 @@ html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --fore
 html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.6); }
 .day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
 html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000; }
+
+/* Big screens B1 · The live workout in two columns: the exercise on the left,
+   the workout's standing, Up next and Finish held beside it. On a phone the
+   wrappers dissolve and the order is the one column's. */
+.live-workout__main, .live-workout__side { display: contents; }
+.live-workout__chips { order: -2; }
+.live-workout__side > :first-child { order: -1; }
+@media (min-width: 66rem) {
+  .live-workout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem); align-items: start; gap: 1rem 1.25rem; }
+  .live-workout__chips { grid-column: 1 / -1; margin-inline: 0; padding-inline: 0; flex-wrap: wrap; }
+  .live-workout__main { display: flex; flex-direction: column; gap: 0.875rem; min-inline-size: 0; }
+  .live-workout__side { position: sticky; inset-block-start: 1.5rem; display: flex; flex-direction: column; gap: 0.875rem; }
+  .live-workout__side > :first-child { order: 0; }
+  .live-workout__side .live-workout__dock { position: static; flex-wrap: wrap; margin: 0; padding: 1rem; border-radius: var(--r-card); }
+  .live-workout__side .live-workout__dock .cds--btn { flex: 1 1 100%; max-inline-size: none; justify-content: center; }
+}

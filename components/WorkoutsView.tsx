@@ -1101,64 +1101,69 @@ export function ActiveWorkoutPanel({
         </div>
       )}
 
-      <WorkoutProgress active={active} />
+      {/* On a wide screen the workout is two columns: the exercise being done
+          on the left, how the workout stands, what's next and Finish on the
+          right. On a phone both wrappers dissolve into the one column. */}
+      <div className="live-workout__main">
+        {/* Circuit blocks are run by the clock rather than filled in by hand, so
+            they get the timer instead of set rows. */}
+        {circuits.map(({ block, exercises }) => (
+          <div key={block.id} className="mb-3">
+            <CircuitPlayer tracker={tracker} block={block} exercises={exercises} />
+          </div>
+        ))}
 
-      {/* Circuit blocks are run by the clock rather than filled in by hand, so
-          they get the timer instead of set rows. */}
-      {circuits.map(({ block, exercises }) => (
-        <div key={block.id} className="mb-3">
-          <CircuitPlayer tracker={tracker} block={block} exercises={exercises} />
-        </div>
-      ))}
+        {shown && (
+          <ExerciseBlock
+            key={shown.exerciseId}
+            tracker={tracker}
+            exercise={shown}
+            history={lastPerformed(sessions, shown.exerciseId)}
+            lastSet={lastSetOf(active, definition)}
+          />
+        )}
+      </div>
+      <div className="live-workout__side">
+        <WorkoutProgress active={active} />
+        {upNext && (
+          <button
+            type="button"
+            className="live-next"
+            onClick={() => setPicked(upNext.exerciseId)}
+          >
+            <span className="flex min-w-0 flex-1 flex-col text-start">
+              <span className="live-next__label">Up next</span>
+              <span className="live-next__name">
+                {upNext.name}
+                {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
+              </span>
+            </span>
+            {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
+            <ChevronRight className="group-row__chev" aria-hidden />
+          </button>
+        )}
 
-      {shown && (
-        <ExerciseBlock
-          key={shown.exerciseId}
-          tracker={tracker}
-          exercise={shown}
-          history={lastPerformed(sessions, shown.exerciseId)}
-          lastSet={lastSetOf(active, definition)}
-        />
-      )}
-
-      {upNext && (
-        <button
-          type="button"
-          className="live-next"
-          onClick={() => setPicked(upNext.exerciseId)}
-        >
-          <span className="flex min-w-0 flex-1 flex-col text-start">
-            <span className="live-next__label">Up next</span>
-            <span className="live-next__name">
-              {upNext.name}
-              {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
+        <div className="live-workout__foot live-workout__dock">
+          {/* The running time leads, so it stays in view however far down. */}
+          <span className="live-workout__tally">
+            <span className="live-workout__time">
+              <Elapsed startedAt={active.startedAt} />
+            </span>
+            <span>
+              {sets} of {planned} {planned === 1 ? "set" : "sets"} · {total.toLocaleString()} kg
             </span>
           </span>
-          {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
-          <ChevronRight className="group-row__chev" aria-hidden />
-        </button>
-      )}
-
-      <div className="live-workout__foot live-workout__dock">
-        {/* The running time leads, so it stays in view however far down. */}
-        <span className="live-workout__tally">
-          <span className="live-workout__time">
-            <Elapsed startedAt={active.startedAt} />
-          </span>
-          <span>
-            {sets} of {planned} {planned === 1 ? "set" : "sets"} · {total.toLocaleString()} kg
-          </span>
-        </span>
-        <Button
-          variant="primary"
-          // Enabled once anything has been done. A circuit is ticked off by
-          // the clock and never records a set, so requiring one left the
-          // button dead for the whole of a timed workout.
-          isDisabled={pending || (sets === 0 && !active.exercises.some((e) => e.done))}
-          onPress={() => void run(() => tracker.finishWorkout())}
-        >
-          Finish workout
-        </Button>
+          <Button
+            variant="primary"
+            // Enabled once anything has been done. A circuit is ticked off by
+            // the clock and never records a set, so requiring one left the
+            // button dead for the whole of a timed workout.
+            isDisabled={pending || (sets === 0 && !active.exercises.some((e) => e.done))}
+            onPress={() => void run(() => tracker.finishWorkout())}
+          >
+            Finish workout
+          </Button>
+        </div>
       </div>
     </div>
   );
