@@ -6352,3 +6352,72 @@ html.is-working-out .live-workout__dock { inset-block-end: calc(env(safe-area-in
 .insert-row .icon-disc.insert-row__plus, .insert-row .icon-disc,
 .live-workout .exercise .icon-disc.set-add__plus, .light .live-workout .icon-disc.set-add__plus, .set-add__plus { inline-size: 2rem; block-size: 2rem; margin: 0; border-radius: var(--r-control); background: var(--default); color: var(--foreground); }
 .insert-row__label, .set-add__label { flex: 1 1 auto; }
+
+/* Audit 6 · Hero cards follow the theme: in light they are light cards with
+   dark ink, like every other card; the white details inside turn black. */
+html.light:not([data-style="signal"]) { --hero-bg: var(--surface); --hero-fg: var(--foreground); --hero-muted: var(--muted); --hero-shape: transparent; }
+html.light:not([data-style="signal"]) .momentum__shape--low { background: linear-gradient(0deg, transparent, rgba(0, 0, 0, 0.05)); }
+html.light:not([data-style="signal"]) .momentum__shape--square { background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent); }
+html.light:not([data-style="signal"]) .momentum__seg { background: rgba(0, 0, 0, 0.14); }
+html.light:not([data-style="signal"]) .momentum__seg.is-done { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__bar { background: rgba(0, 0, 0, 0.14); }
+html.light:not([data-style="signal"]) .momentum__bar span { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__figures > li + li { box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .hero::after { background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), transparent); }
+html.light:not([data-style="signal"]) .hero .since-set__label { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .hero__ghost { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .hero .up-next__name { color: #000000; }
+html.light:not([data-style="signal"]) .kcal-hero__week { border-block-start: 1px solid rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .since-set.hero .since-set__time { color: #000000; }
+html.light:not([data-style="signal"]) .since-set.hero .since-set__what { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .momentum__start { color: #000000; }
+html.light:not([data-style="signal"]) .momentum .eyebrow { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .momentum__badge { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .momentum--done { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 0 40px rgba(43, 145, 255, 0.25); }
+html.light:not([data-style="signal"]) .momentum--done .momentum__seg.is-done { background: #000000; }
+html.light:not([data-style="signal"]) .momentum__next-name { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .momentum__tile.is-done { background: #000000; color: #ffffff; }
+html.light:not([data-style="signal"]) .momentum__tile.is-next { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .plan-card__next { color: var(--hero-muted, rgba(0, 0, 0, 0.62)); }
+html.light:not([data-style="signal"]) .plan-card__label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__label.is-next { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .plan-card__week-label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__week-goals svg { fill: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .plan-card__strong { color: #000000; }
+html.light:not([data-style="signal"]) .momentum__plan-hint { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card__aside { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card__aside .text-action, html.light:not([data-style="signal"]) .summary-card__aside button { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .summary-card__title { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__actions .hero__ghost, html.light:not([data-style="signal"]) .summary-card__actions .pill-link { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__band-text { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card .cds--text-input { background: #ffffff; color: #000000; box-shadow: inset 0 0 0 1px #d4d6db; }
+html.light:not([data-style="signal"]) .summary-card .cds--text-input::placeholder { color: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .summary-card .segmented { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .summary-card .segmented__item { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .summary-card .segmented__item.is-on { background: rgba(0, 0, 0, 0.14); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__aside .cds--btn { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .summary-card__unit { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card__hint { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .day-bars__bar { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .day-bars__bar > span { background: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__bar > span { background: #000000; }
+html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.4); }
+html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card :is(.cds--text-input, input:is([type="text"], [type="number"], :not([type]))):not(.macro-field__row input) { background: rgba(0, 0, 0, 0.08); color: #000000; }
+html.light:not([data-style="signal"]) .summary-card .macro-field { background: rgba(0, 0, 0, 0.08); }
+html.light:not([data-style="signal"]) .summary-card .macro-field__row input { color: #000000; }
+html.light:not([data-style="signal"]) .summary-card .macro-field:focus-within { box-shadow: inset 0 0 0 1.5px #000000; }
+html.light:not([data-style="signal"]) .summary-card .weight-now__badge { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .hero .eyebrow, html.light:not([data-style="signal"]) .hero .up-next__label, html.light:not([data-style="signal"]) .hero .since-set__label { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .up-next__meta, html.light:not([data-style="signal"]) .hero__meta { color: rgba(0, 0, 0, 0.6); }
+html.light:not([data-style="signal"]) .hero .cds--btn--ghost, html.light:not([data-style="signal"]) .hero .up-next__pick, html.light:not([data-style="signal"]) .hero .hero__ghost { background: rgba(0, 0, 0, 0.1); color: #000000; }
+html.light:not([data-style="signal"]) .momentum__tile { background: rgba(0, 0, 0, 0.06); color: rgba(0, 0, 0, 0.35); }
+html.light:not([data-style="signal"]) .plan-card__week { border-block-start: 1px solid rgba(0, 0, 0, 0.08); color: #000000; }
+html.light:not([data-style="signal"]) .card-bars__bar { background: rgba(0, 0, 0, 0.1); }
+html.light:not([data-style="signal"]) .card-bars li.is-on .card-bars__bar { background: #000000; }
+html.light:not([data-style="signal"]) .card-bars__label { color: rgba(0, 0, 0, 0.62); }
+html.light:not([data-style="signal"]) .card-bars li.is-hi .card-bars__label { color: var(--accent-text); }
+html.light:not([data-style="signal"]) .card-bars li.is-hi .card-bars__bar { background: var(--accent); box-shadow: none; }
+html.light:not([data-style="signal"]) .card-meter { background: rgba(0, 0, 0, 0.12); }
+html.light:not([data-style="signal"]) .card-meter > span { background: #000000; }
+html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --foreground: inherit; --muted: inherit; --faint: inherit; --separator: inherit; --default: inherit; --border-strong: inherit; --field: inherit; --accent-text: inherit; }
