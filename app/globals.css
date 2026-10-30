@@ -6503,3 +6503,18 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
    column (beside the plan it belongs to) instead of trailing the left one. */
 .today-leftovers { display: none; }
 @media (min-width: 42rem) { .today-leftovers:has(.leftovers) { display: block; } }
+
+/* Up next: the one-arm hand sits beside the name, not under it (svgs are
+   block-level, so the name lays out as a row). */
+.live-next__name { display: flex; align-items: center; gap: 0.375rem; min-inline-size: 0; }
+.live-next__name .live-chip__hand { margin: 0; }
+
+/* iOS gives a date input a native minimum width and ignores width: 100%, so
+   the invisible picker over Log a meal's calendar icon stuck out past the
+   screen's edge; when the keyboard opened Safari zoomed out to fit it and
+   the page shrank. Date inputs may shrink, the icon's pill clips its own,
+   and nothing can widen the page sideways. */
+input[type="date"] { min-inline-size: 0; max-inline-size: 100%; }
+.meal-log__date { overflow: hidden; }
+.meal-log__date input { -webkit-appearance: none; appearance: none; min-inline-size: 0; font-size: 16px; }
+html, body { overflow-x: clip; }
