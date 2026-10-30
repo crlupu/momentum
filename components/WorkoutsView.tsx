@@ -1030,13 +1030,10 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
   );
 }
 
-/** Beside the live workout's title: its clock and its menu. */
+/** Beside the live workout's title: its menu. The clock is on the Finish card. */
 export function LiveActions({ tracker, active }: { tracker: Tracker; active: ActiveWorkout }) {
   return (
     <span className="live-actions">
-      <span className="live-workout__clock">
-        <Elapsed startedAt={active.startedAt} />
-      </span>
       <ActionMenu
         label="Workout options"
         className="live-workout__more"

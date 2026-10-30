@@ -6333,3 +6333,7 @@ input.todo-add__input { caret-color: var(--accent); }
 .week-goal__pace.is-on, .week-goal__pace.is-behind { background: var(--default); color: var(--foreground); }
 .week-goal__bar.is-behind > span { background: color-mix(in srgb, var(--foreground) 45%, transparent); }
 .week-hero__behind { color: inherit; font-weight: 600; }
+
+/* A workout under way: no tab bar, the Finish card at the bottom of the screen. */
+html.is-working-out .tabbar { display: none; }
+html.is-working-out .live-workout__dock { inset-block-end: calc(env(safe-area-inset-bottom) + 1rem); }
