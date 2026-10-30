@@ -6498,3 +6498,8 @@ html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, h
 .heatmap__date { position: absolute; inset-block-start: 0.25rem; inset-inline-start: 0.3125rem; font-size: 0.625rem; line-height: 1; color: var(--muted); }
 .heatmap__day.is-full .heatmap__date { color: var(--background); }
 @media (max-width: 30rem) { .heatmap__date { display: none; } }
+
+/* Big screens B8 · Two-column Today: Left from earlier heads the right
+   column (beside the plan it belongs to) instead of trailing the left one. */
+.today-leftovers { display: none; }
+@media (min-width: 42rem) { .today-leftovers:has(.leftovers) { display: block; } }

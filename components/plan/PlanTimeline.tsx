@@ -42,7 +42,6 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
   const today = dateKey();
   const steps = stepsOn(tracker.state!, plan, today);
   const [openGoal, setOpenGoal] = useState<string | null>(null);
-  const goal = openGoal ? tracker.state!.goals.find((g) => g.id === openGoal) : undefined;
   const next = steps.find((x) => !x.done);
 
   return (
@@ -67,18 +66,41 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
             </ol>
           </section>
         )}
-        {/* Today first; what earlier days left waits under it, folded. */}
-        <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
+        {/* Today first; what earlier days left waits under it, folded. Where
+            Today has two columns it moves to the top of the right one instead
+            (PlanLeftovers), so the columns end closer together. */}
+        <div className="md:hidden">
+          <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
+        </div>
       </div>
-      <Modal
-        open={!!goal}
-        onClose={() => setOpenGoal(null)}
-        title={goal?.title ?? ""}
-        titleNode={goal && <GoalTitle key={goal.id} tracker={tracker} goal={goal} />}
-        wide
-      >
-        {goal && <GoalDetail key={goal.id} tracker={tracker} goal={goal} onClose={() => setOpenGoal(null)} />}
-      </Modal>
+      <GoalModal tracker={tracker} id={openGoal} onClose={() => setOpenGoal(null)} />
+    </ReadingFlow>
+  );
+}
+
+/** A goal opened from a step, in its sheet. */
+function GoalModal({ tracker, id, onClose }: { tracker: Tracker; id: string | null; onClose: () => void }) {
+  const goal = id ? tracker.state!.goals.find((g) => g.id === id) : undefined;
+  return (
+    <Modal
+      open={!!goal}
+      onClose={onClose}
+      title={goal?.title ?? ""}
+      titleNode={goal && <GoalTitle key={goal.id} tracker={tracker} goal={goal} />}
+      wide
+    >
+      {goal && <GoalDetail key={goal.id} tracker={tracker} goal={goal} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+/** Left from earlier on its own, for the right-hand column of a wide Today. */
+export function PlanLeftovers({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
+  const [openGoal, setOpenGoal] = useState<string | null>(null);
+  return (
+    <ReadingFlow tracker={tracker}>
+      <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
+      <GoalModal tracker={tracker} id={openGoal} onClose={() => setOpenGoal(null)} />
     </ReadingFlow>
   );
 }
