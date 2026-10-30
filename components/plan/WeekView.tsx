@@ -64,7 +64,7 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
       <SummaryCard
         className="week-hero"
         aria-label="This week"
-        label={`Week ${weekNumber(week)}`}
+        label="This week"
         aside={daysLeft === 1 ? "Last day" : `${daysLeft} days left`}
         done={sum.done}
         doneLabel="Week done"

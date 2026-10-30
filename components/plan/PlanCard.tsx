@@ -41,7 +41,6 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
   const done = steps.filter((x) => x.done).length;
   const next = steps.find((x) => !x.done);
   const allDone = n > 0 && !next;
-  const weekday = WEEKDAY_LONG[weekdayOf(today)];
   // Tiles are Today's size on every card: eight to a line, more only past eight.
   const cols = Math.max(n, TILE_COLUMNS);
   const planDays = week.days.filter((d) => d.planned).length;
@@ -49,13 +48,13 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
   const hasFocus = plan.steps.some((st) => (st.same ? [st.pick] : Object.values(st.byDay ?? {})).some((r) => r?.kind === "focus"));
 
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={plan} />;
-  if (n === 0) return <RestDayCard tracker={tracker} weekday={weekday} />;
+  if (n === 0) return <RestDayCard tracker={tracker} />;
 
   return (
     <section className={"momentum plan-card" + (allDone ? " momentum--done" : "")} aria-label="Today's plan">
       <div className="momentum__top">
         <div className="momentum__head">
-          <p className="eyebrow">{weekday}</p>
+          <p className="eyebrow">Day plan</p>
           {allDone ? (
             <span className="momentum__badge">
               <Check aria-hidden />
@@ -105,7 +104,7 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
 }
 
 /** A day the plan doesn't run on: the week, and what's left to finish it. */
-function RestDayCard({ tracker, weekday }: { tracker: Tracker; weekday: string }) {
+function RestDayCard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const today = dateKey();
   const week = summarizeWeek(s, weekOf(today), today);
@@ -114,7 +113,7 @@ function RestDayCard({ tracker, weekday }: { tracker: Tracker; weekday: string }
     <section className={"momentum plan-card" + (week.done ? " momentum--done" : "")} aria-label="This week">
       <div className="momentum__top">
         <div className="momentum__head">
-          <p className="eyebrow">{weekday} · No plan today</p>
+          <p className="eyebrow">No plan today</p>
           {week.done && (
             <span className="momentum__badge">
               <Check aria-hidden />
