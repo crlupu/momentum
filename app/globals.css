@@ -6529,3 +6529,8 @@ html, body { overflow-x: clip; }
 .live-next .live-next__name { font-size: 1.0625rem; font-weight: 500; line-height: 1.25; }
 .live-next .live-next__label { margin: 0.0625rem 0 0; font-size: 0.8125rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
 .live-next .group-row__chev { flex: none; }
+
+/* The Finish bar: the button is a pill too, a little shorter, with the same
+   8px all round, so its curve follows the bar's instead of pressing into it. */
+.live-workout__dock { gap: 0.75rem; padding: 0.5rem 0.5rem 0.5rem 1.375rem; }
+.live-workout__dock .cds--btn.cds--btn { min-block-size: 3rem; block-size: 3rem; padding-inline: 1.5rem; border-radius: var(--r-pill) !important; }
