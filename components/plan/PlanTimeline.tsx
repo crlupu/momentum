@@ -106,7 +106,7 @@ export function PlanLeftovers({ tracker, plan }: { tracker: Tracker; plan: DayPl
 }
 
 /**
- * Steps not done on the plan days of the last week: one folded row under today's
+ * Steps not done on this week's earlier plan days (none on a Monday): one folded row under today's
  * plan, opened to review them by day, each tickable for its day or skipped,
  * a step or a day at a time.
  */

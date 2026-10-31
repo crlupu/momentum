@@ -489,19 +489,18 @@ export function planSkipsOf(s: TrackerState): Record<string, string[]> {
   return t && typeof t === "object" ? (t as Record<string, string[]>) : {};
 }
 
-/** How many calendar days back leftovers reach: a week, so every plan day
- *  since the same weekday last week is caught up (Monday still sees last
- *  week's days); older misses go quietly, the week view keeps them. */
-export const LEFTOVER_DAYS = 7;
-
 export type Leftover = { day: string; x: DayStep };
 
-/** Steps not done on the plan days before today, newest first, unless skipped. */
+/**
+ * Steps not done on this week's plan days before today, newest first, unless
+ * skipped. The list starts over each Monday: last week's misses go quietly,
+ * the week view keeps them.
+ */
 export function leftovers(s: TrackerState, plan: DayPlan, today: string = dateKey()): Leftover[] {
   const skips = planSkipsOf(s);
   const out: Leftover[] = [];
-  for (let i = 1; i <= LEFTOVER_DAYS; i++) {
-    const day = addDays(today, -i);
+  const monday = weekOf(today);
+  for (let day = addDays(today, -1); day >= monday; day = addDays(day, -1)) {
     const steps = stepsOn(s, plan, day);
     if (!steps.length) continue;
     const skipped = skips[day] ?? [];
