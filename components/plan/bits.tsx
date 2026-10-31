@@ -27,9 +27,10 @@ export function PlanTile({ icon }: { icon: PlanIcon }) {
 }
 
 /**
- * This week's plan days, a short bar each filled by how much of the day got
- * done: white once every step is, blue for today so far, grey for the rest.
- * The day's letter sits under its bar.
+ * This week's plan days across the full width, like the live workout's set
+ * bars: each day a group of thin bars, one per step, done or not yet (two
+ * colours, the card's ink and grey); the day's letter underneath, lit once
+ * every step is done.
  */
 export function DayMarks({ days, today, big }: { days: DayStatus[]; today: string; big?: boolean }) {
   const planned = days.filter((d) => d.planned);
@@ -42,8 +43,10 @@ export function DayMarks({ days, today, big }: { days: DayStatus[]; today: strin
         const state = done ? "is-done" : d.day === today ? "is-today" : d.day < today ? "is-past" : "is-ahead";
         return (
           <li key={d.day} className={"day-bars__day " + state} title={`${WEEKDAY[wd]} · ${d.done} of ${d.total}`}>
-            <span className="day-bars__bar" aria-hidden>
-              <span style={{ blockSize: `${(d.done / d.total) * 100}%` }} />
+            <span className="day-bars__steps" aria-hidden>
+              {Array.from({ length: d.total }, (_, k) => (
+                <span key={k} className={"day-bars__step" + (k < d.done ? " is-done" : "")} />
+              ))}
             </span>
             <span className="day-bars__label" aria-hidden>
               {WEEKDAY[wd][0]}
