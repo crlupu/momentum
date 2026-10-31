@@ -1020,8 +1020,8 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
 
 /**
  * The workout's exercises across the card's full width, however many: a
- * block each, holding a small bar per set (white done, blue the set you're
- * on, grey to go), the current exercise ringed, its number underneath.
+ * group of bars each, one per set, done or not yet; the current exercise's
+ * number lit underneath.
  */
 function SetBlocks({ active, current }: { active: ActiveWorkout; current?: ActiveWorkout["exercises"][number] }) {
   return (
@@ -1030,12 +1030,11 @@ function SetBlocks({ active, current }: { active: ActiveWorkout; current?: Activ
         const done = e.sets.filter((x) => x.done).length;
         const full = e.sets.length > 0 && done === e.sets.length;
         const now = e === current;
-        const next = now ? e.sets.findIndex((x) => !x.done) : -1;
         return (
           <li key={e.exerciseId} className={"set-blocks__ex" + (now ? " is-current" : full ? " is-done" : "")} title={`${e.name} · ${done} of ${e.sets.length}`}>
             <span className="set-blocks__box" aria-hidden>
               {e.sets.map((x, k) => (
-                <span key={k} className={"set-blocks__set" + (x.done ? " is-done" : k === next ? " is-next" : "")} />
+                <span key={k} className={"set-blocks__set" + (x.done ? " is-done" : "")} />
               ))}
             </span>
             <span className="set-blocks__n" aria-hidden>
