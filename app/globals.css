@@ -6522,9 +6522,10 @@ html, body { overflow-x: clip; }
 .set-blocks__n { font-size: 0.625rem; font-weight: 600; line-height: 1; text-align: center; color: color-mix(in srgb, var(--foreground) 40%, transparent); font-variant-numeric: tabular-nums; }
 .set-blocks__ex.is-current .set-blocks__n, .set-blocks__ex.is-done .set-blocks__n { color: var(--foreground); }
 
-/* The week's plan days, full width like the live workout's set bars: a group
-   of thin bars per day, one per step, done (the card's ink) or not yet
-   (grey); the letter underneath, lit once the day is finished. */
+/* The week's plan days, in two colours: done (the card's ink) and not yet
+   (grey). Small, in Today's band: thin upright bars per day, one per step,
+   across the width, the letter beneath. Big, on the rest-day card and the
+   Week page: a row per day, its name, a segmented line and the count. */
 .day-bars { display: flex; flex: 1 1 auto; gap: 0.5rem; min-inline-size: 0; margin: 0; padding: 0; list-style: none; }
 .day-bars__day { display: flex; flex: 1 1 0; flex-direction: column; gap: 0.25rem; min-inline-size: 0; }
 .day-bars__steps { display: flex; gap: 2px; block-size: 1rem; }
@@ -6532,7 +6533,10 @@ html, body { overflow-x: clip; }
 .day-bars__step.is-done { background: var(--foreground); }
 .day-bars__label { font-size: 0.625rem; font-weight: 600; line-height: 1; text-align: center; color: color-mix(in srgb, var(--foreground) 45%, transparent); }
 .day-bars__day.is-done .day-bars__label { color: var(--foreground); }
-.day-bars--big { gap: 0.625rem; margin-block-start: 0.5rem; }
-.day-bars--big .day-bars__steps { gap: 3px; block-size: 1.75rem; }
-.day-bars--big .day-bars__step { border-radius: 4px; }
-.day-bars--big .day-bars__label { font-size: 0.6875rem; }
+.day-lines { display: flex; flex-direction: column; gap: 0.5625rem; margin: 0.75rem 0 0.25rem; padding: 0; list-style: none; }
+.day-lines__day { display: flex; align-items: center; gap: 0.625rem; }
+.day-lines__name { flex: none; inline-size: 2rem; font-size: 0.75rem; font-weight: 600; color: color-mix(in srgb, var(--foreground) 45%, transparent); }
+.day-lines__steps { display: flex; flex: 1 1 auto; gap: 3px; min-inline-size: 0; }
+.day-lines__steps .day-bars__step { block-size: 0.5rem; border-radius: 4px; }
+.day-lines__count { flex: none; min-inline-size: 2.25rem; font-size: 0.75rem; font-variant-numeric: tabular-nums; text-align: end; color: var(--muted); }
+.day-lines__day.is-done .day-lines__name, .day-lines__day.is-done .day-lines__count { color: var(--foreground); }
