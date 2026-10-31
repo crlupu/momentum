@@ -33,7 +33,7 @@ import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
 import { RowActions } from "./RowActions";
-import { CardTiles, SummaryCard } from "./SummaryCard";
+import { SummaryCard } from "./SummaryCard";
 import { CircuitPlayer } from "./CircuitPlayer";
 import {
   Tracker,
@@ -1013,20 +1013,40 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
         { value: setsPlanned - setsDone, label: "sets to go" },
       ]}
     >
-      {active.exercises.length > 1 && (
-        <CardTiles
-          items={active.exercises.slice(0, 8).map((e) => {
-            const all = e.sets.length > 0 && e.sets.every((x) => x.done);
-            return {
-              key: e.exerciseId,
-              icon: <Dumbbell aria-hidden />,
-              title: e.name,
-              state: (all ? "done" : e === current ? "next" : "todo") as "done" | "next" | "todo",
-            };
-          })}
-        />
-      )}
+      {active.exercises.length > 1 && <SetBlocks active={active} current={current} />}
     </SummaryCard>
+  );
+}
+
+/**
+ * The workout's exercises across the card's full width, however many: a
+ * group of bars each, one per set, done or not yet; the current exercise's
+ * number lit underneath.
+ */
+function SetBlocks({ active, current }: { active: ActiveWorkout; current?: ActiveWorkout["exercises"][number] }) {
+  return (
+    <ol className="set-blocks" aria-label="Sets by exercise">
+      {active.exercises.map((e, i) => {
+        const done = e.sets.filter((x) => x.done).length;
+        const full = e.sets.length > 0 && done === e.sets.length;
+        const now = e === current;
+        return (
+          <li key={e.exerciseId} className={"set-blocks__ex" + (now ? " is-current" : full ? " is-done" : "")} title={`${e.name} · ${done} of ${e.sets.length}`}>
+            <span className="set-blocks__box" aria-hidden>
+              {e.sets.map((x, k) => (
+                <span key={k} className={"set-blocks__set" + (x.done ? " is-done" : "")} />
+              ))}
+            </span>
+            <span className="set-blocks__n" aria-hidden>
+              {i + 1}
+            </span>
+            <span className="sr-only">
+              {e.name}, {done} of {e.sets.length} sets{now ? ", current" : ""}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -1131,14 +1151,19 @@ export function ActiveWorkoutPanel({
             className="live-next"
             onClick={() => setPicked(upNext.exerciseId)}
           >
+            {/* A row like the rest: the tile, the name, then "Up next · 3 × 8–12" beneath. */}
+            <span className="area-tile" aria-hidden>
+              <Dumbbell />
+            </span>
             <span className="flex min-w-0 flex-1 flex-col text-start">
-              <span className="live-next__label">Up next</span>
               <span className="live-next__name">
                 {upNext.name}
                 {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
               </span>
+              <span className="live-next__label">
+                Up next{upNext.target ? ` · ${formatTarget(upNext.target)}` : ""}
+              </span>
             </span>
-            {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
             <ChevronRight className="group-row__chev" aria-hidden />
           </button>
         )}

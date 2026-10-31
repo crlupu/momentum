@@ -6522,3 +6522,26 @@ html, body { overflow-x: clip; }
 /* Add · Which workout?: the one due next is marked, its tile blue. */
 .quick__book.is-next .quick__icon { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-text); }
 .quick__upnext { margin-inline-start: 0.5rem; font-size: 0.65625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); vertical-align: 0.0625rem; }
+
+/* Up next as a row like the rest: the tile, the name, "Up next · 3 × 8–12"
+   quietly beneath, the chevron at the end. */
+.live-next { gap: 0.75rem; min-block-size: 4rem; padding: 0.625rem 0.875rem 0.625rem 0.75rem; }
+.live-next .live-next__name { font-size: 1.0625rem; font-weight: 500; line-height: 1.25; }
+.live-next .live-next__label { margin: 0.0625rem 0 0; font-size: 0.8125rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.live-next .group-row__chev { flex: none; }
+
+/* The Finish bar: the button is a pill too, a little shorter, with the same
+   8px all round, so its curve follows the bar's instead of pressing into it. */
+.live-workout__dock { gap: 0.75rem; padding: 0.5rem 0.5rem 0.5rem 1.375rem; }
+.live-workout__dock .cds--btn.cds--btn { min-block-size: 3rem; block-size: 3rem; padding-inline: 1.5rem; border-radius: var(--r-pill) !important; }
+
+/* The live workout's exercises, full width however many: a group of set
+   bars each, in two colours, done (the card's ink, so black in light mode)
+   and not done yet; the current exercise's number lit underneath. */
+.set-blocks { display: flex; gap: 0.625rem; margin: 0.625rem 0 0.25rem; padding: 0; list-style: none; }
+.set-blocks__ex { display: flex; flex: 1 1 0; flex-direction: column; gap: 0.3125rem; min-inline-size: 0; }
+.set-blocks__box { display: flex; gap: 3px; block-size: 1.75rem; }
+.set-blocks__set { flex: 1 1 0; min-inline-size: 2px; border-radius: 4px; background: color-mix(in srgb, var(--foreground) 12%, transparent); }
+.set-blocks__set.is-done { background: var(--foreground); }
+.set-blocks__n { font-size: 0.625rem; font-weight: 600; line-height: 1; text-align: center; color: color-mix(in srgb, var(--foreground) 40%, transparent); font-variant-numeric: tabular-nums; }
+.set-blocks__ex.is-current .set-blocks__n, .set-blocks__ex.is-done .set-blocks__n { color: var(--foreground); }
