@@ -146,16 +146,13 @@ function RestDayCard({ tracker }: { tracker: Tracker }) {
           </p>
         </div>
         <DayMarks days={week.days} today={today} big />
-        <div className="plan-card__actions">
-          {left.length === 1 && left[0].goal.ref ? (
+        {left.length === 1 && left[0].goal.ref ? (
+          <div className="plan-card__actions">
             <ReadingFlow tracker={tracker}>
               <FinishAction tracker={tracker} p={left[0]} />
             </ReadingFlow>
-          ) : null}
-          <Link href="/week" className={"pill-link" + (left.length === 1 && left[0].goal.ref ? "" : " pill-link--primary")}>
-            Open the week
-          </Link>
-        </div>
+          </div>
+        ) : null}
       </div>
       <TodayFigures tracker={tracker} />
     </section>

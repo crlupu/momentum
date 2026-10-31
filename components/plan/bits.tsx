@@ -27,24 +27,49 @@ export function PlanTile({ icon }: { icon: PlanIcon }) {
 }
 
 /**
- * This week's plan days, a short bar each filled by how much of the day got
- * done: white once every step is, blue for today so far, grey for the rest.
- * The day's letter sits under its bar.
+ * This week's plan days. Small (in Today's band): a group of thin upright
+ * bars per day, one per step, across the width. Big (the rest-day card, the
+ * Week page): a row per day, its name, a line split into its steps and the
+ * count. Either way two colours: done (the card's ink) and not yet (grey).
  */
 export function DayMarks({ days, today, big }: { days: DayStatus[]; today: string; big?: boolean }) {
   const planned = days.filter((d) => d.planned);
   const full = planned.filter((d) => d.done === d.total);
+  const label = `${full.length} of ${planned.length} plan days finished this week`;
+  const steps = (d: DayStatus, cls: string) => (
+    <span className={cls} aria-hidden>
+      {Array.from({ length: d.total }, (_, k) => (
+        <span key={k} className={"day-bars__step" + (k < d.done ? " is-done" : "")} />
+      ))}
+    </span>
+  );
+  if (big)
+    return (
+      <ol className="day-lines" aria-label={label}>
+        {planned.map((d) => {
+          const wd = new Date(d.day + "T12:00:00").getDay();
+          const done = d.done === d.total;
+          return (
+            <li key={d.day} className={"day-lines__day" + (done ? " is-done" : "") + (d.day === today ? " is-today" : "")}>
+              <span className="day-lines__name">{WEEKDAY[wd]}</span>
+              {steps(d, "day-lines__steps")}
+              <span className="day-lines__count">
+                {d.done}/{d.total}
+                <span className="sr-only"> done{done ? ", finished" : ""}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    );
   return (
-    <ol className={"day-bars" + (big ? " day-bars--big" : "")} aria-label={`${full.length} of ${planned.length} plan days finished this week`}>
+    <ol className="day-bars" aria-label={label}>
       {planned.map((d) => {
         const wd = new Date(d.day + "T12:00:00").getDay();
         const done = d.done === d.total;
-        const state = done ? "is-done" : d.day === today ? "is-today" : d.day < today ? "is-past" : "is-ahead";
         return (
-          <li key={d.day} className={"day-bars__day " + state} title={`${WEEKDAY[wd]} · ${d.done} of ${d.total}`}>
-            <span className="day-bars__bar" aria-hidden>
-              <span style={{ blockSize: `${(d.done / d.total) * 100}%` }} />
-            </span>
+          <li key={d.day} className={"day-bars__day" + (done ? " is-done" : "")} title={`${WEEKDAY[wd]} · ${d.done} of ${d.total}`}>
+            {steps(d, "day-bars__steps")}
             <span className="day-bars__label" aria-hidden>
               {WEEKDAY[wd][0]}
             </span>

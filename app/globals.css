@@ -6270,14 +6270,6 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .macro-field__row input[inputmode="text"] { font-weight: 500; }
 
 /* This week's plan days in Today's card: a bar each, filled by how much got done, white when all of it. */
-.day-bars { display: flex; align-items: flex-end; gap: 0.4375rem; margin: 0; padding: 0; list-style: none; }
-.day-bars__day { display: flex; flex-direction: column; align-items: center; gap: 0.1875rem; }
-.day-bars__bar { position: relative; display: block; inline-size: 1rem; block-size: 1.125rem; overflow: hidden; border-radius: 0.3125rem; background: rgba(255, 255, 255, 0.08); }
-.day-bars__bar > span { position: absolute; inset-inline: 0; inset-block-end: 0; background: rgba(255, 255, 255, 0.35); }
-.day-bars__day.is-done .day-bars__bar > span { background: #fff; }
-.day-bars__day.is-today .day-bars__bar > span { background: var(--accent); }
-.day-bars__label { font-size: 0.59375rem; font-weight: 600; line-height: 1; color: rgba(255, 255, 255, 0.4); }
-.day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
 
 /*
  * One field everywhere. Every text, number, date and search box, Carbon's
@@ -6338,11 +6330,6 @@ input.todo-add__input { caret-color: var(--accent); }
 html.is-working-out .tabbar { display: none; }
 html.is-working-out .live-workout__dock { inset-block-end: calc(env(safe-area-inset-bottom) + 1rem); }
 
-/* Audit 4 · One way to draw the week: the hero's day bars, a size up. */
-.day-bars--big { gap: 0.625rem; margin-block-start: 0.5rem; }
-.day-bars--big .day-bars__bar { inline-size: 1.375rem; block-size: 1.875rem; border-radius: 0.4375rem; }
-.day-bars--big .day-bars__label { font-size: 0.6875rem; }
-
 /* Audit 5 · An add is a row, not a button: no ring, a grey + tile where the
    list's items keep theirs, the words beside it. Blue stays for the next step. */
 .insert-row, .insert-row + .insert-row, .set-add { justify-content: flex-start; gap: 0.75rem; box-shadow: none; color: color-mix(in srgb, var(--foreground) 72%, transparent); font-weight: 500; }
@@ -6398,11 +6385,6 @@ html.light:not([data-style="signal"]) .summary-card .segmented__item.is-on { bac
 html.light:not([data-style="signal"]) .summary-card__aside .cds--btn { color: var(--accent-text); }
 html.light:not([data-style="signal"]) .summary-card__unit { color: #000000; }
 html.light:not([data-style="signal"]) .summary-card__hint { color: rgba(0, 0, 0, 0.62); }
-html.light:not([data-style="signal"]) .day-bars__bar { background: rgba(0, 0, 0, 0.08); }
-html.light:not([data-style="signal"]) .day-bars__bar > span { background: rgba(0, 0, 0, 0.35); }
-html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__bar > span { background: #000000; }
-html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.4); }
-html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000000; }
 html.light:not([data-style="signal"]) .summary-card :is(.cds--text-input, input:is([type="text"], [type="number"], :not([type]))):not(.macro-field__row input) { background: rgba(0, 0, 0, 0.08); color: #000000; }
 html.light:not([data-style="signal"]) .summary-card .macro-field { background: rgba(0, 0, 0, 0.08); }
 html.light:not([data-style="signal"]) .summary-card .macro-field__row input { color: #000000; }
@@ -6433,12 +6415,6 @@ html.light:not([data-style="signal"]) .summary-card { --surface: inherit; --fore
 /* Audit 9 · Ticks on the right: a later step reads like Today's plan rows,
    a tile, the words, then the tick. */
 .next-step { gap: 0.75rem; padding-inline: 0.75rem 0.625rem; }
-
-/* Audit 10 · Small details: the day bars' letters are readable. */
-.day-bars__label { font-size: 0.6875rem; color: rgba(255, 255, 255, 0.6); }
-html.light:not([data-style="signal"]) .day-bars__label { color: rgba(0, 0, 0, 0.6); }
-.day-bars__day.is-done .day-bars__label, .day-bars__day.is-today .day-bars__label { color: #fff; }
-html.light:not([data-style="signal"]) .day-bars__day.is-done .day-bars__label, html.light:not([data-style="signal"]) .day-bars__day.is-today .day-bars__label { color: #000; }
 
 /* Big screens B1 · The live workout in two columns: the exercise on the left,
    the workout's standing, Up next and Finish held beside it. On a phone the
@@ -6545,3 +6521,22 @@ html, body { overflow-x: clip; }
 .set-blocks__set.is-done { background: var(--foreground); }
 .set-blocks__n { font-size: 0.625rem; font-weight: 600; line-height: 1; text-align: center; color: color-mix(in srgb, var(--foreground) 40%, transparent); font-variant-numeric: tabular-nums; }
 .set-blocks__ex.is-current .set-blocks__n, .set-blocks__ex.is-done .set-blocks__n { color: var(--foreground); }
+
+/* The week's plan days, in two colours: done (the card's ink) and not yet
+   (grey). Small, in Today's band: thin upright bars per day, one per step,
+   across the width, the letter beneath. Big, on the rest-day card and the
+   Week page: a row per day, its name, a segmented line and the count. */
+.day-bars { display: flex; flex: 1 1 auto; gap: 0.5rem; min-inline-size: 0; margin: 0; padding: 0; list-style: none; }
+.day-bars__day { display: flex; flex: 1 1 0; flex-direction: column; gap: 0.25rem; min-inline-size: 0; }
+.day-bars__steps { display: flex; gap: 2px; block-size: 1rem; }
+.day-bars__step { flex: 1 1 0; min-inline-size: 2px; border-radius: 3px; background: color-mix(in srgb, var(--foreground) 12%, transparent); }
+.day-bars__step.is-done { background: var(--foreground); }
+.day-bars__label { font-size: 0.625rem; font-weight: 600; line-height: 1; text-align: center; color: color-mix(in srgb, var(--foreground) 45%, transparent); }
+.day-bars__day.is-done .day-bars__label { color: var(--foreground); }
+.day-lines { display: flex; flex-direction: column; gap: 0.5625rem; margin: 0.75rem 0 0.25rem; padding: 0; list-style: none; }
+.day-lines__day { display: flex; align-items: center; gap: 0.625rem; }
+.day-lines__name { flex: none; inline-size: 2rem; font-size: 0.75rem; font-weight: 600; color: color-mix(in srgb, var(--foreground) 45%, transparent); }
+.day-lines__steps { display: flex; flex: 1 1 auto; gap: 3px; min-inline-size: 0; }
+.day-lines__steps .day-bars__step { block-size: 0.5rem; border-radius: 4px; }
+.day-lines__count { flex: none; min-inline-size: 2.25rem; font-size: 0.75rem; font-variant-numeric: tabular-nums; text-align: end; color: var(--muted); }
+.day-lines__day.is-done .day-lines__name, .day-lines__day.is-done .day-lines__count { color: var(--foreground); }
