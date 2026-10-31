@@ -1131,14 +1131,19 @@ export function ActiveWorkoutPanel({
             className="live-next"
             onClick={() => setPicked(upNext.exerciseId)}
           >
+            {/* A row like the rest: the tile, the name, then "Up next · 3 × 8–12" beneath. */}
+            <span className="area-tile" aria-hidden>
+              <Dumbbell />
+            </span>
             <span className="flex min-w-0 flex-1 flex-col text-start">
-              <span className="live-next__label">Up next</span>
               <span className="live-next__name">
                 {upNext.name}
                 {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
               </span>
+              <span className="live-next__label">
+                Up next{upNext.target ? ` · ${formatTarget(upNext.target)}` : ""}
+              </span>
             </span>
-            {upNext.target && <span className="live-next__target">{formatTarget(upNext.target)}</span>}
             <ChevronRight className="group-row__chev" aria-hidden />
           </button>
         )}

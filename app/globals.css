@@ -6522,3 +6522,10 @@ html, body { overflow-x: clip; }
 /* Add · Which workout?: the one due next is marked, its tile blue. */
 .quick__book.is-next .quick__icon { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-text); }
 .quick__upnext { margin-inline-start: 0.5rem; font-size: 0.65625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); vertical-align: 0.0625rem; }
+
+/* Up next as a row like the rest: the tile, the name, "Up next · 3 × 8–12"
+   quietly beneath, the chevron at the end. */
+.live-next { gap: 0.75rem; min-block-size: 4rem; padding: 0.625rem 0.875rem 0.625rem 0.75rem; }
+.live-next .live-next__name { font-size: 1.0625rem; font-weight: 500; line-height: 1.25; }
+.live-next .live-next__label { margin: 0.0625rem 0 0; font-size: 0.8125rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.live-next .group-row__chev { flex: none; }
