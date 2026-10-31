@@ -11,7 +11,7 @@ import { InsertRow } from "./InsertRow";
 import { WeeklyTaskForm } from "./WeeklyTasks";
 import { Apple, BookOpen, Check, ChevronLeft, ChevronRight, Dumbbell, Minus, Play, Plus, Repeat, Scale, TaskDone } from "./icons";
 import { Tracker, dateKey } from "@/lib/tracker";
-import { nextOfGoal, planOf, stepsOn } from "@/lib/plan";
+import { daysBetween, nextOfGoal, planOf, stepsOn } from "@/lib/plan";
 import * as R from "@/lib/reading";
 import { routines } from "@/lib/routines";
 import { categoryIcon, doneThisWeek, weeklyTasksOf } from "@/lib/weekly";
@@ -20,7 +20,7 @@ import type { TrackerState } from "@/lib/model";
 /** What a logged thing was, and how to take it back for a few seconds. */
 export type Toast = { text: string; undo?: Partial<TrackerState> };
 
-type View = "menu" | "todo" | "weight" | "meal" | "weekly" | "books";
+type View = "menu" | "todo" | "weight" | "meal" | "weekly" | "books" | "workouts";
 
 /**
  * The tab bar's +: log anything from any screen without leaving it. The
@@ -35,7 +35,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
     onClose();
     setView("menu");
   };
-  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks", books: "Which book?" };
+  const titles: Record<View, string> = { menu: "Add", todo: "To-do", weight: "Weigh-in", meal: "Meal", weekly: "Weekly tasks", books: "Which book?", workouts: "Which workout?" };
   return (
     <Modal open={open} onClose={close} title={titles[view]}>
       {open && tracker.state && (
@@ -51,6 +51,7 @@ export function QuickAdd({ tracker, open, onClose, onToast }: { tracker: Tracker
           {view === "meal" && <MealForm tracker={tracker} onDone={close} onToast={onToast} />}
           {view === "weekly" && <WeeklyList tracker={tracker} />}
           {view === "books" && <BookPicker tracker={tracker} onClose={close} />}
+          {view === "workouts" && <WorkoutPicker tracker={tracker} onClose={close} />}
         </div>
       )}
     </Modal>
@@ -63,12 +64,13 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
   const today = dateKey();
   const lastKg = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).pop()?.kg;
   const books = openBooks(s);
-  const workout = nextWorkout(s, today);
   const kcalToday = s.calories.filter((c) => c.date === today).reduce((a, c) => a + c.kcal, 0);
   const weekly = weeklyTasksOf(s);
+  const startable = s.workouts.filter((w) => w.exercises.length > 0);
+  // A workout under way goes straight back to it; otherwise which one first.
   const goWorkout = () => {
+    if (!s.activeWorkout) return onView("workouts");
     onClose();
-    if (!s.activeWorkout && workout) void tracker.startWorkout(workout.id);
     router.push("/fitness?view=live");
   };
   const tiles: { key: AddKey; icon: ReactNode; title: string; hint?: string; onPress: () => void; disabled?: boolean }[] = [
@@ -83,7 +85,7 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
       // Which book first, then its page log.
       onPress: () => onView("books"),
     },
-    { key: "workout", icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : workout?.name, disabled: !s.activeWorkout && !workout, onPress: goWorkout },
+    { key: "workout", icon: <Dumbbell />, title: "Workout", hint: s.activeWorkout ? "Resume" : startable.length === 1 ? startable[0].name : `${startable.length} workouts`, disabled: !s.activeWorkout && !startable.length, onPress: goWorkout },
     { key: "meal", icon: <Apple />, title: "Meal", hint: s.calorieBudget ? `${Math.max(0, s.calorieBudget - kcalToday).toLocaleString()} left` : undefined, onPress: () => onView("meal") },
     {
       key: "weekly",
@@ -161,6 +163,53 @@ function BookPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => voi
         })}
       </ul>
       {books.length > 1 && <p className="quick__note">The book your plan reads next comes first.</p>}
+    </>
+  );
+}
+
+/** Workouts: every one that can be started, the one due next first; a tap starts it. */
+function WorkoutPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => void }) {
+  const s = tracker.state!;
+  const router = useRouter();
+  const today = dateKey();
+  const next = nextWorkout(s, today);
+  const startable = s.workouts.filter((w) => w.exercises.length > 0);
+  const list = next ? [next, ...startable.filter((w) => w.id !== next.id)] : startable;
+  const last = (id: string) => s.workoutSessions.filter((x) => x.workoutId === id).map((x) => x.date).sort().pop();
+  const start = (id: string) => {
+    onClose();
+    void tracker.startWorkout(id);
+    router.push("/fitness?view=live");
+  };
+  return (
+    <>
+      <ul className="card quick__books">
+        {list.map((w) => {
+          const d = last(w.id);
+          const ago = d ? daysBetween(d, today) : null;
+          return (
+            <li key={w.id}>
+              <button type="button" className={"quick__book" + (w === next ? " is-next" : "")} onClick={() => start(w.id)}>
+                <span className="quick__icon" aria-hidden>
+                  <Dumbbell />
+                </span>
+                <span className="quick__book-text">
+                  <span className="quick__book-title">
+                    {w.name}
+                    {w === next && <span className="quick__upnext">Up next</span>}
+                  </span>
+                  <span className="quick__book-sub">
+                    {w.exercises.length} exercise{w.exercises.length === 1 ? "" : "s"} ·{" "}
+                    {ago == null ? "not done yet" : ago === 0 ? "done today" : `last ${ago} day${ago === 1 ? "" : "s"} ago`}
+                  </span>
+                </span>
+                <ChevronRight className="quick__chev" aria-hidden />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {list.length > 1 && <p className="quick__note">Tap one to start it. The one due next comes first.</p>}
     </>
   );
 }

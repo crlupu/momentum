@@ -6518,3 +6518,7 @@ input[type="date"] { min-inline-size: 0; max-inline-size: 100%; }
 .meal-log__date { overflow: hidden; }
 .meal-log__date input { -webkit-appearance: none; appearance: none; min-inline-size: 0; font-size: 16px; }
 html, body { overflow-x: clip; }
+
+/* Add · Which workout?: the one due next is marked, its tile blue. */
+.quick__book.is-next .quick__icon { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-text); }
+.quick__upnext { margin-inline-start: 0.5rem; font-size: 0.65625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text); vertical-align: 0.0625rem; }
