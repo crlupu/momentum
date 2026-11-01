@@ -225,7 +225,7 @@ function PageBody({ id, tracker }: { id: PageId; tracker: Tracker }) {
                   href={`/education?track=${t.id}`}
                   icon={<span className="settings-dot" style={{ background: t.color }} />}
                   label={t.name}
-                  sub={[t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : null, `${t.wipLimit} at a time`].filter(Boolean).join(" · ")}
+                  sub={[t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : null, `${t.wipLimit} at a time`].filter(Boolean).join(", ")}
                 />
               ))}
               <Row href="/education" icon={<Plus />} label="New track" sub="From Education › Library" quiet />
@@ -447,16 +447,16 @@ function exportData(t: Tracker) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/** The style and the theme, as the Appearance page names them: "Volt · System". */
+/** The style and the theme, as the Appearance page names them: "Volt, System". */
 function useStyleName(): string {
   const [name, setName] = useState("");
   const { theme } = useTheme();
   useEffect(() => {
-    const st = document.documentElement.dataset.style;
+    const st = document.documentElement.dataset.scheme;
     setName(st === "signal" ? "Blue" : st === "neutral" ? "Neutral" : "Volt");
   }, []);
   if (!name) return "";
-  return `${name} · ${theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}`;
+  return `${name}, ${theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}`;
 }
 
 export default function ConfigurationPage() {

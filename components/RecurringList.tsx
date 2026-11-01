@@ -106,7 +106,7 @@ export default function RecurringList({
                     <span className={"task-row__title " + (r.done ? "is-done" : "")}>{r.title}</span>
                     <span className="task-row__sub">
                       {REPEAT_LABEL[r.freq]}
-                      <span aria-hidden> · </span>
+                      <span className="meta-sep">, </span>
                       {(() => {
                         // A book's page in place of its category: the tile
                         // already says it's reading.

@@ -103,7 +103,7 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
       {plan.steps.length === 0 && <FromRoutines tracker={tracker} onUse={save} days={plan.days} />}
 
       <section>
-        <h3 className="group-head">Steps · in order</h3>
+        <h3 className="group-head">Steps, in order</h3>
         <div className="card plan-steps">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -286,7 +286,7 @@ function StepItem({ tracker, plan, step, n, onOpen }: { tracker: Tracker; plan: 
         <span className="plan-steps__text">
           <span className="plan-steps__name">{step.name}</span>
           {step.same ? (
-            <span className="plan-steps__sub">Every day · {refTitle(s, step.pick) ?? "nothing picked"}</span>
+            <span className="plan-steps__sub">Every day, {refTitle(s, step.pick) ?? "nothing picked"}</span>
           ) : (
             <span className="plan-steps__chips">
               {days.map((d) => {
@@ -414,10 +414,10 @@ function StepForm({
                     {v ? (
                       <>
                         <span className="plan-byday__title">{refTitle(tracker.state!, v) ?? "Gone"}</span>
-                        {v.kind === "focus" && <span className="plan-byday__kind">Focus · {v.minutes} min</span>}
+                        {v.kind === "focus" && <span className="plan-byday__kind">Focus, {v.minutes} min</span>}
                       </>
                     ) : (
-                      "Nothing · step skipped"
+                      "Nothing, step skipped"
                     )}
                   </span>
                   {open ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
@@ -524,7 +524,7 @@ function Picker({
             <div className="card plan-opts">
               {goals.map((g) => {
                 const n = nextOfGoal(g);
-                return <Opt key={g.id} r={{ kind: "goal", id: g.id }} title={g.title} sub={goalStatus(g) === "queued" ? "Queued" : n ? `Next: ${n.itemId ? `${n.title} · ${n.of}` : `session ${n.of}`}` : "All done"} />;
+                return <Opt key={g.id} r={{ kind: "goal", id: g.id }} title={g.title} sub={goalStatus(g) === "queued" ? "Queued" : n ? `Next: ${n.itemId ? `${n.title}, ${n.of}` : `session ${n.of}`}` : "All done"} />;
               })}
             </div>
           </section>
@@ -535,7 +535,7 @@ function Picker({
           </p>
         )}
         <p className="plan-picker__foot">
-          <span>{queued ? "Active and queued" : `Only active goals · ${activeCount}`}</span>
+          <span>{queued ? "Active and queued" : `Only active goals, ${activeCount}`}</span>
           {queuedCount > 0 && (
             <button type="button" className="text-action" onClick={() => setQueued((v) => !v)}>
               {queued ? "Hide queued" : `Show ${queuedCount} queued`}
@@ -555,7 +555,7 @@ function Picker({
               key={t.id}
               r={{ kind: "track", id: t.id }}
               title={t.name}
-              sub={`${t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : "No daily pages"} · ${open} open`}
+              sub={`${t.dailyTarget > 0 ? `${t.dailyTarget} pages a day` : "No daily pages"}, ${open} open`}
             />
           );
         })}
@@ -610,7 +610,7 @@ function Picker({
           <Opt r={{ kind: "focus", id: "", minutes }} title="Just focus" sub="Time on whatever matters most" />
           {projects.map((p) => {
             const doing = columnCards(p, "doing")[0];
-            return <Opt key={p.id} r={{ kind: "focus", id: p.id, minutes }} title={p.title} sub={doing ? `Project · Doing: ${doing.title}` : "Project"} />;
+            return <Opt key={p.id} r={{ kind: "focus", id: p.id, minutes }} title={p.title} sub={doing ? `Project, Doing: ${doing.title}` : "Project"} />;
           })}
         </div>
         <p className="plan-note">Focus is your main work. Start it from Today as a timer; the step ticks itself when the time is in.</p>
@@ -632,7 +632,7 @@ function Picker({
           <div className="card plan-opts">
             {weekly.map((t) => {
               const c = s.categories.find((x) => x.id === t.catId);
-              return <Opt key={t.id} r={{ kind: "weekly", id: t.id }} title={t.title} sub={`${c?.name ?? "Weekly"} \u00b7 ${t.times}\u00d7 a week`} />;
+              return <Opt key={t.id} r={{ kind: "weekly", id: t.id }} title={t.title} sub={`${c?.name ?? "Weekly"}, ${t.times}\u00d7 a week`} />;
             })}
           </div>
         </section>

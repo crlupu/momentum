@@ -299,7 +299,7 @@ function TargetFields({ value, onChange }: { value: TargetDraft; onChange: (v: T
         {field("sets", "Recommended sets", "sets", "w-14")}
         <span className="text-[var(--muted)]">×</span>
         {field("repsMin", "Fewest reps", "reps", "w-14")}
-        <span className="text-[var(--muted)]">–</span>
+        <span className="text-[var(--muted)]">to</span>
         {field("repsMax", "Most reps", "max", "w-14")}
       </div>
     </div>
@@ -423,7 +423,7 @@ function ExerciseRow({
             checked={oneArm}
             onChange={(e) => setOneArm(e.target.checked)}
           />
-          One arm — counts double
+          One arm, counts double
         </label>
       </form>
     );
@@ -1003,7 +1003,7 @@ function WorkoutProgress({ active }: { active: ActiveWorkout }) {
       className="since-set-card"
       aria-label="Workout progress"
       label="Workout"
-      aside={current ? `Now · ${current.name}` : undefined}
+      aside={current ? `Now: ${current.name}` : undefined}
       done={setsPlanned > 0 && setsDone === setsPlanned}
       doneLabel="Every set done"
       figure={`${setsDone} of ${setsPlanned}`}
@@ -1031,7 +1031,7 @@ function SetBlocks({ active, current }: { active: ActiveWorkout; current?: Activ
         const full = e.sets.length > 0 && done === e.sets.length;
         const now = e === current;
         return (
-          <li key={e.exerciseId} className={"set-blocks__ex" + (now ? " is-current" : full ? " is-done" : "")} title={`${e.name} · ${done} of ${e.sets.length}`}>
+          <li key={e.exerciseId} className={"set-blocks__ex" + (now ? " is-current" : full ? " is-done" : "")} title={`${e.name}, ${done} of ${e.sets.length}`}>
             <span className="set-blocks__box" aria-hidden>
               {e.sets.map((x, k) => (
                 <span key={k} className={"set-blocks__set" + (x.done ? " is-done" : "")} />
@@ -1114,7 +1114,7 @@ export function ActiveWorkoutPanel({
                 onClick={() => setPicked(e.exerciseId)}
               >
                 {e.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
-                {e.name} · {d}/{e.sets.length}
+                {e.name}, {d}/{e.sets.length}
               </button>
             );
           })}
@@ -1151,7 +1151,7 @@ export function ActiveWorkoutPanel({
             className="live-next"
             onClick={() => setPicked(upNext.exerciseId)}
           >
-            {/* A row like the rest: the tile, the name, then "Up next · 3 × 8–12" beneath. */}
+            {/* A row like the rest: the tile, the name, then "Up next, 3 × 8–12" beneath. */}
             <span className="area-tile" aria-hidden>
               <Dumbbell />
             </span>
@@ -1161,7 +1161,7 @@ export function ActiveWorkoutPanel({
                 {upNext.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
               </span>
               <span className="live-next__label">
-                Up next{upNext.target ? ` · ${formatTarget(upNext.target)}` : ""}
+                Up next{upNext.target ? `, ${formatTarget(upNext.target)}` : ""}
               </span>
             </span>
             <ChevronRight className="group-row__chev" aria-hidden />
@@ -1175,7 +1175,7 @@ export function ActiveWorkoutPanel({
               <Elapsed startedAt={active.startedAt} />
             </span>
             <span>
-              {sets} of {planned} {planned === 1 ? "set" : "sets"} · {total.toLocaleString()} kg
+              {sets} of {planned} {planned === 1 ? "set" : "sets"}, {total.toLocaleString()} kg
             </span>
           </span>
           <Button

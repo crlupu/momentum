@@ -54,12 +54,12 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
         sum.goals.length && sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
       ]
         .filter(Boolean)
-        .flatMap((x, i) => (i ? [" · ", x] : [x]));
+        .flatMap((x, i) => (i ? [", ", x] : [x]));
 
   return (
     <div className="flex flex-col gap-6">
       <p className="week-dates">
-        {fmt(week)} – {fmt(addDays(week, 6))}
+        {fmt(week)} to {fmt(addDays(week, 6))}
       </p>
       <SummaryCard
         className="week-hero"
@@ -118,7 +118,7 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
                     <Check />
                   </span>
                   <span className="flex-1 truncate">
-                    {done.length} done{done.length === 1 ? ` · ${done[0].label}` : ""}
+                    {done.length} done{done.length === 1 ? `, ${done[0].label}` : ""}
                   </span>
                   {showDone ? <ChevronDown aria-hidden /> : <ChevronRight aria-hidden />}
                 </button>
@@ -201,7 +201,7 @@ function History({ tracker, week }: { tracker: Tracker; week: string }) {
   return (
     <section>
       <div className="panel-head">
-        <h2 className="panel-head__title">Weeks{n > 1 ? ` · ${n} in a row` : ""}</h2>
+        <h2 className="panel-head__title">Weeks{n > 1 ? `, ${n} in a row` : ""}</h2>
       </div>
       <ol className="card week-history">
         {rows.map(({ w, sum }) => {
@@ -297,7 +297,7 @@ function GoalsForm({ tracker, week, onDone }: { tracker: Tracker; week: string; 
                   <PlanTile icon={iconOf(goal)} />
                   <span className="week-goal__text">
                     <span className="week-goal__label">{p.label}</span>
-                    <span className="week-goal__sub">{goal.ref ? `${refTitle(s, goal.ref)} · ${why}` : why}</span>
+                    <span className="week-goal__sub">{goal.ref ? `${refTitle(s, goal.ref)}, ${why}` : why}</span>
                   </span>
                   <button type="button" className="week-edit__add" onClick={() => setList((l) => [...l, goal])}>
                     <Plus aria-hidden />

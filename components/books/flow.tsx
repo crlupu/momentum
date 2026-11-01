@@ -338,7 +338,7 @@ function LogForm({ tracker, book }: { tracker: Tracker; book: Book }) {
       <p className={"log-sheet__note" + (diff > 0 ? " is-up" : "")} aria-live="polite">
         {error ??
           (diff > 0
-            ? `+${diff} page${diff === 1 ? "" : "s"}${book.pages > 0 ? ` · ${Math.round((page / book.pages) * 100)}%` : ""}`
+            ? `+${diff} page${diff === 1 ? "" : "s"}${book.pages > 0 ? `, ${Math.round((page / book.pages) * 100)}%` : ""}`
             : diff < 0
               ? `Back ${-diff} page${diff === -1 ? "" : "s"}: a correction, nothing is logged`
               : "\u00a0")}
@@ -391,7 +391,7 @@ function WipChoice({ tracker, book }: { tracker: Tracker; book: Book }) {
             void run(() => tracker.placeInQueue(book.id, "top"));
           }}
         >
-          Finish current first — put this next in line
+          Finish current first, put this next in line
         </Button>
       </div>
     </div>

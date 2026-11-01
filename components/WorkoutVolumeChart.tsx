@@ -90,7 +90,7 @@ const WorkoutVolumeChart = memo(function WorkoutVolumeChart({
       lineLabel: "minutes",
       tooltip: (i) =>
         `${w.name}: ${vol[i].toLocaleString()} kg` +
-        (mins[i] ? ` · ${mins[i]} min` : "") +
+        (mins[i] ? `, ${mins[i]} min` : "") +
         ` on ${keys[i]}` });
   }
   // How long the lifting took, every workout together, as bars of its own
@@ -330,7 +330,7 @@ function DayChart({
   return (
     <SummaryCard
       label={title}
-      aside={`${total.toLocaleString()} ${unit} · 14 days`}
+      aside={`${total.toLocaleString()} ${unit}, 14 days`}
       figure={lastDay >= 0 ? values[lastDay].toLocaleString() : "–"}
       detail={`${unit} last time`}
     >

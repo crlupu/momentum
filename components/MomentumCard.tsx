@@ -102,7 +102,7 @@ export function MomentumCard({ tracker }: { tracker: Tracker }) {
                 madeOf(units)
               ) : (
                 <>
-                  Next · <span className="momentum__next-name">{next!.title}</span>, {KIND[next!.kind].a}
+                  Next: <span className="momentum__next-name">{next!.title}</span>, {KIND[next!.kind].a}
                 </>
               )}
             </p>
@@ -172,8 +172,8 @@ export function TodayFigures({ tracker, focus }: { tracker: Tracker; focus?: boo
             : kcalLeft == null
             ? "kcal today"
             : kcalLeft >= 0
-              ? `kcal · ${compact(kcalLeft)} left`
-              : `kcal · ${compact(Math.abs(kcalLeft))} over`
+              ? `kcal, ${compact(kcalLeft)} left`
+              : `kcal, ${compact(Math.abs(kcalLeft))} over`
         }
         value={kcalToday.toLocaleString()}
         href="/nutrition"

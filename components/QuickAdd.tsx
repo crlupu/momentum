@@ -152,7 +152,7 @@ function BookPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => voi
                 <span className="quick__book-text">
                   <span className="quick__book-title">{b.title}</span>
                   <span className="quick__book-sub">
-                    {track?.name ?? "No track"} · p. {b.read}
+                    {track?.name ?? "No track"}, p. {b.read}
                     {b.pages > 0 ? ` of ${b.pages}` : ""}
                   </span>
                 </span>
@@ -199,7 +199,7 @@ function WorkoutPicker({ tracker, onClose }: { tracker: Tracker; onClose: () => 
                     {w === next && <span className="quick__upnext">Up next</span>}
                   </span>
                   <span className="quick__book-sub">
-                    {w.exercises.length} exercise{w.exercises.length === 1 ? "" : "s"} ·{" "}
+                    {w.exercises.length} exercise{w.exercises.length === 1 ? "" : "s"} ,{" "}
                     {ago == null ? "not done yet" : ago === 0 ? "done today" : `last ${ago} day${ago === 1 ? "" : "s"} ago`}
                   </span>
                 </span>
@@ -233,7 +233,7 @@ function NextStep({ tracker, onClose, onToast }: { tracker: Tracker; onClose: ()
   let sub = `Step ${i + 1} of ${steps.length}`;
   if (it.kind === "workout") {
     label = "Start";
-    sub += ` · ${it.item.exercises.length} exercises`;
+    sub += `, ${it.item.exercises.length} exercises`;
     act = () => {
       onClose();
       if (!s.activeWorkout) void tracker.startWorkout(it.item.id);
@@ -241,7 +241,7 @@ function NextStep({ tracker, onClose, onToast }: { tracker: Tracker; onClose: ()
     };
   } else if (it.kind === "focus") {
     label = "Start";
-    sub += ` · ${it.minutes} min`;
+    sub += `, ${it.minutes} min`;
     act = () => {
       onClose();
       void tracker.startFocus({ minutes: it.minutes, projectId: it.project?.id, stepId: x.step.id, day: today });
@@ -256,7 +256,7 @@ function NextStep({ tracker, onClose, onToast }: { tracker: Tracker; onClose: ()
     };
   } else if (it.kind === "goal") {
     const nx = nextOfGoal(it.item);
-    if (nx) sub += ` · ${nx.itemId ? nx.title : "a session"}`;
+    if (nx) sub += `, ${nx.itemId ? nx.title : "a session"}`;
     act = () =>
       void run(async () => {
         const ok = await (nx?.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id));
@@ -394,7 +394,7 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
       if (p > 0 || f > 0) ok = (await tracker.addMacros(p || null, f || null)) !== false && ok;
       if (ok) {
         const tag = k > 0 ? s.mealTags.find((t) => t.id === tagId) : undefined;
-        onToast({ text: `Logged ${parts.join(" \u00b7 ")}${tag ? ` \u00b7 ${tag.name}` : ""}`, undo: before });
+        onToast({ text: `Logged ${parts.join(", ")}${tag ? `, ${tag.name}` : ""}`, undo: before });
         onDone();
       }
       return ok;
@@ -413,7 +413,7 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
       <p className="quick__note">
         {[left != null ? (left >= 0 ? `${left.toLocaleString()} left today` : `${(-left).toLocaleString()} over today`) : null, `${of(sum("protein"), s.proteinTarget)} protein`]
           .filter(Boolean)
-          .join(" · ")}
+          .join(", ")}
       </p>
       <div className="meal-log__chips" role="radiogroup" aria-label="Meal">
         {s.mealTags.map((t) => (
@@ -423,7 +423,7 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
         ))}
       </div>
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !parts.length}>
-        {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
+        {parts.length ? `Log ${parts.join(", ")}` : "Log meal"}
       </button>
     </form>
   );
@@ -466,17 +466,15 @@ export function MacroField({
     <div className={"macro-field " + className}>
       <label className="macro-field__main">
         <span className="macro-field__label">{label}</span>
-        <span className="macro-field__row">
-          <input
-            inputMode={text ? "text" : whole ? "numeric" : "decimal"}
-            aria-label={ariaLabel ?? (unit === "g" ? `${label} in grams` : label)}
-            placeholder={placeholder}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            autoFocus={autoFocus}
-          />
-          {unit && <span aria-hidden>{unit}</span>}
-        </span>
+        <input
+          inputMode={text ? "text" : whole ? "numeric" : "decimal"}
+          aria-label={ariaLabel ?? (unit === "g" ? `${label} in grams` : label)}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoFocus={autoFocus}
+        />
+        {unit && <span className="macro-field__unit" aria-hidden>{unit}</span>}
       </label>
       {children}
     </div>

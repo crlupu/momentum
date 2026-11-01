@@ -188,7 +188,7 @@ export function CircuitPlayer({
         </span>
         <span className="circuit__done-name">{block.name}</span>
         <span className="circuit__done-meta">
-          {workSteps} of {workSteps} · done
+          {workSteps} of {workSteps}, done
         </span>
       </button>
     );
@@ -201,10 +201,10 @@ export function CircuitPlayer({
     <div className={"circuit" + (resting ? " circuit--rest" : "")}>
       <div className="circuit__top">
         <span className="circuit__phase">
-          {block.name} · {resting ? "Rest" : "Work"}
+          {block.name}, {resting ? "Rest" : "Work"}
         </span>
         <span className="circuit__count">
-          Round {step.round}/{rounds} · {workDone}/{workSteps}
+          Round {step.round}/{rounds}, {workDone}/{workSteps}
         </span>
       </div>
 

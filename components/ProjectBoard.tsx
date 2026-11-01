@@ -146,7 +146,7 @@ export function ProjectBoard({ tracker, project: p }: { tracker: Tracker; projec
                 label="Column"
                 value={shownCol}
                 onChange={setShownCol}
-                options={COLUMNS.map((c) => ({ value: c.id, label: `${c.title} · ${cols[c.id].length}` }))}
+                options={COLUMNS.map((c) => ({ value: c.id, label: `${c.title} ${cols[c.id].length}` }))}
               />
             </div>
           )}

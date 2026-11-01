@@ -307,8 +307,8 @@ export function BulkAddForm({
           {list.map((b, i) => (
             <li key={i} className="truncate py-0.5">
               <span className="font-semibold">{b.title}</span>
-              {b.author && <span className="text-[var(--muted)]"> · {b.author}</span>}
-              {b.pages && <span className="text-[var(--muted)]"> · {b.pages} pages</span>}
+              {b.author && <span className="text-[var(--muted)]">, {b.author}</span>}
+              {b.pages && <span className="text-[var(--muted)]">, {b.pages} pages</span>}
             </li>
           ))}
         </ul>
@@ -371,7 +371,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
                 {plan.tracks
                   .map((t) => `${t.name}${t.dailyTarget ? ` (${t.dailyTarget}/day)` : ""}`)
                   .join(", ")}
-                {plan.wipLimit ? ` · ${plan.wipLimit} open book${plan.wipLimit === 1 ? "" : "s"} per track` : ""}
+                {plan.wipLimit ? `, ${plan.wipLimit} open book${plan.wipLimit === 1 ? "" : "s"} per track` : ""}
               </li>
             )}
             {plan.phases.length > 0 && (
@@ -384,7 +384,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
                   .filter(Boolean)
                   .join(", ")}
                 :{" "}
-                {fmtDate(plan.phases[0].start, true)} – {fmtDate(plan.phases[plan.phases.length - 1].end, true)}
+                {fmtDate(plan.phases[0].start, true)} to {fmtDate(plan.phases[plan.phases.length - 1].end, true)}
               </li>
             )}
             {plan.books.length > 0 && (

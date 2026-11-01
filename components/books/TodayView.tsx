@@ -43,7 +43,7 @@ export function TodayView({
         <span className="font-mono-n text-sm font-bold text-foreground">{pagesToday}</span> pages today
         {units.length > 0 && (
           <>
-            {" · "}
+            {", "}
             <span className="font-mono-n text-sm font-bold text-foreground">
               {units.filter((u) => u.done).length}
             </span>{" "}
@@ -101,7 +101,7 @@ function TrackToday({
             <span className="opacity-70">/ {track.dailyTarget} pages</span>
           </span>
         ) : (
-          <span className="text-xs text-[var(--muted)]">{read} pages · no target</span>
+          <span className="text-xs text-[var(--muted)]">{read} pages, no target</span>
         )
       }
     >
@@ -235,7 +235,7 @@ export function OpenBook({
                   <span className="font-mono-n shrink-0">
                     {book.pages > 0 ? `p. ${book.read} of ${book.pages}` : `p. ${book.read}`}
                   </span>
-                  {book.author && <span className="book-row__author"> · {book.author}</span>}
+                  {book.author && <span className="book-row__author">, {book.author}</span>}
                 </>
               )}
             </span>
@@ -267,7 +267,7 @@ export function OpenBook({
             <ProgressText book={book} />
             {pace.perDay > 0 && (
               <span className="text-xs text-[var(--muted)]">
-                {fmtPace(pace.perDay)}/day{pace.eta ? ` · done ~${fmtDateAuto(pace.eta)}` : ""}
+                {fmtPace(pace.perDay)}/day{pace.eta ? `, done ~${fmtDateAuto(pace.eta)}` : ""}
               </span>
             )}
           </span>

@@ -68,7 +68,7 @@ export function DayMarks({ days, today, big }: { days: DayStatus[]; today: strin
         const wd = new Date(d.day + "T12:00:00").getDay();
         const done = d.done === d.total;
         return (
-          <li key={d.day} className={"day-bars__day" + (done ? " is-done" : "")} title={`${WEEKDAY[wd]} · ${d.done} of ${d.total}`}>
+          <li key={d.day} className={"day-bars__day" + (done ? " is-done" : "")} title={`${WEEKDAY[wd]}, ${d.done} of ${d.total}`}>
             {steps(d, "day-bars__steps")}
             <span className="day-bars__label" aria-hidden>
               {WEEKDAY[wd][0]}

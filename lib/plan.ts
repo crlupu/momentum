@@ -361,22 +361,22 @@ export function nextOfGoal(g: Goal): { itemId?: string; title: string; of: strin
   return null;
 }
 
-/** What the step asks of today, in a line: "Lesson 13", "20 pages · to p. 152", "5 exercises". */
+/** What the step asks of today, in a line: "Lesson 13", "20 pages, to p. 152", "5 exercises". */
 export function askOf(s: TrackerState, it: Resolved | null): string {
   if (!it) return "Nothing picked";
   if (it.kind === "goal") {
     const n = nextOfGoal(it.item);
-    return n ? (n.itemId ? `${n.title} · ${n.of}` : `Session ${n.of}`) : "All done";
+    return n ? (n.itemId ? `${n.title}, ${n.of}` : `Session ${n.of}`) : "All done";
   }
   if (it.kind === "focus") {
     const doing = it.project ? columnCards(it.project, "doing")[0] : undefined;
-    return `${it.minutes} min${doing ? ` · Doing: ${doing.title}` : ""}`;
+    return `${it.minutes} min${doing ? `, Doing: ${doing.title}` : ""}`;
   }
   if (it.kind === "track") {
     const b = it.book;
     if (!b) return "No book open";
     const daily = it.item.dailyTarget;
-    if (daily > 0) return `${daily} pages · to p. ${b.pages > 0 ? Math.min(b.pages, b.read + daily) : b.read + daily}`;
+    if (daily > 0) return `${daily} pages, to p. ${b.pages > 0 ? Math.min(b.pages, b.read + daily) : b.read + daily}`;
     return b.pages > 0 ? `p. ${b.read} of ${b.pages}` : `p. ${b.read}`;
   }
   if (it.kind === "book") {
@@ -384,11 +384,11 @@ export function askOf(s: TrackerState, it: Resolved | null): string {
     const daily = R.trackOf(s, b.trackId)?.dailyTarget ?? 0;
     if (daily > 0) {
       const to = b.pages > 0 ? Math.min(b.pages, b.read + daily) : b.read + daily;
-      return `${daily} pages · to p. ${to}`;
+      return `${daily} pages, to p. ${to}`;
     }
     return b.pages > 0 ? `p. ${b.read} of ${b.pages}` : `p. ${b.read}`;
   }
-  if (it.kind === "weekly") return `${it.cat?.name ?? "Weekly"} \u00b7 ${it.item.times}\u00d7 a week`;
+  if (it.kind === "weekly") return `${it.cat?.name ?? "Weekly"}, ${it.item.times}\u00d7 a week`;
   const n = it.item.exercises.length;
   return `${n} exercise${n === 1 ? "" : "s"}`;
 }

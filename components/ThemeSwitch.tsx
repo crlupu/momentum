@@ -66,18 +66,18 @@ const STYLES = [
 export const STYLE_KEY = "momentum:style";
 
 /**
- * The style, stored per device and set on <html data-style>. The inline
+ * The style, stored per device and set on <html data-scheme>. The inline
  * script in the layout applies it before the first paint, so the page never
  * flashes in the other style.
  */
 export function StyleSwitch() {
   const [style, setStyle] = useState<string | null>(null);
   useEffect(() => {
-    setStyle(document.documentElement.dataset.style || DEFAULT_STYLE);
+    setStyle(document.documentElement.dataset.scheme || DEFAULT_STYLE);
   }, []);
   const choose = (v: string) => {
     setStyle(v);
-    document.documentElement.dataset.style = v;
+    document.documentElement.dataset.scheme = v;
     try {
       localStorage.setItem(STYLE_KEY, v);
     } catch {}

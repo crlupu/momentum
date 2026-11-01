@@ -77,7 +77,7 @@ export function SectionPage({
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    document.title = id === "tasks" ? "Momentum" : `${sectionTitle(id)} · Momentum`;
+    document.title = id === "tasks" ? "Momentum" : `${sectionTitle(id)} | Momentum`;
   }, [id]);
 
   useEffect(() => {

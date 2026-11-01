@@ -188,7 +188,7 @@ export function PathsView({
                       <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
                     </div>
                     <span className="path__figure">
-                      {prog.done} of {prog.total} items · {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
+                      {prog.done} of {prog.total} items, {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
                       {sec.all.length === 1 ? "goal" : "goals"}
                     </span>
                   </button>
@@ -348,7 +348,7 @@ function EditGoalRow({ tracker, goal: g, color }: { tracker: Tracker; goal: Goal
         <span className="goal-row__title">{g.title}</span>
         <span className="goal-row__meta">
           {st[0].toUpperCase() + st.slice(1)}
-          {g.target ? ` · ${g.current ?? 0} of ${g.target}` : ""}
+          {g.target ? `, ${g.current ?? 0} of ${g.target}` : ""}
         </span>
       </span>
       <button

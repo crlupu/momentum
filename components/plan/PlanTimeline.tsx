@@ -51,7 +51,7 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
           <section>
             <div className="panel-head">
               <h2 className="panel-head__title">
-                Today&rsquo;s plan · {steps.filter((x) => x.done).length} of {steps.length}
+                Today&rsquo;s plan, {steps.filter((x) => x.done).length} of {steps.length}
               </h2>
               <div className="panel-head__side">
                 <Link href="/plan" className="text-action">
@@ -194,7 +194,7 @@ function StepRow({
           <span className="plan-row__text">
             <span className="plan-row__title">
               {title}
-              {running ? " · running" : ""}
+              {running ? ", running" : ""}
               {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
             </span>
           </span>
@@ -375,7 +375,7 @@ function StepActions({
     <div className="plan-row__actions">
       {running ? (
         <button type="button" className="pill-link pill-link--primary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          Running · see the card
+          Running, see the card
         </button>
       ) : (
         <button
@@ -433,7 +433,7 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
           <section key={d} className="plan-opts-day">
             <h3 className="plan-opts-day__head">
               {WEEKDAY_LONG[weekdayOf(d)]}
-              <span className="plan-opts-day__when"> · {when(d)}</span>
+              <span className="plan-opts-day__when">, {when(d)}</span>
             </h3>
             <div className="card plan-opts">
               {options
@@ -464,9 +464,9 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
 function optionSub(s: TrackerState, r: PlanRef): string {
   const it = resolve(s, r);
   if (!it) return "";
-  if (it.kind === "workout") return `Workout · ${it.item.exercises.length} exercise${it.item.exercises.length === 1 ? "" : "s"}`;
-  if (it.kind === "track") return it.book ? `Reading · ${it.book.title}` : "Reading";
+  if (it.kind === "workout") return `Workout, ${it.item.exercises.length} exercise${it.item.exercises.length === 1 ? "" : "s"}`;
+  if (it.kind === "track") return it.book ? `Reading, ${it.book.title}` : "Reading";
   if (it.kind === "book") return "Reading";
-  if (it.kind === "focus") return `Focus · ${it.minutes} min`;
+  if (it.kind === "focus") return `Focus, ${it.minutes} min`;
   return s.categories.find((c) => c.id === it.item.catId)?.name ?? "Goal";
 }

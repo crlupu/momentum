@@ -1382,7 +1382,7 @@ export function migrate(raw: unknown): TrackerState {
 
 /**
  * Goals hold no other goals: a goal with parts becomes one goal per part,
- * "Parent · Part", each with the part's count and checklist and the parent's
+ * "Parent, Part", each with the part's count and checklist and the parent's
  * category, status, phases and description. The ids are made from the
  * parent's and the part's, so every device makes the same ones. Sessions and
  * to-dos that counted a part follow it to its goal.
@@ -1407,7 +1407,7 @@ function flattenLearning(s: TrackerState): TrackerState {
       goals.push(
         withItemCount({
           id,
-          title: `${g.title} · ${part.title}`,
+          title: `${g.title}, ${part.title}`,
           catId: g.catId,
           current: part.current,
           target: part.target,
