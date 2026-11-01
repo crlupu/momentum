@@ -6278,14 +6278,14 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
  * caret. Fields with their own look (the logging field's bare input, row
  * inputs, mini fields) are left out.
  */
-:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input):not(.v2 input) {
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input) {
   background: color-mix(in srgb, var(--foreground) 7%, transparent);
   border: 0;
   border-radius: 0.875rem;
   box-shadow: none;
   caret-color: var(--accent);
 }
-:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input):not(.v2 input):focus {
+:is(.cds--text-input, .cds--text-area, .cds--select-input, textarea, select, input:is([type="text"], [type="number"], [type="email"], [type="password"], [type="date"], [type="search"], [type="url"], :not([type]))):not(.row-input):not(.mini-field):not(.todo-add__input):not(.macro-field__row input):not(.settings-search input):focus {
   outline: none;
   box-shadow: inset 0 0 0 1.5px var(--foreground);
 }
