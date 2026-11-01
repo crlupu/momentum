@@ -10,6 +10,7 @@ import { TabPanes, isPane } from "./TabPanes";
 import { QuickAdd, type Toast } from "./QuickAdd";
 import { ReadingFlow } from "./books/flow";
 import { FocusScreen } from "./FocusScreen";
+import { V2Shell } from "./v2/Shell";
 import { Check } from "./icons";
 import { usePathname, useRouter } from "next/navigation";
 import { NAV, navPath, sectionPath, trimPath } from "./sections";
@@ -124,6 +125,22 @@ export function AppShell({ children }: { children: ReactNode }) {
     () => ({ tracker, openGoal: () => setGoalOpen(true), openMore: () => setMoreOpen(true), openFocus: () => setTuckedAt(null) }),
     [tracker]
   );
+
+  // The rebuilt app lives under /v2 with its own shell; the data, sign-in
+  // and focus screen are shared.
+  if (path === "/v2" || path.startsWith("/v2/"))
+    return (
+      <ShellContext.Provider value={shell}>
+        <AuthGate tracker={tracker}>
+          {!tracker.state ? (
+            <PageSkeleton />
+          ) : (
+            <V2Shell tracker={tracker}>{children}</V2Shell>
+          )}
+        </AuthGate>
+        {!gated && focusAt != null && tuckedAt !== focusAt && <FocusScreen tracker={tracker} onTuck={() => setTuckedAt(focusAt)} />}
+      </ShellContext.Provider>
+    );
 
   return (
     <ShellContext.Provider value={shell}>
