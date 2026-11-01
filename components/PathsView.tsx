@@ -21,7 +21,7 @@ import { DeleteButton } from "./DeleteButton";
 import { ChevronRight, Plus, ReorderLines } from "./icons";
 import { GoalForm } from "./Forms";
 import { Tracker, goalStatus, type Goal, type GoalStatus, type Path } from "@/lib/tracker";
-import { GENERAL, generalGoals, goalsOf, pathProgress } from "@/lib/paths";
+import { GENERAL, generalGoals, goalsOf } from "@/lib/paths";
 
 /** The paths opened by hand, per device; every other one starts folded. */
 const OPEN_KEY = "momentum:paths-open";
@@ -64,7 +64,7 @@ export function PathsView({
   // One Edit for the section; while on, each path shows its own Edit.
   const [arranging, setArranging] = useState(false);
 
-  // Paths start folded, a progress line each; the ones opened stay open,
+  // Paths start folded, a summary line each; the ones opened stay open,
   // per device. Only a convenience.
   useEffect(() => {
     try {
@@ -139,8 +139,9 @@ export function PathsView({
           // General alone, with no paths beside it, is simply the goals.
           const lone = visible.length === 1 && sec.id === GENERAL;
           const open = editing || opened.includes(sec.id);
-          const prog = pathProgress(sec.all);
-          // The path's name, how far along and its fold: the first row of its
+          const live = sec.all.filter((g) => goalStatus(g) === "active").length;
+          const kept = sec.all.filter((g) => goalStatus(g) !== "dropped").length;
+          // The path's name and its fold: the first row of its
           // card, as every list's title sits; above the editor while editing.
           const headRow = (
             <div className="path__headrow">
@@ -151,7 +152,6 @@ export function PathsView({
                 onClick={() => !editing && toggle(sec.id)}
               >
                 <span className="path__title">{lone ? "Goals" : sec.title}</span>
-                <span className="path__pct font-mono-n">{prog.pct}%</span>
                 {!editing && <ChevronRight className={"path__chev" + (open ? " is-open" : "")} aria-hidden />}
               </button>
               {editable && arranging && (
@@ -181,15 +181,12 @@ export function PathsView({
               ) : (
                 <div className="card path__card">
                   {headRow}
-                  {/* Open, the rows say how far along it is; folded, this line does. */}
+                  {/* Folded, a line says what's in it. */}
                   {!open && (
                   <button type="button" className="path__summary" aria-label={`Show ${lone ? "goals" : sec.title}`} onClick={() => toggle(sec.id)}>
-                    <div className="progress-track h-1">
-                      <div className="progress-fill" style={{ width: `${prog.pct}%`, background: sec.color }} />
-                    </div>
                     <span className="path__figure">
-                      {prog.done} of {prog.total} items, {sec.all.filter((g) => goalStatus(g) !== "dropped").length}{" "}
-                      {sec.all.length === 1 ? "goal" : "goals"}
+                      {kept} {kept === 1 ? "goal" : "goals"}
+                      {live > 0 ? `, ${live} active` : ""}
                     </span>
                   </button>
                   )}

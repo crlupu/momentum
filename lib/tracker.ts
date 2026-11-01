@@ -542,36 +542,6 @@ export function useTracker() {
         }),
       })),
 
-    /** Saves every editable field of a goal in a single write. */
-    saveGoal: (
-      id: string,
-      patch: { title?: string; catId?: string; current: number | null; target: number | null }
-    ) =>
-      commit((s) => ({
-        ...s,
-        goals: s.goals.map((g) =>
-          g.id === id
-            ? {
-                ...g,
-                title: patch.title?.trim() || g.title,
-                catId: patch.catId ?? g.catId,
-                current:
-                  patch.current != null && Number.isFinite(patch.current) && patch.current >= 0
-                    ? patch.current
-                    : undefined,
-                target:
-                  patch.target != null && Number.isFinite(patch.target) && patch.target > 0
-                    ? patch.target
-                    : undefined,
-              }
-            : g
-        ),
-      })),
-
-    /** Replaces a goal's parts; an empty list removes them. */
-    setGoalParts: (id: string, parts: Parameters<typeof O.setGoalParts>[2]) =>
-      commit((s) => O.setGoalParts(s, id, parts)),
-
     /** Replaces a goal's checklist; an empty list removes it. */
     setGoalItems: (id: string, items: Parameters<typeof O.setGoalItems>[2], partId?: string) =>
       commit((s) => O.setGoalItems(s, id, items, partId)),
@@ -686,18 +656,9 @@ export function useTracker() {
         ),
       })),
 
-    /** Sets or clears (null) a goal's target date. */
-    setGoalTargetDate: (id: string, date: string | null) => commit((s) => O.setGoalTargetDate(s, id, date)),
-
-    /** Sets or clears the minimum on a goal's own count. */
-    setGoalMinimum: (id: string, minimum: number | null) => commit((s) => O.setGoalMinimum(s, id, minimum)),
-
     /** +1 on a goal's count, or a part's, logged as a session. */
     logSession: (goalId: string, partId?: string, id?: string) =>
       commit((s) => O.logSession(s, { id, goalId, partId })),
-
-    /** − on a count: undoes today's last plain +1, else just lowers it. */
-    stepBack: (goalId: string, partId?: string) => commit((s) => O.stepBack(s, goalId, partId)),
 
     setLogNote: (id: string, note: string) => commit((s) => O.setLogNote(s, id, note)),
 

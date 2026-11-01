@@ -3,7 +3,7 @@
  * and the Claude connector (app/api/mcp) make them the same way. Books have
  * theirs in lib/reading.ts.
  */
-import { NOTE_MAX, cleanUrl, findItem, isDateKey, validMinimum, dateKey, goalStarted, goalStatus, uid, withItemCount, withTopicCategory, type LearningEntry, type Goal, type GoalItem, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
+import { NOTE_MAX, cleanUrl, findItem, isDateKey, dateKey, goalStarted, goalStatus, uid, withItemCount, withTopicCategory, type LearningEntry, type Goal, type GoalItem, type GoalStatus, type Part, type Path, type TodoItem, type TrackerState } from "./model";
 import { withStatus, type CardStatus } from "./projects";
 
 const count = (n: number | null | undefined, min: number) =>
@@ -64,22 +64,6 @@ export function setGoalStatus(s: TrackerState, id: string, status: GoalStatus): 
       };
     }),
   };
-}
-
-/** Sets or clears (null) the minimum on a goal's own count; it must not pass the target. */
-export function setGoalMinimum(s: TrackerState, id: string, minimum: number | null): TrackerState {
-  return {
-    ...s,
-    goals: s.goals.map((g) =>
-      g.id === id ? { ...g, minimum: minimum != null && validMinimum(minimum, g.target) ? minimum : undefined } : g
-    ),
-  };
-}
-
-/** Sets a goal's target date (YYYY-MM-DD), or clears it with null or "". */
-export function setGoalTargetDate(s: TrackerState, id: string, date: string | null): TrackerState {
-  const d = date && isDateKey(date) ? date : undefined;
-  return { ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, targetDate: d } : g)) };
 }
 
 /** Renames a goal, or changes its link or description. Empty clears a link or description. */
@@ -183,25 +167,6 @@ export function otherActiveInTopic(s: TrackerState, id: string): Goal[] {
     .filter((g): g is Goal => !!g && goalStatus(g) === "active");
 }
 
-/** Sets a goal's count: how far along, and of how many. */
-export function setGoalCount(
-  s: TrackerState,
-  id: string,
-  c: { current?: number; target?: number }
-): TrackerState {
-  return {
-    ...s,
-    goals: s.goals.map((g) => {
-      if (g.id !== id) return g;
-      const target = c.target !== undefined ? (c.target > 0 ? c.target : undefined) : g.target;
-      const current = c.current !== undefined ? Math.max(0, c.current) : g.current;
-      // A checklist goal counts its ticks; its count isn't set by hand.
-      if (g.items?.length) return withItemCount(g);
-      return { ...g, target, current: target && current != null ? Math.min(current, target) : current };
-    }),
-  };
-}
-
 type ItemInput = { id?: string; title: string; url?: string; done?: boolean; doneDate?: string | null };
 
 /** A checklist as written: named entries, http(s) links kept, ticks as given. */
@@ -220,41 +185,6 @@ function cleanItems(items: ItemInput[]): GoalItem[] {
         doneDate: done ? (i.doneDate && isDateKey(i.doneDate) ? i.doneDate : today) : null,
       };
     });
-}
-
-/**
- * Replaces a goal's parts. Each needs a title and a total above 0; counts are
- * kept within 0 and the total. A part with a checklist keeps it, and its
- * count comes from it. An empty list removes them.
- */
-export function setGoalParts(
-  s: TrackerState,
-  id: string,
-  parts: Array<{ id?: string; title: string; current?: number; target: number; minimum?: number | null; items?: ItemInput[] }>
-): TrackerState {
-  const clean: Part[] = parts
-    .map((p) => {
-      const items = p.items?.length ? cleanItems(p.items) : [];
-      return items.length ? { ...p, items, target: items.length } : { ...p, items: undefined };
-    })
-    .filter((p) => p.title.trim() && Number.isFinite(p.target) && p.target > 0)
-    .map((p) => ({
-      id: p.id ?? uid(),
-      title: p.title.trim(),
-      target: p.target,
-      current: Math.min(p.target, Math.max(0, p.current ?? 0)),
-      ...(validMinimum(p.minimum, p.target) ? { minimum: p.minimum } : {}),
-      ...(p.items ? { items: p.items } : {}),
-    }));
-  return {
-    ...s,
-    // Parts and a goal-wide checklist don't mix: parts, once there, replace it.
-    goals: s.goals.map((g) =>
-      g.id === id
-        ? withItemCount({ ...g, parts: clean.length ? clean : undefined, ...(clean.length ? { items: undefined } : {}) })
-        : g
-    ),
-  };
 }
 
 /**
@@ -503,20 +433,20 @@ export function deleteLogEntry(s: TrackerState, id: string): TrackerState {
   return reopenTodos({ ...counted, learningLog: (counted.learningLog ?? []).filter((x) => x.id !== id) }, id);
 }
 
+/** A goal's sessions, oldest first. */
 /**
- * − on a count: takes back the latest entry for that count when it was
- * logged today and has no note (a tap made by mistake); otherwise just
- * lowers the count, as a correction, leaving the log as it is.
+ * The last day there was activity on a goal: a session, a ticked entry, or
+ * its routine ticked by hand. Null when there has been none.
  */
-export function stepBack(s: TrackerState, goalId: string, partId?: string): TrackerState {
-  const last = [...(s.learningLog ?? [])]
-    .reverse()
-    .find((e) => e.goalId === goalId && (e.partId ?? undefined) === (partId ?? undefined));
-  if (last && last.date === dateKey() && !last.note && last.amount === 1) return deleteLogEntry(s, last.id);
-  return moveCount(s, goalId, partId, -1).state;
+export function goalLastActive(s: TrackerState, goalId: string): string | null {
+  const g = s.goals.find((x) => x.id === goalId);
+  const days = [
+    ...(s.learningLog ?? []).filter((e) => e.goalId === goalId).map((e) => e.date),
+    ...(g?.routineTicks ?? []),
+  ];
+  return days.length ? days.reduce((a, b) => (b > a ? b : a)) : null;
 }
 
-/** A goal's sessions, oldest first. */
 export function goalLog(s: TrackerState, goalId: string): LearningEntry[] {
   return (s.learningLog ?? []).filter((e) => e.goalId === goalId).sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at);
 }

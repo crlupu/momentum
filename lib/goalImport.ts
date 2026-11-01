@@ -349,10 +349,9 @@ export const GOAL_JSON_FORMAT = `{
     {
       "title": "The Rust Book",
       "description": "Chapters 1–20, with the exercises",
-      "link": "https://doc.rust-lang.org/book/",
-      "count": 20
+      "link": "https://doc.rust-lang.org/book/"
     },
-    { "title": "Rustlings", "count": 94, "done": 3 },
+    { "title": "Rustlings" },
     { "title": "Rewrite the fixtures consumer in Rust" }
   ]
 }`;

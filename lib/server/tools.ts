@@ -7,13 +7,12 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
-  countdown,
   dateKey,
   findItem,
   goalStatus,
   goalTopic,
   isDateKey,
-  minimumReached,
+  goalSummary,
   uid,
   type GoalItem,
   type GoalStatus,
@@ -23,6 +22,7 @@ import {
 } from "../model";
 import * as R from "../reading";
 import * as O from "../ops";
+import { goalLastActive } from "../ops";
 import { makePlan, validPlan } from "../weight";
 import { patchRoutineItem, routines, type RepeatSetting, type RoutineKind } from "../routines";
 import { projectFinished, type CardStatus } from "../projects";
@@ -102,18 +102,12 @@ function overview(s: TrackerState, section: string) {
       title: g.title,
       topic: goalTopic(g.id, s.paths)?.title,
       status: goalStatus(g),
-      progress: g.parts?.length
-        ? undefined
-        : g.target
-          ? `${g.current ?? 0}/${g.target}${g.minimum != null ? ` (min ${g.minimum})` : ""}`
-          : undefined,
-      parts: g.parts?.map((p) => `${p.title} ${p.current}/${p.target}${p.minimum != null ? ` (min ${p.minimum})` : ""}`),
+      ...(goalSummary(g) ? { next: goalSummary(g)!.replace(/^Next: /, "") } : {}),
+      ...(goalLastActive(s, g.id) ? { last_worked_on: goalLastActive(s, g.id) } : {}),
       checklist: g.items?.map(itemLine),
       ...(g.parts?.some((p) => p.items?.length)
         ? { part_checklists: Object.fromEntries(g.parts.filter((p) => p.items?.length).map((p) => [p.title, p.items!.map(itemLine)])) }
         : {}),
-      ...(minimumReached(g) ? { minimum_reached: true } : {}),
-      ...(g.targetDate ? { target_date: g.targetDate, due: countdown(g.targetDate) } : {}),
       description: g.note,
       link: g.link,
       ...sessionsOf(s, g.id),
@@ -444,7 +438,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Add learning goals",
       description:
-        "Adds learning goals, optionally into a topic (created if it doesn't exist). A goal can have a count to track (current of target: pages, videos, modules). A goal whose title is already in the topic is updated instead of duplicated.",
+        "Adds learning goals, optionally into a topic (created if it doesn't exist). A goal is a habit kept up (a course worked on, a subject practised), not a total to reach; give it a checklist afterwards with update_goal for what to work through next. A goal whose title is already in the topic is updated instead of duplicated.",
       inputSchema: {
         topic: z.string().optional(),
         goals: z
@@ -453,8 +447,6 @@ export function registerTools(server: McpServer) {
               title: z.string(),
               description: z.string().optional(),
               link: z.string().optional(),
-              current: z.number().min(0).optional(),
-              target: z.number().positive().optional(),
             })
           )
           .min(1),
@@ -478,11 +470,9 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. A part can have a checklist of its own (parts[].checklist), which works the same way and counts that part; its target then comes from the list. To tick entries one at a time, use check_items.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. Goals are habits, with no count, percentage or deadline. session: true logs a session on it for today, with note if given. checklist is what to work through next (videos, talks, lessons), each with a title and an optional link. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. To tick entries one at a time, use check_items.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
-        current: z.number().min(0).optional(),
-        target: z.number().min(0).optional().describe("0 removes the count"),
         done: z.boolean().optional(),
         status: z.enum(["queued", "active", "done", "dropped"]).optional(),
         title: z.string().min(1).optional().describe("A new name"),
@@ -495,20 +485,6 @@ export function registerTools(server: McpServer) {
         // Arrays are also taken as JSON text: clients holding the tool list
         // from before a field existed send an array they don't know the type
         // of as a string.
-        parts: jsonArray(
-          z.array(
-            z.object({
-              title: z.string().min(1),
-              target: z.number().positive().optional().describe("Its total; not needed with a checklist"),
-              current: z.number().min(0).optional(),
-              minimum: z.number().min(0).optional().describe("Enough to count as covered, at most target; 0 clears"),
-              checklist: z
-                .array(z.object({ title: z.string().min(1), url: z.string().optional(), done: z.boolean().optional() }))
-                .optional()
-                .describe("The part's own checklist, as the goal's checklist works; [] removes it"),
-            })
-          )
-        ).optional(),
         checklist: jsonArray(
           z.array(
             z.object({
@@ -520,39 +496,21 @@ export function registerTools(server: McpServer) {
         )
           .optional()
           .describe("The whole checklist, in order; [] removes it"),
-        minimum: z
-          .number()
-          .min(0)
-          .optional()
-          .describe("For a goal without parts: enough to count as covered, at most its target; 0 clears"),
-        note: z.string().max(200).optional().describe("A line about the session, kept with the count change it logs"),
-        target_date: z
-          .string()
-          .optional()
-          .describe("A date it's aimed at, such as an exam: YYYY-MM-DD; empty string clears"),
+        session: z.boolean().optional().describe("true logs a session on it for today"),
+        note: z.string().max(200).optional().describe("A line about the session or the ticks"),
       },
     },
     safe(async (a: {
       goal: string;
-      current?: number;
-      target?: number;
       done?: boolean;
       status?: GoalStatus;
       title?: string;
       description?: string;
       link?: string;
       topic?: string;
-      parts?: {
-        title: string;
-        target?: number;
-        current?: number;
-        minimum?: number;
-        checklist?: { title: string; url?: string; done?: boolean }[];
-      }[];
       checklist?: { title: string; url?: string; done?: boolean }[];
-      minimum?: number;
+      session?: boolean;
       note?: string;
-      target_date?: string;
     }) =>
       change((s) => {
         const g = pick(s.goals, a.goal, (x) => x.title, "goal");
@@ -572,74 +530,17 @@ export function registerTools(server: McpServer) {
           }
           next = O.moveGoalToTopic(next, g.id, topicId);
         }
-        const listed = a.checklist !== undefined ? a.checklist.length > 0 : !!g.items?.length;
-        if ((a.current !== undefined || a.target !== undefined) && listed)
-          throw new Error(`${g.title} counts its checklist: tick entries with check_items, or change the list.`);
-        if (a.checklist?.length && g.parts?.length && !(a.parts && a.parts.length === 0))
-          throw new Error(`${g.title} has parts. Pass parts: [] with the checklist to replace them.`);
-        if (a.current !== undefined || a.target !== undefined) next = O.setGoalCount(next, g.id, a);
-        let partLists: { partId: string; list: { title: string; url?: string; done?: boolean }[] }[] = [];
-        if (a.parts !== undefined) {
-          const had = g.parts ?? [];
-          next = O.setGoalParts(
-            next,
-            g.id,
-            a.parts.map((p) => {
-              const old = had.find((x) => x.title.toLowerCase() === p.title.trim().toLowerCase());
-              const listed = p.checklist !== undefined ? p.checklist.length > 0 : !!old?.items?.length;
-              // A part with a checklist is counted by it; its own total only matters without one.
-              const target = listed ? p.checklist?.length || old?.items?.length || 1 : p.target ?? old?.target;
-              if (!target) throw new Error(`${p.title}: give it a target or a checklist.`);
-              if (p.minimum && p.minimum > target) throw new Error(`${p.title}: a minimum can't pass its total (${target}).`);
-              if (listed && p.current !== undefined)
-                throw new Error(`${p.title} counts its checklist: tick entries with check_items.`);
-              return {
-                id: old?.id ?? uid(),
-                title: p.title,
-                target,
-                current: p.current ?? old?.current ?? 0,
-                minimum: p.minimum === 0 ? null : p.minimum ?? old?.minimum,
-                // Its checklist stays unless a new one is given (written below).
-                items: p.checklist === undefined ? old?.items : undefined,
-              };
-            })
-          );
-          partLists = a.parts.flatMap((p) => {
-            if (p.checklist === undefined) return [];
-            const part = next.goals.find((x) => x.id === g.id)?.parts?.find((x) => norm(x.title) === norm(p.title));
-            return part ? [{ partId: part.id, list: p.checklist }] : [];
-          });
-        }
-        if (a.target_date !== undefined) {
-          if (a.target_date && !isDateKey(a.target_date)) throw new Error(`"${a.target_date}" isn't a date: use YYYY-MM-DD.`);
-          next = O.setGoalTargetDate(next, g.id, a.target_date || null);
-        }
-        if (a.minimum !== undefined) {
-          const total = next.goals.find((x) => x.id === g.id)?.target;
-          if (a.minimum && total && a.minimum > total) throw new Error(`A minimum can't pass the total (${total}).`);
-          next = O.setGoalMinimum(next, g.id, a.minimum || null);
-        }
-        // Count changes are sessions: logged like a +1 in the app.
-        next = O.logChanges(s, next, g.id, a.note);
         if (a.checklist !== undefined) next = writeChecklist(next, g.id, a.checklist, a.note);
-        for (const { partId, list } of partLists) next = writeChecklist(next, g.id, list, a.note, partId);
+        if (a.session) next = O.logSession(next, { goalId: g.id, note: a.note });
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
         const after = next.goals.find((x) => x.id === g.id)!;
-        const min = (m?: number) => (m != null ? ` (min ${m})` : "");
-        const reached = minimumReached(after);
-        const progress =
-          (after.items?.length
-            ? `, checklist ${after.current ?? 0}/${after.items.length}`
-            : after.parts?.length
-            ? `, ${after.parts.map((p) => `${p.title}${p.items?.length ? " (checklist)" : ""} ${p.current}/${p.target}${min(p.minimum)}`).join(", ")}`
-            : after.target
-              ? `, ${after.current ?? 0}/${after.target}${min(after.minimum)}`
-              : "") + (reached ? ", minimum reached" : "") + (after.targetDate ? `, target ${after.targetDate} (${countdown(after.targetDate)})` : "");
+        const last = goalLastActive(next, g.id);
+        const nextUp = goalSummary(after);
         const topic = goalTopic(g.id, next.paths)?.title;
         return {
           state: next,
-          result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}.${alsoActive(next, g.id)}`,
+          result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${last ? `, last worked on ${last}` : ""}${nextUp ? `, ${nextUp.replace(/^Next: /, "next: ")}` : ""}.${alsoActive(next, g.id)}`,
         };
       })
     )
@@ -650,7 +551,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Tick checklist entries",
       description:
-        "Ticks (or, with done: false, unticks) entries on a goal's checklist or its parts' checklists, by title or id; a unique part of a title is enough. Each tick is logged as a session for today, like a tick in the app, with note on the first; unticking takes its session back. The goal's progress follows its ticks.",
+        "Ticks (or, with done: false, unticks) entries on a goal's checklist or its parts' checklists, by title or id; a unique part of a title is enough. Each tick is logged as a session for today, like a tick in the app, with note on the first; unticking takes its session back.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         items: jsonArray(z.array(z.string()).min(1)).describe("Entry titles or ids"),

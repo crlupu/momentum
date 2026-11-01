@@ -1,25 +1,18 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DialogActions } from "./DialogActions";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
-import { ProgressRing } from "./ProgressRing";
-import { Check, ChevronDown, ChevronRight, ExternalLink, Minus, Plus } from "./icons";
+import { Check, ChevronDown, ChevronRight, ExternalLink, Plus, Repeat } from "./icons";
 import { DeleteGlyph } from "./DeleteGlyph";
 import { RepeatSelect } from "./RepeatSelect";
 import { MenuSelect } from "./Menu";
 import { GENERAL, pathOfGoal } from "@/lib/paths";
-import { Goal, GoalItem, GoalStatus, Part, Tracker, findItem, goalPct, goalStatus, goalSummary, minimumReached, uid } from "@/lib/tracker";
-import { goalLog, otherActiveInTopic } from "@/lib/ops";
+import { Goal, GoalItem, GoalStatus, Tracker, dateKey, goalStatus, uid } from "@/lib/tracker";
+import { goalLastActive, goalLog, otherActiveInTopic } from "@/lib/ops";
+import * as R from "@/lib/reading";
 import { fmtDateAuto } from "@/lib/dates";
-
-/** A number field's value, or null when empty or not a number. */
-function num(v: string): number | null {
-  if (v.trim() === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
 
 /**
  * Text edited where it's shown: it looks like the text until tapped, and is
@@ -96,9 +89,9 @@ export function GoalTitle({ tracker, goal: g }: { tracker: Tracker; goal: Goal }
 }
 
 /**
- * One goal, opened: how far it is, and its count, or its parts, each edited
- * where it stands. Names, totals and counts are all typed over in place;
- * − and + move a count by one.
+ * One goal, opened: when it was last worked on and how often lately, what's
+ * next on it, its checklist, and its details. A goal is a habit kept up, so
+ * there is no total, percentage or deadline.
  */
 export function GoalDetail({
   tracker,
@@ -111,155 +104,46 @@ export function GoalDetail({
 }) {
   const status = goalStatus(g);
   const alsoActive = otherActiveInTopic(tracker.state!, g.id);
-  const pct = g.done ? 100 : goalPct(g);
-  const parts = g.parts ?? [];
-  const summary = g.done ? "Done" : goalSummary(g) ?? "Give it a total to track how far along it is.";
-  const widest = Math.max(1, g.target ?? 0, ...parts.map((p) => p.target));
-  const [editing, setEditing] = useState(false);
   const log = goalLog(tracker.state!, g.id);
-  const last = log[log.length - 1];
-  /** + logs a session; − takes a mistaken + back. */
-  const step = (d: number, partId?: string) =>
-    d > 0 ? tracker.logSession(g.id, partId, uid()) : tracker.stepBack(g.id, partId);
-  // The part just added, whose name is selected to be typed over.
-  const [focusId, setFocusId] = useState<string | null>(null);
-  // Parts whose checklists are showing. A part being worked on opens first.
-  const [openParts, setOpenParts] = useState<string[]>(() => {
-    const first = parts.find((p) => p.items?.length && p.current < p.target);
-    return first ? [first.id] : [];
-  });
+  const last = goalLastActive(tracker.state!, g.id);
+  // Days worked on it in the last four weeks: how well the habit is kept.
+  const since = R.addDays(dateKey(), -27);
+  const recent = new Set([...log.map((e) => e.date), ...(g.routineTicks ?? [])].filter((d) => d >= since)).size;
   // A checklist just started: its first entry opens ready to be named.
   const pendingFocus = useRef<string | null>(null);
-
-  /** Rewrites the parts from the latest saved ones, so quick edits don't undo each other. */
-  const writeParts = (fn: (list: Part[]) => Part[]) => {
-    const now = tracker.state!.goals.find((x) => x.id === g.id)?.parts ?? [];
-    return tracker.setGoalParts(g.id, fn(now));
-  };
   // The first entry, saved at once; the checklist opens in Edit on its name.
   const startChecklist = () => {
     const id = uid();
     void tracker.setGoalItems(g.id, [{ id, title: "Item 1" }]);
     pendingFocus.current = id;
   };
-  const setOwnCount = (c: { current?: number | null; target?: number | null }) => {
-    const now = tracker.state!.goals.find((x) => x.id === g.id) ?? g;
-    return tracker.saveGoal(g.id, {
-      title: now.title,
-      catId: now.catId,
-      current: c.current !== undefined ? c.current : now.current ?? null,
-      target: c.target !== undefined ? c.target : now.target ?? null,
-    });
-  };
 
   return (
     <div className="goal-detail">
       {g.note && <Description text={g.note} />}
       <div className="goal-detail__summary">
-        <ProgressRing pct={pct} color="var(--accent)" size={64} />
+        <span className="goal-row__blank goal-detail__icon" aria-hidden>
+          <Repeat />
+        </span>
         <div className="min-w-0">
-          <p className="goal-detail__pct">{g.target || parts.length || g.done ? `${pct}% complete` : "Open"}</p>
-          {minimumReached(g) && <p className="min-badge">Minimum reached</p>}
-          <p className="goal-detail__sub">{summary}</p>
-          {last && <p className="goal-detail__sub">Last session: {fmtDateAuto(last.date)}</p>}
+          <p className="goal-detail__pct goal-detail__pct--line">
+            {status === "done" ? "Done" : status === "dropped" ? "Dropped" : last ? `Last worked on ${fmtDateAuto(last)}` : "Not started yet"}
+          </p>
+          <p className="goal-detail__sub">
+            {recent === 0 ? "No days in the last 4 weeks" : `${recent} day${recent === 1 ? "" : "s"} in the last 4 weeks`}
+          </p>
         </div>
       </div>
 
       {status !== "done" && <NextItem tracker={tracker} goal={g} />}
 
-      {/* A checklist counts itself: ticks instead of − and +. */}
+      {/* A checklist is what to work through next; without one, a session
+          is logged as it happens. */}
       {g.items?.length ? (
         <Checklist tracker={tracker} goal={g} startOn={pendingFocus} />
       ) : (
-      /* The parts, as an iOS list: counted with − and + as they stand,
-          and renamed, resized or deleted in Edit, which a new part opens. */
-      <section className="goal-steps" aria-label="Parts">
-        <div className="goal-steps__head">
-          <h3 className="group-label">{parts.length ? "Parts" : "Progress"}</h3>
-          <button
-            type="button"
-            className="text-action"
-            aria-pressed={editing}
-            onClick={() => {
-              setEditing((v) => !v);
-              setFocusId(null);
-            }}
-          >
-            {editing ? "Done" : "Edit"}
-          </button>
-        </div>
-        <ul className="step-list">
-          {parts.length === 0 ? (
-            <>
-            <StepRow
-              name="Completed"
-              current={g.current ?? 0}
-              total={g.target ?? null}
-              widest={widest}
-              editing={editing}
-              onStep={(d) => step(d)}
-              onCurrent={(n) => setOwnCount({ current: n })}
-              onTotal={(n) => setOwnCount({ target: n })}
-              minimum={g.minimum}
-              onMinimum={(n) => tracker.setGoalMinimum(g.id, n)}
-            />
-            </>
-          ) : (
-            parts.map((p) => (
-              <Fragment key={p.id}>
-              <StepRow
-                counted={!!p.items?.length}
-                open={openParts.includes(p.id)}
-                onOpen={() => setOpenParts((o) => (o.includes(p.id) ? o.filter((x) => x !== p.id) : [...o, p.id]))}
-                name={p.title}
-                current={p.current}
-                total={p.target}
-                widest={widest}
-                editing={editing}
-                focus={focusId === p.id}
-                onStep={(d) => step(d, p.id)}
-                onName={(title) => writeParts((list) => list.map((x) => (x.id === p.id ? { ...x, title } : x)))}
-                onCurrent={(n) =>
-                  writeParts((list) =>
-                    list.map((x) => (x.id === p.id ? { ...x, current: Math.min(x.target, Math.max(0, n ?? 0)) } : x))
-                  )
-                }
-                onTotal={(n) =>
-                  n && n > 0
-                    ? writeParts((list) =>
-                        list.map((x) => (x.id === p.id ? { ...x, target: n, current: Math.min(x.current, n) } : x))
-                      )
-                    : Promise.resolve()
-                }
-                onDelete={() => writeParts((list) => list.filter((x) => x.id !== p.id))}
-                minimum={p.minimum}
-                onMinimum={(n) =>
-                  writeParts((list) =>
-                    list.map((x) => {
-                      if (x.id !== p.id) return x;
-                      const { minimum: _m, ...rest } = x;
-                      return n != null ? { ...rest, minimum: n } : rest;
-                    })
-                  )
-                }
-              />
-              {p.items?.length && (openParts.includes(p.id) || editing) ? (
-                <ChecklistRows
-                  tracker={tracker}
-                  goal={g}
-                  partId={p.id}
-                  items={p.items}
-                  editing={editing}
-                  focusId={focusId}
-                  onFocus={setFocusId}
-                />
-              ) : null}
-              </Fragment>
-            ))
-          )}
-          {/* A goal is a count or a checklist: videos, talks, each ticked
-              when finished. Goals don't hold other goals. */}
-          {parts.length === 0 && (
+        <section className="goal-steps" aria-label="Checklist">
+          <ul className="step-list">
             <li>
               <button type="button" className="step-add" onClick={startChecklist}>
                 <span className="step-add__icon" aria-hidden>
@@ -268,9 +152,8 @@ export function GoalDetail({
                 Add Checklist
               </button>
             </li>
-          )}
-        </ul>
-      </section>
+          </ul>
+        </section>
       )}
 
       {status === "active" && alsoActive.length > 0 && (
@@ -330,12 +213,9 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
   const all = [...(g.items ?? []), ...(g.parts ?? []).flatMap((p) => p.items ?? [])];
   const item = all.find((i) => !i.done);
   if (item) {
-    const n = all.filter((i) => i.done).length + 1;
     return (
       <div className="next-item goal-next">
-        <p className="goal-next__label">
-          Next: {n} of {all.length}
-        </p>
+        <p className="goal-next__label">Next</p>
         <p className="next-item__title">{item.title}</p>
         {item.url && (
           <a href={item.url} target="_blank" rel="noopener noreferrer" className="next-item__link">
@@ -354,231 +234,19 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
       </div>
     );
   }
-  if (!all.length && !g.parts?.length && g.target && (g.current ?? 0) < g.target) {
-    return (
-      <div className="next-item goal-next">
-        <p className="goal-next__label">Next</p>
-        <p className="next-item__title">
-          {(g.current ?? 0) + 1} of {g.target}
-        </p>
-        <Button
-          variant="primary"
-          className="w-full justify-center"
-          isDisabled={pending}
-          onPress={() => void run(() => tracker.logSession(g.id, undefined, uid()))}
-        >
-          Log one
-        </Button>
-      </div>
-    );
-  }
-  return null;
-}
-
-/**
- * One part. As it stands: its name and "− 4 of 30 +". In Edit: a red delete
- * button, and its name, done count and total as text fields.
- */
-function StepRow({
-  counted,
-  open,
-  onOpen,
-  name,
-  current,
-  total,
-  widest,
-  editing,
-  focus,
-  onStep,
-  onName,
-  onCurrent,
-  onTotal,
-  onDelete,
-  minimum,
-  onMinimum,
-}: {
-  /** Counted by its checklist: no − and +, and its figures aren't typed. */
-  counted?: boolean;
-  /** Whether its checklist is showing, and the tap that shows or hides it. */
-  open?: boolean;
-  onOpen?: () => void;
-  name: string;
-  current: number;
-  total: number | null;
-  /** Enough to count as covered: a marker on the bar, set in Edit. */
-  minimum?: number;
-  onMinimum: (n: number | null) => Promise<unknown>;
-  widest: number;
-  editing: boolean;
-  focus?: boolean;
-  onStep: (delta: number) => Promise<unknown>;
-  /** Absent for a goal's own count, whose row is always "Progress". */
-  onName?: (title: string) => Promise<unknown>;
-  onCurrent: (n: number | null) => Promise<unknown>;
-  onTotal: (n: number | null) => Promise<unknown>;
-  onDelete?: () => Promise<unknown>;
-}) {
-  const { reset: resetName, ...nameField } = useInline(name, (v) => v, (text) => {
-    if (text.trim() && onName) void onName(text.trim());
-    else resetName();
-  });
-  const { reset: resetCur, ...curField } = useInline(current, String, (text) => {
-    const n = num(text);
-    if (n != null && n >= 0) void onCurrent(total ? Math.min(n, total) : n);
-    else resetCur();
-  });
-  const { reset: resetTot, ...totField } = useInline(total, (v) => (v == null ? "" : String(v)), (text) => {
-    const n = num(text);
-    if (n != null && n > 0) void onTotal(n);
-    else if (!onDelete && text.trim() === "") void onTotal(null);
-    else resetTot();
-  });
-  const { reset: resetMin, ...minField } = useInline(minimum ?? null, (v) => (v == null ? "" : String(v)), (text) => {
-    const n = num(text);
-    if (text.trim() === "" || n === 0) void onMinimum(null);
-    else if (n != null && n > 0 && (total == null || n <= total)) void onMinimum(n);
-    else resetMin();
-  });
-  const nameRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (focus && editing) {
-      nameRef.current?.focus();
-      nameRef.current?.select();
-    }
-  }, [focus, editing]);
-
-  if (editing) {
-    return (
-      <li className="step-row step-row--editing">
-        {onDelete && (
-          <button type="button" className="step-delete" aria-label={`Delete ${name}`} onClick={() => void onDelete()}>
-            <DeleteGlyph />
-          </button>
-        )}
-        {onName ? (
-          <input ref={nameRef} aria-label="Part name" placeholder="Name" className="step-field step-field--name" {...nameField} />
-        ) : (
-          <span className="step-row__name">{name}</span>
-        )}
-        {counted ? (
-          <span className="step-row__of">
-            {current} of {total}
-          </span>
-        ) : (
-        <span className="step-row__figures">
-          <input
-            type="number"
-            inputMode="decimal"
-            aria-label={`Done, ${name}`}
-            className="step-field step-field--num"
-            {...curField}
-          />
-          <span className="step-row__of">of</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            aria-label={`Total, ${name}`}
-            placeholder="—"
-            className="step-field step-field--num"
-            {...totField}
-          />
-        </span>
-        )}
-        {total != null && (
-          <label className="step-row__min">
-            <span>Minimum</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              aria-label={`Minimum, ${name}`}
-              placeholder="None"
-              className="step-field step-field--num"
-              {...minField}
-            />
-          </label>
-        )}
-      </li>
-    );
-  }
-
-  const digits = Math.max(1, widest.toLocaleString().length);
-  if (counted) {
-    return (
-      <li className="step-row part-row">
-        <button type="button" className="part-row__open" aria-expanded={open} onClick={onOpen}>
-          <span className="step-row__label">
-            <span className="step-row__name">{name}</span>
-            {total != null && total > 0 && (
-              <span className="step-bar" aria-hidden>
-                <span className="step-bar__fill" style={{ width: `${Math.min(100, (current / total) * 100)}%` }} />
-                {minimum != null && minimum < total && (
-                  <span
-                    className={"step-bar__min" + (current >= minimum ? " is-met" : "")}
-                    style={{ left: `${(minimum / total) * 100}%` }}
-                  />
-                )}
-              </span>
-            )}
-          </span>
-          <span className="part-row__count font-mono-n">
-            {current.toLocaleString()}
-            <span className="stepper__total"> of {total?.toLocaleString()}</span>
-          </span>
-          <ChevronDown className={"part-row__chevron" + (open ? " is-open" : "")} aria-hidden />
-        </button>
-      </li>
-    );
-  }
   return (
-    <li className="step-row">
-      <span className="step-row__label">
-        <span className="step-row__name">{name}</span>
-        {/* How far, with the minimum marked when there is one. */}
-        {total != null && total > 0 && (
-          <span className="step-bar" aria-hidden>
-            <span className="step-bar__fill" style={{ width: `${Math.min(100, (current / total) * 100)}%` }} />
-            {minimum != null && minimum < total && (
-              <span
-                className={"step-bar__min" + (current >= minimum ? " is-met" : "")}
-                style={{ left: `${(minimum / total) * 100}%` }}
-              />
-            )}
-          </span>
-        )}
-        {minimum != null && (
-          <span className="sr-only">
-            Minimum {minimum}
-            {current >= minimum ? ", reached" : ""}
-          </span>
-        )}
-      </span>
-      <span className="stepper">
-        <Button
-          size="sm"
-          variant="ghost"
-          isIconOnly
-          aria-label={`One less, ${name}`}
-          isDisabled={current <= 0}
-          onPress={() => void onStep(-1)}
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <span className="stepper__value font-mono-n" style={{ minInlineSize: `${digits * 2 + 3.5}ch` }}>
-          {current.toLocaleString()}
-          {total != null && <span className="stepper__total"> of {total.toLocaleString()}</span>}
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          isIconOnly
-          aria-label={`One more, ${name}`}
-          isDisabled={total != null && current >= total}
-          onPress={() => void onStep(1)}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </span>
-    </li>
+    <div className="next-item goal-next">
+      <p className="goal-next__label">Today</p>
+      <p className="next-item__title">A session on it</p>
+      <Button
+        variant="primary"
+        className="btn-l w-full justify-center"
+        isDisabled={pending}
+        onPress={() => void run(() => tracker.logSession(g.id, undefined, uid()))}
+      >
+        Log a session
+      </Button>
+    </div>
   );
 }
 
@@ -607,7 +275,7 @@ function Checklist({
     <section className="goal-steps" aria-label="Checklist">
       <div className="goal-steps__head">
         <h3 className="group-label">
-          {editing ? "Checklist" : "Still to do"} <span className="checklist__count">{done} of {items.length} done</span>
+          {editing ? "Checklist" : "Still to do"}
         </h3>
         <button
           type="button"

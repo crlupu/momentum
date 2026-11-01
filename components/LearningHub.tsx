@@ -31,7 +31,7 @@ const TAB_KEY = "momentum:learning-tab";
  * Learning: books and goals in one place, without a second row of tabs.
  *
  * One switch. Now is what's under way: the books open, with their quick page
- * update, and the goals with some of their count done. Library is what to
+ * update, and the goals active. Library is what to
  * pick from: the reading tracks, each a row that opens its own page, and the
  * goals not yet started. Anything deeper (a track's queue, history)
  * is a page you go into, with a way back, never a tab within a tab.
@@ -159,7 +159,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
                 onOpen={setOpenId}
                 empty={
                   <EmptyState icon={<School />} title="No goals active">
-                    Set a goal to Active and its progress ring appears here.
+                    Set a goal to Active and it shows here.
                   </EmptyState>
                 }
               />
