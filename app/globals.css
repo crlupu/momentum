@@ -6440,3 +6440,33 @@ html, body { overflow-x: clip; }
 .habit-card__value { font-size: 1.25rem; font-weight: 300; font-variant-numeric: tabular-nums; }
 .habit-card__label { font-size: 0.75rem; color: color-mix(in srgb, var(--hero-fg) 60%, transparent); }
 .plan-row__sub { overflow: hidden; font-size: 0.8125rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Measurements: waist, chest and arm, monthly ---- */
+.measure-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.measure-lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.measure-line { display: flex; align-items: center; gap: 0.75rem; min-block-size: 4.25rem; padding: 0.625rem 1rem; color: var(--muted); }
+.measure-line + .measure-line { border-block-start: 0.5px solid var(--separator); }
+.measure-line__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; color: var(--foreground); }
+.measure-line__name { font-size: 0.8125rem; color: var(--muted); }
+.measure-line__value { font-size: 1.25rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.measure-line__unit { font-size: 0.8125rem; color: var(--muted); }
+.measure-line__since { font-size: 0.75rem; color: var(--muted); }
+.measure-table { display: flex; flex-direction: column; overflow: hidden; }
+.measure-table__row {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr 1fr 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: 3rem;
+  padding: 0 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  text-align: start;
+}
+button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var(--separator); }
+.measure-table__row--head { min-block-size: 2.25rem; font-size: 0.75rem; color: var(--muted); }
+.measure-table__delta { font-size: 0.6875rem; color: var(--muted); }
+.measure-table .rd-link__chevron { inline-size: 1rem; block-size: 1rem; }
+@media (hover: hover) { button.measure-table__row:hover { background: var(--default); } }
