@@ -2,185 +2,131 @@
 
 import Link from "next/link";
 import { Tracker, dateKey } from "@/lib/tracker";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   WEEKDAY_LONG,
   focusElapsed,
   focusMinutes,
   hours,
   stepsOn,
-  summarizeWeek,
   weekOf,
   weekdayOf,
   type DayPlan,
-  type GoalProgress,
 } from "@/lib/plan";
 import { columnCards } from "@/lib/projects";
 import { Button } from "../ui";
 import { CardMeter, SummaryCard, TILE_COLUMNS } from "../SummaryCard";
 import { usePending } from "../ActionButton";
-import { ReadingFlow } from "../books/flow";
-import { useFlow } from "../books/flowContext";
-import { Check, ChevronRight } from "../icons";
-import { TodayFigures } from "../MomentumCard";
+import { Check } from "../icons";
 import { useShell } from "../AppShell";
-import { DayMarks, PlanGlyph } from "./bits";
+import { chain, dayRun, history, longestRun, type ChainDay } from "@/lib/habits";
+import { fmtDate } from "@/lib/dates";
 
 /**
- * Today's card when there is a day plan: the day's count, one tile per step
- * in the plan's order (done white, the next ringed blue), and a band with
- * the days this week where every step got done, opening the week. On a day the
- * plan doesn't run, the week leads instead.
+ * Today's card when there is a day plan, read as habits: how many of today's
+ * are kept and which is next, the last four weeks as a chain (every habit
+ * kept, some, none, rest days apart, today ringed), and two runs: plan days
+ * in a row with a habit kept, and the longest run one habit has going. On a
+ * day the plan doesn't run, the same card says it's a rest day.
  */
 export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
   const s = tracker.state!;
   const today = dateKey();
   const steps = stepsOn(s, plan, today);
-  const week = summarizeWeek(s, weekOf(today), today);
+  const h = useMemo(() => history(s, plan, today), [s, plan, today]);
+  const days = useMemo(() => chain(s, plan, today), [s, plan, today]);
   const n = steps.length;
   const done = steps.filter((x) => x.done).length;
   const next = steps.find((x) => !x.done);
   const allDone = n > 0 && !next;
-  // Tiles are Today's size on every card: eight to a line, more only past eight.
-  const cols = Math.max(n, TILE_COLUMNS);
-  const planDays = week.days.filter((d) => d.planned).length;
-  const fullDays = week.days.filter((d) => d.planned && d.done === d.total).length;
-  const hasFocus = plan.steps.some((st) => (st.same ? [st.pick] : Object.values(st.byDay ?? {})).some((r) => r?.kind === "focus"));
+  const run = dayRun(h);
+  const best = longestRun(h, plan);
 
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={plan} />;
-  if (n === 0) return <RestDayCard tracker={tracker} />;
 
   return (
-    <section className={"momentum plan-card" + (allDone ? " momentum--done" : "")} aria-label="Today's plan">
+    <section className={"momentum plan-card habit-card" + (allDone ? " momentum--done" : "")} aria-label="Today's habits">
       <div className="momentum__top">
         <div className="momentum__head">
-          <p className="eyebrow">Day plan</p>
+          <p className="eyebrow">{n ? "Today" : "Rest day"}</p>
           {allDone ? (
             <span className="momentum__badge">
               <Check aria-hidden />
-              All done
+              All kept
             </span>
-          ) : (
+          ) : next ? (
             <span className="plan-card__next">
-              Next: <span className="momentum__next-name">{next!.name}</span>
+              Next: <span className="momentum__next-name">{next.name}</span>
             </span>
+          ) : null}
+        </div>
+        <p className="momentum__count">
+          {n ? (
+            <>
+              <span className="font-mono-n momentum__headline">{`${done} of ${n}`}</span>
+              <span className="momentum__detail">habits</span>
+            </>
+          ) : (
+            <span className="momentum__detail habit-card__rest">Nothing on today. A rest day never breaks a run.</span>
           )}
-        </div>
-        <div>
-          <p className="momentum__count">
-            <span className="font-mono-n momentum__headline">{`${done} of ${n}`}</span>
-            {!allDone && <span className="momentum__detail">{n - done} to go</span>}
-          </p>
-          {allDone && <p className="momentum__detail momentum__next">Every step is done. See you tomorrow.</p>}
-        </div>
-        {/* One row, the list below names them; past eight they shrink to fit. */}
-        <ol className={"plan-card__tiles" + (cols > TILE_COLUMNS ? " is-compact" : "")} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, var(--tile-max)))` }}>
-          {steps.map((x) => (
-            <li key={x.step.id} className="plan-card__cell" title={x.name}>
-              <span className={"momentum__tile" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
-                <PlanGlyph icon={x.icon} />
-              </span>
-              <span className="sr-only">
-                {x.name}, {x.done ? "done" : "to do"}
-              </span>
-            </li>
-          ))}
-        </ol>
+        </p>
+        <HabitChain days={days} today={today} />
       </div>
-      {/* The days this week where everything got done, opening the week. */}
-      <Link href="/week" className="plan-card__week">
-        <span className="plan-card__week-label">This week</span>
-        <span className="plan-card__week-rings">
-          <DayMarks days={week.days} today={today} />
-        </span>
-        <span className="plan-card__week-goals">
-          {fullDays} of {planDays} days
-          <ChevronRight aria-hidden />
-        </span>
-      </Link>
-      <TodayFigures tracker={tracker} focus={hasFocus} />
+      <div className="habit-card__figures">
+        <div className="habit-card__figure">
+          <span className="habit-card__value">{run} {run === 1 ? "day" : "days"}</span>
+          <span className="habit-card__label">with a habit kept, in a row</span>
+        </div>
+        <div className="habit-card__figure">
+          <span className="habit-card__value">{best ? `${best.days} ${best.days === 1 ? "day" : "days"}` : "None yet"}</span>
+          <span className="habit-card__label">{best ? `longest run going, ${best.name}` : "longest run going"}</span>
+        </div>
+      </div>
     </section>
   );
 }
 
-/** A day the plan doesn't run on: the week, and what's left to finish it. */
-function RestDayCard({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const today = dateKey();
-  const week = summarizeWeek(s, weekOf(today), today);
-  const left = week.goals.filter((g) => !g.done);
+const CHAIN_WORD: Record<ChainDay["state"], string> = {
+  all: "every habit kept",
+  some: "some habits kept",
+  none: "none kept",
+  rest: "rest day",
+  future: "still to come",
+};
+
+/** Four weeks, Monday to Sunday, a square a day: white all kept, grey some, faint none; rest days outlined. */
+function HabitChain({ days, today }: { days: ChainDay[]; today: string }) {
   return (
-    <section className={"momentum plan-card" + (week.done ? " momentum--done" : "")} aria-label="This week">
-      <div className="momentum__top">
-        <div className="momentum__head">
-          <p className="eyebrow">No plan today</p>
-          {week.done && (
-            <span className="momentum__badge">
-              <Check aria-hidden />
-              Week done
-            </span>
-          )}
-        </div>
-        <div>
-          <p className="momentum__count">
-            {week.goals.length ? (
-              <>
-                <span className="font-mono-n momentum__headline">{`${week.goalsDone} of ${week.goals.length}`}</span>
-                <span className="momentum__detail">week goals</span>
-              </>
-            ) : (
-              <>
-                <span className="font-mono-n momentum__headline">{`${week.daysDone} of ${week.daysPlanned}`}</span>
-                <span className="momentum__detail">plan days</span>
-              </>
-            )}
-          </p>
-          <p className="momentum__detail plan-card__line">
-            {week.done
-              ? "Every goal and every plan day, done."
-              : left.length === 1
-                ? <>One left: <span className="plan-card__strong">{left[0].label}</span>, {left[0].count}.</>
-                : left.length > 1
-                  ? `${left.length} goals left this week.`
-                  : "Weekends are rest days. Turn them on in the plan to give them steps."}
-          </p>
-        </div>
-        <DayMarks days={week.days} today={today} big />
-        {left.length === 1 && left[0].goal.ref ? (
-          <div className="plan-card__actions">
-            <ReadingFlow tracker={tracker}>
-              <FinishAction tracker={tracker} p={left[0]} />
-            </ReadingFlow>
-          </div>
-        ) : null}
+    <div className="habit-chain">
+      <div className="habit-chain__grid" role="img" aria-label={chainLabel(days)}>
+        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+          <span key={i} className="habit-chain__head" aria-hidden>
+            {d}
+          </span>
+        ))}
+        {days.map((d) => (
+          <span
+            key={d.day}
+            className={"habit-chain__day is-" + d.state + (d.day === today ? " is-today" : "")}
+            title={`${fmtDate(d.day)}: ${CHAIN_WORD[d.state]}${d.total ? `, ${d.done} of ${d.total}` : ""}`}
+          />
+        ))}
       </div>
-      <TodayFigures tracker={tracker} />
-    </section>
+      <div className="habit-chain__key" aria-hidden>
+        <span><i className="is-all" />All kept</span>
+        <span><i className="is-some" />Some</span>
+        <span><i className="is-none" />None</span>
+        <span><i className="is-rest" />Rest</span>
+      </div>
+    </div>
   );
 }
 
-/** The one thing that would finish the week, one tap away: pages, a session, the workout. */
-function FinishAction({ tracker, p }: { tracker: Tracker; p: GoalProgress }) {
-  const flow = useFlow();
-  const { pending, run } = usePending();
-  const r = p.goal.ref!;
-  if (r.kind === "book")
-    return (
-      <button type="button" className="pill-link pill-link--primary" onClick={() => flow.open({ kind: "log", bookId: r.id })}>
-        Log pages
-      </button>
-    );
-  if (r.kind === "workout")
-    return (
-      <Link href={`/fitness?view=workout&id=${r.id}`} className="pill-link pill-link--primary">
-        Start workout
-      </Link>
-    );
-  return (
-    <button type="button" className="pill-link pill-link--primary" disabled={pending} onClick={() => void run(() => tracker.logSession(r.id))}>
-      Log a session
-    </button>
-  );
+function chainLabel(days: ChainDay[]): string {
+  const past = days.filter((d) => d.state !== "future" && d.state !== "rest");
+  const all = past.filter((d) => d.state === "all").length;
+  const some = past.filter((d) => d.state === "some").length;
+  return `Last four weeks: ${all} days with every habit kept, ${some} with some, of ${past.length} plan days.`;
 }
 
 /**

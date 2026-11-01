@@ -6410,3 +6410,33 @@ html, body { overflow-x: clip; }
 
 /* A goal's headline is a sentence (when it was last worked on), not a figure. */
 .goal-detail__pct.goal-detail__pct--line { font-size: 1.25rem; font-weight: 600; line-height: 1.25; }
+
+/* ---- Habits: Today's card as a four-week chain, and the habit rows ---- */
+.habit-card { padding-block-end: 0; }
+.momentum__count .habit-card__rest { font-size: 0.9375rem; line-height: 1.4; }
+.habit-chain { display: flex; flex-direction: column; gap: 0.625rem; }
+.habit-chain__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
+.habit-chain__head { font-size: 0.6875rem; font-weight: 600; text-align: center; color: color-mix(in srgb, var(--hero-fg) 55%, transparent); }
+.habit-chain__day { block-size: 1.125rem; border-radius: 5px; background: color-mix(in srgb, var(--hero-fg) 9%, transparent); }
+.habit-chain__day.is-all { background: var(--hero-fg); }
+.habit-chain__day.is-some { background: color-mix(in srgb, var(--hero-fg) 38%, transparent); }
+.habit-chain__day.is-rest { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hero-fg) 14%, transparent); }
+.habit-chain__day.is-future { background: transparent; }
+.habit-chain__day.is-today { box-shadow: 0 0 0 1.5px var(--hero-bg), 0 0 0 3px var(--accent); }
+.habit-chain__key { display: flex; flex-wrap: wrap; gap: 0.25rem 0.875rem; font-size: 0.75rem; color: color-mix(in srgb, var(--hero-fg) 60%, transparent); }
+.habit-chain__key > span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.habit-chain__key i { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 3px; background: color-mix(in srgb, var(--hero-fg) 9%, transparent); }
+.habit-chain__key i.is-all { background: var(--hero-fg); }
+.habit-chain__key i.is-some { background: color-mix(in srgb, var(--hero-fg) 38%, transparent); }
+.habit-chain__key i.is-rest { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hero-fg) 14%, transparent); }
+.habit-card__figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 1rem -1.25rem 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--hero-fg) 8%, transparent);
+}
+.habit-card__figure { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.75rem 1.25rem; }
+.habit-card__figure + .habit-card__figure { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--hero-fg) 8%, transparent); }
+.habit-card__value { font-size: 1.25rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.habit-card__label { font-size: 0.75rem; color: color-mix(in srgb, var(--hero-fg) 60%, transparent); }
+.plan-row__sub { overflow: hidden; font-size: 0.8125rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
