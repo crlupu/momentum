@@ -116,7 +116,7 @@ function useTitleSearch(query: string, enabled: boolean) {
 }
 
 /**
- * Add a book, or edit one. The same fields either way, with the track, phase
+ * Add a book, or edit one. The same fields either way, with the track
  * and "read before" links that place it in the plan.
  */
 export function BookForm({
@@ -139,7 +139,6 @@ export function BookForm({
   const [author, setAuthor] = useState(book?.author ?? "");
   const [pages, setPages] = useState(book?.pages ? String(book.pages) : "");
   const [track, setTrack] = useState(book?.trackId ?? trackId ?? tracks[0]?.id ?? "");
-  const [phase, setPhase] = useState(book?.phaseId ?? "");
   const [coverImage, setCoverImage] = useState(book?.coverImage ?? "");
   const [after, setAfter] = useState<string[]>(book?.after ?? []);
   const { pending, run } = usePending();
@@ -233,7 +232,6 @@ export function BookForm({
       language: book?.language,
       tags: book?.tags,
       trackId: track,
-      phaseId: phase || undefined,
       coverImage,
       after,
       note: book?.note,
@@ -339,26 +337,15 @@ export function BookForm({
           className="w-full"
         />
       </Field>
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Track">
-          <MenuSelect
-            label="Track"
-            className="menu-select--field"
-            value={track}
-            onChange={setTrack}
-            options={[...tracks.map((t) => ({ value: t.id, label: t.name, color: t.color })), { value: "", label: "No track" }]}
-          />
-        </Field>
-        <Field label="Phase">
-          <MenuSelect
-            label="Phase"
-            className="menu-select--field"
-            value={phase}
-            onChange={setPhase}
-            options={[{ value: "", label: "No phase" }, ...s.readingPhases.map((p) => ({ value: p.id, label: p.name }))]}
-          />
-        </Field>
-      </div>
+      <Field label="Track">
+        <MenuSelect
+          label="Track"
+          className="menu-select--field"
+          value={track}
+          onChange={setTrack}
+          options={[...tracks.map((t) => ({ value: t.id, label: t.name, color: t.color })), { value: "", label: "No track" }]}
+        />
+      </Field>
       {bumps && (
         <p className="text-xs" style={{ color: "var(--danger)" }}>
           {track

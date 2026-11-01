@@ -26,24 +26,19 @@ const SHOWN = 3;
 type Step = {
   key: string;
   goal: Goal;
-  /** The checklist entry to tick, or none for a goal that only counts. */
+  /** The checklist entry to tick, or none for a goal without a checklist. */
   item?: GoalItem;
   title: string;
   sub: string;
 };
 
-/** A goal's next step: its first unticked entry, or one more on its count. */
+/** A goal's next step: its first unticked entry, or, with no checklist, a session on it. */
 function stepOf(g: Goal): Step | null {
   const lists = [g.items ?? [], ...(g.parts ?? []).map((p) => p.items ?? [])];
   const all = lists.flat();
   const item = all.find((i) => !i.done);
-  if (item) {
-    const done = all.filter((i) => i.done).length;
-    return { key: item.id, goal: g, item, title: item.title, sub: `${g.title}, ${done + 1} of ${all.length}` };
-  }
-  if (all.length === 0 && g.target && (g.current ?? 0) < g.target) {
-    return { key: g.id, goal: g, title: g.title, sub: `${(g.current ?? 0) + 1} of ${g.target}` };
-  }
+  if (item) return { key: item.id, goal: g, item, title: item.title, sub: g.title };
+  if (all.length === 0) return { key: g.id, goal: g, title: "A session", sub: g.title };
   return null;
 }
 
@@ -97,7 +92,7 @@ function NextHero({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onO
     void run(() =>
       step.item ? tracker.setItemDone(step.goal.id, step.item.id, true) : tracker.stepGoal(step.goal.id, 1)
     );
-  const [from, count] = step.item ? [step.goal.title, step.sub.slice(step.goal.title.length + 3)] : [step.goal.title, step.sub];
+  const from = step.goal.title;
   // The goal's entries around the next one: two before, the next, two after.
   const all = [step.goal.items ?? [], ...(step.goal.parts ?? []).map((p) => p.items ?? [])].flat();
   const at = step.item ? all.findIndex((i) => i.id === step.item!.id) : -1;
@@ -115,7 +110,6 @@ function NextHero({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onO
     <SummaryCard
       aria-label="Next step"
       label="Next step"
-      aside={count}
       title={step.title}
       line={from}
       actions={

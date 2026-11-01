@@ -8,29 +8,6 @@ import { type Goal, type Path, type TrackerState, goalStatus, uid } from "./mode
 
 export const GENERAL = "general";
 
-/** A goal's items done and in all: its checklist or count, or 1 for a goal with neither. */
-export function goalUnits(g: Goal): { done: number; total: number } {
-  const total = g.target && g.target > 0 ? g.target : 1;
-  if (goalStatus(g) === "done") return { done: total, total };
-  return { done: g.target && g.target > 0 ? Math.min(total, g.current ?? 0) : 0, total };
-}
-
-/**
- * How far a path is: every item of every goal in it, added up, so a goal of
- * 26 steps weighs more than one of 8. Dropped goals don't count.
- */
-export function pathProgress(goals: Goal[]): { done: number; total: number; pct: number } {
-  let done = 0;
-  let total = 0;
-  for (const g of goals) {
-    if (goalStatus(g) === "dropped") continue;
-    const u = goalUnits(g);
-    done += u.done;
-    total += u.total;
-  }
-  return { done, total, pct: total ? Math.floor((done / total) * 100) : 0 };
-}
-
 /** A path's goals in its order. */
 export function goalsOf(s: TrackerState, path: Path): Goal[] {
   return path.goalIds.map((id) => s.goals.find((g) => g.id === id)).filter((g): g is Goal => !!g);

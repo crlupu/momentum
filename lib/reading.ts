@@ -3,8 +3,8 @@
  *
  * Books run in parallel lanes ("tracks"), each with its own ordered queue, a
  * limit on how many books are open at once, a daily page target and a time
- * of day. Phases group books across tracks into blocks of the plan. Every
- * reading session is logged, so progress, pace, streaks and projections are
+ * of day. Every reading
+ * session is logged, so progress, pace, streaks and projections are
  * all worked out from the log rather than stored alongside it.
  *
  * Everything here is pure: state in, state out. The tracker hook wraps each
@@ -59,18 +59,6 @@ export type ReadingTrack = {
   restDays: number;
   /** Hidden everywhere but the track list, with its books left alone. */
   archived?: boolean;
-};
-
-/** A block of the plan, e.g. "Phase 1: Q4 2026". */
-export type ReadingPhase = {
-  id: string;
-  name: string;
-  /** YYYY-MM-DD */
-  start: string;
-  /** YYYY-MM-DD */
-  end: string;
-  /** What the phase is for, in a sentence. */
-  goal?: string;
 };
 
 /** One sitting: the pages read, on a day. */
@@ -157,7 +145,7 @@ export function migrateReading(
   rawBooks: Book[]
 ): Pick<
   TrackerState,
-  "books" | "readingTracks" | "readingPhases" | "readingSessions" | "bookQuotes"
+  "books" | "readingTracks" | "readingSessions" | "bookQuotes"
 > {
   const readingTracks: ReadingTrack[] = Array.isArray(s.readingTracks)
     ? (s.readingTracks as Array<Record<string, unknown>>).map((t) => ({
@@ -172,10 +160,6 @@ export function migrateReading(
       }))
     : DEFAULT_TRACKS;
 
-  const readingPhases: ReadingPhase[] = Array.isArray(s.readingPhases)
-    ? (s.readingPhases as ReadingPhase[]).filter((p) => p && p.id)
-    : [];
-
   const readingSessions: ReadingSession[] = Array.isArray(s.readingSessions)
     ? (s.readingSessions as ReadingSession[]).filter(
         (x) => x && x.id && x.bookId && isDateKey(x.date) && Number.isFinite(x.pages)
@@ -188,7 +172,6 @@ export function migrateReading(
 
   const trackIds = new Set(readingTracks.map((t) => t.id));
   const firstTrack = (readingTracks.find((t) => !t.archived) ?? readingTracks[0])?.id ?? "";
-  const phaseIds = new Set(readingPhases.map((p) => p.id));
 
   const books: Book[] = rawBooks.map((b, i) => {
     const pages = Math.max(0, Math.round(num(b.pages)));
@@ -201,8 +184,10 @@ export function migrateReading(
         : read > 0
           ? "active"
           : "queued";
+    // Phases are gone: whatever one a book was in is dropped.
+    const { phaseId: _phase, ...rest } = b as Book & { phaseId?: string };
     return {
-      ...b,
+      ...rest,
       color: currentColor(b.color),
       pages,
       read,
@@ -218,13 +203,12 @@ export function migrateReading(
       queueOrder: num(b.queueOrder, i),
       // A book from before sessions has all its progress in the base.
       base: typeof b.base === "number" && Number.isFinite(b.base) ? b.base : read,
-      phaseId: b.phaseId && phaseIds.has(b.phaseId) ? b.phaseId : undefined,
       after: Array.isArray(b.after) ? b.after.filter((x) => typeof x === "string") : undefined,
       tags: Array.isArray(b.tags) ? b.tags.filter((x) => typeof x === "string") : undefined,
     };
   });
 
-  return { books, readingTracks, readingPhases, readingSessions, bookQuotes };
+  return { books, readingTracks, readingSessions, bookQuotes };
 }
 
 /* ============================== Selectors ============================== */
@@ -445,149 +429,6 @@ export function wipBlockers(s: TrackerState, bookId: string, trackId: string): B
   return open.length >= track.wipLimit ? open : [];
 }
 
-export type PhaseFlag = "done" | "on-track" | "at-risk" | "behind" | "unknown";
-
-export type PhaseStats = {
-  books: Book[];
-  /** 0 to 1, weighted by pages. */
-  completion: number;
-  finished: number;
-  projected: string | null;
-  flag: PhaseFlag;
-  /** A track's pace was taken from its target, having nothing logged lately. */
-  assumed: boolean;
-  /** Books left out of the projection for want of a page count. */
-  unsized: number;
-};
-
-/** How far the reading has gone in a track over the last fortnight. */
-function trackPace(s: TrackerState, track: ReadingTrack, today: string): number {
-  const from = addDays(today, -13);
-  const inTrack = new Set(s.books.filter((b) => b.trackId === track.id).map((b) => b.id));
-  const pages = s.readingSessions
-    .filter((x) => inTrack.has(x.bookId) && x.date >= from && x.date <= today)
-    .reduce((a, x) => a + x.pages, 0);
-  return pages / 14;
-}
-
-/** How far through a book, counting a finished one as complete. */
-function bookFraction(b: Book): number {
-  if (b.status === "finished") return 1;
-  if (b.pages <= 0) return 0;
-  return Math.min(1, b.read / b.pages);
-}
-
-/** Where one track stands in a phase against reading its books at an even pace. */
-export type TrackPace = {
-  track: ReadingTrack;
-  /** Pages in the track's books for the phase (those with a page count). */
-  planned: number;
-  /** Pages the even pace would have reached by today. */
-  expected: number;
-  /** Pages read of those books so far. */
-  actual: number;
-  /** actual − expected: above 0 ahead, below 0 behind. */
-  delta: number;
-  /** Books left out for want of a page count. */
-  unsized: number;
-};
-
-/**
- * Per track, how many pages ahead or behind the phase's plan it is: the
- * plan being to read all of the track's books in the phase, at an even pace
- * from the phase's first day to its last. Before it starts nothing is
- * expected yet; once it's over, everything is. Dropped books aren't planned.
- */
-export function phaseTrackPace(s: TrackerState, phase: ReadingPhase, today: string = dateKey()): TrackPace[] {
-  const total = daysBetween(phase.start, phase.end) + 1;
-  const elapsed = Math.min(total, Math.max(0, daysBetween(phase.start, today) + 1));
-  const share = total > 0 ? elapsed / total : 1;
-  const books = s.books.filter((b) => b.phaseId === phase.id && b.status !== "dropped");
-  return s.readingTracks
-    .map((track) => {
-      const mine = books.filter((b) => b.trackId === track.id);
-      const sized = mine.filter((b) => b.pages > 0);
-      const planned = sized.reduce((a, b) => a + b.pages, 0);
-      const actual = sized.reduce((a, b) => a + Math.round(b.pages * bookFraction(b)), 0);
-      const expected = Math.round(planned * share);
-      return { track, planned, expected, actual, delta: actual - expected, unsized: mine.length - sized.length };
-    })
-    .filter((x) => x.planned > 0 || x.unsized > 0);
-}
-
-/**
- * Completion and a projected end date for every phase.
- *
- * Tracks read one book after another, so a phase's books are read after the
- * earlier phases' books in the same track: the projection for a track is
- * everything left in it up to and including this phase, at the pace it has
- * been read over the last fortnight. The phase ends when its slowest track
- * does. A track with nothing logged lately is projected at its daily target
- * instead, which is flagged, since it is a hope rather than a measurement.
- */
-export function phaseStats(s: TrackerState, today: string = dateKey()): Map<string, PhaseStats> {
-  const phases = [...s.readingPhases].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
-  const carried = new Map<string, number>();
-  const out = new Map<string, PhaseStats>();
-
-  const known = s.books.filter((b) => b.pages > 0).map((b) => b.pages).sort((a, b) => a - b);
-  const typical = known.length ? known[Math.floor(known.length / 2)] : 300;
-
-  for (const p of phases) {
-    const books = s.books.filter((b) => b.phaseId === p.id && b.status !== "dropped");
-    let weight = 0;
-    let done = 0;
-    for (const b of books) {
-      const w = b.pages > 0 ? b.pages : typical;
-      weight += w;
-      done += w * bookFraction(b);
-    }
-    const completion = weight > 0 ? done / weight : 0;
-    const finished = books.filter((b) => b.status === "finished").length;
-    const unsized = books.filter((b) => b.status !== "finished" && b.pages <= 0).length;
-
-    let days = 0;
-    let assumed = false;
-    let projectable = true;
-    for (const t of s.readingTracks) {
-      const left = books
-        .filter((b) => b.trackId === t.id && b.status !== "finished")
-        .reduce((a, b) => a + remainingPages(b), 0);
-      const total = (carried.get(t.id) ?? 0) + left;
-      carried.set(t.id, total);
-      if (left === 0) continue;
-      let pace = trackPace(s, t, today);
-      if (pace <= 0) {
-        pace = t.dailyTarget;
-        assumed = true;
-      }
-      if (pace <= 0) {
-        projectable = false;
-        continue;
-      }
-      days = Math.max(days, Math.ceil(total / pace));
-    }
-
-    const remaining = books.some((b) => b.status !== "finished");
-    // Nothing left has a length yet: there is nothing to project from, and
-    // a projection of "today" would read as done.
-    const sized = books.some((b) => b.status !== "finished" && b.pages > 0);
-    let projected: string | null = null;
-    let flag: PhaseFlag;
-    if (books.length > 0 && !remaining) flag = "done";
-    else if (books.length === 0 || !projectable || !sized) flag = "unknown";
-    else {
-      projected = addDays(today, days);
-      if (today > p.end) flag = "behind";
-      else if (projected <= p.end) flag = "on-track";
-      else if (daysBetween(p.end, projected) <= 14) flag = "at-risk";
-      else flag = "behind";
-    }
-    out.set(p.id, { books, completion, finished, projected, flag, assumed, unsized });
-  }
-  return out;
-}
-
 /* ============================== Changes ================================ */
 
 /** Recomputes a book's progress from its base and its sessions. */
@@ -632,7 +473,6 @@ export type BookInput = {
   language?: string;
   tags?: string[];
   trackId: string;
-  phaseId?: string;
   coverId?: string | null;
   coverImage?: string;
   after?: string[];
@@ -673,7 +513,6 @@ export function addBook(s: TrackerState, input: BookInput, id: string = uid()): 
     trackId: input.trackId,
     status: "queued",
     queueOrder: queueEnd(s, input.trackId),
-    phaseId: input.phaseId || undefined,
     edition: clean(input.edition),
     language: clean(input.language),
     tags: cleanTags(input.tags),
@@ -723,8 +562,7 @@ export function updateBook(s: TrackerState, id: string, input: BookInput): Track
       language: clean(input.language),
       tags: cleanTags(input.tags),
       coverImage: clean(input.coverImage),
-      phaseId: input.phaseId || undefined,
-      after: after.length ? after : undefined,
+        after: after.length ? after : undefined,
       note: clean(input.note),
       trackId: input.trackId,
       queueOrder: moved ? queueEnd(s, input.trackId, id) : b.queueOrder,
@@ -913,8 +751,8 @@ export function reorderQueue(s: TrackerState, trackId: string, ids: string[]): T
  * Reorders some books among themselves, leaving every other book where it is.
  *
  * The books keep the queue positions they held between them, handed out in
- * the new order: so a phase's books can be rearranged without moving the
- * books of earlier or later phases in the same track.
+ * the new order: so a few books can be rearranged without moving the
+ * rest of the track.
  */
 export function reorderAmong(s: TrackerState, ids: string[]): TrackerState {
   const books = ids
@@ -1005,61 +843,6 @@ export function untrackedBooks(s: TrackerState): Book[] {
     .sort((a, b) => a.queueOrder - b.queueOrder);
 }
 
-/* ---- phases ---- */
-
-export type PhaseInput = Omit<ReadingPhase, "id">;
-
-function normalisePhase(p: PhaseInput): PhaseInput {
-  const [start, end] = p.start <= p.end ? [p.start, p.end] : [p.end, p.start];
-  return { name: p.name.trim() || "Phase", start, end, goal: clean(p.goal) };
-}
-
-export function addPhase(s: TrackerState, p: PhaseInput): TrackerState {
-  if (!isDateKey(p.start) || !isDateKey(p.end)) return s;
-  return { ...s, readingPhases: [...s.readingPhases, { id: uid(), ...normalisePhase(p) }] };
-}
-
-export function updatePhase(s: TrackerState, id: string, p: PhaseInput): TrackerState {
-  if (!isDateKey(p.start) || !isDateKey(p.end)) return s;
-  return {
-    ...s,
-    readingPhases: s.readingPhases.map((x) => (x.id === id ? { id, ...normalisePhase(p) } : x)),
-  };
-}
-
-/**
- * Moves the whole plan so its first phase starts on `start`: every phase
- * shifts by the same number of days, keeping its length and the gaps
- * between phases. Books and goals keep their phases.
- */
-export function shiftPlan(s: TrackerState, start: string): { state: TrackerState; days: number } {
-  if (!isDateKey(start) || s.readingPhases.length === 0) return { state: s, days: 0 };
-  const first = [...s.readingPhases].sort((a, b) => a.start.localeCompare(b.start))[0];
-  const days = daysBetween(first.start, start);
-  if (days === 0) return { state: s, days };
-  return {
-    state: {
-      ...s,
-      readingPhases: s.readingPhases.map((p) => ({ ...p, start: addDays(p.start, days), end: addDays(p.end, days) })),
-    },
-    days,
-  };
-}
-
-/** Removes a phase. Its books and goals stay, just without it. */
-export function removePhase(s: TrackerState, id: string): TrackerState {
-  return {
-    ...s,
-    readingPhases: s.readingPhases.filter((p) => p.id !== id),
-    books: s.books.map((b) => (b.phaseId === id ? { ...b, phaseId: undefined } : b)),
-    goals: s.goals.map((g) =>
-      g.phaseIds?.includes(id)
-        ? { ...g, phaseIds: g.phaseIds.filter((x) => x !== id).length ? g.phaseIds.filter((x) => x !== id) : undefined }
-        : g
-    ),
-  };
-}
-
 /* ---- quotes ---- */
 
 export function addQuote(
@@ -1115,11 +898,10 @@ export function parseBookList(text: string): { title: string; author?: string; p
 export function addBooks(
   s: TrackerState,
   list: { title: string; author?: string; pages?: number }[],
-  trackId: string,
-  phaseId?: string
+  trackId: string
 ): TrackerState {
   return list.reduce(
-    (acc, b) => addBook(acc, { title: b.title, author: b.author, pages: b.pages, trackId, phaseId }),
+    (acc, b) => addBook(acc, { title: b.title, author: b.author, pages: b.pages, trackId }),
     s
   );
 }

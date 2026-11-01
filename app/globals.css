@@ -123,7 +123,6 @@
   --data-olive: var(--c-64761c);
   --data-slate: var(--c-646f7f);
 
-
   /* Shape: 14px cards, 10px fields and tiles, 6px for the small square
      buttons and chips. Actions are pills; marks (dots, rings) stay round. */
   --r-card: 14px;
@@ -439,7 +438,6 @@
 .type-heading-05 { font-size: 2rem; line-height: 1.25; font-weight: 400; letter-spacing: 0; }
 .type-heading-06 { font-size: 2.625rem; line-height: 1.19; font-weight: 300; letter-spacing: 0; }
 .type-heading-07 { font-size: 3.375rem; line-height: 1.19; font-weight: 300; letter-spacing: 0; }
-
 
 body {
   font-family: var(--font-ui);
@@ -2292,38 +2290,7 @@ button {
 .book-cover--sm.book-cover--drawn { padding: 4px 0 0; }
 .book-cover--sm.book-cover--drawn::before { height: 2px; }
 
-.rd-phase {
-  padding: 1rem;
-  background: var(--pane-bg);
-  border-radius: var(--r-card);
-  box-shadow: var(--card-shadow);
-}
-/* The current phase says so in its dates ("now"); it needs no stripe. */
-.rd-phase--current { box-shadow: var(--card-shadow), inset 0 0 0 1.5px var(--accent-soft-strong); }
-.rd-phase__tracks {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-.rd-phase__book {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  width: 100%;
-  min-height: 2.5rem;
-  padding: 0.3rem 0.25rem 0.3rem 0;
-  font-size: 14px;
-  text-align: left;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--separator);
-  cursor: pointer;
-}
-.rd-phase__book:hover { color: var(--accent); }
-
-/* The phase verdict: a word, with a tint behind it. */
+/* A checkpoint's verdict: a word, with a tint behind it. */
 .rd-flag {
   padding: 2px 10px;
   font-size: 12px;
@@ -3062,7 +3029,7 @@ button {
 button.rd-link:active { background: var(--default); }
 @media (hover: hover) {
   button.rd-link:hover { background: var(--default); }
-  .rd-phase__book:hover { background: var(--default); }
+
 }
 .rd-link__chevron {
   flex: none;
@@ -3224,10 +3191,8 @@ button.rd-link:active { background: var(--default); }
 .light .goal-counter { background: var(--background); }
 .goal-counter__label { font-weight: 600; }
 
-
 .stepper { display: inline-flex; flex: none; align-items: center; gap: 0.375rem; }
 .stepper__value { min-inline-size: 3.75rem; text-align: center; font-size: 0.9375rem; font-weight: 700; }
-.stepper__total { font-weight: 500; color: var(--muted); }
 
 .goal-fields { display: flex; flex-direction: column; gap: 0.875rem; }
 .goal-section--pending { min-block-size: 24rem; }
@@ -3744,8 +3709,6 @@ button.rd-link:active { background: var(--default); }
    totals in its details. */
 .goal-parts { display: flex; flex-direction: column; gap: 0.5rem; }
 .part-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.part-row { display: flex; align-items: center; gap: 0.5rem; }
-.part-row__total { inline-size: 5.5rem; flex: none; }
 
 /* History's filters: the two pickers share a row, the toggle under them. */
 .rd-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-block-end: 0.75rem; }
@@ -3769,7 +3732,7 @@ input.inline-field {
   block-size: auto;
   outline: none;
 }
-input.inline-field.stepper__total { color: var(--muted); font-weight: 500; }
+
 input.inline-field:hover { border-color: transparent; }
 input.inline-field:focus { outline: none; border-color: transparent; background: var(--pane-bg); box-shadow: 0 0 0 2px var(--accent); }
 input.inline-field::placeholder { color: var(--muted); font-weight: 400; }
@@ -3820,8 +3783,6 @@ textarea.inline-title:focus { outline: none; background: var(--pane-bg); box-sha
 }
 .step-row__name { flex: 1 1 auto; min-inline-size: 0; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
 .step-row--editing { gap: 0.625rem; }
-.step-row__figures { display: inline-flex; flex: none; align-items: center; gap: 0.375rem; }
-.step-row__of { font-size: 0.9375rem; color: var(--muted); }
 
 /* Delete, as in an iOS list in Edit: a red circle with a white minus. */
 .step-delete {
@@ -3837,7 +3798,6 @@ textarea.inline-title:focus { outline: none; background: var(--pane-bg); box-sha
   box-shadow: 0 0 0 0.625rem transparent;
 }
 
-
 /* Text fields in Edit: filled, borderless, as iOS draws them. */
 input.step-field {
   block-size: 2.25rem;
@@ -3851,9 +3811,6 @@ input.step-field {
 input.step-field:hover { border-color: transparent; }
 input.step-field:focus { outline: 2px solid var(--accent); outline-offset: 0; }
 input.step-field--name { flex: 1 1 auto; min-inline-size: 0; }
-input.step-field--num { inline-size: 3.75rem; text-align: center; -moz-appearance: textfield; }
-input.step-field--num::-webkit-outer-spin-button,
-input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* The last row: Add Step, in the accent colour, as iOS lists add a row. */
 .step-add {
@@ -3897,40 +3854,6 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .goal-status .seg__btn { flex: 1 1 0; }
 .goal-status__note { margin: 0; padding-inline: 0.25rem; font-size: 0.875rem; color: var(--warning); }
 
-/* A goal's phases: chips that wrap beside the label; chosen ones filled. */
-.phase-row { align-items: flex-start; flex-wrap: wrap; row-gap: 0.5rem; }
-.phase-row .step-row__name { padding-block: 0.375rem; }
-.phase-row__chips { display: flex; flex: 1 1 12rem; flex-wrap: wrap; justify-content: flex-end; gap: 0.375rem; }
-.phase-chip { min-block-size: 2rem; }
-.phase-chip[aria-pressed="true"] { background-color: var(--button-primary); color: var(--c-white); }
-.phase-chip:disabled { opacity: 0.4; color: var(--muted); cursor: not-allowed; }
-
-/* A reading phase's heading over its goals: a disclosure row. */
-.phase-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  inline-size: 100%;
-  min-block-size: 3rem;
-  padding: 0.5rem 0.25rem;
-  text-align: start;
-  color: var(--foreground);
-}
-.phase-head > svg { flex: none; inline-size: 1.25rem; block-size: 1.25rem; fill: var(--muted); }
-.phase-head__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; }
-.phase-head__title { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; }
-.phase-head__now {
-  padding: 0.0625rem 0.4375rem;
-  border-radius: var(--r-pill);
-  background: var(--accent);
-  color: var(--c-white);
-  font-size: 0.6875rem;
-  font-weight: 600;
-}
-.phase-head__sub { font-size: 0.8125rem; color: var(--muted); }
-.phase-head__count { font-size: 0.875rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.phase-head[aria-expanded="true"] { border-block-end: 0.5px solid var(--separator); }
-
 /* Rows of the goal's grouped details list: hairlines between them. */
 .step-list > div + div { border-top: 0.5px solid var(--separator); }
 
@@ -3951,37 +3874,8 @@ input.step-field--num::-webkit-inner-spin-button { -webkit-appearance: none; mar
 .session-row__amount { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
 .session-row__note { font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
 
-/* A count's bar under its name, with the minimum as a tick across it. */
-.step-row__label { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.375rem; }
-.step-bar { position: relative; display: block; block-size: 4px; border-radius: 999px; background: var(--progress-track, var(--default)); }
-.step-bar__fill { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; background: var(--accent); }
-.step-bar__min {
-  position: absolute;
-  inset-block: -3px;
-  inline-size: 2px;
-  margin-inline-start: -1px;
-  border-radius: 1px;
-  background: var(--foreground);
-  opacity: 0.55;
-}
-.step-bar__min.is-met { background: var(--accent); opacity: 1; }
-
-/* In Edit, the minimum on a line of its own under the figures. */
 .step-row--editing { flex-wrap: wrap; }
-.step-row__min { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; inline-size: 100%; font-size: 0.875rem; color: var(--muted); }
 
-/* "Minimum reached": a quiet capsule in the progress colour. */
-.min-badge {
-  display: inline-block;
-  margin: 0.25rem 0 0;
-  padding: 0.0625rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-.min-badge--row { margin: 0; }
 /* The name gives way so the figures stay on its line; only the minimum wraps. */
 .step-row--editing input.step-field--name { flex: 1 1 0; }
 
@@ -4008,24 +3902,12 @@ input.row-date:hover { border-color: transparent; }
   color: var(--muted);
 }
 .row-clear svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
-.goal-row__due { color: var(--accent); font-weight: 600; }
 
 /* A goal's description under its name: line breaks kept, a long one folded. */
 .goal-desc { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; margin-block-start: -0.5rem; }
 .goal-desc__text { margin: 0; font-size: 0.9375rem; line-height: 1.45; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
 .goal-desc__text.is-folded { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
 .goal-desc__more { color: var(--accent); font-size: 0.9375rem; font-weight: 600; }
-
-/* A phase's tracks against its plan: name and figures, and ahead/behind. */
-.pace-list { display: flex; flex-direction: column; margin: 0.75rem 0 0; padding: 0; list-style: none; }
-.pace-row { display: flex; align-items: center; gap: 0.625rem; padding-block: 0.5rem; }
-.pace-row + .pace-row { border-top: 0.5px solid var(--separator); }
-.pace-row__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; }
-.pace-row__name { font-size: 0.9375rem; font-weight: 600; }
-.pace-row__sub { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.pace-row__verdict { flex: none; font-size: 0.875rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
-.pace-row__verdict.is-ahead { color: var(--accent); }
-.pace-row__verdict.is-behind { color: var(--danger); }
 
 /* A card's description: its first two lines, muted, under the title. */
 .board-card__excerpt {
@@ -4052,15 +3934,9 @@ input.row-date:hover { border-color: transparent; }
   color: var(--muted);
 }
 
-/* A book's track against its phase's plan, in the book's row. */
-
-/* A phase's book lifted while reordering: on the card's own surface, so
-   the rows it passes over don't show through it. */
-.rd-phase__tracks .rd-row--dragging { background: var(--pane-bg); }
-
 /* A goal's checklist: a tick, then the name, which opens the video or talk
    when it has a link. Ticked entries step back to the muted text colour. */
-.checklist__count { margin-inline-start: 0.375rem; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .item-row { gap: 0.875rem; padding-inline-start: 0; }
 .item-row .check { margin-inline: -0.625rem -0.25rem; }
 .item-row__name { flex: 1 1 auto; min-inline-size: 0; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; color: var(--foreground); }
@@ -4081,23 +3957,7 @@ a.item-row__link { display: flex; align-items: center; gap: 0.75rem; text-decora
 
 /* A part counted by its checklist: the whole row shows or hides the list,
    whose entries sit in under it. */
-.part-row { padding-block: 0; }
-.part-row__open {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  inline-size: 100%;
-  min-block-size: 3.25rem;
-  padding-block: 0.375rem;
-  text-align: start;
-  color: inherit;
-}
-.part-row__count { flex: none; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
-.part-row__chevron { flex: none; inline-size: 1.25rem; block-size: 1.25rem; fill: currentColor; color: var(--muted); transition: transform var(--duration-fast-02) var(--easing-standard-productive); }
-.part-row__chevron.is-open { transform: rotate(180deg); }
-@media (prefers-reduced-motion: reduce) {
-  .part-row__chevron { transition: none; }
-}
+
 .item-row--nested { padding-inline-start: 1.5rem; }
 li.item-row--nested .step-add { padding-inline-start: 1.5rem; }
 
@@ -4223,7 +4083,7 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 }
 .path__head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .path__title { flex: 1 1 auto; min-inline-size: 0; font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.path__pct { font-size: 0.9375rem; color: var(--muted); }
+
 .path__chev { flex: none; inline-size: 18px; block-size: 18px; fill: var(--accent); transition: transform 0.2s ease; }
 .path__chev.is-open { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .path__chev { transition: none; } }
@@ -4267,7 +4127,6 @@ textarea.inline-title:hover { background: color-mix(in srgb, var(--foreground) 6
 .task-row__text { display: flex; flex: 1 1 auto; min-inline-size: 0; flex-direction: column; gap: 0.125rem; }
 .task-row__text .task-row__title { flex: none; }
 .task-row__sub { display: flex; align-items: center; gap: 0.3rem; font-size: 13px; color: var(--muted); }
-
 
 .value-rows { list-style: none; margin: -0.25rem 0; padding: 0; }
 .value-rows li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-block-size: 2.75rem; font-size: 1rem; }
@@ -4407,10 +4266,8 @@ svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
 .rd-target,
 .rd-flag,
 .rd-later,
-.min-badge,
 .log-kind,
 .task-row__group,
-.phase-head__now,
 .cfg-block__mode,
 .book-suggest__tag { border-radius: var(--r-small); }
 .segmented__item.is-on { box-shadow: none; }
@@ -4450,8 +4307,7 @@ svg.delete-glyph, .icon-btn svg.delete-glyph { fill: var(--ios-red); }
 .dark .sheet .group-list,
 .dark .dialog .group-list,
 .dark .dialog .book-progress,
-.dark .dialog .next-item,
-.dark .dialog .phase-card { background: var(--surface-secondary); }
+.dark .dialog .next-item { background: var(--surface-secondary); }
 .light .dialog .group-list,
 .light .dialog .book-progress,
 .light .dialog .next-item { background: var(--background); }
@@ -4569,24 +4425,6 @@ input.todo-add__input::placeholder { color: var(--field-placeholder); }
 .group-list .insert-row { padding-inline: 0.75rem; }
 .group-list > li > .insert-row { border-block-start: 0; }
 .group-list > li + li { border-block-start: 1px solid var(--separator); }
-
-/* A reading phase. */
-.phase-card { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; border-radius: var(--r-card); background: var(--surface); }
-.phase-card__head { display: flex; align-items: center; gap: 0.5rem; }
-.phase-card__name { margin: 0; font-size: 1.375rem; font-weight: 600; }
-.phase-card__now { padding: 0.125rem 0.5rem; border-radius: var(--r-small); background: var(--accent-soft); color: var(--accent-text); font-size: 0.8125rem; font-weight: 600; }
-.phase-card__sub { margin: 0; font-size: 0.875rem; color: var(--muted); }
-.phase-bars { display: grid; grid-template-columns: 3rem 1fr 2.5rem; align-items: center; gap: 0.5rem 0.625rem; font-size: 0.8125rem; color: var(--muted); }
-.phase-bars > span:nth-child(3n) { text-align: end; color: var(--foreground); }
-.phase-bars__track { display: block; block-size: 0.5rem; border-radius: 4px; background: var(--accent-track); overflow: hidden; }
-.phase-bars__fill { display: block; block-size: 100%; border-radius: inherit; background: var(--area-reading); }
-.phase-bars__fill.is-time { background: var(--faint); }
-.phase-card__verdict { margin: 0; padding: 0.625rem 0.75rem; border-radius: var(--r-control); font-size: 0.9375rem; line-height: 1.35; }
-.phase-card__verdict.is-behind { background: var(--warning-soft); color: var(--warning); }
-.phase-card__verdict.is-ahead, .phase-card__verdict.is-done { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
-.phase-card .group-list { background: var(--surface-secondary); }
-.light .phase-card .group-list { background: var(--background); }
-.phase-card .rd-phase__book { padding-inline: 0.75rem; min-block-size: 2.75rem; }
 
 /* A goal's next entry, on top of its sheet. */
 .next-item { display: flex; flex-direction: column; gap: 0.375rem; padding: 1rem; border-radius: var(--r-card); background: var(--surface); }
@@ -4797,8 +4635,7 @@ body { font-feature-settings: "ss01" 0; }
 
 /* Selected chips and segments are neutral (white on dark, black on light). */
 .cat-chips .cat-chip[aria-checked="true"],
-.cat-chip.meal-chip[aria-checked="true"],
-.phase-chip[aria-pressed="true"] { background: var(--selected-bg); color: var(--selected-fg); }
+.cat-chip.meal-chip[aria-checked="true"] { background: var(--selected-bg); color: var(--selected-fg); }
 .cat-chip.meal-chip[aria-checked="true"] .cat-chip__dot { background: var(--selected-fg); }
 .segmented { border-radius: var(--r-pill); padding: 3px; }
 .segmented__item { border-radius: var(--r-pill); }
@@ -4925,13 +4762,6 @@ body { font-feature-settings: "ss01" 0; }
 .weight-now__delta.is-up { color: var(--warning); }
 .live-workout__head { margin-block: -0.75rem -0.25rem; }
 
-/* A phase's books, below its card: a group per track, its pace at the end of
-   the label. */
-.phase-books { margin-block-start: -0.75rem; }
-.phase-books__pace { margin-inline-start: auto; letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--muted); }
-.phase-books__pace.is-ahead { color: var(--success); }
-.phase-books__pace.is-behind { color: var(--warning); }
-
 /* ---- The board, neutral ---- */
 .board-col { background: var(--surface-secondary); }
 .dark .board-col { background: var(--surface); box-shadow: var(--pane-hairline-shadow); }
@@ -4976,10 +4806,6 @@ body { font-feature-settings: "ss01" 0; }
 .dark .seg__btn[aria-pressed="true"] { background: var(--surface-tertiary); }
 .board-switch .seg { display: flex; inline-size: 100%; }
 .board-switch .seg__btn { flex: 1; }
-
-/* A phase's books as rows in their own lists. */
-.phase-books .rd-phase__book { min-block-size: 3rem; padding: 0.5rem 0.75rem 0.5rem 1rem; font-size: 1rem; border-bottom: 0; }
-.phase-books .group-list > li + li .rd-phase__book { border-block-start: 1px solid var(--separator); }
 
 /* ============================================================
    One system.
@@ -5075,7 +4901,6 @@ body { font-feature-settings: "ss01" 0; }
   color: var(--muted);
 }
 .rd-flag,
-.phase-card__now,
 .weight-now__badge {
   display: inline-flex;
   align-items: center;
@@ -5089,9 +4914,8 @@ body { font-feature-settings: "ss01" 0; }
   font-weight: 500;
 }
 .rd-flag::before,
-.phase-card__now::before,
 .weight-now__badge::before { content: ""; inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--rd-f, var(--faint)); }
-.phase-card__now::before { background: var(--accent); }
+
 .weight-now__badge.is-ahead::before, .weight-now__badge.is-on-track::before { background: var(--success); }
 .weight-now__badge.is-close::before { background: var(--warning); }
 .weight-now__badge.is-behind::before { background: var(--danger); }
@@ -5188,15 +5012,6 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .rd-status--active::before { background: var(--accent); }
 .rd-status--paused::before { background: var(--warning); }
 .rd-status--finished::before { background: var(--success); }
-
-/* Phases: Reorder on the first track label; the verdict is quiet unless the
-   phase is behind. */
-.phase-books__reorder { margin-inline-start: 0.5rem; text-transform: none; letter-spacing: 0; }
-.phase-books__pace + .phase-books__reorder { margin-inline-start: 0.5rem; }
-.group-head .phase-books__reorder:only-of-type { margin-inline-start: auto; }
-.phase-books__hint { margin: 0 0 0.5rem; padding-inline: 0.25rem; font-size: 0.8125rem; color: var(--muted); }
-.phase-card__verdict.is-ahead,
-.phase-card__verdict.is-done { padding: 0; background: none; color: var(--success); }
 
 /* The routines list never scrolls sideways: the ticks' pulled-out hit area
    stays inside it. */
@@ -5598,8 +5413,6 @@ html[data-scheme="signal"] .momentum__next-name { color: var(--c-white); font-we
 .week-rings li { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; }
 .week-rings__label { font-size: 0.6875rem; font-weight: 500; color: color-mix(in srgb, var(--c-white) 62%, transparent); }
 .week-rings li.is-today .week-rings__label { font-weight: 700; color: var(--c-blue-200); }
-
-
 
 /* No plan yet; a day off. */
 .plan-invite { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.125rem; color: var(--foreground); }
@@ -6148,7 +5961,6 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
 @media (min-width: 66rem) { .toast { inset-block-end: 1.5rem; } }
 
-
 /* Pages: which book. */
 .quick__books { margin: 0; padding: 0.25rem; list-style: none; }
 .quick__books li + li { border-block-start: 1px solid var(--separator); }
@@ -6282,7 +6094,6 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .macro-field__main input,
 .quick .macro-field__main input { flex: 1 1 auto; inline-size: 100%; min-inline-size: 0; min-block-size: 0; block-size: auto; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; color: var(--foreground); font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; caret-color: var(--accent); outline: none; }
 .macro-field__main input::placeholder { color: color-mix(in srgb, var(--foreground) 30%, transparent); font-weight: 500; }
-
 
 /* Nutrition's one card: kcal, protein and fibre side by side, the meal, one button. */
 .meal-log { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; }
@@ -6596,3 +6407,36 @@ html, body { overflow-x: clip; }
 .macro-field:focus-within, .settings-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--foreground); }
 .summary-card .macro-field { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 45%, transparent); }
 .summary-card .macro-field:focus-within { box-shadow: inset 0 0 0 1.5px var(--foreground); }
+
+/* A goal's headline is a sentence (when it was last worked on), not a figure. */
+.goal-detail__pct.goal-detail__pct--line { font-size: 1.25rem; font-weight: 600; line-height: 1.25; }
+
+/* ---- Habits: Today's card as a four-week chain, and the habit rows ---- */
+.habit-card { padding-block-end: 0; }
+.momentum__count .habit-card__rest { font-size: 0.9375rem; line-height: 1.4; }
+.habit-chain { display: flex; flex-direction: column; gap: 0.625rem; }
+.habit-chain__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.25rem; }
+.habit-chain__head { font-size: 0.6875rem; font-weight: 600; text-align: center; color: color-mix(in srgb, var(--hero-fg) 55%, transparent); }
+.habit-chain__day { block-size: 1.125rem; border-radius: 5px; background: color-mix(in srgb, var(--hero-fg) 9%, transparent); }
+.habit-chain__day.is-all { background: var(--hero-fg); }
+.habit-chain__day.is-some { background: color-mix(in srgb, var(--hero-fg) 38%, transparent); }
+.habit-chain__day.is-rest { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hero-fg) 14%, transparent); }
+.habit-chain__day.is-future { background: transparent; }
+.habit-chain__day.is-today { box-shadow: 0 0 0 1.5px var(--hero-bg), 0 0 0 3px var(--accent); }
+.habit-chain__key { display: flex; flex-wrap: wrap; gap: 0.25rem 0.875rem; font-size: 0.75rem; color: color-mix(in srgb, var(--hero-fg) 60%, transparent); }
+.habit-chain__key > span { display: inline-flex; align-items: center; gap: 0.375rem; }
+.habit-chain__key i { inline-size: 0.625rem; block-size: 0.625rem; border-radius: 3px; background: color-mix(in srgb, var(--hero-fg) 9%, transparent); }
+.habit-chain__key i.is-all { background: var(--hero-fg); }
+.habit-chain__key i.is-some { background: color-mix(in srgb, var(--hero-fg) 38%, transparent); }
+.habit-chain__key i.is-rest { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hero-fg) 14%, transparent); }
+.habit-card__figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 1rem -1.25rem 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--hero-fg) 8%, transparent);
+}
+.habit-card__figure { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.75rem 1.25rem; }
+.habit-card__figure + .habit-card__figure { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--hero-fg) 8%, transparent); }
+.habit-card__value { font-size: 1.25rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.habit-card__label { font-size: 0.75rem; color: color-mix(in srgb, var(--hero-fg) 60%, transparent); }
+.plan-row__sub { overflow: hidden; font-size: 0.8125rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }

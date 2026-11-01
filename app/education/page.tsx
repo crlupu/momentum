@@ -9,7 +9,7 @@ import { LearningHub } from "@/components/LearningHub";
 import { ChevronLeft } from "@/components/icons";
 
 /**
- * Education: books and goals. A track, phases or history is the same page with
+ * Education: books and goals. A track or history is the same page with
  * where you are in the address (?track=…, ?view=…), so the back button and
  * the "‹ Education" link both return to the hub.
  */
@@ -27,11 +27,9 @@ function Education() {
     ? trackId === "none"
       ? "No track"
       : s?.readingTracks.find((t) => t.id === trackId)?.name
-    : view === "phases"
-      ? "Phases"
-      : view === "history"
-        ? "History"
-        : undefined;
+    : view === "history"
+      ? "History"
+      : undefined;
 
   return (
     <SectionPage

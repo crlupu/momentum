@@ -230,8 +230,7 @@ export function OpenBook({
                 <span className="rd-derived is-counted">{preview}</span>
               ) : (
                 <>
-                  {/* The page, not the pace: how far ahead or behind the
-                      plan a track is belongs to Phases. */}
+                  {/* The page, not the pace. */}
                   <span className="font-mono-n shrink-0">
                     {book.pages > 0 ? `p. ${book.read} of ${book.pages}` : `p. ${book.read}`}
                   </span>

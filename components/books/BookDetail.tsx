@@ -14,7 +14,6 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
   const s = tracker.state!;
   const flow = useFlow();
   const track = R.trackOf(s, book.trackId);
-  const phase = s.readingPhases.find((p) => p.id === book.phaseId);
   const pace = R.bookPace(s, book);
   const prereqs = R.unmetPrerequisites(s, book);
   const endDate = book.status === "finished" ? book.doneDate : book.droppedDate;
@@ -47,7 +46,6 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
           <div className="flex flex-wrap items-center gap-1.5">
             <StatusBadge status={book.status} />
             <TrackChip track={track} />
-            {phase && <span className="cat-chip">{phase.name}</span>}
           </div>
         </div>
       </div>

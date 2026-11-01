@@ -21,12 +21,12 @@ section's id, title and path, and for the tabs (`NAV`).
 
 | Section | Path | What it holds | Main components |
 | --- | --- | --- | --- |
-| Today | `/` | The day's momentum ring and figures, recurring routines and to-dos. Routines keep themselves: every active goal, book being read and workout comes round daily, weekly or monthly (set on the goal, book or workout; Off leaves it out) and is done for its period as soon as there's activity on it (a goal session, pages read, the workout finished), or when ticked by hand. Logic in `lib/routines.ts`. `/tasks` forwards here | `MomentumCard`, `RecurringList`, `TodoList` |
-| Learning | `/education` | Courses and subjects, each a goal with a count or a checklist; goals don't hold other goals. Goals sit in paths: sections you add yourself, each with a bar over every item of its goals, folded and opened in place. A goal in no path is in General, the default. In Library, New Path makes one, and a path's Edit opens it to rename, recolour, move or delete it, reorder or delete its goals and add one; a goal's Path row moves it to another path (`lib/paths.ts`). Active only shows. Goals can be imported from JSON or Markdown (`lib/goalImport.ts`). `/learning` and `/goals` forward here | `LearningHub`, `PathsView`, `GoalDetail`, `GoalImport` |
+| Today | `/` | Habits first. With a day plan, its steps are the day's habits: the card counts today's kept, shows the last four weeks as a chain (all kept, some, none, rest days apart) and two runs (plan days in a row with a habit kept, and the longest run one habit has going). Below, each habit with what it is today and its run, what's left first, then Left from earlier and to-dos. Runs and the chain are worked out from what the plan records (`lib/habits.ts`); rest days never break a run. Without a plan, the day's routines as before | `PlanCard`, `PlanTimeline`, `RecurringList`, `TodoList` |
+| Learning | `/education` | Courses and subjects, each a goal kept up as a habit: when it was last worked on, how often lately, and an optional checklist of what's next. No counts, percentages or deadlines. Goals sit in paths: sections you add yourself, folded and opened in place. A goal in no path is in General, the default. In Library, New Path makes one, and a path's Edit opens it to rename, recolour, move or delete it, reorder or delete its goals and add one; a goal's Path row moves it to another path (`lib/paths.ts`). Active only shows. Goals can be imported from JSON or Markdown (`lib/goalImport.ts`). `/learning` and `/goals` forward here | `LearningHub`, `PathsView`, `GoalDetail`, `GoalImport` |
 | Projects | `/projects` | Personal projects, each a board of cards in To do / Doing / Done, dragged between columns. Each project has its own tags for its cards. `?p=<id>` opens a board | `ProjectsView`, `ProjectBoard`, `CardSheet`, `ProjectForm`, `TagPicker`; logic in `lib/projects.ts` |
 | Health: Fitness | `/fitness` | A summary of weight and training, each opening its own page (`?view=weight`: chart, weekly medians, plan; `?view=training`: a chart per workout, plus Duration and Cardio). Workouts built from blocks of exercises, each with an optional recommended sets × reps range shown as a chip while working out, a live workout player (timed circuits included), weight log with weekly medians (Monday–Sunday), a weight-loss plan (checkpoints of a weight by a date, the last the target, each judged by its week's median; `lib/weight.ts`), cardio log | `WorkoutsView`, `CircuitPlayer`, `WeightTracker`, `WeightPlan`, `WorkoutVolumeChart` |
 | Health: Nutrition | `/nutrition` | Calories with meal tags and a weekly budget, protein and fibre against targets | `CaloriesTracker`, `MacroTracker` |
-| Books | `/books` | Reading tracks: queues, phases, daily logging, notes, pace and history | `Books`, `components/books/*` |
+| Books | `/books` | Reading tracks: queues, daily logging, notes, pace and history | `Books`, `components/books/*` |
 | Progress | `/progress` | Completion charts and a month calendar | `Charts` |
 | Log | `/log` | History of completed tasks, workout sessions and cardio | `CompletionLog` |
 | Settings | `/configuration` | Categories, workouts (with their repeat), meal tags, calorie budget, macro targets | `Forms`, `ConfigCard` |
@@ -46,17 +46,14 @@ The logic lives in `lib/reading.ts` (pure functions); the UI is in `components/b
   skimmed, and moves back, aren't) or by pages read. A book's `read` is `base` plus all of its
   sessions, so editing or deleting a session recalculates it. `base` holds progress no
   session accounts for: reading from before sessions existed, corrections, skims.
-- **Phases** group books across tracks into blocks of the plan. A phase shows its
-  completion and a projected end date based on the last 14 days' pace, and is flagged
-  on track, at risk or behind.
 - **Views:** Today (open books, targets, quick log, streaks, stall nudges), Tracks
-  (queues), Phases, Notes (searchable key ideas and quotes) and History (finished and
+  (queues), Notes (searchable key ideas and quotes) and History (finished and
   dropped books, charts, year in review). A book's own page has its sessions,
   notes and quotes, and status timeline.
 - A track counts toward Today's momentum ring once it has an open book and a target,
   and it is done when today's pages reach the target.
 - **Import plan** reads a reading plan written in Markdown (`lib/planImport.ts`): a table of
-  tracks, `## Phase … (Q4 2026)` headings with a `**Track**` line above each numbered list,
+  tracks, `##` section headings with a `**Track**` line above each numbered list,
   a `## Slow lane (continuous)` list and a `## Dropped` list. Importing again updates what's
   there instead of duplicating it. `docs/reading-plan-2026-2028.md` is an example.
 - Covers, missing authors and missing page counts are looked up from Open Library (`lib/covers.ts`),

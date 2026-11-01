@@ -11,7 +11,6 @@ import type { WeightPlan } from "./weight";
 import type {
   BookStatus,
   BookQuote,
-  ReadingPhase,
   ReadingSession,
   ReadingTrack,
   StatusChange,
@@ -77,12 +76,6 @@ export type Goal = {
    * app. Absent on goals saved before statuses: see goalStatus.
    */
   status?: GoalStatus;
-  /** A date it's aimed at (an exam), YYYY-MM-DD. Optional. */
-  targetDate?: string;
-  /** For a goal's own count: enough to count as covered, at most its target. */
-  minimum?: number;
-  /** Up to two reading phases it belongs to: the same phases books use. */
-  phaseIds?: string[];
   doneDate?: string | null;
   /**
    * When it was ticked, as epoch milliseconds. The date alone puts everything
@@ -138,7 +131,7 @@ export function withItemCount(g: Goal): Goal {
 }
 
 /** A goal's or a part's count, from its checklist when it has one. */
-function countItems<T extends { items?: GoalItem[]; current?: number; target?: number; minimum?: number }>(x: T): T {
+function countItems<T extends { items?: GoalItem[]; current?: number; target?: number }>(x: T): T {
   if (!x.items?.length) return x;
   const target = x.items.length;
   const current = x.items.filter((i) => i.done).length;
@@ -146,7 +139,6 @@ function countItems<T extends { items?: GoalItem[]; current?: number; target?: n
     ...x,
     target,
     current,
-    ...(x.minimum != null && x.minimum > target ? { minimum: undefined } : {}),
   };
 }
 
@@ -170,8 +162,6 @@ export type Part = {
   title: string;
   current: number;
   target: number;
-  /** Enough to count as covered, at most the target: Projects 2 of 4. Optional. */
-  minimum?: number;
   /**
    * A checklist of its own: the lectures of "Lectures", the projects of
    * "Projects". A part with one counts it, as a goal does (see withItemCount).
@@ -296,7 +286,6 @@ export type Book = {
    * session, which is why editing a session can move it.
    */
   base: number;
-  phaseId?: string;
   edition?: string;
   language?: string;
   tags?: string[];
@@ -654,7 +643,6 @@ export type TrackerState = {
   cardio: CardioEntry[];
   books: Book[];
   readingTracks: ReadingTrack[];
-  readingPhases: ReadingPhase[];
   readingSessions: ReadingSession[];
   bookQuotes: BookQuote[];
   calories: CalorieEntry[];
@@ -906,7 +894,6 @@ export const DEFAULT_STATE: TrackerState = {
   cardio: [],
   books: [],
   readingTracks: DEFAULT_TRACKS,
-  readingPhases: [],
   readingSessions: [],
   bookQuotes: [],
   calories: [],
@@ -995,17 +982,6 @@ export function recurringUnits(
   return units;
 }
 
-/** True when there is a percentage to show: the goal has a count or parts. */
-export function goalHasProgress(g: Goal): boolean {
-  return !!g.parts?.length || (typeof g.target === "number" && g.target > 0);
-}
-
-/** A part's percentage, 0–100. */
-export function partPct(p: Part): number {
-  if (!p.target || p.target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.floor((p.current / p.target) * 100)));
-}
-
 /** True once some of the goal is done: its count, or any of its parts. */
 export function goalStarted(g: Goal): boolean {
   if (g.done) return true;
@@ -1026,19 +1002,6 @@ export function goalStatus(g: Goal): GoalStatus {
   return goalStarted(g) ? "active" : "queued";
 }
 
-/**
- * Whether every count that has a minimum has reached it: true or false, or
- * null when none has one (nothing to say).
- */
-export function minimumReached(g: Goal): boolean | null {
-  const counts = g.parts?.length
-    ? g.parts.map((p) => ({ current: p.current, minimum: p.minimum }))
-    : [{ current: g.current ?? 0, minimum: g.minimum }];
-  const withMin = counts.filter((c) => c.minimum != null);
-  if (!withMin.length) return null;
-  return withMin.every((c) => c.current >= c.minimum!);
-}
-
 /** Status order in a topic: active, then queued, then done, then dropped. */
 export const STATUS_RANK: Record<GoalStatus, number> = { active: 0, queued: 1, done: 2, dropped: 3 };
 
@@ -1057,36 +1020,14 @@ export function stepsLine(steps: Goal[]): string {
   return countLine(steps.length, steps.filter((g) => g.done).length, steps.filter(goalStarted).length, "goal");
 }
 
-/** How far a goal is, in words: "2 of 4 parts done", "3 of 12", or null. */
-export function goalSummary(g: Goal): string | null {
-  if (g.parts?.length) {
-    return countLine(
-      g.parts.length,
-      g.parts.filter((p) => p.current >= p.target).length,
-      g.parts.filter((p) => p.current > 0).length,
-      "part"
-    );
-  }
-  if (g.items?.length) {
-    const done = g.items.filter((i) => i.done).length;
-    return countLine(g.items.length, done, done, "item");
-  }
-  if (g.target) return `${(g.current ?? 0).toLocaleString()} of ${g.target.toLocaleString()}`;
-  return null;
-}
-
 /**
- * A goal's percentage: its count over its total. A goal without a count has
- * no percentage; it is simply done or not.
- *
- * Floored, so the figure never claims more progress than has actually happened
- * and only reaches 100% when everything really is finished.
+ * What's next on a goal, in words: "Next: Implementing DELETE", the first
+ * unticked entry of its checklist. Null when there is no checklist or it's
+ * all ticked: a goal is a habit, not a total to reach.
  */
-export function goalPct(g: Goal): number {
-  // Each part weighs the same, so thirty readings don't drown out one project.
-  if (g.parts?.length) return Math.floor(g.parts.reduce((sum, p) => sum + partPct(p), 0) / g.parts.length);
-  if (!g.target || g.target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.floor(((g.current ?? 0) / g.target) * 100)));
+export function goalSummary(g: Goal): string | null {
+  const next = [...(g.items ?? []), ...(g.parts ?? []).flatMap((p) => p.items ?? [])].find((i) => !i.done);
+  return next ? `Next: ${next.title}` : null;
 }
 
 /**
@@ -1117,45 +1058,12 @@ export function pathGoals(p: Path, goals: Goal[]): Goal[] {
     .filter((g): g is Goal => !!g);
 }
 
-/**
- * A path's percentage: the mean of its goals' own percentages.
- *
- * Each goal counts once whatever its count, so a goal of 600 pages does not
- * drown out one of 4 modules — on a path, a goal
- * is a step, and steps are equal. A goal marked done counts as complete even
- * if it carries no figures, because ticking it is the whole way some goals are
- * finished.
- */
-export function pathPct(p: Path, goals: Goal[]): number {
-  const list = pathGoals(p, goals);
-  if (list.length === 0) return 0;
-  const total = list.reduce((sum, g) => sum + (g.done ? 100 : goalPct(g)), 0);
-  return Math.max(0, Math.min(100, Math.floor(total / list.length)));
-}
-
 /** A real calendar date as YYYY-MM-DD. */
 export function isDateKey(v: unknown): v is string {
   if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
   const [y, m, d] = v.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d));
   return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
-}
-
-/** "in 23 days", "today" or "5 days ago", from today to a YYYY-MM-DD date. */
-export function countdown(date: string, today: string = dateKey()): string {
-  const utc = (k: string) => {
-    const [y, m, d] = k.split("-").map(Number);
-    return Date.UTC(y, m - 1, d);
-  };
-  const n = Math.round((utc(date) - utc(today)) / 86_400_000);
-  if (n === 0) return "today";
-  const days = `${Math.abs(n)} day${Math.abs(n) === 1 ? "" : "s"}`;
-  return n > 0 ? `in ${days}` : `${days} ago`;
-}
-
-/** A minimum is a number from 0 up to the target. */
-export function validMinimum(m: unknown, target: number | undefined): m is number {
-  return typeof m === "number" && Number.isFinite(m) && m > 0 && (!target || m <= target);
 }
 
 function migrateParts(raw: unknown): Part[] | undefined {
@@ -1167,7 +1075,6 @@ function migrateParts(raw: unknown): Part[] | undefined {
       title: (p.title as string).trim(),
       target: p.target as number,
       current: Math.min(p.target as number, Math.max(0, typeof p.current === "number" ? p.current : 0)),
-      ...(validMinimum(p.minimum, p.target as number) ? { minimum: p.minimum as number } : {}),
       ...(migrateItems(p.items) ? { items: migrateItems(p.items) } : {}),
     }));
   return parts.length ? parts : undefined;
@@ -1250,9 +1157,6 @@ export function migrate(raw: unknown): TrackerState {
     note: typeof g.note === "string" && g.note.trim() ? g.note.trim() : undefined,
     parts: migrateParts(g.parts),
     items: migrateParts(g.parts) ? undefined : migrateItems(g.items),
-    targetDate: isDateKey(g.targetDate) ? g.targetDate : undefined,
-    minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
-    // Goals sit in paths, not reading phases: any phases saved on one are dropped.
     repeat: ["daily", "weekly", "monthly", "off"].includes(g.repeat as string) ? (g.repeat as Goal["repeat"]) : undefined,
     routineTicks: Array.isArray(g.routineTicks)
       ? (g.routineTicks as unknown[]).filter(isDateKey) as string[]
@@ -1383,7 +1287,7 @@ export function migrate(raw: unknown): TrackerState {
 /**
  * Goals hold no other goals: a goal with parts becomes one goal per part,
  * "Parent, Part", each with the part's count and checklist and the parent's
- * category, status, phases and description. The ids are made from the
+ * category, status and description. The ids are made from the
  * parent's and the part's, so every device makes the same ones. Sessions and
  * to-dos that counted a part follow it to its goal.
  *
@@ -1411,7 +1315,6 @@ function flattenLearning(s: TrackerState): TrackerState {
           catId: g.catId,
           current: part.current,
           target: part.target,
-          ...(part.minimum ? { minimum: part.minimum } : {}),
           ...(part.items?.length ? { items: part.items } : {}),
           status,
           done: status === "done",
@@ -1419,7 +1322,6 @@ function flattenLearning(s: TrackerState): TrackerState {
           doneAt: status === "done" ? g.doneAt ?? null : null,
           ...(g.note ? { note: g.note } : {}),
           ...(g.link ? { link: g.link } : {}),
-          ...(g.phaseIds ? { phaseIds: g.phaseIds } : {}),
           ...(g.repeat ? { repeat: g.repeat } : {}),
         })
       );

@@ -9,7 +9,7 @@ import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
 import { PathsView } from "./PathsView";
 import { NextSteps } from "./NextSteps";
-import { BookOpen, CalendarDays, ChevronRight, Clock, School } from "./icons";
+import { BookOpen, ChevronRight, Clock, School, Upload } from "./icons";
 import { EmptyState } from "./EmptyState";
 import { SummaryCard } from "./SummaryCard";
 import { useShell } from "./AppShell";
@@ -20,7 +20,6 @@ import { useCoverLookup } from "./books/Cover";
 import { Segmented } from "./books/bits";
 import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackPageView } from "./books/TracksView";
-import { PhasesView } from "./books/PhasesView";
 import { HistoryView } from "./books/HistoryView";
 import { Tracker, dateKey, goalStatus, type Goal } from "@/lib/tracker";
 import * as R from "@/lib/reading";
@@ -32,9 +31,9 @@ const TAB_KEY = "momentum:learning-tab";
  * Learning: books and goals in one place, without a second row of tabs.
  *
  * One switch. Now is what's under way: the books open, with their quick page
- * update, and the goals with some of their count done. Library is what to
+ * update, and the goals active. Library is what to
  * pick from: the reading tracks, each a row that opens its own page, and the
- * goals not yet started. Anything deeper (a track's queue, phases, history)
+ * goals not yet started. Anything deeper (a track's queue, history)
  * is a page you go into, with a way back, never a tab within a tab.
  */
 export function LearningHub({
@@ -46,7 +45,7 @@ export function LearningHub({
   tracker: Tracker;
   /** A track's own page: its id, or "none" for the books in no track. */
   trackId?: string | null;
-  /** The phases or history page. */
+  /** The library or history page. */
   view?: string | null;
   /** A goal with steps: its page. */
   groupId?: string | null;
@@ -58,8 +57,6 @@ export function LearningHub({
         <GroupRedirect />
       ) : trackId ? (
         <TrackPage tracker={tracker} trackId={trackId} />
-      ) : view === "phases" ? (
-        <PhasesView tracker={tracker} />
       ) : view === "history" ? (
         <HistoryPage tracker={tracker} />
       ) : (
@@ -162,7 +159,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
                 onOpen={setOpenId}
                 empty={
                   <EmptyState icon={<School />} title="No goals active">
-                    Set a goal to Active and its progress ring appears here.
+                    Set a goal to Active and it shows here.
                   </EmptyState>
                 }
               />
@@ -223,12 +220,12 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
             )}
           </section>
 
-          {/* Places to look back and plan ahead, apart from the tracks
+          {/* Bringing books in and looking back, apart from the tracks
               themselves. */}
           <section>
-          <h3 className="group-head">Plan and look back</h3>
+          <h3 className="group-head">More</h3>
           <ul className="card hub-list">
-            <HubRow icon={<CalendarDays aria-hidden />} title="Phases" sub={phasesLine(s)} onPress={() => go("view=phases")} />
+            <HubRow icon={<Upload aria-hidden />} title="Import a reading plan" sub="Tracks and books, from text" onPress={() => flow.open({ kind: "import" })} />
             <HubRow icon={<Clock aria-hidden />} title="History" sub="Finished books and goals" onPress={() => go("view=history")} />
           </ul>
           </section>
@@ -263,13 +260,6 @@ function DroppedToggle({ shown, count, onToggle }: { shown: boolean; count: numb
       {shown ? "Hide dropped" : `Show dropped (${count})`}
     </button>
   );
-}
-
-function phasesLine(s: NonNullable<Tracker["state"]>): string {
-  if (!s.readingPhases.length) return "Group books into stretches of time";
-  const today = new Date().toISOString().slice(0, 10);
-  const now = s.readingPhases.find((p) => p.start <= today && today <= p.end);
-  return now ? `${now.name}, now` : `${s.readingPhases.length} phase${s.readingPhases.length === 1 ? "" : "s"}`;
 }
 
 /** A row that opens a page: what it is, a line about it, and a chevron. */

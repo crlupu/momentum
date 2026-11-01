@@ -14,7 +14,6 @@ import {
   ArrowDown,
   BarChart3,
   BookOpen,
-  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -53,7 +52,7 @@ type PageId = "account" | "today" | "education" | "projects" | "health" | "appea
 
 const PAGES: { id: PageId; title: string; sub: string; icon: ReactNode; group: "areas" | "app" }[] = [
   { id: "today", title: "Today", sub: "Categories", icon: <Today />, group: "areas" },
-  { id: "education", title: "Education", sub: "Reading tracks, paths, phases", icon: <School />, group: "areas" },
+  { id: "education", title: "Education", sub: "Reading tracks, paths", icon: <School />, group: "areas" },
   { id: "projects", title: "Projects", sub: "Projects, finished projects", icon: <Kanban />, group: "areas" },
   { id: "health", title: "Health", sub: "Workouts, weight plan, nutrition targets", icon: <Health />, group: "areas" },
   { id: "appearance", title: "Appearance", sub: "Style, light or dark", icon: <Moon />, group: "app" },
@@ -65,7 +64,6 @@ const INDEX: { label: string; words: string; page: PageId | string }[] = [
   { label: "Categories", words: "colours tags routines", page: "today" },
   { label: "Reading tracks", words: "books pages a day track", page: "education" },
   { label: "Paths", words: "goals learning", page: "education" },
-  { label: "Phases", words: "quarter plan reading", page: "education" },
   { label: "Import a reading plan", words: "import books plan", page: "education" },
   { label: "Projects", words: "board cards tags", page: "projects" },
   { label: "Workouts", words: "exercises training gym", page: "health" },
@@ -231,11 +229,10 @@ function PageBody({ id, tracker }: { id: PageId; tracker: Tracker }) {
               <Row href="/education" icon={<Plus />} label="New track" sub="From Education › Library" quiet />
             </ul>
           </Group>
-          <Group title="Goals and plans">
+          <Group title="Goals and history">
             <ul className="group-list">
               <Row href="/education" icon={<School />} label="Paths" sub={s.paths.map((p) => p.title).join(", ") || "None yet"} value={String(s.paths.length)} />
-              <Row href="/education?view=phases" icon={<CalendarDays />} label="Phases" sub="Plan reading by quarter" />
-              <Row href="/education?view=phases" icon={<Upload />} label="Import a reading plan" sub="From text, on the Phases page" />
+              <Row href="/education?view=library" icon={<Upload />} label="Import a reading plan" sub="From text, in Education, Library" />
               <Row href="/education?view=history" icon={<Clock />} label="History" sub="Finished books and goals" />
             </ul>
           </Group>
@@ -345,7 +342,7 @@ function PageBody({ id, tracker }: { id: PageId; tracker: Tracker }) {
                   </span>
                 </button>
               </li>
-              <Row href="/education?view=phases" icon={<BookOpen />} label="Import a reading plan" />
+              <Row href="/education?view=library" icon={<BookOpen />} label="Import a reading plan" />
             </ul>
           </Group>
           <Group title="Account">

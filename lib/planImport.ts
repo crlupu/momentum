@@ -1,21 +1,20 @@
 /**
- * Reading plans written in Markdown, read into tracks, phases and books.
+ * Reading plans written in Markdown, read into tracks and books.
  *
  * The shape it understands is the one a plan is naturally written in:
  *
  *   | Track | Daily target | Slot |            a table of tracks
  *   | Technical | ~20 pages | 12:15 iPad block |
  *   Rule: one active book per track.         the open-book limit
- *   ## Phase 1 — Foundations (Q4 2026)       a phase, dated by quarter
- *   **Goal:** …                              what the phase is for
+ *   ## Foundations                           any heading: a new section
  *   **Technical**                            the track the list below is in
  *   1. Title — Author *(note)*               a book, in reading order
  *      - *Optional:* Title — Author          an optional extra after it
- *   ## Slow lane (continuous)                a track's own list, no phase
+ *   ## Slow lane (continuous)                a track's own list
  *   ## Dropped                               books given up on
  *   - Title — Author *(reason)*
  *
- * Importing is repeatable: tracks and phases are matched by name and books
+ * Importing is repeatable: tracks are matched by name and books
  * by title, so pasting an edited plan again updates what is there instead of
  * adding it twice, and a book's progress is never touched.
  */
@@ -29,14 +28,12 @@ export type PlanBook = {
   edition?: string;
   note?: string;
   track: string;
-  phase?: string;
   status: "queued" | "active" | "dropped";
   optional?: boolean;
 };
 
 export type Plan = {
   tracks: { name: string; dailyTarget?: number }[];
-  phases: { name: string; start: string; end: string; goal?: string }[];
   books: PlanBook[];
   wipLimit?: number;
   /** Lines that looked like books but couldn't be read as one. */
@@ -50,37 +47,12 @@ const plain = (s: string) => s.replace(/\*\*|__|`/g, "").replace(/^\*|\*$/g, "")
 
 const WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
 
-function quarterDates(q: number, y: number): [string, string] {
-  const start = new Date(y, (q - 1) * 3, 1);
-  const end = new Date(y, q * 3, 0);
-  return [dateKey(start), dateKey(end)];
-}
-
-/**
- * The dates in a phase heading's brackets: "Q4 2026", "H1 2027", "2027", or
- * two explicit dates. Null when there is nothing to go on.
- */
-function parseWhen(text: string): [string, string] | null {
-  let m = text.match(/\bQ([1-4])\s*(\d{4})\b/i);
-  if (m) return quarterDates(Number(m[1]), Number(m[2]));
-  m = text.match(/\bH([12])\s*(\d{4})\b/i);
-  if (m) {
-    const y = Number(m[2]);
-    return m[1] === "1" ? [`${y}-01-01`, `${y}-06-30`] : [`${y}-07-01`, `${y}-12-31`];
-  }
-  m = text.match(/(\d{4}-\d{2}-\d{2})\s*(?:–|—|-|to)\s*(\d{4}-\d{2}-\d{2})/);
-  if (m) return [m[1], m[2]];
-  m = text.match(/^\s*(\d{4})\s*$/);
-  if (m) return [`${m[1]}-01-01`, `${m[1]}-12-31`];
-  return null;
-}
-
 /**
  * One list line: "Title — Author *(note)*". The note in trailing italics is
  * kept as the book's note; "(2nd ed.)" in the title becomes its edition; a
  * note that starts "finish" or "in progress" means the book is open now.
  */
-function parseBookLine(raw: string): Omit<PlanBook, "track" | "phase"> | null {
+function parseBookLine(raw: string): Omit<PlanBook, "track"> | null {
   let text = raw.trim();
   let optional = false;
   const opt = text.match(/^\*?\s*optional\s*:?\s*\*?\s*:?\s*/i);
@@ -126,10 +98,9 @@ function parseBookLine(raw: string): Omit<PlanBook, "track" | "phase"> | null {
 }
 
 export function parsePlan(md: string): Plan {
-  const plan: Plan = { tracks: [], phases: [], books: [], skipped: [] };
+  const plan: Plan = { tracks: [], books: [], skipped: [] };
   const lines = md.split(/\r?\n/);
 
-  let phase: Plan["phases"][number] | null = null;
   let track: string | null = null;
   let dropped = false;
   let tableCols: string[] | null = null;
@@ -173,41 +144,26 @@ export function parsePlan(md: string): Plan {
       continue;
     }
 
-    // Headings: a phase, a track's own list, or the dropped list.
+    // Headings: a track's own list, the dropped list, or a section of the plan.
     const h = trimmed.match(/^(#{2,6})\s+(.*)$/);
     if (h) {
       const text = plain(h[2]);
       dropped = /^dropped\b/i.test(text);
-      phase = null;
       track = null;
       if (dropped) continue;
       const paren = text.match(/\(([^)]*)\)\s*$/);
       const bare = paren ? text.slice(0, paren.index).trim() : text;
-      const when = paren ? parseWhen(paren[1]) : null;
       if (isTrack(bare) || (paren && /continuous|ongoing|always/i.test(paren[1]))) {
         track = bare;
         if (!isTrack(bare)) plan.tracks.push({ name: bare });
         continue;
       }
-      let dates = when;
-      if (!dates) {
-        // Undated: the quarter after the phase before, or this one.
-        const prev = plan.phases[plan.phases.length - 1];
-        const from = prev ? R.addDays(prev.end, 1) : dateKey();
-        const [y, m] = from.split("-").map(Number);
-        dates = [from, dateKey(new Date(y, m + 2, 0))];
-      }
-      phase = { name: bare, start: dates[0], end: dates[1] };
-      plan.phases.push(phase);
       continue;
     }
     if (trimmed.startsWith("# ")) continue;
 
-    const goal = trimmed.match(/^\*\*goal:?\*\*:?\s*(.*)$/i) ?? trimmed.match(/^goal:\s*(.*)$/i);
-    if (goal) {
-      if (phase) phase.goal = plain(goal[1]);
-      continue;
-    }
+    // A section's "**Goal:**" line describes it; there is nothing to keep.
+    if (/^\*\*goal:?\*\*|^goal:/i.test(trimmed)) continue;
 
     // "**Technical**" on its own line: the track for the list that follows.
     const label = trimmed.match(/^\*\*([^*]+)\*\*:?$/);
@@ -242,7 +198,6 @@ export function parsePlan(md: string): Plan {
       ...book,
       optional: book.optional || (nested ? true : undefined),
       track,
-      phase: phase?.name,
     });
   }
   return plan;
@@ -251,8 +206,6 @@ export function parsePlan(md: string): Plan {
 export type PlanPreview = {
   tracksNew: string[];
   tracksUpdated: string[];
-  phasesNew: number;
-  phasesUpdated: number;
   booksNew: number;
   booksMatched: string[];
   open: string[];
@@ -264,8 +217,8 @@ export type PlanPreview = {
 /**
  * Applies a plan to the state, and says what it did.
  *
- * Tracks keep their colour; phases their id. A book already on the shelf is
- * moved into the plan's track, phase and place in the queue with its
+ * Tracks keep their colour. A book already on the shelf is
+ * moved into the plan's track and place in the queue with its
  * progress intact. Each track's queue becomes the plan's order, with any
  * books the plan doesn't mention after it. A book the plan says is open is
  * opened, and any other open book in its track that the plan doesn't name
@@ -276,8 +229,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
   const preview: PlanPreview = {
     tracksNew: [],
     tracksUpdated: [],
-    phasesNew: 0,
-    phasesUpdated: 0,
     booksNew: 0,
     booksMatched: [],
     open: [],
@@ -321,24 +272,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
   }
   s.readingTracks = tracks;
 
-  // Phases.
-  const phaseIds = new Map<string, string>();
-  let phases = [...s.readingPhases];
-  for (const p of plan.phases) {
-    const found = phases.find((x) => norm(x.name) === norm(p.name));
-    if (found) {
-      phases = phases.map((x) => (x.id === found.id ? { ...x, start: p.start, end: p.end, goal: p.goal ?? x.goal } : x));
-      phaseIds.set(norm(p.name), found.id);
-      preview.phasesUpdated++;
-    } else {
-      const id = uid() + phases.length;
-      phases.push({ id, name: p.name, start: p.start, end: p.end, goal: p.goal });
-      phaseIds.set(norm(p.name), id);
-      preview.phasesNew++;
-    }
-  }
-  s.readingPhases = phases;
-
   // Books, in plan order.
   const log = (b: Book, status: R.BookStatus) => [...(b.statusLog ?? []), { status, date: today }];
   let books = [...s.books];
@@ -349,7 +282,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
   plan.books.forEach((pb, i) => {
     const droppedHere = pb.status === "dropped";
     const trackId = droppedHere ? "" : (trackIds.get(norm(pb.track)) ?? tracks[0]?.id);
-    const phaseId = pb.phase ? phaseIds.get(norm(pb.phase)) : undefined;
     const existing = books.find((b) => norm(b.title) === norm(pb.title) && !planned.has(b.id));
     let book: Book;
     if (existing) {
@@ -357,7 +289,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
       book = {
         ...existing,
         trackId,
-        phaseId: droppedHere ? undefined : (phaseId ?? existing.phaseId),
         author: existing.author?.trim() ? existing.author : pb.author,
         edition: existing.edition ?? pb.edition,
         note: existing.note ?? pb.note,
@@ -380,7 +311,6 @@ export function applyPlan(s0: TrackerState, plan: Plan): { state: TrackerState; 
         trackId,
         status: "queued",
         queueOrder: 0,
-        phaseId,
         tags: pb.optional ? ["optional"] : undefined,
         statusLog: [{ status: "queued", date: today }],
       };
@@ -429,9 +359,7 @@ export const PLAN_FORMAT = `| Track | Daily target | Slot |
 
 Rule: one active book per track.
 
-## Phase 1 — Foundations (Q4 2026)
-**Goal:** Solid Java and system-design basics.
-
+## Up next
 **Technical**
 1. Effective Java (3rd ed.) — Joshua Bloch *(finish)*
 2. Designing Data-Intensive Applications — Martin Kleppmann
@@ -440,9 +368,7 @@ Rule: one active book per track.
 **Non-technical**
 1. Atomic Habits — James Clear
 
-## Phase 2 — Architecture (Q1 2027)
-**Technical**
-1. Fundamentals of Software Architecture — Mark Richards
+3. Fundamentals of Software Architecture — Mark Richards
 
 ## Slow lane (continuous)
 1. Gödel, Escher, Bach — Douglas Hofstadter

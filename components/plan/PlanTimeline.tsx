@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tracker, dateKey } from "@/lib/tracker";
@@ -31,18 +31,21 @@ import { Check, ChevronDown, Play, Swap } from "../icons";
 import { doneThisWeek } from "@/lib/weekly";
 
 import { PlanGlyph } from "./bits";
+import { history, runWords, stepRun } from "@/lib/habits";
 
 /**
- * Today's steps, in the plan's order, each with its own tick: any can be done
- * first. The plan suggests one, the first not done, marked Suggested next
- * and opened up with its actions; tapping another row opens its actions too.
- * Above them, what earlier plan days left undone, to catch up or let go.
+ * Today's habits, the plan's steps: what's left first in the plan's order,
+ * kept ones after, muted. Each row is the habit, what it is today and its
+ * run, and one tick; tapping it opens its actions (log pages, start the
+ * workout, the next entry). Under them, what earlier plan days left undone.
  */
 export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
   const today = dateKey();
-  const steps = stepsOn(tracker.state!, plan, today);
+  const s = tracker.state!;
+  // What's left first, in the plan's order; kept ones sink to the bottom.
+  const steps = stepsOn(s, plan, today).sort((a, b) => Number(a.done) - Number(b.done));
+  const h = useMemo(() => history(s, plan, today), [s, plan, today]);
   const [openGoal, setOpenGoal] = useState<string | null>(null);
-  const next = steps.find((x) => !x.done);
 
   return (
     <ReadingFlow tracker={tracker}>
@@ -50,9 +53,7 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
         {steps.length > 0 && (
           <section>
             <div className="panel-head">
-              <h2 className="panel-head__title">
-                Today&rsquo;s plan, {steps.filter((x) => x.done).length} of {steps.length}
-              </h2>
+              <h2 className="panel-head__title">Habits</h2>
               <div className="panel-head__side">
                 <Link href="/plan" className="text-action">
                   Edit plan
@@ -60,8 +61,8 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
               </div>
             </div>
             <ol className="card plan-steps-today">
-              {steps.map((x, i) => (
-                <StepRow key={x.step.id} tracker={tracker} plan={plan} x={x} n={i + 1} day={today} suggested={x === next} onOpenGoal={setOpenGoal} />
+              {steps.map((x) => (
+                <StepRow key={x.step.id} tracker={tracker} plan={plan} x={x} day={today} streak={stepRun(h, x.step.id)} onOpenGoal={setOpenGoal} />
               ))}
             </ol>
           </section>
@@ -163,16 +164,19 @@ function StepRow({
   day,
   dayLabel,
   suggested,
+  streak,
   onOpenGoal,
 }: {
   tracker: Tracker;
   plan: DayPlan;
   x: DayStep;
-  /** Today's steps are numbered; leftovers carry their day instead. */
+  /** Leftovers are numbered or carry their day; today's habits carry their run instead. */
   n?: number;
   day: string;
   dayLabel?: string;
   suggested?: boolean;
+  /** Days in a row this habit was kept: shown under it, on Today. */
+  streak?: number;
   onOpenGoal: (id: string) => void;
 }) {
   const s = tracker.state!;
@@ -186,18 +190,31 @@ function StepRow({
     <li className={"plan-row" + (x.done ? " is-done" : "") + (suggested && !x.done ? " is-next" : "")}>
       <div className="plan-row__main">
         <button type="button" className="plan-row__open" aria-expanded={!!shown} onClick={() => setOpen((v) => !v)}>
-          <span className="plan-row__n">{dayLabel ?? n}</span>
+          {streak === undefined && <span className="plan-row__n">{dayLabel ?? n}</span>}
           <span className="area-tile plan-row__tile" aria-hidden>
             <PlanGlyph icon={x.icon} />
           </span>
           {/* One line: what it is. The tile says the kind; the actions say the rest. */}
-          <span className="plan-row__text">
-            <span className="plan-row__title">
-              {title}
-              {running ? ", running" : ""}
-              {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
+          {streak === undefined ? (
+            <span className="plan-row__text">
+              <span className="plan-row__title">
+                {title}
+                {running ? ", running" : ""}
+                {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
+              </span>
             </span>
-          </span>
+          ) : (
+            <span className="plan-row__text">
+              <span className="plan-row__title">
+                {x.name}
+                {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
+              </span>
+              <span className="plan-row__sub">
+                {title}
+                {running ? ", running" : ""}, {runWords(streak)}
+              </span>
+            </span>
+          )}
         </button>
         {dayLabel && !x.done && (
           <button
