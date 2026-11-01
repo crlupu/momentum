@@ -187,7 +187,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
                     dot={t.color}
                     title={t.name}
                     note={t.note}
-                    sub={`${open} reading · ${next} up next${t.dailyTarget > 0 ? ` · ${t.dailyTarget} pages a day` : ""}`}
+                    sub={`${open} reading, ${next} up next${t.dailyTarget > 0 ? `, ${t.dailyTarget} pages a day` : ""}`}
                     onPress={() => go(`track=${t.id}`)}
                   />
                 );

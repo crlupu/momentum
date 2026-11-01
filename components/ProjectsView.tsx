@@ -36,8 +36,8 @@ export function ProjectList({ tracker, onOpen }: { tracker: Tracker; onOpen: (id
           value={view}
           onChange={setView}
           options={[
-            { value: "active", label: `Active · ${active.length}` },
-            { value: "done", label: `Finished · ${finished.length}` },
+            { value: "active", label: `Active ${active.length}` },
+            { value: "done", label: `Finished ${finished.length}` },
           ]}
         />
         <span className="goals-toolbar__actions">
@@ -165,8 +165,8 @@ export function ProjectPage({ tracker, project: p }: { tracker: Tracker; project
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
         <span className="goal-topic__figure">
-          <span className="font-mono-n">{pct}%</span> · {done} of {total} done
-          {projectFinished(p) && " · Finished"}
+          <span className="font-mono-n">{pct}%</span>, {done} of {total} done
+          {projectFinished(p) && ", Finished"}
         </span>
       </div>
 

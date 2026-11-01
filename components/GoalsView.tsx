@@ -74,8 +74,8 @@ export default function GoalsView({ tracker }: { tracker: Tracker }) {
           value={view}
           onChange={setView}
           options={[
-            { value: "active", label: `Active · ${activeCount}` },
-            { value: "done", label: `Done · ${doneCount}` },
+            { value: "active", label: `Active ${activeCount}` },
+            { value: "done", label: `Done ${doneCount}` },
           ]}
         />
         <span className="goals-toolbar__actions">
@@ -219,7 +219,7 @@ function TopicSection({
                 <div className="progress-fill" style={{ width: `${pct}%` }} />
               </div>
               <span className="goal-topic__figure">
-                <span className="font-mono-n">{pct}%</span> · {done} of {all.length} done
+                <span className="font-mono-n">{pct}%</span>, {done} of {all.length} done
               </span>
             </div>
           )}
@@ -266,7 +266,7 @@ export function GoalRow({
       : status === "dropped"
         ? "Dropped"
         : status === "active"
-          ? ["Active", goalSummary(g)].filter(Boolean).join(" · ")
+          ? ["Active", goalSummary(g)].filter(Boolean).join(", ")
           : goalSummary(g) ?? "Queued";
   const covered = (status === "active" || status === "queued") && minimumReached(g);
   const due = g.targetDate && (status === "active" || status === "queued") ? countdown(g.targetDate) : null;
@@ -290,15 +290,14 @@ export function GoalRow({
           <span className="goal-row__meta">
             {!inTopic && (
               <>
-                <span className="cat-dot" style={{ background: cat.color }} aria-hidden />
                 {cat.name}
-                <span aria-hidden>·</span>
+                <span className="meta-sep">, </span>
               </>
             )}
             {meta}
             {due && (
               <>
-                <span aria-hidden> · </span>
+                <span className="meta-sep">, </span>
                 <span className="goal-row__due">{due}</span>
               </>
             )}

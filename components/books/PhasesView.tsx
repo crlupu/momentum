@@ -112,8 +112,8 @@ function PhaseCard({
         </button>
       </div>
       <p className="phase-card__sub">
-        {fmtDate(p.start, true)} – {fmtDate(p.end, true)}
-        {p.goal ? ` · ${p.goal}` : ""}
+        {fmtDate(p.start, true)} to {fmtDate(p.end, true)}
+        {p.goal ? `, ${p.goal}` : ""}
       </p>
       <div className="phase-bars">
         <span>Time</span>
@@ -158,7 +158,7 @@ function phaseVerdict(s: TrackerState, p: R.ReadingPhase, st: R.PhaseStats, toda
   if (delta >= 0) {
     return late
       ? { tone: "is-behind", text: `${delta ? `${pages(delta)} ahead` : "On pace"}, but slowing.${slowing}` }
-      : { tone: "is-ahead", text: delta ? `On pace \u00b7 ${pages(delta)} ahead.` : "On pace." };
+      : { tone: "is-ahead", text: delta ? `On pace, ${pages(delta)} ahead.` : "On pace." };
   }
   return { tone: "is-behind", text: `${pages(delta)} behind. ${n(perDay)} pages a day catches up by ${fmtDateAuto(p.end)}.` };
 }

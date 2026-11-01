@@ -174,7 +174,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             </div>
           )}
           <button type="submit" className="pill-link pill-link--primary meal-log__save" disabled={pending || !parts.length}>
-            {parts.length ? `Log ${parts.join(" \u00b7 ")}` : "Log meal"}
+            {parts.length ? `Log ${parts.join(", ")}` : "Log meal"}
           </button>
         </form>
 
@@ -215,7 +215,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
 
   return (
     <section aria-label="Calories, last two weeks">
-      <h3 className="group-head">Calories · last two weeks</h3>
+      <h3 className="group-head">Calories, last two weeks</h3>
       <div className="card p-4 md:p-5">
         {s.calorieBudget ? (
           <p className="mb-3 text-[13px] text-[var(--muted)]">Budget {s.calorieBudget.toLocaleString()} a day</p>
@@ -250,7 +250,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
                   {(entriesByDate[dateKey(d)] ?? []).map((e, j, all) => (
                     <div
                       key={e.id}
-                      title={`${fmtDateAuto(dateKey(d))} · ${tagOf(e.tagId)?.name ?? "Untagged"} · ${e.kcal} kcal (${counts[i]} that day)`}
+                      title={`${fmtDateAuto(dateKey(d))}, ${tagOf(e.tagId)?.name ?? "Untagged"}, ${e.kcal} kcal (${counts[i]} that day)`}
                       style={{
                         height: `${(e.kcal / (counts[i] || 1)) * 100}%`,
                         background: colorOf(e.tagId),

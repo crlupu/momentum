@@ -42,7 +42,7 @@ export function WeeklyTaskRow({ tracker, task, onEdit }: { tracker: Tracker; tas
         <span className={"task-row__title" + (full ? " is-done" : "")}>{task.title}</span>
         <span className="task-row__sub">
           {cat?.name ?? "Weekly"}
-          <span aria-hidden> · </span>
+          <span className="meta-sep">, </span>
           {task.times === 1 ? "weekly" : `${n} of ${task.times} this week`}
           {task.times > 1 && <WeekDots done={n} of={task.times} />}
         </span>

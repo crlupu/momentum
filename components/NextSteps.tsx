@@ -39,7 +39,7 @@ function stepOf(g: Goal): Step | null {
   const item = all.find((i) => !i.done);
   if (item) {
     const done = all.filter((i) => i.done).length;
-    return { key: item.id, goal: g, item, title: item.title, sub: `${g.title} · ${done + 1} of ${all.length}` };
+    return { key: item.id, goal: g, item, title: item.title, sub: `${g.title}, ${done + 1} of ${all.length}` };
   }
   if (all.length === 0 && g.target && (g.current ?? 0) < g.target) {
     return { key: g.id, goal: g, title: g.title, sub: `${(g.current ?? 0) + 1} of ${g.target}` };

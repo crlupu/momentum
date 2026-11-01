@@ -90,7 +90,7 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
                         <span className="truncate">{b.title}</span>
                       </span>
                       <span className="text-[13px] text-[var(--muted)]">
-                        {b.status === "dropped" ? `Dropped${b.dropReason ? ` · ${b.dropReason}` : ""}` : span || "Finished"}
+                        {b.status === "dropped" ? `Dropped${b.dropReason ? `, ${b.dropReason}` : ""}` : span || "Finished"}
                       </span>
                     </span>
                     {days != null && <span className="group-row__value font-mono-n">{days} d</span>}

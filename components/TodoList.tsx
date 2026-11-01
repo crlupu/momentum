@@ -19,13 +19,13 @@ const byPlan = (a: TodoItem, b: TodoItem) =>
   (a.date ?? "9999").localeCompare(b.date ?? "9999") ||
   a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
 
-/** "Kafka 101 · Readings": what a tied to-do waits for, or nothing. */
+/** "Kafka 101, Readings": what a tied to-do waits for, or nothing. */
 function stepOf(s: TrackerState, t: TodoItem): string | null {
   if (!t.goalId) return null;
   const g = s.goals.find((x) => x.id === t.goalId);
   if (!g) return null;
   const part = t.partId ? g.parts?.find((p) => p.id === t.partId) : undefined;
-  return part ? `${g.title} · ${part.title}` : g.title;
+  return part ? `${g.title}, ${part.title}` : g.title;
 }
 
 function TodoRow({ tracker, t, day, today }: { tracker: Tracker; t: TodoItem; day?: boolean; today: string }) {
@@ -38,7 +38,7 @@ function TodoRow({ tracker, t, day, today }: { tracker: Tracker; t: TodoItem; da
       <TodoCheckbox tracker={tracker} id={t.id} done={t.done} label={t.title} />
       <span className="task-row__title">
         {t.title}
-        {meta.length > 0 && <span className="task-row__meta">{meta.join(" · ")}</span>}
+        {meta.length > 0 && <span className="task-row__meta">{meta.join(", ")}</span>}
       </span>
     </li>
   );
@@ -132,7 +132,7 @@ export default function TodoList({ tracker }: { tracker: Tracker }) {
                 onClick={() => setShowLater((v) => !v)}
               >
                 {showLater ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
-                Later · {later.length}
+                Later {later.length}
               </button>
               {showLater && (
                 <ul className="list-none p-0">

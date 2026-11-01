@@ -62,7 +62,7 @@ export function PlanCard({ tracker, plan }: { tracker: Tracker; plan: DayPlan })
             </span>
           ) : (
             <span className="plan-card__next">
-              Next · <span className="momentum__next-name">{next!.name}</span>
+              Next: <span className="momentum__next-name">{next!.name}</span>
             </span>
           )}
         </div>
@@ -258,7 +258,7 @@ export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan 
   return (
     <SummaryCard
       aria-label="Focus timer"
-      label={`Focus · ${project?.title ?? "Just focus"}`}
+      label={`Focus: ${project?.title ?? "Just focus"}`}
       aside={f.pausedAt ? "Paused" : at >= 0 ? `Step ${at + 1} of ${steps.length}` : undefined}
       done={ms >= f.minutes * 60000}
       doneLabel="Time's in"

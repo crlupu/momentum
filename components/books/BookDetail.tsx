@@ -63,13 +63,13 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
         <Meter book={book} />
         {book.status === "active" && pace.perDay > 0 && (
           <p className="book-progress__pace">
-            About {fmtPace(pace.perDay)} pages a day{pace.eta ? ` · done around ${fmtDateAuto(pace.eta)}` : ""}
+            About {fmtPace(pace.perDay)} pages a day{pace.eta ? `, done around ${fmtDateAuto(pace.eta)}` : ""}
           </p>
         )}
         {(book.status === "finished" || book.status === "dropped") && (
           <p className="book-progress__pace">
             {book.status === "finished" ? "Finished" : "Dropped"} {fmtDateAuto(endDate)}
-            {taken ? ` · ${taken} day${taken === 1 ? "" : "s"}` : ""}
+            {taken ? `, ${taken} day${taken === 1 ? "" : "s"}` : ""}
           </p>
         )}
         {book.status === "active" && (
@@ -106,7 +106,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
               <li key={x.id} className="group-row">
                 <span className="flex-1">{fmtDateAuto(x.date)}</span>
                 <span className="group-row__value font-mono-n">
-                  pp. {x.from}–{x.to} · {x.pages}
+                  pp. {x.from} to {x.to}, {x.pages}
                 </span>
               </li>
             ))}

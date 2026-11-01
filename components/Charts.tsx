@@ -134,7 +134,7 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
       </SummaryCard>
 
       <section>
-        <PanelHeader title="By category · this month" />
+        <PanelHeader title="By category, this month" />
         <Card>
           <Card.Content className="p-4 md:p-5">
             {perCat.length === 0 ? (

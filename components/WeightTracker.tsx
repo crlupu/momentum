@@ -193,7 +193,7 @@ function WeightChart({
           <div className="font-semibold">{shown.kg} kg</div>
           {plan && shown.date >= plan.startDate && (
             <div>
-              plan {expectedOn(plan, shown.date).toFixed(1)} ·{" "}
+              plan {expectedOn(plan, shown.date).toFixed(1)} ,{" "}
               {(() => {
                 const d = Math.round((shown.kg - expectedOn(plan, shown.date)) * 10) / 10;
                 return d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`;

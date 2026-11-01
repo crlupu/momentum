@@ -118,7 +118,7 @@ export function GoalImportForm({
                 )}
                 {preview.goalsUpdated > 0 && (
                   <li>
-                    Update {preview.goalsUpdated} already there, matched by title — keeping their progress
+                    Update {preview.goalsUpdated} already there, matched by title, keeping their progress
                     unless the file gives one
                   </li>
                 )}

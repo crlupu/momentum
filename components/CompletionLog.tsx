@@ -144,16 +144,16 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
       `${w.total.toLocaleString()} kg`,
       w.minutes ? `${w.minutes} min` : null,
     ].filter(Boolean);
-    const summary = parts.join(" · ");
+    const summary = parts.join(", ");
     // Sessions logged before per-set detail existed simply have none.
     const breakdown = (w.exercises ?? [])
       .map((e) => `${e.name} ${e.sets.map(formatSet).join(", ")}`)
-      .join(" · ");
+      .join(", ");
     entries.push({
       key: `workout-${w.id}`,
       kind: "Workout",
       title: w.name,
-      detail: [summary, breakdown].filter(Boolean).join(" · ") || undefined,
+      detail: [summary, breakdown].filter(Boolean).join(", ") || undefined,
       date: w.date,
       at: w.at,
       color: KIND_COLOR.Workout,
@@ -169,7 +169,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     entries.push({
       key: `kcal-${c.id}`,
       kind: "Calories",
-      title: `${c.kcal.toLocaleString()} kcal${tag ? ` · ${tag.name}` : ""}`,
+      title: `${c.kcal.toLocaleString()} kcal${tag ? `, ${tag.name}` : ""}`,
       date: c.date,
       at: c.at,
       color: tag?.color || KIND_COLOR.Calories,
@@ -188,7 +188,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     entries.push({
       key: `macro-${m.id}`,
       kind: "Macros",
-      title: parts.join(" · "),
+      title: parts.join(", "),
       date: m.date,
       at: m.at,
       color: KIND_COLOR.Macros,
@@ -285,7 +285,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                           {e.title}
                           <span className="mt-0.5 block text-[13px] text-[var(--muted)]">
                             {e.kind}
-                            {e.detail ? ` · ${e.detail}` : ""}
+                            {e.detail ? `, ${e.detail}` : ""}
                           </span>
                         </span>
                         {e.at != null && (

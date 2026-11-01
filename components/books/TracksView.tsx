@@ -62,7 +62,7 @@ export function TracksView({ tracker }: { tracker: Tracker }) {
                 <span className="flex items-center gap-2 text-sm">
                   <TrackDot color={t.color} /> {t.name}
                   <span className="text-[var(--muted)]">
-                    · {s.books.filter((b) => b.trackId === t.id).length} books
+                   {", "}{s.books.filter((b) => b.trackId === t.id).length} books
                   </span>
                 </span>
                 <Button
@@ -127,7 +127,7 @@ export function TrackQueue({
       subtitle={
         <span>
           {open.length} of {track.wipLimit} open
-          {track.dailyTarget > 0 ? ` · ${track.dailyTarget} pages a day` : ""}
+          {track.dailyTarget > 0 ? `, ${track.dailyTarget} pages a day` : ""}
         </span>
       }
       onEdit={() => flow.open({ kind: "track", trackId: track.id })}
@@ -213,7 +213,7 @@ export function NoTrack({ books }: { books: Book[] }) {
   return (
     <Panel
       title="No track"
-      subtitle={`${books.length} book${books.length === 1 ? "" : "s"} · give one a track from its Edit`}
+      subtitle={`${books.length} book${books.length === 1 ? "" : "s"}, give one a track from its Edit`}
     >
       <ul className="flex flex-col">
         {books.map((b) => (
@@ -456,7 +456,7 @@ function QueueLine({ book, perDay }: { book: Book; perDay: number }) {
           <span className="book-line__title">{book.title}</span>
           <span className="book-line__sub">
             {book.status === "paused" ? `Paused at p. ${book.read}` : book.pages > 0 ? `${book.pages} pages` : "Pages not set"}
-            {days ? ` · about ${days} days` : ""}
+            {days ? `, about ${days} days` : ""}
           </span>
         </span>
       </button>

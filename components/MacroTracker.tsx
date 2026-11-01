@@ -66,7 +66,7 @@ export default function MacroTracker({ tracker }: { tracker: Tracker }) {
 
   return (
     <section aria-label="Protein and fibre, last two weeks">
-      <PanelHeader title="Protein & fibre · two weeks" color="var(--sec-nutrition)">
+      <PanelHeader title="Protein & fibre, two weeks" color="var(--sec-nutrition)">
         <Legend color={PROTEIN_SOLID} name="Protein" />
         <Legend color={FIBER_SOLID} name="Fibre" />
       </PanelHeader>

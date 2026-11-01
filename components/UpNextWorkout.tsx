@@ -92,7 +92,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
       title={next.name}
       line={
         <>
-          {freq !== "off" ? `${REPEAT_LABEL[freq]} · ` : ""}
+          {freq !== "off" ? `${REPEAT_LABEL[freq]}, ` : ""}
           {ago == null ? "not done yet" : ago === 0 ? "done today" : `last done ${ago} day${ago === 1 ? "" : "s"} ago`}
         </>
       }

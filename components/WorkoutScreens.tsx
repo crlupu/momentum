@@ -218,7 +218,7 @@ function ExerciseLine({
         <span>{exercise.name}</span>
         <span className="text-[13px] text-[var(--muted)]">
           {exercise.target ? formatTarget(exercise.target) : "No target"}
-          {exercise.oneArm ? " · one arm" : ""}
+          {exercise.oneArm ? ", one arm" : ""}
         </span>
       </button>
       <button type="button" ref={setActivatorNodeRef} className="rd-grip" aria-label={`Move ${exercise.name}`} {...attributes} {...listeners}>

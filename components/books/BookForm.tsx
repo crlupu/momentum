@@ -284,7 +284,7 @@ export function BookForm({
                   <span className="book-suggest__text">
                     <span className="book-suggest__title">{b.title}</span>
                     <span className="book-suggest__meta">
-                      {[b.author, b.pages ? `${b.pages} pages` : null].filter(Boolean).join(" · ")}
+                      {[b.author, b.pages ? `${b.pages} pages` : null].filter(Boolean).join(", ")}
                     </span>
                   </span>
                   <span className="book-suggest__tag">On your shelf</span>
@@ -304,7 +304,7 @@ export function BookForm({
                     <span className="book-suggest__meta">
                       {[s.author, s.year, s.pages ? `${s.pages} pages` : null]
                         .filter(Boolean)
-                        .join(" · ")}
+                        .join(", ")}
                     </span>
                   </span>
                 </button>

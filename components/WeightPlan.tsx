@@ -88,7 +88,7 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
         label="Plan"
         aside={`${Math.round(sum.progress * 100)}% of the way`}
         figure={kg1(plan.targetKg)}
-        side={{ unit: "kg", hint: `by ${fmtDateAuto(plan.targetDate)} · from ${kg1(plan.startKg)}` }}
+        side={{ unit: "kg", hint: `by ${fmtDateAuto(plan.targetDate)}, from ${kg1(plan.startKg)}` }}
         band={{
           label: "Next",
           content: sum.next && sum.next.date !== plan.targetDate ? `${kg1(sum.next.kg)} kg by ${fmtDateAuto(sum.next.date)}` : "The target",
@@ -205,7 +205,7 @@ function PlanForm({ tracker, plan, onDone }: { tracker: Tracker; plan?: WeightPl
         </div>
       </div>
       <div className="-mb-1 text-[13px] font-semibold">
-        Checkpoints <span className="font-normal text-[var(--muted)]">· the last is the target</span>
+        Checkpoints <span className="font-normal text-[var(--muted)]">(the last is the target)</span>
       </div>
       <ul className="flex flex-col gap-2">
         {rows.map((r, i) => (

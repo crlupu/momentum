@@ -334,7 +334,7 @@ function NextItem({ tracker, goal: g }: { tracker: Tracker; goal: Goal }) {
     return (
       <div className="next-item goal-next">
         <p className="goal-next__label">
-          Next · {n} of {all.length}
+          Next: {n} of {all.length}
         </p>
         <p className="next-item__title">{item.title}</p>
         {item.url && (

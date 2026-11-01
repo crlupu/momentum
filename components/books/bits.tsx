@@ -51,13 +51,13 @@ export function Meter({ book }: { book: Book }) {
   );
 }
 
-/** "143 / 320 · 44%", or "143 pages read" when the length isn't known. */
+/** "143 / 320, 44%", or "143 pages read" when the length isn't known. */
 export function ProgressText({ book }: { book: Book }) {
   if (book.pages > 0) {
     const pct = book.status === "finished" ? 100 : Math.floor(bookProgress(book) * 100);
     return (
       <span className="text-xs text-[var(--muted)]">
-        <span className="font-mono-n font-bold text-foreground">{book.read}</span> / {book.pages} ·{" "}
+        <span className="font-mono-n font-bold text-foreground">{book.read}</span> / {book.pages} ,{" "}
         {pct}%
       </span>
     );
