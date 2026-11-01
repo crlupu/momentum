@@ -5,11 +5,10 @@ import { FormEvent, useMemo, useState } from "react";
 import { Modal } from "../Modal";
 import { DialogActions } from "../DialogActions";
 import { usePending } from "../ActionButton";
-import { Tracker, BOOK_COLORS, dateKey } from "@/lib/tracker";
+import { Tracker, BOOK_COLORS } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 import { PLAN_FORMAT, applyPlan, parsePlan } from "@/lib/planImport";
 import { FormatHelp } from "../FormatHelp";
-import { fmtDate } from "@/lib/dates";
 import { Field } from "./bits";
 
 /** Create or edit a track: its name, colour, limit, target and time of day. */
@@ -183,70 +182,7 @@ export function TrackForm({
   );
 }
 
-/** Create or edit a phase: a name and the dates it is meant to run between. */
-export function PhaseForm({
-  tracker,
-  phase,
-  onClose,
-}: {
-  tracker: Tracker;
-  phase: R.ReadingPhase | null;
-  onClose: () => void;
-}) {
-  const today = dateKey();
-  const [name, setName] = useState(phase?.name ?? "");
-  const [start, setStart] = useState(phase?.start ?? today);
-  const [end, setEnd] = useState(phase?.end ?? R.addDays(today, 90));
-  const [goal, setGoal] = useState(phase?.goal ?? "");
-  const { pending, run } = usePending();
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !start || !end || pending) return;
-    onClose();
-    const input = { name, start, end, goal };
-    await run(() => (phase ? tracker.updatePhase(phase.id, input) : tracker.addPhase(input)));
-  };
-
-  return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <input
-        aria-label="Phase name"
-        placeholder="Name, e.g. Phase 1: Q4 2026"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        autoFocus={!phase}
-        className="w-full"
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Starts">
-          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-        </Field>
-        <Field label="Ends">
-          <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="Goal (optional)">
-        <textarea rows={2} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="What this phase is for" />
-      </Field>
-      <p className="text-xs text-[var(--muted)]">Books are put in a phase from their edit form, or when adding several.</p>
-      <DialogActions
-        primary={{ label: phase ? "Save" : "Add", disabled: pending || !name.trim() }}
-        del={
-          phase && {
-            what: `"${phase.name}"`,
-            onDelete: async () => {
-              onClose();
-              return tracker.removePhase(phase.id);
-            },
-          }
-        }
-      />
-    </form>
-  );
-}
-
-/** Adds a pasted list, one "Title – Author" a line, to a track and phase. */
+/** Adds a pasted list, one "Title – Author" a line, to a track. */
 export function BulkAddForm({
   tracker,
   trackId,
@@ -260,7 +196,6 @@ export function BulkAddForm({
   const tracks = s.readingTracks.filter((t) => !t.archived);
   const [text, setText] = useState("");
   const [track, setTrack] = useState(trackId ?? tracks[0]?.id ?? "");
-  const [phase, setPhase] = useState("");
   const { pending, run } = usePending();
   const list = R.parseBookList(text);
 
@@ -268,7 +203,7 @@ export function BulkAddForm({
     e.preventDefault();
     if (!list.length || !track || pending) return;
     onClose();
-    await run(() => tracker.addBooks(list, track, phase || undefined));
+    await run(() => tracker.addBooks(list, track));
   };
 
   return (
@@ -282,26 +217,15 @@ export function BulkAddForm({
         autoFocus
         className="w-full"
       />
-      <div className="grid grid-cols-2 gap-2">
-        <Field label="Track">
-          <MenuSelect
-            label="Track"
-            className="menu-select--field"
-            value={track}
-            onChange={setTrack}
-            options={tracks.map((t) => ({ value: t.id, label: t.name, color: t.color }))}
-          />
-        </Field>
-        <Field label="Phase">
-          <MenuSelect
-            label="Phase"
-            className="menu-select--field"
-            value={phase}
-            onChange={setPhase}
-            options={[{ value: "", label: "No phase" }, ...s.readingPhases.map((p) => ({ value: p.id, label: p.name }))]}
-          />
-        </Field>
-      </div>
+      <Field label="Track">
+        <MenuSelect
+          label="Track"
+          className="menu-select--field"
+          value={track}
+          onChange={setTrack}
+          options={tracks.map((t) => ({ value: t.id, label: t.name, color: t.color }))}
+        />
+      </Field>
       {list.length > 0 && (
         <ul className="max-h-40 overflow-y-auto text-sm">
           {list.map((b, i) => (
@@ -337,7 +261,7 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
   const { pending, run } = usePending();
   const plan = useMemo(() => parsePlan(text), [text]);
   const preview = useMemo(() => applyPlan(s, plan).preview, [s, plan]);
-  const empty = plan.books.length === 0 && plan.phases.length === 0 && plan.tracks.length === 0;
+  const empty = plan.books.length === 0 && plan.tracks.length === 0;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -372,19 +296,6 @@ export function ImportPlanForm({ tracker, onClose }: { tracker: Tracker; onClose
                   .map((t) => `${t.name}${t.dailyTarget ? ` (${t.dailyTarget}/day)` : ""}`)
                   .join(", ")}
                 {plan.wipLimit ? `, ${plan.wipLimit} open book${plan.wipLimit === 1 ? "" : "s"} per track` : ""}
-              </li>
-            )}
-            {plan.phases.length > 0 && (
-              <li>
-                {[
-                  preview.phasesNew > 0 && `Add ${preview.phasesNew} phase${preview.phasesNew === 1 ? "" : "s"}`,
-                  preview.phasesUpdated > 0 &&
-                    `${preview.phasesNew > 0 ? "update" : "Update"} ${preview.phasesUpdated} already there`,
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-                :{" "}
-                {fmtDate(plan.phases[0].start, true)} to {fmtDate(plan.phases[plan.phases.length - 1].end, true)}
               </li>
             )}
             {plan.books.length > 0 && (

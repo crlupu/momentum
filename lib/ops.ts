@@ -112,7 +112,7 @@ export function addTopic(s: TrackerState, title: string, catId?: string): { stat
 
 /**
  * Moves a goal into a topic, at its end, or out of every topic (null). It
- * keeps its progress, parts, status and phases; it takes the new topic's
+ * keeps its progress, parts and status; it takes the new topic's
  * category, as every goal in a topic does.
  */
 export function moveGoalToTopic(s: TrackerState, goalId: string, topicId: string | null): TrackerState {
@@ -171,15 +171,6 @@ export function renameTopic(s: TrackerState, topicId: string, title: string): Tr
 export function removeTopic(s: TrackerState, topicId: string): TrackerState {
   if (topicGoalCount(s, topicId) > 0) return s;
   return { ...s, paths: s.paths.filter((p) => p.id !== topicId) };
-}
-
-/** Puts a goal in up to two phases ([] for none). Unknown phases are skipped. */
-export function setGoalPhases(s: TrackerState, id: string, phaseIds: string[]): TrackerState {
-  const valid = [...new Set(phaseIds)].filter((p) => s.readingPhases.some((x) => x.id === p)).slice(0, 2);
-  return {
-    ...s,
-    goals: s.goals.map((g) => (g.id === id ? { ...g, phaseIds: valid.length ? valid : undefined } : g)),
-  };
 }
 
 /** The other active goals in the goal's topic, for a gentle "already active" note. */

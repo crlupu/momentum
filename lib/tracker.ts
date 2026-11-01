@@ -29,7 +29,6 @@ import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } 
 import type {
   BookStatus,
   BookQuote,
-  ReadingPhase,
   ReadingSession,
   ReadingTrack,
   StatusChange,
@@ -705,9 +704,6 @@ export function useTracker() {
     /** Deletes a session, taking its amount back off the count. */
     deleteLogEntry: (id: string) => commit((s) => O.deleteLogEntry(s, id)),
 
-    /** Up to two phases, shared with books; [] for none. */
-    setGoalPhases: (id: string, phaseIds: string[]) => commit((s) => O.setGoalPhases(s, id, phaseIds)),
-
     /** Queued, active, done or dropped. */
     setGoalStatus: (id: string, status: GoalStatus) => commit((s) => O.setGoalStatus(s, id, status)),
 
@@ -1240,9 +1236,8 @@ export function useTracker() {
     updateBook: (id: string, input: R.BookInput) => commit((s) => R.updateBook(s, id, input)),
     addBooks: (
       list: { title: string; author?: string; pages?: number }[],
-      trackId: string,
-      phaseId?: string
-    ) => commit((s) => R.addBooks(s, list, trackId, phaseId)),
+      trackId: string
+    ) => commit((s) => R.addBooks(s, list, trackId)),
     setBookStatus: (
       id: string,
       status: BookStatus,
@@ -1268,7 +1263,7 @@ export function useTracker() {
     removeReadingSession: (id: string) => commit((s) => R.removeSession(s, id)),
     reorderQueue: (trackId: string, ids: string[]) =>
       commit((s) => R.reorderQueue(s, trackId, ids)),
-    /** Rearranges some books among themselves, e.g. one phase's in a track. */
+    /** Rearranges some books among themselves, e.g. a few in a track. */
     reorderAmong: (ids: string[]) => commit((s) => R.reorderAmong(s, ids)),
     placeInQueue: (id: string, place: "top" | "end") =>
       commit((s) => R.placeInQueue(s, id, place)),
@@ -1280,9 +1275,6 @@ export function useTracker() {
     updateTrack: (id: string, t: R.TrackInput) => commit((s) => R.updateTrack(s, id, t)),
     /** Deletes a track; its books are kept without one, moved, or deleted. */
     removeTrack: (id: string, then: R.TrackBooks) => commit((s) => R.removeTrack(s, id, then)),
-    addPhase: (p: R.PhaseInput) => commit((s) => R.addPhase(s, p)),
-    updatePhase: (id: string, p: R.PhaseInput) => commit((s) => R.updatePhase(s, id, p)),
-    removePhase: (id: string) => commit((s) => R.removePhase(s, id)),
 
     /**
      * Records the result of a cover lookup — an id, or null for "looked and
@@ -1327,7 +1319,7 @@ export function useTracker() {
       })),
 
     removeBook: (id: string) => commit((s) => R.removeBook(s, id)),
-    /** Reads a Markdown reading plan into tracks, phases and books. See lib/planImport.ts. */
+    /** Reads a Markdown reading plan into tracks and books. See lib/planImport.ts. */
     importPlan: (plan: Plan) => commit((s) => applyPlan(s, plan).state),
 
     /** Learning goals from a JSON or Markdown file. See lib/goalImport.ts. */

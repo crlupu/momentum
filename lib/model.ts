@@ -11,7 +11,6 @@ import type { WeightPlan } from "./weight";
 import type {
   BookStatus,
   BookQuote,
-  ReadingPhase,
   ReadingSession,
   ReadingTrack,
   StatusChange,
@@ -81,8 +80,6 @@ export type Goal = {
   targetDate?: string;
   /** For a goal's own count: enough to count as covered, at most its target. */
   minimum?: number;
-  /** Up to two reading phases it belongs to: the same phases books use. */
-  phaseIds?: string[];
   doneDate?: string | null;
   /**
    * When it was ticked, as epoch milliseconds. The date alone puts everything
@@ -296,7 +293,6 @@ export type Book = {
    * session, which is why editing a session can move it.
    */
   base: number;
-  phaseId?: string;
   edition?: string;
   language?: string;
   tags?: string[];
@@ -654,7 +650,6 @@ export type TrackerState = {
   cardio: CardioEntry[];
   books: Book[];
   readingTracks: ReadingTrack[];
-  readingPhases: ReadingPhase[];
   readingSessions: ReadingSession[];
   bookQuotes: BookQuote[];
   calories: CalorieEntry[];
@@ -906,7 +901,6 @@ export const DEFAULT_STATE: TrackerState = {
   cardio: [],
   books: [],
   readingTracks: DEFAULT_TRACKS,
-  readingPhases: [],
   readingSessions: [],
   bookQuotes: [],
   calories: [],
@@ -1252,7 +1246,6 @@ export function migrate(raw: unknown): TrackerState {
     items: migrateParts(g.parts) ? undefined : migrateItems(g.items),
     targetDate: isDateKey(g.targetDate) ? g.targetDate : undefined,
     minimum: validMinimum(g.minimum, typeof g.target === "number" ? g.target : undefined) ? (g.minimum as number) : undefined,
-    // Goals sit in paths, not reading phases: any phases saved on one are dropped.
     repeat: ["daily", "weekly", "monthly", "off"].includes(g.repeat as string) ? (g.repeat as Goal["repeat"]) : undefined,
     routineTicks: Array.isArray(g.routineTicks)
       ? (g.routineTicks as unknown[]).filter(isDateKey) as string[]
@@ -1383,7 +1376,7 @@ export function migrate(raw: unknown): TrackerState {
 /**
  * Goals hold no other goals: a goal with parts becomes one goal per part,
  * "Parent, Part", each with the part's count and checklist and the parent's
- * category, status, phases and description. The ids are made from the
+ * category, status and description. The ids are made from the
  * parent's and the part's, so every device makes the same ones. Sessions and
  * to-dos that counted a part follow it to its goal.
  *
@@ -1419,7 +1412,6 @@ function flattenLearning(s: TrackerState): TrackerState {
           doneAt: status === "done" ? g.doneAt ?? null : null,
           ...(g.note ? { note: g.note } : {}),
           ...(g.link ? { link: g.link } : {}),
-          ...(g.phaseIds ? { phaseIds: g.phaseIds } : {}),
           ...(g.repeat ? { repeat: g.repeat } : {}),
         })
       );

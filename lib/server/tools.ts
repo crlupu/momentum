@@ -80,16 +80,6 @@ function overview(s: TrackerState, section: string) {
   const out: Record<string, unknown> = {};
   if (section === "all" || section === "books") {
     out.tracks = s.readingTracks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.name, pagesPerDay: t.dailyTarget, ...(t.note ? { description: t.note } : {}) }));
-    out.phases = [...s.readingPhases]
-      .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : a.name.localeCompare(b.name)))
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        start: p.start,
-        end: p.end,
-        goal: p.goal,
-        books: s.books.filter((b) => b.phaseId === p.id).length,
-      }));
     // A waiting book's place in its track's queue, 1 being next up.
     const queuePos = new Map<string, number>();
     for (const t of s.readingTracks) R.trackQueue(s, t.id).forEach((b, i) => queuePos.set(b.id, i + 1));
@@ -102,7 +92,6 @@ function overview(s: TrackerState, section: string) {
       page: b.read,
       pages: b.pages || undefined,
       track: s.readingTracks.find((t) => t.id === b.trackId)?.name,
-      phase: s.readingPhases.find((p) => p.id === b.phaseId)?.name,
       category: b.category,
     }));
   }
@@ -299,12 +288,6 @@ function sessionsOf(s: TrackerState, goalId: string) {
   return { last_session: log[log.length - 1].date, ...(notes.length ? { notes } : {}) };
 }
 
-/** ", in Phase 1 — Foundations" for a goal's phases, or nothing. */
-function phaseList(s: TrackerState, ids: string[] | undefined): string {
-  const names = (ids ?? []).map((id) => s.readingPhases.find((p) => p.id === id)?.name).filter(Boolean);
-  return names.length ? `, in ${names.join(" and ")}` : "";
-}
-
 /** " Also active in Rust ramp up: The Rust Book." when the goal shares its topic with other active goals. */
 function alsoActive(s: TrackerState, id: string): string {
   const g = s.goals.find((x) => x.id === id);
@@ -421,7 +404,6 @@ export function registerTools(server: McpServer) {
               language: b.language,
               tags: b.tags,
               trackId: untrack ? "" : (track?.id ?? b.trackId),
-              phaseId: untrack ? undefined : b.phaseId,
               coverImage: b.coverImage,
               after: b.after,
               note: b.note,
@@ -454,57 +436,6 @@ export function registerTools(server: McpServer) {
             result: `${b.title}: ${did.join(", ") || "nothing to change"}.${end ? " It's at its last page: ask whether to mark it finished." : ""}`,
           };
         })
-    )
-  );
-
-  server.registerTool(
-    "remove_phase",
-    {
-      title: "Remove a reading phase",
-      description:
-        "Removes one reading phase, such as a duplicate left by an earlier plan import. Its books stay where they are, just without a phase. Take the name or id from the overview's phases.",
-      inputSchema: {
-        phase: z.string().describe("Phase name or id"),
-      },
-    },
-    safe(async (a: { phase: string }) =>
-      change((s) => {
-        const p = pick(s.readingPhases, a.phase, (x) => x.name, "phase");
-        const freed = s.books.filter((b) => b.phaseId === p.id).length;
-        return {
-          state: R.removePhase(s, p.id),
-          result: `Removed phase "${p.name}" (${p.start} to ${p.end})${freed ? `; ${freed} book${freed === 1 ? "" : "s"} left without a phase` : ""}.`,
-        };
-      })
-    )
-  );
-
-  server.registerTool(
-    "shift_plan",
-    {
-      title: "Move the reading plan's dates",
-      description:
-        "Moves every reading phase by the same number of days so the first phase starts on the given date, keeping each phase's length and the gaps between them. Books and goals keep their phases.",
-      inputSchema: {
-        start: z.string().describe("The first phase's new start date, YYYY-MM-DD"),
-      },
-    },
-    safe(async (a: { start: string }) =>
-      change((s) => {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(a.start)) throw new Error(`"${a.start}" isn't a date: use YYYY-MM-DD.`);
-        if (!s.readingPhases.length) throw new Error("There are no phases to move.");
-        const { state, days } = R.shiftPlan(s, a.start);
-        const phases = [...state.readingPhases].sort((x, y) => x.start.localeCompare(y.start));
-        return {
-          state,
-          result:
-            days === 0
-              ? "The plan already starts on that date."
-              : `Moved ${phases.length} phases ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ${days < 0 ? "earlier" : "later"}: ${phases
-                  .map((p) => `${p.name} ${p.start} to ${p.end}`)
-                  .join("; ")}.`,
-        };
-      })
     )
   );
 
@@ -547,7 +478,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Update a goal",
       description:
-        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. phases puts it in up to two reading phases (the ones books use), by name or id; [] clears them. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. A part can have a checklist of its own (parts[].checklist), which works the same way and counts that part; its target then comes from the list. To tick entries one at a time, use check_items.",
+        "Updates one learning goal: its name, description or link, its topic (moving keeps everything the goal has), its count (current, target), its parts, or its status: queued, active, done or dropped ('done' true/false still works as a shortcut). Two active goals in one topic are allowed; the result notes it. Parts (a course's readings, problem sets, project…) each have their own count; a goal with parts takes its progress from them. Passing parts replaces the whole list ([] removes them); a part named like an existing one keeps its id. target_date sets a date it's aimed at, such as an exam (YYYY-MM-DD, empty clears); the app counts down to it. A count (or part) can have a minimum, enough to count as covered; the result says when every minimum is reached. Any count that moves (current, or a part's current) is logged as a session for today, with note if given; the app shows them under the goal's Sessions. checklist makes the goal a list of things to tick (videos, talks), each with a title and an optional link; its progress is ticked of total, so current and target can't be set by hand. Passing checklist replaces the whole list ([] removes it): an entry with the same link, or else the same title, as an existing one keeps it and its tick unless done is given; a tick or untick given here is logged like one made in the app. A goal getting its first checklist keeps its progress: entries are ticked as given, or, when none says done, the first ones are ticked up to its current count. A goal has parts or a checklist, not both; to swap, pass parts: [] with the checklist. A part can have a checklist of its own (parts[].checklist), which works the same way and counts that part; its target then comes from the list. To tick entries one at a time, use check_items.",
       inputSchema: {
         goal: z.string().describe("Title or id"),
         current: z.number().min(0).optional(),
@@ -564,7 +495,6 @@ export function registerTools(server: McpServer) {
         // Arrays are also taken as JSON text: clients holding the tool list
         // from before a field existed send an array they don't know the type
         // of as a string.
-        phases: jsonArray(z.array(z.string()).max(2)).optional().describe("Up to two phase names or ids; [] clears"),
         parts: jsonArray(
           z.array(
             z.object({
@@ -612,7 +542,6 @@ export function registerTools(server: McpServer) {
       description?: string;
       link?: string;
       topic?: string;
-      phases?: string[];
       parts?: {
         title: string;
         target?: number;
@@ -696,8 +625,6 @@ export function registerTools(server: McpServer) {
         for (const { partId, list } of partLists) next = writeChecklist(next, g.id, list, a.note, partId);
         if (a.done !== undefined) next = O.setGoalDone(next, g.id, a.done);
         if (a.status) next = O.setGoalStatus(next, g.id, a.status);
-        if (a.phases !== undefined)
-          next = O.setGoalPhases(next, g.id, a.phases.map((x) => pick(next.readingPhases, x, (p) => p.name, "phase").id));
         const after = next.goals.find((x) => x.id === g.id)!;
         const min = (m?: number) => (m != null ? ` (min ${m})` : "");
         const reached = minimumReached(after);
@@ -712,7 +639,7 @@ export function registerTools(server: McpServer) {
         const topic = goalTopic(g.id, next.paths)?.title;
         return {
           state: next,
-          result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}${phaseList(next, after.phaseIds)}.${alsoActive(next, g.id)}`,
+          result: `${after.title}${topic ? ` (${topic})` : ""}: ${goalStatus(after)}${progress}.${alsoActive(next, g.id)}`,
         };
       })
     )
@@ -789,7 +716,7 @@ export function registerTools(server: McpServer) {
     {
       title: "Reorder a reading track",
       description:
-        "Sets the reading order of one track's queue (queued and paused books), touching no other track. Listed books go first, in the order given; waiting books left out keep their relative order after them. Each entry can also move the book to another phase (phase name or id; an empty string takes it out of every phase). The active book stays open; list it only to change its phase.",
+        "Sets the reading order of one track's queue (queued and paused books), touching no other track. Listed books go first, in the order given; waiting books left out keep their relative order after them. The active book stays open.",
       inputSchema: {
         track: z.string().describe("Track name or id"),
         books: jsonArray(
@@ -797,37 +724,26 @@ export function registerTools(server: McpServer) {
             .array(
               z.object({
                 book: z.string().describe("Title or id"),
-                phase: z.string().optional().describe("Move it to this phase; empty string for none"),
               })
             )
             .min(1)
         ),
       },
     },
-    safe(async (a: { track: string; books: { book: string; phase?: string }[] }) =>
+    safe(async (a: { track: string; books: { book: string }[] }) =>
       change((s) => {
         const tr = pick(s.readingTracks, a.track, (x) => x.name, "track");
         const inTrack = s.books.filter((b) => b.trackId === tr.id && b.status !== "dropped" && b.status !== "finished");
         const ids: string[] = [];
-        const phaseOf = new Map<string, string | undefined>();
         for (const e of a.books) {
           const b = pick(inTrack, e.book, (x) => x.title, `book in ${tr.name}`);
           if (ids.includes(b.id)) throw new Error(`"${b.title}" is listed twice.`);
           ids.push(b.id);
-          if (e.phase !== undefined) {
-            phaseOf.set(b.id, e.phase.trim() ? pick(s.readingPhases, e.phase, (p) => p.name, "phase").id : undefined);
-          }
         }
-        let next: TrackerState = {
-          ...s,
-          books: s.books.map((b) => (phaseOf.has(b.id) ? { ...b, phaseId: phaseOf.get(b.id) } : b)),
-        };
+        let next: TrackerState = s;
         const waiting = new Set(R.trackQueue(next, tr.id).map((b) => b.id));
         next = R.reorderQueue(next, tr.id, ids.filter((id) => waiting.has(id)));
-        const queue = R.trackQueue(next, tr.id).map((b, i) => {
-          const ph = next.readingPhases.find((p) => p.id === b.phaseId)?.name;
-          return `${i + 1}. ${b.title}${ph ? ` (${ph})` : ""}`;
-        });
+        const queue = R.trackQueue(next, tr.id).map((b, i) => `${i + 1}. ${b.title}`);
         return { state: next, result: `${tr.name} queue:\n${queue.join("\n")}` };
       })
     )
@@ -1054,7 +970,7 @@ export function registerTools(server: McpServer) {
     "import_reading_plan",
     {
       title: "Import a reading plan",
-      description: `Reads a whole reading plan — tracks, phases and books in order — in Momentum's Markdown format, the same the app's Import plan takes. Books already on the shelf are moved into place with their progress kept. The format:\n\n${PLAN_FORMAT}`,
+      description: `Reads a whole reading plan — tracks and books in order — in Momentum's Markdown format, the same the app's Import plan takes. Books already on the shelf are moved into place with their progress kept. The format:\n\n${PLAN_FORMAT}`,
       inputSchema: { markdown: z.string() },
     },
     safe(async ({ markdown }: { markdown: string }) => {

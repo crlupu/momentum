@@ -10,7 +10,7 @@ import * as R from "@/lib/reading";
 import { FlowContext, useFlow as useFlowFromContext, type Dialog, type Flow } from "./flowContext";
 import { BookDetail } from "./BookDetail";
 import { BookForm } from "./BookForm";
-import { BulkAddForm, ImportPlanForm, PhaseForm, TrackForm } from "./forms";
+import { BulkAddForm, ImportPlanForm, TrackForm } from "./forms";
 import { Minus, Plus } from "../icons";
 import { MacroField } from "../QuickAdd";
 
@@ -241,15 +241,6 @@ function DialogFor({
       return (
         <Modal open onClose={close} title={track ? "Edit track" : "New track"}>
           <TrackForm tracker={tracker} track={track ?? null} onClose={close} />
-        </Modal>
-      );
-    }
-
-    case "phase": {
-      const phase = d.phaseId ? s.readingPhases.find((p) => p.id === d.phaseId) : undefined;
-      return (
-        <Modal open onClose={close} title={phase ? "Edit phase" : "New phase"}>
-          <PhaseForm tracker={tracker} phase={phase ?? null} onClose={close} />
         </Modal>
       );
     }

@@ -17,8 +17,7 @@ export type Dialog =
   | { kind: "next"; bookId: string; finishedTitle: string }
   | { kind: "bulk"; trackId?: string }
   | { kind: "import" }
-  | { kind: "track"; trackId: string | null }
-  | { kind: "phase"; phaseId: string | null };
+  | { kind: "track"; trackId: string | null };
 
 export type Flow = {
   /** Opens a dialog over whatever is showing. */
