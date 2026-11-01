@@ -9,6 +9,7 @@ import { SectionPage } from "@/components/Section";
 import { HealthSwitch } from "@/components/HealthSwitch";
 import WeightTracker, { WeeklyMedians } from "@/components/WeightTracker";
 import WeightPlanCard from "@/components/WeightPlan";
+import { MeasurementsCard, MeasurementsPage } from "@/components/Measurements";
 import WorkoutVolumeChart from "@/components/WorkoutVolumeChart";
 import { ChevronLeft } from "@/components/icons";
 import { UpNextWorkout } from "@/components/UpNextWorkout";
@@ -106,6 +107,13 @@ function Fitness() {
       </SectionPage>
     );
   }
+  if (view === "measurements") {
+    return (
+      <SectionPage id="fitness" title="Measurements" subtitle={back}>
+        <MeasurementsPage tracker={tracker} />
+      </SectionPage>
+    );
+  }
   if (view === "training") {
     return (
       <SectionPage id="fitness" title="Training" subtitle={back}>
@@ -120,6 +128,7 @@ function Fitness() {
         <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
           <WeightTracker tracker={tracker} summary />
           <WorkoutVolumeChart tracker={tracker} summary />
+          <MeasurementsCard tracker={tracker} />
         </div>
       </div>
     </SectionPage>

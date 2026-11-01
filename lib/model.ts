@@ -8,6 +8,7 @@ import { contrast } from "./color";
 import * as R from "./reading";
 import * as P from "./projects";
 import type { WeightPlan } from "./weight";
+import { migrateMeasurements, type Measurement } from "./measurements";
 import type {
   BookStatus,
   BookQuote,
@@ -640,6 +641,8 @@ export type TrackerState = {
   weights: WeightEntry[];
   /** The weight-loss plan, if one is set. See lib/weight.ts. */
   weightPlan?: WeightPlan | null;
+  /** Waist, chest and arm, one entry a month. See lib/measurements.ts. */
+  measurements?: Measurement[];
   cardio: CardioEntry[];
   books: Book[];
   readingTracks: ReadingTrack[];
@@ -1255,6 +1258,7 @@ export function migrate(raw: unknown): TrackerState {
     completions,
     projects: P.migrateProjects(s.projects, uid),
     weights,
+    measurements: migrateMeasurements(s.measurements),
     cardio,
     ...reading,
     calories,

@@ -18,6 +18,7 @@ import { contrast } from "./color";
 import * as R from "./reading";
 import * as P from "./projects";
 import * as O from "./ops";
+import { withMonth, type MeasureValues } from "./measurements";
 import * as LP from "./paths";
 import { applyPlan, type Plan } from "./planImport";
 import { applyGoalPlan, type GoalPlan, type ImportOptions } from "./goalImport";
@@ -1168,6 +1169,10 @@ export function useTracker() {
         weights.sort((a, b) => a.date.localeCompare(b.date));
         return { ...s, weights };
       }),
+
+    /** Logs a month's measurements: a value replaces, null clears, one left out stays. */
+    setMeasurements: (month: string, values: MeasureValues) =>
+      commit((s) => ({ ...s, measurements: withMonth(s.measurements ?? [], month, values, dateKey()) })),
 
     /**
      * Logs a stretch of cardio against today. Adds rather than replaces, so a
