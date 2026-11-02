@@ -358,7 +358,7 @@ function WeightForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: ()
       </MacroField>
       {diff != null && last && <p className="quick__note">{diff === 0 ? "Same as" : `${diff > 0 ? "+" : "−"}${Math.abs(diff)} from`} {last.date === dateKey() ? "earlier today" : "last time"}</p>}
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !(n > 0)}>
-        Log {n > 0 ? `${n} kg` : "weight"}
+        Log
       </button>
     </form>
   );
@@ -423,7 +423,7 @@ function MealForm({ tracker, onDone, onToast }: { tracker: Tracker; onDone: () =
         ))}
       </div>
       <button type="submit" className="pill-link pill-link--primary quick__save" disabled={pending || !parts.length}>
-        {parts.length ? `Log ${parts.join(", ")}` : "Log meal"}
+        Log
       </button>
     </form>
   );

@@ -70,7 +70,7 @@ export function MeasurementsCard({ tracker, onPage }: { tracker: Tracker; /** On
         <p className="empty-state__title">Measure once a month</p>
         <p className="empty-state__text">Waist, chest and arm, in centimetres. Weight says how much; these say where.</p>
         <button type="button" className="pill-link pill-link--primary mt-3" onClick={() => setOpen(true)}>
-          Log {monthName(month, today)}
+          Log
         </button>
         {sheet}
       </div>
@@ -89,7 +89,7 @@ export function MeasurementsCard({ tracker, onPage }: { tracker: Tracker; /** On
         actions={
           <>
             <button type="button" className="pill-link pill-link--primary flex-1 justify-center" onClick={() => setOpen(true)}>
-              {logged ? `Edit ${monthName(month, today)}` : `Log ${monthName(month, today)}`}
+              Log
             </button>
             {!onPage && (
               <Link href="/fitness?view=measurements" className="pill-link">

@@ -103,15 +103,15 @@ export function FocusScreen({ tracker, onTuck }: { tracker: Tracker; onTuck: () 
       </div>
 
       <div className="focus-screen__actions">
-        {f.pausedAt ? (
-          <button type="button" className="focus-screen__btn" disabled={pending} onClick={() => void run(() => tracker.resumeFocus())}>
-            Resume
-          </button>
-        ) : (
-          <button type="button" className="focus-screen__btn" disabled={pending} onClick={() => void run(() => tracker.pauseFocus())}>
-            Pause
-          </button>
-        )}
+        <button
+          type="button"
+          className="focus-screen__btn"
+          aria-pressed={!!f.pausedAt}
+          disabled={pending}
+          onClick={() => void run(() => (f.pausedAt ? tracker.resumeFocus() : tracker.pauseFocus()))}
+        >
+          Pause
+        </button>
         <button
           type="button"
           className="focus-screen__btn focus-screen__btn--primary"

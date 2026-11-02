@@ -2,7 +2,7 @@
 
 import { InsertRow } from "./InsertRow";
 import { IconButton } from "./IconButton";
-import { FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { FormEvent, Fragment, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -28,6 +28,7 @@ import {
   Hourglass,
   Plus,
   Trash2,
+  LinkIcon,
   Undo } from "./icons";
 import { ActionMenu } from "./Menu";
 import { usePending } from "./ActionButton";
@@ -51,7 +52,8 @@ import {
   activeWorkoutVolume,
   activeWorkoutSets,
   activeWorkoutPlannedSets,
-  lastPerformed } from "@/lib/tracker";
+  lastPerformed,
+  supersetsOf } from "@/lib/tracker";
 
 /* --------------------------------- blocks -------------------------------- */
 
@@ -325,6 +327,7 @@ function SortableExercises({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
   const ids = exercises.map((e) => e.id);
+  const sets = supersetsOf(exercises, (e) => e.id);
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const from = ids.indexOf(String(active.id));
@@ -336,8 +339,17 @@ function SortableExercises({
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
         <div>
-          {exercises.map((ex) => (
-            <ExerciseRow key={ex.id} tracker={tracker} workout={workout} exercise={ex} />
+          {exercises.map((ex, i) => (
+            <Fragment key={ex.id}>
+              <ExerciseRow tracker={tracker} workout={workout} exercise={ex} superset={sets.get(ex.id)} />
+              {i < exercises.length - 1 && (
+                <SupersetToggle
+                  on={!!ex.supersetNext}
+                  between={`${ex.name} and ${exercises[i + 1].name}`}
+                  onToggle={() => void tracker.setSuperset(workout.id, ex.id, !ex.supersetNext)}
+                />
+              )}
+            </Fragment>
           ))}
         </div>
       </SortableContext>
@@ -345,13 +357,31 @@ function SortableExercises({
   );
 }
 
+/**
+ * Between two exercises: Superset, quiet until tapped, then blue, linking
+ * the two so their sets alternate. Tapped again, they're apart.
+ */
+export function SupersetToggle({ on, between, onToggle }: { on: boolean; between: string; onToggle: () => void }) {
+  return (
+    <div className={"superset-toggle" + (on ? " is-on" : "")}>
+      <button type="button" aria-pressed={on} aria-label={`Superset ${between}`} onClick={onToggle}>
+        <LinkIcon aria-hidden />
+        Superset
+      </button>
+    </div>
+  );
+}
+
 function ExerciseRow({
   tracker,
   workout,
-  exercise }: {
+  exercise,
+  superset }: {
   tracker: Tracker;
   workout: Workout;
   exercise: Exercise;
+  /** Its place in a superset: "A1", with where it sits in the run for the bracket. */
+  superset?: { letter: string; n: number; size: number };
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise.id,
@@ -433,8 +463,18 @@ function ExerciseRow({
     <div
       ref={setNodeRef}
       style={dragStyle}
-      className={"exercise-row group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0" + (isDragging ? " is-dragging" : "")}
+      className={
+        "exercise-row group flex items-center gap-3 border-b border-foreground/10 py-2.5 last:border-b-0" +
+        (isDragging ? " is-dragging" : "") +
+        (superset ? " is-superset" + (superset.n === 1 ? " is-superset-first" : "") + (superset.n === superset.size ? " is-superset-last" : "") : "")
+      }
     >
+      {superset && (
+        <span className="superset-tag" aria-label={`Superset ${superset.letter}, ${superset.n} of ${superset.size}`}>
+          {superset.letter}
+          {superset.n}
+        </span>
+      )}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[15px]">{exercise.name}</span>
         {exercise.target && (
@@ -793,10 +833,13 @@ function ExerciseBlock({
   tracker,
   exercise: e,
   history,
-  lastSet }: {
+  lastSet,
+  tag }: {
   tracker: Tracker;
   exercise: ActiveExercise;
   history: { date: string; sets: SetRecord[] } | null;
+  /** Its place in a superset, "A1". */
+  tag?: string;
   /** The workout's most recently completed set, for the rest clock. */
   lastSet: LastSet | null;
 }) {
@@ -858,6 +901,7 @@ function ExerciseBlock({
       className={["exercise", done ? "exercise--done" : "", tapped ? "is-tapped" : ""].filter(Boolean).join(" ")}
     >
       <div className="exercise__head">
+        {tag && <span className="superset-tag">{tag}</span>}
         <span className="exercise__name">{e.name}</span>
         {/* Done one side at a time: the kg are for one arm. */}
         {e.oneArm && (
@@ -930,7 +974,7 @@ function ExerciseBlock({
           </button>
           {!empty && (
             <button type="button" className="exercise__finish" onClick={finish}>
-              <Check aria-hidden /> Finish {e.name}
+              <Check aria-hidden /> Finish
             </button>
           )}
           {!empty && (
@@ -957,8 +1001,10 @@ type LastSet = { at: number; set: number; name: string; rest: number };
  */
 function lastSetOf(active: ActiveWorkout, definition?: Workout): LastSet | null {
   let last: LastSet | null = null;
-  for (const e of active.exercises) {
-    const rest = definition?.exercises.find((d) => d.id === e.exerciseId)?.restSeconds ?? DEFAULT_REST;
+  for (const [k, e] of active.exercises.entries()) {
+    // Inside a superset the next exercise follows straight on: the rest comes after the last of the run.
+    const linked = !!e.supersetNext && k < active.exercises.length - 1;
+    const rest = linked ? 0 : definition?.exercises.find((d) => d.id === e.exerciseId)?.restSeconds ?? DEFAULT_REST;
     e.sets.forEach((x, i) => {
       if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name, rest };
     });
@@ -1096,7 +1142,19 @@ export function ActiveWorkoutPanel({
   const currentIdx = plain.findIndex((e) => !e.done);
   const shown = plain.find((e) => e.exerciseId === picked) ?? plain[currentIdx] ?? plain[plain.length - 1];
   const shownIdx = shown ? plain.indexOf(shown) : -1;
-  const upNext = shownIdx >= 0 ? plain.slice(shownIdx + 1).find((e) => !e.done) ?? plain.find((e, i) => i !== shownIdx && !e.done) : undefined;
+  // A superset is on screen whole: its exercises together, sets alternating.
+  const supersets = supersetsOf(plain, (e) => e.exerciseId);
+  const ss = shown ? supersets.get(shown.exerciseId) : undefined;
+  const group = ss ? plain.filter((e) => ss.group.includes(e.exerciseId)) : shown ? [shown] : [];
+  const groupIds = new Set(group.map((e) => e.exerciseId));
+  // In a superset, the one due next: the fewest sets done, the first on a tie.
+  const due = group.filter((e) => !e.done).reduce<ActiveExercise | undefined>((a, e) => (!a || e.sets.filter((x) => x.done).length < a.sets.filter((x) => x.done).length ? e : a), undefined);
+  const lastIdx = group.length ? plain.indexOf(group[group.length - 1]) : shownIdx;
+  const upNext =
+    shownIdx >= 0
+      ? plain.slice(lastIdx + 1).find((e) => !e.done) ?? plain.find((e) => !groupIds.has(e.exerciseId) && !e.done)
+      : undefined;
+  const last = lastSetOf(active, definition);
 
   return (
     <div className="live-workout">
@@ -1109,10 +1167,16 @@ export function ActiveWorkoutPanel({
                 key={e.exerciseId}
                 type="button"
                 role="listitem"
-                aria-pressed={i === shownIdx}
-                className={"live-chip" + (i === shownIdx ? " is-current" : "") + (e.done ? " is-done" : "")}
+                aria-pressed={groupIds.has(e.exerciseId)}
+                className={"live-chip" + (groupIds.has(e.exerciseId) ? " is-current" : "") + (e.done ? " is-done" : "")}
                 onClick={() => setPicked(e.exerciseId)}
               >
+                {supersets.get(e.exerciseId) && (
+                  <span className="live-chip__tag">
+                    {supersets.get(e.exerciseId)!.letter}
+                    {supersets.get(e.exerciseId)!.n}
+                  </span>
+                )}
                 {e.oneArm && <OneArm className="live-chip__hand" aria-label="One arm" />}
                 {e.name}, {d}/{e.sets.length}
               </button>
@@ -1133,14 +1197,33 @@ export function ActiveWorkoutPanel({
           </div>
         ))}
 
-        {shown && (
-          <ExerciseBlock
-            key={shown.exerciseId}
-            tracker={tracker}
-            exercise={shown}
-            history={lastPerformed(sessions, shown.exerciseId)}
-            lastSet={lastSetOf(active, definition)}
-          />
+        {ss ? (
+          <section className="superset-live" aria-label={`Superset ${ss.letter}`}>
+            <div className="superset-live__head">
+              <span className="superset-live__name">Superset {ss.letter}</span>
+              <span className="superset-live__note">Alternate sets, rest after {ss.letter}{ss.size}</span>
+            </div>
+            {group.map((e) => (
+              <ExerciseBlock
+                key={e.exerciseId}
+                tracker={tracker}
+                exercise={e}
+                history={lastPerformed(sessions, e.exerciseId)}
+                lastSet={e === due ? last : null}
+                tag={`${ss.letter}${supersets.get(e.exerciseId)!.n}`}
+              />
+            ))}
+          </section>
+        ) : (
+          shown && (
+            <ExerciseBlock
+              key={shown.exerciseId}
+              tracker={tracker}
+              exercise={shown}
+              history={lastPerformed(sessions, shown.exerciseId)}
+              lastSet={last}
+            />
+          )
         )}
       </div>
       <div className="live-workout__side">

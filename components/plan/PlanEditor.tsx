@@ -537,8 +537,9 @@ function Picker({
         <p className="plan-picker__foot">
           <span>{queued ? "Active and queued" : `Only active goals, ${activeCount}`}</span>
           {queuedCount > 0 && (
-            <button type="button" className="text-action" onClick={() => setQueued((v) => !v)}>
-              {queued ? "Hide queued" : `Show ${queuedCount} queued`}
+            <button type="button" className="text-action fold-toggle" aria-expanded={queued} onClick={() => setQueued((v) => !v)}>
+              Queued <span className="fold-toggle__count">{queuedCount}</span>
+              <ChevronDown className={queued ? "rotate-180" : undefined} aria-hidden />
             </button>
           )}
         </p>

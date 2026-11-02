@@ -123,7 +123,7 @@ export function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; ta
         </span>
       </div>
       <button type="submit" className="pill-link pill-link--primary weekly-form__save" disabled={pending || !title.trim() || !catId}>
-        {task ? "Save" : "Add weekly task"}
+        Save
       </button>
       {task && (
         <button

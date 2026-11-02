@@ -20,6 +20,7 @@ export {
   MdAdd as Plus,
   MdRemove as Minus,
   MdOpenInNew as ExternalLink,
+  MdLink as LinkIcon,
   MdCheck as Check,
   MdInfoOutline as Info,
   MdClose as X,

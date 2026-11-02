@@ -223,7 +223,7 @@ export function CircuitPlayer({
           </Button>
         ) : (
           <Button variant="primary" onPress={start}>
-            <Play className="h-4 w-4" /> {left === step.seconds ? "Start" : "Resume"}
+            <Play className="h-4 w-4" /> Start
           </Button>
         )}
         <Button

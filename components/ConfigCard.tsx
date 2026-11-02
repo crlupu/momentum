@@ -35,9 +35,9 @@ export function ConfigCard({ title, children }: { title: string; children: React
   return (
     <Panel
       title={title}
-      // Edit / Done, in words: the convention for a list that turns editable.
+      // Edit stays Edit; it turns white while the list is editable.
       onEdit={() => setEditing((v) => !v)}
-      editLabel={editing ? "Done" : "Edit"}
+      editLabel="Edit"
       editPressed={editing}
       bodyClassName={editing ? "config-card--editing" : undefined}
     >

@@ -73,7 +73,9 @@ export function NextSteps({ tracker, onOpen }: { tracker: Tracker; onOpen: (goal
         {more > 0 && (
           <li>
             <button type="button" className="next-steps__more" aria-expanded={all} onClick={() => setAll((v) => !v)}>
-              <span className="flex-1">{all ? "Show fewer" : `Show ${more} more`}</span>
+              <span className="flex-1">
+                More <span className="fold-toggle__count">{more}</span>
+              </span>
               <ChevronDown className={all ? "rotate-180" : undefined} aria-hidden />
             </button>
           </li>

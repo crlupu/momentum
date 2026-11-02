@@ -6470,3 +6470,79 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .measure-table__delta { font-size: 0.6875rem; color: var(--muted); }
 .measure-table .rd-link__chevron { inline-size: 1rem; block-size: 1rem; }
 @media (hover: hover) { button.measure-table__row:hover { background: var(--default); } }
+
+/* ---- Supersets: a quiet chip between exercises, blue once linked ---- */
+.superset-toggle { display: flex; justify-content: center; margin-block: -0.75rem; position: relative; z-index: 1; pointer-events: none; }
+.superset-toggle > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-block-size: 1.5rem;
+  padding: 0 0.625rem;
+  border-radius: var(--r-pill);
+  background: var(--surface-secondary);
+  box-shadow: 0 0 0 3px var(--pane-bg);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.superset-toggle > button svg { inline-size: 0.9375rem; block-size: 0.9375rem; fill: currentColor; }
+.superset-toggle.is-on > button { color: var(--foreground); }
+.superset-toggle.is-on > button svg { fill: var(--accent); }
+/* Tap room beyond the chip's drawn size. */
+.superset-toggle > button::after { content: ""; position: absolute; inset: -0.625rem -0.5rem; }
+.superset-toggle > button { position: relative; }
+.exercise-row.is-superset { position: relative; padding-inline-start: 0.875rem; }
+.exercise-row.is-superset::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  inline-size: 3px;
+  background: var(--accent);
+}
+.exercise-row.is-superset-first::before { inset-block-start: 0.75rem; border-start-start-radius: 2px; border-start-end-radius: 2px; }
+.exercise-row.is-superset-last::before { inset-block-end: 0.75rem; border-end-start-radius: 2px; border-end-end-radius: 2px; }
+.superset-tag {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.875rem;
+  block-size: 1.875rem;
+  padding: 0 0.25rem;
+  border-radius: 9px;
+  background: var(--surface-secondary);
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.superset-live { display: flex; flex-direction: column; gap: 0.75rem; }
+.superset-live__head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; padding-inline: 0.25rem; }
+.superset-live__name { font-size: 1.0625rem; font-weight: 700; }
+.superset-live__note { font-size: 0.8125rem; color: var(--muted); }
+.live-chip__tag { margin-inline-end: 0.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- Buttons keep one word: counts sit beside it, state shows by chevron or fill ---- */
+.fold-toggle { gap: 0.375rem; }
+.fold-toggle__count { margin-inline-start: 0.25rem; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.fold-toggle svg { inline-size: 1.125rem; block-size: 1.125rem; transition: transform 160ms ease; }
+.goal-desc__more { display: inline-flex; align-items: center; gap: 0.25rem; }
+.goal-desc__more svg { inline-size: 1.125rem; block-size: 1.125rem; fill: currentColor; }
+.plan-row__next { flex: 1 1 100%; margin: 0; overflow: hidden; font-size: 0.8125rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.hero__ghost[aria-pressed="true"],
+.focus-screen__btn[aria-pressed="true"] { background: var(--hero-fg, var(--foreground)); color: var(--hero-bg, var(--background)); }
+.superset-li { list-style: none; position: relative; }
+.exercise-line.is-superset { position: relative; }
+.exercise-line.is-superset::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  inline-size: 3px;
+  background: var(--accent);
+}
+.exercise-line.is-superset-first::before { inset-block-start: 0.875rem; border-radius: 2px 2px 0 0; }
+.exercise-line.is-superset-last::before { inset-block-end: 0.875rem; border-radius: 0 0 2px 2px; }
