@@ -113,7 +113,7 @@ export function PathsView({
                   setEditingId(null);
                 }}
               >
-                {arranging ? "Done" : "Edit"}
+                Edit
               </button>
               {/* One + for the section: a goal, or a path to group goals. */}
               <ActionMenu
@@ -159,10 +159,10 @@ export function PathsView({
                   type="button"
                   className="text-action text-action--sm"
                   aria-pressed={editing}
-                  aria-label={editing ? `Done editing ${sec.title}` : `Edit ${sec.title}`}
+                  aria-label={`Edit ${sec.title}`}
                   onClick={() => setEditingId(editing ? null : sec.id)}
                 >
-                  {editing ? "Done" : "Edit"}
+                  Edit
                 </button>
               )}
             </div>

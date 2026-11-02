@@ -111,7 +111,7 @@ function TrackToday({
           <span className="text-sm text-[var(--muted)]">Nothing open.</span>
           {next && (
             <Button size="sm" variant="outline" onPress={() => flow.start(next.id)}>
-              <Play className="h-3.5 w-3.5" /> Start {next.title}
+              <Play className="h-3.5 w-3.5" /> Start
             </Button>
           )}
         </div>

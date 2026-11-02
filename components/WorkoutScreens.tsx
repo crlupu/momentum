@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -19,10 +19,10 @@ import { DialogActions } from "./DialogActions";
 import { DeleteButton } from "./DeleteButton";
 import { InsertRow } from "./InsertRow";
 import { RepeatSelect } from "./RepeatSelect";
-import { AddBlockRow, BlockSection } from "./WorkoutsView";
+import { AddBlockRow, BlockSection, SupersetToggle } from "./WorkoutsView";
 import { ChevronRight, Minus, Plus, ReorderLines } from "./icons";
 import { usePending } from "./ActionButton";
-import { DEFAULT_REST, Tracker, blockExercises, formatTarget, type Exercise, type ExerciseTarget, type Workout } from "@/lib/tracker";
+import { DEFAULT_REST, Tracker, blockExercises, formatTarget, supersetsOf, type Exercise, type ExerciseTarget, type Workout } from "@/lib/tracker";
 
 /** Every workout, each a row that opens its page; New workout at the end. */
 export function WorkoutsList({ tracker }: { tracker: Tracker }) {
@@ -95,6 +95,7 @@ export function WorkoutScreen({ tracker, workout, onDeleted }: { tracker: Tracke
   );
   const main = blockExercises(workout, undefined);
   const ids = main.map((e) => e.id);
+  const sets = supersetsOf(main, (e) => e.id);
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
     const from = ids.indexOf(String(active.id));
@@ -132,8 +133,19 @@ export function WorkoutScreen({ tracker, workout, onDeleted }: { tracker: Tracke
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={ids} strategy={verticalListSortingStrategy}>
             <ul className="group-list">
-              {main.map((ex) => (
-                <ExerciseLine key={ex.id} tracker={tracker} workout={workout} exercise={ex} onOpen={() => setSheet(ex)} />
+              {main.map((ex, i) => (
+                <Fragment key={ex.id}>
+                  <ExerciseLine tracker={tracker} workout={workout} exercise={ex} superset={sets.get(ex.id)} onOpen={() => setSheet(ex)} />
+                  {i < main.length - 1 && (
+                    <li className="superset-li">
+                      <SupersetToggle
+                        on={!!ex.supersetNext}
+                        between={`${ex.name} and ${main[i + 1].name}`}
+                        onToggle={() => void tracker.setSuperset(workout.id, ex.id, !ex.supersetNext)}
+                      />
+                    </li>
+                  )}
+                </Fragment>
               ))}
               <li>
                 <InsertRow label="Add exercise" onPress={() => setSheet("new")} />
@@ -141,7 +153,7 @@ export function WorkoutScreen({ tracker, workout, onDeleted }: { tracker: Tracke
             </ul>
           </SortableContext>
         </DndContext>
-        <p className="group-foot">Tap an exercise to change its target. Drag ≡ to reorder.</p>
+        <p className="group-foot">Tap an exercise to change its target. Drag ≡ to reorder. Tap Superset between two to alternate their sets.</p>
       </section>
 
       <section>
@@ -192,11 +204,14 @@ function ExerciseLine({
   tracker,
   workout,
   exercise,
+  superset,
   onOpen,
 }: {
   tracker: Tracker;
   workout: Workout;
   exercise: Exercise;
+  /** Its place in a superset, for the A1 tag and the bracket. */
+  superset?: { letter: string; n: number; size: number };
   onOpen: () => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
@@ -205,7 +220,11 @@ function ExerciseLine({
   return (
     <li
       ref={setNodeRef}
-      className={"group-row exercise-line" + (isDragging ? " is-dragging" : "")}
+      className={
+        "group-row exercise-line" +
+        (isDragging ? " is-dragging" : "") +
+        (superset ? " is-superset" + (superset.n === 1 ? " is-superset-first" : "") + (superset.n === superset.size ? " is-superset-last" : "") : "")
+      }
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       <DeleteButton
@@ -214,6 +233,12 @@ function ExerciseLine({
         what={`the exercise "${exercise.name}"`}
         onDelete={() => tracker.removeExercise(workout.id, exercise.id)}
       />
+      {superset && (
+        <span className="superset-tag" aria-label={`Superset ${superset.letter}, ${superset.n} of ${superset.size}`}>
+          {superset.letter}
+          {superset.n}
+        </span>
+      )}
       <button type="button" className="exercise-line__open" onClick={onOpen}>
         <span>{exercise.name}</span>
         <span className="text-[13px] text-[var(--muted)]">

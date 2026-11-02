@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy } from "./icons";
+import { Check, Copy } from "./icons";
 
 /**
  * The format an import reads, as an example to copy — to hand to an AI, or
@@ -28,7 +28,8 @@ export function FormatHelp({ text }: { text: string }) {
       <div className="format-help__head">
         <span className="format-help__label">Format</span>
         <button type="button" className="text-action" onClick={() => void copy()}>
-          <Copy className="h-4 w-4" aria-hidden /> {copied ? "Copied" : "Copy format"}
+          {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />} Copy
+          <span className="sr-only" role="status">{copied ? "Copied" : ""}</span>
         </button>
       </div>
       {manual ? (

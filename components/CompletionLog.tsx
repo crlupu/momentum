@@ -255,7 +255,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
     <Panel
       title="Completed"
       onEdit={entries.length ? () => setEditing((v) => !v) : undefined}
-      editLabel={editing ? "Done" : "Edit"}
+      editLabel="Edit"
       editPressed={editing}
     >
           {entries.length === 0 ? (

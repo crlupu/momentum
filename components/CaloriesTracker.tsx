@@ -174,7 +174,7 @@ export default function CaloriesTracker({ tracker, view = "today" }: { tracker: 
             </div>
           )}
           <button type="submit" className="pill-link pill-link--primary meal-log__save" disabled={pending || !parts.length}>
-            {parts.length ? `Log ${parts.join(", ")}` : "Log meal"}
+            Log
           </button>
         </form>
 

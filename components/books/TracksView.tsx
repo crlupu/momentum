@@ -168,10 +168,10 @@ export function TrackQueue({
             type="button"
             className="text-action"
             aria-pressed={reordering}
-            aria-label={reordering ? `Done reordering ${track.name}` : `Reorder ${track.name}`}
+            aria-label={`Reorder ${track.name}`}
             onClick={() => setReordering((v) => !v)}
           >
-            {reordering ? "Done" : "Reorder"}
+            Reorder
           </button>
         )}
       </div>

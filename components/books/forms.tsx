@@ -243,7 +243,7 @@ export function BulkAddForm({
       </p>
       <DialogActions
         primary={{
-          label: `Add ${list.length || ""} book${list.length === 1 ? "" : "s"}`.replace("  ", " "),
+          label: "Add",
           disabled: pending || !list.length || !track,
         }}
       />

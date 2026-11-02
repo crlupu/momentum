@@ -412,6 +412,12 @@ export type Exercise = {
    * it, so everything that reads a workout's exercises still reads them all.
    */
   blockId?: string;
+  /**
+   * Done as a superset with the exercise after it: their sets alternate, and
+   * the rest comes after the last of the run. Off by default; ignored on the
+   * last exercise of the workout.
+   */
+  supersetNext?: boolean;
 };
 
 /**
@@ -463,6 +469,8 @@ export type ActiveExercise = {
   seconds?: number;
   note?: string;
   blockId?: string;
+  /** Copied from the definition. See Exercise.supersetNext. */
+  supersetNext?: boolean;
   /** Copied from the definition at the start. See Exercise.oneArm. */
   oneArm?: boolean;
   /** Copied from the definition. See Exercise.target. */
@@ -559,6 +567,27 @@ export type Workout = {
 };
 
 /** The exercises of one block, in the workout's own order. */
+/**
+ * Supersets: runs of exercises linked to the next one, each with its letter
+ * (A, B…) and every exercise's place in its run ("A1", "A2"). An exercise in
+ * no superset has no entry.
+ */
+export function supersetsOf<T extends { supersetNext?: boolean }>(list: T[], idOf: (x: T) => string): Map<string, { letter: string; n: number; size: number; group: string[] }> {
+  const out = new Map<string, { letter: string; n: number; size: number; group: string[] }>();
+  let k = 0;
+  for (let i = 0; i < list.length; ) {
+    let j = i;
+    while (j < list.length - 1 && list[j].supersetNext) j++;
+    if (j > i) {
+      const letter = String.fromCharCode(65 + (k++ % 26));
+      const group = list.slice(i, j + 1).map(idOf);
+      group.forEach((id, n) => out.set(id, { letter, n: n + 1, size: group.length, group }));
+    }
+    i = j + 1;
+  }
+  return out;
+}
+
 export function blockExercises(w: Workout, blockId?: string): Exercise[] {
   return w.exercises.filter((e) => (e.blockId ?? undefined) === blockId);
 }

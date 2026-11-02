@@ -1499,6 +1499,32 @@ export function useTracker() {
      * block) in the given order. They take the same slots between them, so
      * every other exercise stays where it is.
      */
+    /** Links an exercise to the one after it as a superset, or unlinks it. */
+    setSuperset: (workoutId: string, exerciseId: string, on: boolean) =>
+      commit((s) => ({
+        ...s,
+        workouts: s.workouts.map((w) =>
+          w.id !== workoutId
+            ? w
+            : {
+                ...w,
+                exercises: w.exercises.map((e) => {
+                  if (e.id !== exerciseId) return e;
+                  const { supersetNext: _x, ...rest } = e;
+                  return on ? { ...rest, supersetNext: true } : rest;
+                }),
+              }
+        ),
+        // A session under way follows at once.
+        activeWorkout:
+          s.activeWorkout?.workoutId === workoutId
+            ? {
+                ...s.activeWorkout,
+                exercises: s.activeWorkout.exercises.map((e) => (e.exerciseId === exerciseId ? { ...e, supersetNext: on || undefined } : e)),
+              }
+            : s.activeWorkout,
+      })),
+
     reorderExercises: (workoutId: string, ids: string[]) =>
       commit((s) => ({
         ...s,
@@ -1592,6 +1618,7 @@ export function useTracker() {
                 seconds: e.seconds,
                 note: e.note,
                 blockId: e.blockId,
+                supersetNext: e.supersetNext,
                 target: e.target,
                 // Never done before: laid out as recommended instead.
                 sets: (previous.length

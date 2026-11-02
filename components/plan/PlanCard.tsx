@@ -216,15 +216,16 @@ export function FocusCard({ tracker, plan }: { tracker: Tracker; plan?: DayPlan 
           <button type="button" className="hero__ghost" onClick={openFocus}>
             Open
           </button>
-          {f.pausedAt ? (
-            <button type="button" className="hero__ghost flex-1" disabled={pending} onClick={() => void run(() => tracker.resumeFocus())}>
-              Resume
-            </button>
-          ) : (
-            <button type="button" className="hero__ghost flex-1" disabled={pending} onClick={() => void run(() => tracker.pauseFocus())}>
-              Pause
-            </button>
-          )}
+          {/* One word: Pause, white while paused; tapped again, it carries on. */}
+          <button
+            type="button"
+            className="hero__ghost flex-1"
+            aria-pressed={!!f.pausedAt}
+            disabled={pending}
+            onClick={() => void run(() => (f.pausedAt ? tracker.resumeFocus() : tracker.pauseFocus()))}
+          >
+            Pause
+          </button>
           <Button variant="primary" isDisabled={pending} onPress={() => void run(() => tracker.finishFocus())}>
             <Check aria-hidden /> Finish
           </Button>

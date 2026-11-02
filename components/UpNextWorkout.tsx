@@ -99,7 +99,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
       actions={
         <>
           <Button variant="primary" onPress={() => start(next.id)}>
-            <Play className="h-4 w-4" /> Start {next.name}
+            <Play className="h-4 w-4" /> Start
           </Button>
           {startable.length > 1 && (
             <button type="button" className="hero__ghost" aria-label="Choose another workout" onClick={() => setChoosing(true)}>

@@ -124,8 +124,8 @@ export function AuthGate({
               </p>
             )}
 
-            <Button type="submit" variant="primary" isDisabled={busy} className="mt-1">
-              {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+            <Button type="submit" variant="primary" isDisabled={busy} aria-busy={busy} className="mt-1">
+              {mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
 

@@ -286,7 +286,7 @@ function Checklist({
             setFocusId(null);
           }}
         >
-          {editing ? "Done" : "Edit"}
+          Edit
         </button>
       </div>
       <ul className="step-list">
@@ -360,7 +360,9 @@ function ChecklistRows({
       {capped && (
         <li className={partId ? "item-row--nested" : undefined}>
           <button type="button" className="done-fold" onClick={() => setShowAll(true)}>
-            <span className="flex-1">Show {left.length - STILL_SHOWN} more</span>
+            <span className="flex-1">
+              More <span className="fold-toggle__count">{left.length - STILL_SHOWN}</span>
+            </span>
             <ChevronDown aria-hidden />
           </button>
         </li>
@@ -484,7 +486,8 @@ function Description({ text }: { text: string }) {
       <p className={"goal-desc__text" + (long && !open ? " is-folded" : "")}>{text}</p>
       {long && (
         <button type="button" className="goal-desc__more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-          {open ? "Less" : "More"}
+          More
+          <ChevronDown className={open ? "rotate-180" : undefined} aria-hidden />
         </button>
       )}
     </div>

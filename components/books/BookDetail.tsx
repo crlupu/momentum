@@ -77,7 +77,7 @@ export function BookDetail({ tracker, book }: { tracker: Tracker; book: Book }) 
         )}
         {(book.status === "queued" || book.status === "paused") && (
           <Button variant="primary" className="w-full justify-center" onPress={() => flow.start(book.id)}>
-            <Play className="h-4 w-4" /> {book.status === "paused" ? "Resume" : "Start"}
+            <Play className="h-4 w-4" /> Start
           </Button>
         )}
         {book.status === "finished" && (

@@ -128,7 +128,7 @@ function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayP
             <span className="leftovers__sub">From {leftoverDays(days)}</span>
           </span>
           <span className="leftovers__action">
-            {open ? "Hide" : "Review"}
+            Review
             <ChevronDown className={open ? "rotate-180" : undefined} aria-hidden />
           </span>
         </button>
@@ -296,6 +296,8 @@ function StepActions({
     const nx = nextOfGoal(it.item);
     return (
       <div className="plan-row__actions">
+        {/* What Done ticks, above the button rather than inside it. */}
+        {nx?.itemId && <p className="plan-row__next">Next: {nx.title}</p>}
         {nx && (
           <button
             type="button"
@@ -308,7 +310,7 @@ function StepActions({
               })
             }
           >
-            <Check aria-hidden /> <span className="pill-link__text">{nx.itemId ? `Done: ${nx.title}` : "Log a session"}</span>
+            <Check aria-hidden /> Done
           </button>
         )}
         <button type="button" className="pill-link" onClick={() => onOpenGoal(it.item.id)}>
@@ -359,7 +361,7 @@ function StepActions({
             router.push("/fitness?view=live");
           }}
         >
-          <Play aria-hidden /> Start {it.item.name}
+          <Play aria-hidden /> Start
         </button>
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
@@ -379,7 +381,7 @@ function StepActions({
           disabled={pending}
           onClick={() => void run(() => tracker.toggleWeeklyTask(it.item.id, day))}
         >
-          <Check aria-hidden /> <span className="pill-link__text">Done for {leftover ? WEEKDAY[weekdayOf(day)] : "today"}</span>
+          <Check aria-hidden /> Done
         </button>
         <span className="plan-row__note">
           {n} of {it.item.times} this week
@@ -410,7 +412,7 @@ function StepActions({
       )}
       {it.project && (
         <Link href={`/projects?p=${it.project.id}`} className="pill-link">
-          <span className="pill-link__text">Open {it.project.title}</span>
+          Open
         </Link>
       )}
       {swap}
@@ -443,7 +445,7 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
       <p className="plan-note">Trades places with another activity of this week&rsquo;s plan, for this week only. Next week the plan is as it was.</p>
       {partner && (
         <button type="button" className="pill-link" disabled={pending} onClick={() => swap(partner)}>
-          <Swap aria-hidden /> Swap back{partner.day === day ? "" : ` with ${WEEKDAY_LONG[weekdayOf(partner.day)]}`}
+          <Swap aria-hidden /> Swap back
         </button>
       )}
       {options.length ? (
