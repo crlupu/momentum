@@ -211,7 +211,8 @@ function StepRow({
               </span>
               <span className="plan-row__sub">
                 {title}
-                {running ? ", running" : ""}, {runWords(streak)}
+                {running ? ", running" : ""}
+                {streak > 0 && `, ${runWords(streak)}`}
               </span>
             </span>
           )}

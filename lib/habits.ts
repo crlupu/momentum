@@ -84,7 +84,7 @@ export function longestRun(h: { day: string; steps: DayStep[] }[], plan: DayPlan
   return best;
 }
 
-/** "9 days running", "1 day running", or "start again today". */
+/** "9 days running", "1 day running". A habit with no run going says nothing about it. */
 export function runWords(days: number): string {
-  return days === 0 ? "start again today" : `${days} day${days === 1 ? "" : "s"} running`;
+  return `${days} day${days === 1 ? "" : "s"} running`;
 }
