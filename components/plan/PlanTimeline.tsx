@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tracker, dateKey } from "@/lib/tracker";
@@ -210,7 +210,7 @@ function StepRow({
                 {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
               </span>
               <span className="plan-row__sub">
-                {title}
+                {activityName(title)}
                 {running ? ", running" : ""}
                 {streak > 0 && `, ${runWords(streak)}`}
               </span>
@@ -271,11 +271,19 @@ function StepActions({
   // (Focus blocks already log to their step's day.)
   const leftover = day !== dateKey();
   const credit = () => (leftover ? tracker.creditLeftover(day, x.step.id) : Promise.resolve(true));
-  // Any activity can trade places with another in this week's plan.
-  const swap = (
+
+  // Swap carries its word while there's room; beside Open it's the icon alone.
+  const swapBtn = (labelled: boolean) => (
     <>
-      <button type="button" className="pill-link pill-link--icon" aria-label="Swap" title="Swap with another activity" onClick={() => setSwapping(true)}>
+      <button
+        type="button"
+        className={"pill-link" + (labelled ? "" : " pill-link--icon")}
+        aria-label={labelled ? undefined : "Swap"}
+        title="Swap with another activity"
+        onClick={() => setSwapping(true)}
+      >
         <Swap aria-hidden />
+        {labelled && "Swap"}
       </button>
       <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${refTitle(tracker.state!, x.ref) ?? x.name}`}>
         {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}
@@ -285,23 +293,21 @@ function StepActions({
 
   if (!it)
     return (
-      <div className="plan-row__actions">
-        <Link href="/plan" className="pill-link">
-          Pick what it is
+      <StepPanel kicker="Nothing picked" title="Pick what this step is">
+        <Link href="/plan" className="pill-link pill-link--primary step-panel__main">
+          Pick
         </Link>
-      </div>
+      </StepPanel>
     );
 
   if (it.kind === "goal") {
     const nx = nextOfGoal(it.item);
     return (
-      <div className="plan-row__actions">
-        {/* What Done ticks, above the button rather than inside it. */}
-        {nx?.itemId && <p className="plan-row__next">Next: {nx.title}</p>}
+      <StepPanel kicker="Next" title={nx?.itemId ? nx.title : "A session on it"}>
         {nx && (
           <button
             type="button"
-            className="pill-link pill-link--primary"
+            className="pill-link pill-link--primary step-panel__main"
             disabled={pending}
             onClick={() =>
               void run(async () => {
@@ -316,45 +322,49 @@ function StepActions({
         <button type="button" className="pill-link" onClick={() => onOpenGoal(it.item.id)}>
           Open
         </button>
-        {swap}
-      </div>
+        {swapBtn(false)}
+      </StepPanel>
     );
   }
   if (it.kind === "track" || it.kind === "book") {
     const book = it.kind === "track" ? it.book : it.item;
     return (
-      <div className="plan-row__actions">
+      <StepPanel
+        kicker={book ? (book.pages > 0 ? `Reading, p. ${book.read} of ${book.pages}` : `Reading, p. ${book.read}`) : "Reading"}
+        title={book ? book.title : "Nothing open in this track"}
+      >
         {book ? (
           <>
             <button
               type="button"
-              className="pill-link pill-link--primary"
+              className="pill-link pill-link--primary step-panel__main"
               onClick={() => {
                 void credit();
                 flow.open({ kind: "log", bookId: book.id });
               }}
             >
-              Log pages
+              Log
             </button>
             <button type="button" className="pill-link" onClick={() => flow.open({ kind: "detail", bookId: book.id })}>
               Open
             </button>
           </>
         ) : (
-          <Link href={`/education?track=${it.kind === "track" ? it.item.id : ""}`} className="pill-link">
-            Open the track
+          <Link href={`/education?track=${it.kind === "track" ? it.item.id : ""}`} className="pill-link pill-link--primary step-panel__main">
+            Open
           </Link>
         )}
-        {swap}
-      </div>
+        {swapBtn(!book)}
+      </StepPanel>
     );
   }
   if (it.kind === "workout") {
+    const n = it.item.exercises.length;
     return (
-      <div className="plan-row__actions">
+      <StepPanel kicker="Workout" title={`${n} exercise${n === 1 ? "" : "s"}`}>
         <button
           type="button"
-          className="pill-link pill-link--primary"
+          className="pill-link pill-link--primary step-panel__main"
           onClick={() => {
             void credit();
             void tracker.startWorkout(it.item.id);
@@ -366,56 +376,75 @@ function StepActions({
         <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
           Open
         </Link>
-        {swap}
-      </div>
+        {swapBtn(false)}
+      </StepPanel>
     );
   }
   if (it.kind === "weekly") {
     // Done for the day it's on; it counts toward the task's week.
     const n = doneThisWeek(it.item, day);
+    const link = it.item.link;
     return (
-      <div className="plan-row__actions">
+      <StepPanel kicker="This week" title={`${n} of ${it.item.times} done`}>
         <button
           type="button"
-          className="pill-link pill-link--primary"
+          className="pill-link pill-link--primary step-panel__main"
           disabled={pending}
           onClick={() => void run(() => tracker.toggleWeeklyTask(it.item.id, day))}
         >
           <Check aria-hidden /> Done
         </button>
-        <span className="plan-row__note">
-          {n} of {it.item.times} this week
-        </span>
-        {swap}
-      </div>
+        {link && (
+          <a href={link} target="_blank" rel="noopener noreferrer" className="pill-link">
+            Open
+          </a>
+        )}
+        {swapBtn(!link)}
+      </StepPanel>
     );
   }
   // Focus: a timer, on Today's card while it runs.
   return (
-    <div className="plan-row__actions">
-      {running ? (
-        <button type="button" className="pill-link pill-link--primary" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          Running, see the card
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="pill-link pill-link--primary"
-          disabled={pending}
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            void run(() => tracker.startFocus({ minutes: it.minutes, projectId: it.project?.id, stepId: x.step.id, day }));
-          }}
-        >
-          <Play aria-hidden /> Start focus
-        </button>
-      )}
+    <StepPanel kicker={running ? "Focus, running" : "Focus"} title={`${it.minutes} min${it.project ? `, ${it.project.title}` : ""}`}>
+      <button
+        type="button"
+        className="pill-link pill-link--primary step-panel__main"
+        disabled={pending || running}
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          void run(() => tracker.startFocus({ minutes: it.minutes, projectId: it.project?.id, stepId: x.step.id, day }));
+        }}
+      >
+        <Play aria-hidden /> Start
+      </button>
       {it.project && (
         <Link href={`/projects?p=${it.project.id}`} className="pill-link">
           Open
         </Link>
       )}
-      {swap}
+      {swapBtn(!it.project)}
+    </StepPanel>
+  );
+}
+
+/**
+ * The activity alone, without the module it's on: a goal saved as
+ * "Spring Certified Professional · Building a REST API" reads as the course.
+ */
+function activityName(title: string): string {
+  return title.split(" · ")[0].trim() || title;
+}
+
+/**
+ * An opened step: what it's about to do in two lines (a kicker and a
+ * title), then its main action across the width with the rest beside it.
+ */
+function StepPanel({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) {
+  return (
+    <div className="step-panel">
+      <p className="step-panel__kicker">{kicker}</p>
+      <p className="step-panel__title">{title}</p>
+      <div className="step-panel__actions">{children}</div>
     </div>
   );
 }

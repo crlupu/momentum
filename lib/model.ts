@@ -36,6 +36,8 @@ export type WeeklyTask = {
   times: number;
   /** The days it was done, YYYY-MM-DD: once a day at most. */
   ticks: string[];
+  /** Where it's done: the course, the video, the page. Optional. */
+  link?: string;
   createdAt: number;
 };
 

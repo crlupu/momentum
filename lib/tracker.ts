@@ -26,6 +26,14 @@ import { LOOKUP_VERSION, type BookLookup } from "./covers";
 import type { WeightPlan } from "./weight";
 import { creditedLeftover, focusElapsed, pickOn, planOf, toggledPlanStep, toggledPlanTick, withSkips, withSwap, type ActiveFocus, type DayPlan, type PlanIcon, type WeekGoal } from "./plan";
 import { toggledWeeklyTick, weeklyTasksOf } from "./weekly";
+import { cleanUrl } from "./model";
+
+/** A typed link as stored: "udemy.com/x" gains https://; anything that isn't a web address is dropped. */
+function linkOf(v?: string): string | undefined {
+  const t = (v ?? "").trim();
+  if (!t) return undefined;
+  return cleanUrl(/^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : `https://${t}`);
+}
 import { patchRoutineItem, toggledTicks, type RepeatSetting, type RoutineKind } from "./routines";
 import type {
   BookStatus,
@@ -894,12 +902,19 @@ export function useTracker() {
     restore: (patch: Partial<TrackerState>) => commit((s) => ({ ...s, ...patch })),
 
     // ---- weekly tasks ----
-    addWeeklyTask: (title: string, catId: string, times: number) =>
-      commit((s) => ({
-        ...s,
-        weeklyTasks: [...weeklyTasksOf(s), { id: uid(), title: title.trim(), catId, times: Math.min(7, Math.max(1, times)), ticks: [], createdAt: Date.now() }],
-      })),
-    updateWeeklyTask: (id: string, patch: { title?: string; catId?: string; times?: number }) =>
+    addWeeklyTask: (title: string, catId: string, times: number, link?: string) =>
+      commit((s) => {
+        const url = linkOf(link);
+        return {
+          ...s,
+          weeklyTasks: [
+            ...weeklyTasksOf(s),
+            { id: uid(), title: title.trim(), catId, times: Math.min(7, Math.max(1, times)), ticks: [], createdAt: Date.now(), ...(url ? { link: url } : {}) },
+          ],
+        };
+      }),
+    /** A link of "" clears it. */
+    updateWeeklyTask: (id: string, patch: { title?: string; catId?: string; times?: number; link?: string }) =>
       commit((s) => ({
         ...s,
         weeklyTasks: weeklyTasksOf(s).map((t) =>
@@ -910,6 +925,7 @@ export function useTracker() {
                 ...(patch.title != null ? { title: patch.title.trim() } : {}),
                 ...(patch.catId ? { catId: patch.catId } : {}),
                 ...(patch.times != null ? { times: Math.min(7, Math.max(1, patch.times)) } : {}),
+                ...(patch.link != null ? { link: linkOf(patch.link) } : {}),
               }
         ),
       })),
