@@ -210,7 +210,7 @@ function StepRow({
                 {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
               </span>
               <span className="plan-row__sub">
-                {title}
+                {activityName(title)}
                 {running ? ", running" : ""}
                 {streak > 0 && `, ${runWords(streak)}`}
               </span>
@@ -425,6 +425,14 @@ function StepActions({
       {swapBtn(!it.project)}
     </StepPanel>
   );
+}
+
+/**
+ * The activity alone, without the module it's on: a goal saved as
+ * "Spring Certified Professional · Building a REST API" reads as the course.
+ */
+function activityName(title: string): string {
+  return title.split(" · ")[0].trim() || title;
 }
 
 /**
