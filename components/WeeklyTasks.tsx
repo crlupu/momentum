@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { Input } from "./ui";
 import { usePending } from "./ActionButton";
-import { Check, Minus, Plus } from "./icons";
+import { Check, ExternalLink, Minus, Plus } from "./icons";
 import { PlanGlyph } from "./plan/bits";
 import { Tracker, dateKey } from "@/lib/tracker";
 import { categoryIcon, doneThisWeek } from "@/lib/weekly";
@@ -47,6 +47,12 @@ export function WeeklyTaskRow({ tracker, task, onEdit }: { tracker: Tracker; tas
           {task.times > 1 && <WeekDots done={n} of={task.times} />}
         </span>
       </button>
+      {/* Where it's done, one tap away; the row itself opens the task. */}
+      {task.link && (
+        <a href={task.link} target="_blank" rel="noopener noreferrer" className="row-link" aria-label={`Open ${task.title}`} title={task.link}>
+          <ExternalLink aria-hidden />
+        </a>
+      )}
       <button
         type="button"
         role="checkbox"
@@ -77,11 +83,12 @@ export function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; ta
   const [title, setTitle] = useState(task?.title ?? "");
   const [catId, setCatId] = useState(task?.catId ?? s.categories[0]?.id ?? "");
   const [times, setTimes] = useState(task?.times ?? 1);
+  const [link, setLink] = useState(task?.link ?? "");
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !catId) return;
     void run(async () => {
-      const ok = task ? await tracker.updateWeeklyTask(task.id, { title, catId, times }) : await tracker.addWeeklyTask(title, catId, times);
+      const ok = task ? await tracker.updateWeeklyTask(task.id, { title, catId, times, link }) : await tracker.addWeeklyTask(title, catId, times, link);
       if (ok) onDone();
       return ok;
     });
@@ -89,6 +96,12 @@ export function WeeklyTaskForm({ tracker, task, onDone }: { tracker: Tracker; ta
   return (
     <form onSubmit={submit} className="weekly-form">
       <Input aria-label="Title" placeholder="Watch one conference talk" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus={!task} />
+      <Input
+        aria-label="Link"
+        placeholder="Link, optional: the course, playlist or page"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+      />
       <div>
         <p className="weekly-form__label">Category, its icon on the plan</p>
         <div className="weekly-form__cats" role="radiogroup" aria-label="Category">
