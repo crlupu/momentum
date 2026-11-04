@@ -1,10 +1,10 @@
 "use client";
 
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Tracker, dateKey, goalStatus, macroTotalsByDate, todoDueBy } from "@/lib/tracker";
-import { planOf, stepsOn, weekdayOf, WEEKDAY_LONG, addDays, nextOfGoal } from "@/lib/plan";
-import { dayRun, history } from "@/lib/habits";
+import { planOf, stepsOn, weekdayOf, WEEKDAY_LONG, addDays, nextOfGoal, refTitle, type DayPlan } from "@/lib/plan";
+import { dayRun, history, runWords, stepRun } from "@/lib/habits";
 import { routines } from "@/lib/routines";
 import { columnCards } from "@/lib/projects";
 import { addDays as addDaysW } from "@/lib/weight";
@@ -12,7 +12,7 @@ import { MEASURES, monthName, monthOf, lastTwo, cmText } from "@/lib/measurement
 import { usePending } from "./ActionButton";
 import { PlanGlyph } from "./plan/bits";
 import { FocusCard, PlanWelcome } from "./plan/PlanCard";
-import { Check, ChevronRight } from "./icons";
+import { Check, ChevronDown, ChevronRight } from "./icons";
 
 /**
  * Today as a dashboard: the routine on top, its habits as a track across
@@ -22,9 +22,29 @@ import { Check, ChevronRight } from "./icons";
  */
 export function Dashboard({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
+  const today = dateKey();
+  const plan = planOf(s);
+  const planned = plan && plan.steps.length > 0 ? plan : null;
+  const steps = planned ? stepsOn(s, planned, today) : [];
   return (
     <div className="dashboard">
-      <RoutineHero tracker={tracker} />
+      <div className="dashboard__routine">
+        <RoutineHero tracker={tracker} />
+      </div>
+      {/* On an iPad the day's habits stand beside the tiles, always open. */}
+      {planned && steps.length > 0 && (
+        <section className="dashboard__habits" aria-label="Today's habits">
+          <div className="panel-head">
+            <h2 className="panel-head__title">Today&rsquo;s habits</h2>
+            <div className="panel-head__side">
+              <Link href="/plan" className="text-action">
+                Edit plan
+              </Link>
+            </div>
+          </div>
+          <HabitList tracker={tracker} plan={planned} />
+        </section>
+      )}
       <div className="dash-tiles">
         <EducationTile tracker={tracker} />
         <FitnessTile tracker={tracker} />
@@ -40,10 +60,68 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
 
 /* ------------------------------------------------------------- routine */
 
+/** The activity alone: "Course · Module" reads as the course. */
+const activityName = (t: string) => t.split(" · ")[0].trim() || t;
+
 /**
- * The routine: today's count and run, the habits as round icons of one size
- * riding on a track that fills from the left as they're kept, and Done for
- * the next one. On a day the plan doesn't run, the next plan day instead.
+ * Today's habits as rows: what's left first in the plan's order, kept ones
+ * after, muted. Each has what it is today and its run, and a tick; the name
+ * goes to the Routine page, where each opens into its actions. `onTicked`
+ * runs after a tick lands (the phone's card closes itself then).
+ */
+function HabitList({ tracker, plan, onTicked }: { tracker: Tracker; plan: DayPlan; onTicked?: (stepId: string) => void }) {
+  const s = tracker.state!;
+  const today = dateKey();
+  const steps = stepsOn(s, plan, today).sort((a, b) => Number(a.done) - Number(b.done));
+  const h = useMemo(() => history(s, plan, today), [s, plan, today]);
+  const { pending, run } = usePending();
+  return (
+    <ul className="habit-list">
+      {steps.map((x) => {
+        const streak = stepRun(h, x.step.id);
+        const what = refTitle(s, x.ref);
+        return (
+          <li key={x.step.id} className={"habit-list__row" + (x.done ? " is-done" : "")}>
+            <Link href="/routine" className="habit-list__open">
+              <span className="habit-list__tile" aria-hidden>
+                <PlanGlyph icon={x.icon} />
+              </span>
+              <span className="habit-list__text">
+                <span className="habit-list__name">{x.name}</span>
+                <span className="habit-list__sub">
+                  {[what ? activityName(what) : null, streak > 0 ? runWords(streak) : null].filter(Boolean).join(", ")}
+                </span>
+              </span>
+            </Link>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={x.done}
+              aria-label={`${x.name}, done today`}
+              className={"check" + (x.done ? " check--on" : "")}
+              disabled={pending}
+              onClick={() =>
+                void run(async () => {
+                  const ok = await tracker.togglePlanStep(today, x.step.id);
+                  if (!x.done) onTicked?.(x.step.id);
+                  return ok;
+                })
+              }
+            >
+              <span className="check__ring">{x.done && <Check className="h-4 w-4" aria-hidden />}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * The routine: today's count and run, and the habits as round icons of one
+ * size on a track that fills from the left as they're kept, the next one's
+ * icon brighter. On a phone the track opens into today's habits; ticking one
+ * closes it again, the new tick glowing for a moment on the track.
  */
 function RoutineHero({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
@@ -52,7 +130,13 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
   const planned = plan && plan.steps.length > 0 ? plan : null;
   const steps = planned ? stepsOn(s, planned, today) : [];
   const h = useMemo(() => (planned ? history(s, planned, today) : []), [s, planned, today]);
-  const { pending, run } = usePending();
+  const [open, setOpen] = useState(false);
+  const [glow, setGlow] = useState<string | null>(null);
+  useEffect(() => {
+    if (!glow) return;
+    const id = window.setTimeout(() => setGlow(null), 1400);
+    return () => window.clearTimeout(id);
+  }, [glow]);
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={planned} />;
   if (!planned) return <PlanWelcome />;
 
@@ -62,9 +146,11 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
   const streak = dayRun(h);
   let nextDay = addDays(today, 1);
   for (let i = 0; i < 7 && !planned.days.includes(weekdayOf(nextDay)); i++) nextDay = addDays(nextDay, 1);
+  // Kept on the left, under the fill; what's left after, in the plan's order.
+  const ordered = [...steps].sort((p, q) => Number(q.done) - Number(p.done));
 
   return (
-    <section className="momentum dash-routine" aria-label="Routine">
+    <section className={"momentum dash-routine" + (open ? " is-open" : "")} aria-label="Routine">
       <div className="momentum__head">
         <p className="eyebrow">{n ? "Routine" : "Rest day"}</p>
         {next ? (
@@ -76,7 +162,11 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
             <Check aria-hidden />
             All kept
           </span>
-        ) : null}
+        ) : (
+          <Link href="/routine" className="plan-card__next">
+            Routine
+          </Link>
+        )}
       </div>
       <p className="momentum__count">
         {n ? (
@@ -91,36 +181,38 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
         )}
       </p>
       {n > 0 && (
-        <ol className="habit-track" aria-label={`${done} of ${n} habits kept`}>
-          <span className="habit-track__fill" style={{ inlineSize: `${(done / n) * 100}%` }} aria-hidden />
-          {/* Kept on the left, under the fill; what's left after, in the plan's order. */}
-          {[...steps].sort((p, q) => Number(q.done) - Number(p.done)).map((x) => (
-            <li key={x.step.id} className="habit-track__slot" title={x.name}>
-              <span className={"habit-track__dot" + (x.done ? " is-done" : x === next ? " is-next" : "")}>
-                {x.done ? <Check aria-hidden /> : <PlanGlyph icon={x.icon} />}
+        <button
+          type="button"
+          className="habit-track"
+          aria-expanded={open}
+          aria-label={`${done} of ${n} habits kept. ${open ? "Hide" : "Show"} today's habits`}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="habit-track__rail">
+            <span className="habit-track__fill" style={{ inlineSize: `${(done / n) * 100}%` }} aria-hidden />
+            {ordered.map((x) => (
+              <span key={x.step.id} className="habit-track__slot" title={x.name} aria-hidden>
+                <span className={"habit-track__dot" + (x.done ? " is-done" : x === next ? " is-next" : "") + (glow === x.step.id ? " is-glow" : "")}>
+                  {x.done ? <Check /> : <PlanGlyph icon={x.icon} />}
+                </span>
               </span>
-              <span className="sr-only">
-                {x.name}, {x.done ? "kept" : "to do"}
-              </span>
-            </li>
-          ))}
-        </ol>
+            ))}
+          </span>
+          <ChevronDown className="habit-track__chev" aria-hidden />
+        </button>
       )}
-      <div className="dash-routine__actions">
-        {next && (
-          <button
-            type="button"
-            className="pill-link pill-link--primary flex-1 justify-center"
-            disabled={pending}
-            onClick={() => void run(() => tracker.togglePlanStep(today, next.step.id))}
-          >
-            <Check aria-hidden /> Done
-          </button>
-        )}
-        <Link href="/routine" className={"pill-link" + (next ? "" : " flex-1 justify-center")}>
-          Open
-        </Link>
-      </div>
+      {open && n > 0 && (
+        <div className="dash-routine__list">
+          <HabitList
+            tracker={tracker}
+            plan={planned}
+            onTicked={(id) => {
+              setOpen(false);
+              setGlow(id);
+            }}
+          />
+        </div>
+      )}
     </section>
   );
 }
