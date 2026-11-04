@@ -6710,3 +6710,14 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 @media (min-width: 1440px) { .dash-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dash-tile__label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dash-tile__badge { flex: none; }
+
+/* ---- This week on the dashboard: a line per plan day ---- */
+.dash-week__today { flex: none; font-size: 0.8125rem; color: var(--muted); }
+.dash-week__days { display: flex; flex-direction: column; gap: 0.3125rem; margin: 0.5rem 0 0.25rem; padding: 0; list-style: none; }
+.dash-week__day { display: grid; grid-template-columns: 2rem minmax(0, 1fr) 2rem; align-items: center; gap: 0.5rem; }
+.dash-week__name { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.dash-week__day.is-today .dash-week__name, .dash-week__day.is-today .dash-week__count { color: var(--foreground); }
+.dash-week__segs { display: flex; gap: 3px; }
+.dash-week__seg { flex: 1 1 0; block-size: 0.4375rem; border-radius: 4px; background: color-mix(in srgb, var(--foreground) 10%, transparent); }
+.dash-week__seg.is-done { background: var(--foreground); }
+.dash-week__count { font-size: 0.75rem; color: var(--muted); text-align: end; font-variant-numeric: tabular-nums; }
