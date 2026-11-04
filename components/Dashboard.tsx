@@ -264,15 +264,13 @@ function Tile({
 
 /**
  * This week, a line per plan day: a segment per habit, white where it was
- * kept, and the day's count at the end; today's name bright; days the plan
- * doesn't run named underneath as rest. Opens the Week page.
+ * kept, and the day's count at the end; today's name bright. Opens the Week page.
  */
 function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
   const s = tracker.state!;
   const today = dateKey();
   const days = weekStatus(s, plan, weekOf(today));
   const planned = days.filter((d) => d.planned);
-  const rest = days.filter((d) => !d.planned);
   const now = days.find((d) => d.day === today);
   const short = (d: string) => WEEKDAY[weekdayOf(d)];
   return (
@@ -302,7 +300,6 @@ function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
           </li>
         ))}
       </ol>
-      {rest.length > 0 && <span className="dash-tile__line">{rest.map((d) => short(d.day)).join(", ")}: rest</span>}
     </Link>
   );
 }
