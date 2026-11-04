@@ -6721,3 +6721,11 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .dash-week__seg { flex: 1 1 0; block-size: 0.4375rem; border-radius: 4px; background: color-mix(in srgb, var(--foreground) 10%, transparent); }
 .dash-week__seg.is-done { background: var(--foreground); }
 .dash-week__count { font-size: 0.75rem; color: var(--muted); text-align: end; font-variant-numeric: tabular-nums; }
+
+/* ---- The track, animated gently: the fill eases, a kept habit glides into place and its tick pops ---- */
+.habit-track__fill { transition: inline-size 620ms cubic-bezier(0.22, 1, 0.36, 1); }
+.habit-track__dot { transition: background-color 280ms ease, color 280ms ease, box-shadow 400ms ease; }
+.habit-track__slot { will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .habit-track__fill, .habit-track__dot { transition: none; }
+}

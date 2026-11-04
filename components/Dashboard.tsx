@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Tracker, dateKey, goalStatus, macroTotalsByDate, todoDueBy } from "@/lib/tracker";
 import { planOf, stepsOn, weekdayOf, WEEKDAY, WEEKDAY_LONG, addDays, nextOfGoal, refTitle, weekOf, weekStatus, type DayPlan } from "@/lib/plan";
@@ -133,11 +133,43 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
   const h = useMemo(() => (planned ? history(s, planned, today) : []), [s, planned, today]);
   const [open, setOpen] = useState(false);
   const [glow, setGlow] = useState<string | null>(null);
+  // Each habit's place on the track, so a re-order glides instead of jumping.
+  const slots = useRef(new Map<string, HTMLSpanElement>());
+  const places = useRef(new Map<string, number>());
+  // Habits kept since the last render: only these get the tick's pop.
+  const keptBefore = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (!glow) return;
     const id = window.setTimeout(() => setGlow(null), 1400);
     return () => window.clearTimeout(id);
   }, [glow]);
+  const trackKey = steps.map((x) => `${x.step.id}:${x.done ? 1 : 0}`).join(",");
+  useLayoutEffect(() => {
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const next = new Map<string, number>();
+    slots.current.forEach((el, id) => {
+      const left = el.offsetLeft;
+      next.set(id, left);
+      const was = places.current.get(id);
+      if (reduce || was == null || was === left) return;
+      el.animate([{ transform: `translateX(${was - left}px)` }, { transform: "translateX(0)" }], {
+        duration: 520,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      });
+    });
+    places.current = next;
+    // A habit just kept: its tick pops in.
+    const kept = new Set(steps.filter((x) => x.done).map((x) => x.step.id));
+    if (keptBefore.current && !reduce)
+      kept.forEach((id) => {
+        if (keptBefore.current!.has(id)) return;
+        slots.current.get(id)?.querySelector("svg")?.animate(
+          [{ opacity: 0, transform: "scale(0.4)" }, { opacity: 1, transform: "scale(1)" }],
+          { duration: 360, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }
+        );
+      });
+    keptBefore.current = kept;
+  }, [trackKey]);
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={planned} />;
   if (!planned) return <PlanWelcome />;
 
@@ -192,8 +224,23 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
           <span className="habit-track__rail">
             <span className="habit-track__fill" style={{ inlineSize: `${(done / n) * 100}%` }} aria-hidden />
             {ordered.map((x) => (
-              <span key={x.step.id} className="habit-track__slot" title={x.name} aria-hidden>
-                <span className={"habit-track__dot" + (x.done ? " is-done" : x === next ? " is-next" : "") + (glow === x.step.id ? " is-glow" : "")}>
+              <span
+                key={x.step.id}
+                ref={(el) => {
+                  if (el) slots.current.set(x.step.id, el);
+                  else slots.current.delete(x.step.id);
+                }}
+                className="habit-track__slot"
+                title={x.name}
+                aria-hidden
+              >
+                <span
+                  className={
+                    "habit-track__dot" +
+                    (x.done ? " is-done" : x === next ? " is-next" : "") +
+                    (glow === x.step.id ? " is-glow" : "")
+                  }
+                >
                   {x.done ? <Check /> : <PlanGlyph icon={x.icon} />}
                 </span>
               </span>
