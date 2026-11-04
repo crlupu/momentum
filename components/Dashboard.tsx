@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Tracker, dateKey, goalStatus, macroTotalsByDate, todoDueBy } from "@/lib/tracker";
-import { planOf, stepsOn, weekdayOf, WEEKDAY_LONG, addDays, nextOfGoal, refTitle, type DayPlan } from "@/lib/plan";
+import { planOf, stepsOn, weekdayOf, WEEKDAY, WEEKDAY_LONG, addDays, nextOfGoal, refTitle, weekOf, weekStatus, type DayPlan } from "@/lib/plan";
 import { dayRun, history, runWords, stepRun } from "@/lib/habits";
 import { routines } from "@/lib/routines";
 import { columnCards } from "@/lib/projects";
@@ -46,12 +46,13 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
         </section>
       )}
       <div className="dash-tiles">
-        <EducationTile tracker={tracker} />
+        {planned && <WeekTile tracker={tracker} plan={planned} />}
         <FitnessTile tracker={tracker} />
         <ProjectsTile tracker={tracker} />
         <NutritionTile tracker={tracker} />
         <WeightTile tracker={tracker} />
         <TodosTile tracker={tracker} />
+        <EducationTile tracker={tracker} />
         {s && <MeasurementsTile tracker={tracker} />}
       </div>
     </div>
@@ -261,6 +262,51 @@ function Tile({
   );
 }
 
+/**
+ * This week, a line per plan day: a segment per habit, white where it was
+ * kept, and the day's count at the end; today's name bright; days the plan
+ * doesn't run named underneath as rest. Opens the Week page.
+ */
+function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
+  const s = tracker.state!;
+  const today = dateKey();
+  const days = weekStatus(s, plan, weekOf(today));
+  const planned = days.filter((d) => d.planned);
+  const rest = days.filter((d) => !d.planned);
+  const now = days.find((d) => d.day === today);
+  const short = (d: string) => WEEKDAY[weekdayOf(d)];
+  return (
+    <Link href="/week" className="dash-tile is-wide dash-week">
+      <span className="dash-tile__head">
+        <span className="dash-tile__label">
+          <span className="dash-tile__icon" aria-hidden>
+            <PlanGlyph icon="task" />
+          </span>
+          This week
+        </span>
+        <span className="dash-week__today">{now?.planned ? `${short(today)}, ${now.done} of ${now.total}` : "Rest day"}</span>
+      </span>
+      <ol className="dash-week__days">
+        {planned.map((d) => (
+          <li key={d.day} className={"dash-week__day" + (d.day === today ? " is-today" : "") + (d.day > today ? " is-ahead" : "")}>
+            <span className="dash-week__name">{short(d.day)}</span>
+            <span className="dash-week__segs" aria-hidden>
+              {Array.from({ length: d.total }, (_, k) => (
+                <span key={k} className={"dash-week__seg" + (k < d.done ? " is-done" : "")} />
+              ))}
+            </span>
+            <span className="dash-week__count">
+              {d.done}/{d.total}
+              <span className="sr-only"> habits kept</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      {rest.length > 0 && <span className="dash-tile__line">{rest.map((d) => short(d.day)).join(", ")}: rest</span>}
+    </Link>
+  );
+}
+
 function EducationTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const active = s.goals.filter((g) => goalStatus(g) === "active");
@@ -272,7 +318,6 @@ function EducationTile({ tracker }: { tracker: Tracker }) {
       href="/education"
       icon={<PlanGlyph icon="learn" />}
       label="Education"
-      wide
       figure={withNext ? withNext.nx!.title : open ? books : "Nothing open"}
       line={withNext ? `${withNext.g.title.split(" · ")[0]}, ${books}` : `${active.length} goal${active.length === 1 ? "" : "s"} active`}
     />
