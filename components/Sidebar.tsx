@@ -8,10 +8,10 @@ import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoCalendarClear, IoCalendarClearOutline, IoList, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline,
+  IoDocumentTextOutline, IoHeart, IoCalendarClear, IoCalendarClearOutline, IoList, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline, IoCheckbox, IoCheckboxOutline, IoRepeat, IoRepeatOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
-import { Tracker, completionsByDate, dateKey } from "@/lib/tracker";
+import { Tracker, completionsByDate, dateKey, todoDueBy } from "@/lib/tracker";
 import { routineCompletions } from "@/lib/routines";
 import { WEEKDAY, planOf, summarizeWeek, weekNumber, weekOf } from "@/lib/plan";
 import type { TrackerState } from "@/lib/model";
@@ -131,6 +131,8 @@ export function Sidebar({ tracker, onAdd }: { tracker: Tracker; onAdd: () => voi
       <nav className="sidebar__nav">
         {NAV.map((n) => <NavLink key={n.id} id={n.id} current={current} />)}
         <div className="sidebar__gap" />
+        <PlanLink href="/routine" title="Routine" icon={IoRepeatOutline} iconOn={IoRepeat} current={current} />
+        <PlanLink href="/todos" title="To-dos" icon={IoCheckboxOutline} iconOn={IoCheckbox} current={current} />
         <PlanLink href="/week" title="Week" icon={IoCalendarClearOutline} iconOn={IoCalendarClear} current={current} />
         <PlanLink href="/plan" title="Day plan" icon={IoListOutline} iconOn={IoList} current={current} />
         <div className="sidebar__gap" />
@@ -302,6 +304,8 @@ function MoreGroups({ tracker, onClose, current }: { tracker: Tracker; onClose: 
     {
       head: "Plan",
       rows: [
+        { href: "/routine", icon: IoRepeatOutline, title: "Routine", value: plan ? `${plan.steps.length} habit${plan.steps.length === 1 ? "" : "s"}` : "" },
+        { href: "/todos", icon: IoCheckboxOutline, title: "To-dos", value: `${s.todos.filter((t) => !t.done && todoDueBy(t, today)).length} for today` },
         { href: "/week", icon: IoCalendarClearOutline, title: `Week ${weekNumber(week.week)}`, value: `${week.daysDone} of ${week.daysPlanned}` },
         { href: "/plan", icon: IoListOutline, title: "Day plan", value: plan ? `${plan.steps.length} step${plan.steps.length === 1 ? "" : "s"}` : "Make one" },
       ],
