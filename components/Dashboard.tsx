@@ -1,14 +1,13 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Tracker, dateKey, goalStatus, macroTotalsByDate, todoDueBy } from "@/lib/tracker";
-import { planOf, stepsOn, weekdayOf, WEEKDAY, WEEKDAY_LONG, addDays, nextOfGoal, refTitle, weekOf, weekStatus, type DayPlan } from "@/lib/plan";
+import { Tracker, dateKey, todoDueBy } from "@/lib/tracker";
+import { planOf, stepsOn, weekdayOf, WEEKDAY, WEEKDAY_LONG, addDays, refTitle, weekOf, weekStatus, type DayPlan } from "@/lib/plan";
 import { dayRun, history, runWords, stepRun } from "@/lib/habits";
-import { routines } from "@/lib/routines";
-import { columnCards } from "@/lib/projects";
 import { addDays as addDaysW } from "@/lib/weight";
 import { MEASURES, monthName, monthOf, lastTwo, cmText } from "@/lib/measurements";
+import { caloriesWeek, compare, focusWeek, learningWeek, liftedWeek, pagesWeek, proteinWeek, readingTarget, todayIndex, todosWeek, workoutsWeek } from "@/lib/weekStats";
 import { usePending } from "./ActionButton";
 import { PlanGlyph } from "./plan/bits";
 import { FocusCard, PlanWelcome } from "./plan/PlanCard";
@@ -47,12 +46,15 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
       )}
       <div className="dash-tiles">
         {planned && <WeekTile tracker={tracker} plan={planned} />}
-        <FitnessTile tracker={tracker} />
-        <ProjectsTile tracker={tracker} />
-        <NutritionTile tracker={tracker} />
+        <WorkoutsTile tracker={tracker} />
+        <LiftedTile tracker={tracker} />
+        <LearningTile tracker={tracker} />
+        <ReadTile tracker={tracker} />
+        <FocusTile tracker={tracker} />
+        <CaloriesTile tracker={tracker} />
+        <ProteinTile tracker={tracker} />
         <WeightTile tracker={tracker} />
         <TodosTile tracker={tracker} />
-        <EducationTile tracker={tracker} />
         {s && <MeasurementsTile tracker={tracker} />}
       </div>
     </div>
@@ -133,11 +135,43 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
   const h = useMemo(() => (planned ? history(s, planned, today) : []), [s, planned, today]);
   const [open, setOpen] = useState(false);
   const [glow, setGlow] = useState<string | null>(null);
+  // Each habit's place on the track, so a re-order glides instead of jumping.
+  const slots = useRef(new Map<string, HTMLSpanElement>());
+  const places = useRef(new Map<string, number>());
+  // Habits kept since the last render: only these get the tick's pop.
+  const keptBefore = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (!glow) return;
     const id = window.setTimeout(() => setGlow(null), 1400);
     return () => window.clearTimeout(id);
   }, [glow]);
+  const trackKey = steps.map((x) => `${x.step.id}:${x.done ? 1 : 0}`).join(",");
+  useLayoutEffect(() => {
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const next = new Map<string, number>();
+    slots.current.forEach((el, id) => {
+      const left = el.offsetLeft;
+      next.set(id, left);
+      const was = places.current.get(id);
+      if (reduce || was == null || was === left) return;
+      el.animate([{ transform: `translateX(${was - left}px)` }, { transform: "translateX(0)" }], {
+        duration: 520,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      });
+    });
+    places.current = next;
+    // A habit just kept: its tick pops in.
+    const kept = new Set(steps.filter((x) => x.done).map((x) => x.step.id));
+    if (keptBefore.current && !reduce)
+      kept.forEach((id) => {
+        if (keptBefore.current!.has(id)) return;
+        slots.current.get(id)?.querySelector("svg")?.animate(
+          [{ opacity: 0, transform: "scale(0.4)" }, { opacity: 1, transform: "scale(1)" }],
+          { duration: 360, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }
+        );
+      });
+    keptBefore.current = kept;
+  }, [trackKey]);
   if (s.activeFocus) return <FocusCard tracker={tracker} plan={planned} />;
   if (!planned) return <PlanWelcome />;
 
@@ -192,8 +226,23 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
           <span className="habit-track__rail">
             <span className="habit-track__fill" style={{ inlineSize: `${(done / n) * 100}%` }} aria-hidden />
             {ordered.map((x) => (
-              <span key={x.step.id} className="habit-track__slot" title={x.name} aria-hidden>
-                <span className={"habit-track__dot" + (x.done ? " is-done" : x === next ? " is-next" : "") + (glow === x.step.id ? " is-glow" : "")}>
+              <span
+                key={x.step.id}
+                ref={(el) => {
+                  if (el) slots.current.set(x.step.id, el);
+                  else slots.current.delete(x.step.id);
+                }}
+                className="habit-track__slot"
+                title={x.name}
+                aria-hidden
+              >
+                <span
+                  className={
+                    "habit-track__dot" +
+                    (x.done ? " is-done" : x === next ? " is-next" : "") +
+                    (glow === x.step.id ? " is-glow" : "")
+                  }
+                >
                   {x.done ? <Check /> : <PlanGlyph icon={x.icon} />}
                 </span>
               </span>
@@ -304,88 +353,152 @@ function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
   );
 }
 
-function EducationTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const active = s.goals.filter((g) => goalStatus(g) === "active");
-  const withNext = active.map((g) => ({ g, nx: nextOfGoal(g) })).find((x) => x.nx?.itemId);
-  const open = s.books.filter((b) => b.status === "active").length;
-  const books = `${open} book${open === 1 ? "" : "s"} open`;
+/* ------------------------------------------------- this week's numbers */
+
+/** Monday to Sunday as small bars: days so far bright, today's letter bright, days ahead faint. */
+function DayBars({ days, label }: { days: number[]; label: string }) {
+  const t = todayIndex();
+  const hi = Math.max(1, ...days);
+  return (
+    <span className="day-mini" role="img" aria-label={label}>
+      <span className="day-mini__bars">
+        {days.map((v, i) => (
+          <span key={i} className={"day-mini__bar" + (i <= t && v > 0 ? " is-on" : "")} style={{ blockSize: `${v > 0 ? Math.max(12, (v / hi) * 100) : 10}%` }} />
+        ))}
+      </span>
+      <span className="day-mini__days" aria-hidden>
+        {"MTWTFSS".split("").map((d, i) => (
+          <span key={i} className={i === t ? "is-today" : undefined}>
+            {d}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function WorkoutsTile({ tracker }: { tracker: Tracker }) {
+  const w = workoutsWeek(tracker.state!);
+  return (
+    <Tile href="/fitness?view=training" icon={<PlanGlyph icon="gym" />} label="Workouts" figure={w.total} unit="this week" line={compare(w.total, w.before)}>
+      <DayBars days={w.days} label={`Workouts by day: ${w.days.join(", ")}`} />
+    </Tile>
+  );
+}
+
+function LiftedTile({ tracker }: { tracker: Tracker }) {
+  const w = liftedWeek(tracker.state!);
+  return (
+    <Tile href="/fitness?view=training" icon={<PlanGlyph icon="gym" />} label="Lifted" figure={Math.round(w.total).toLocaleString()} unit="kg" line={compare(w.total, w.before, true)}>
+      <DayBars days={w.days} label={`Kilograms lifted by day: ${w.days.map((v) => Math.round(v)).join(", ")}`} />
+    </Tile>
+  );
+}
+
+/** Learning this week: sessions in all, and the goals that moved with how many each. */
+function LearningTile({ tracker }: { tracker: Tracker }) {
+  const l = learningWeek(tracker.state!);
   return (
     <Tile
       href="/education"
       icon={<PlanGlyph icon="learn" />}
-      label="Education"
-      figure={withNext ? withNext.nx!.title : open ? books : "Nothing open"}
-      line={withNext ? `${withNext.g.title.split(" · ")[0]}, ${books}` : `${active.length} goal${active.length === 1 ? "" : "s"} active`}
-    />
+      label="Learning"
+      wide
+      figure={l.total}
+      unit={l.total === 1 ? "step this week" : "steps this week"}
+      line={l.goals.length ? undefined : compare(l.total, l.before)}
+    >
+      {l.goals.length > 0 && (
+        <span className="dash-learn">
+          {l.goals.slice(0, 3).map((g) => (
+            <span key={g.title} className="dash-learn__row">
+              <span className="dash-learn__title">{g.title}</span>
+              <span className="dash-learn__n">+{g.n}</span>
+            </span>
+          ))}
+        </span>
+      )}
+    </Tile>
   );
 }
 
-function FitnessTile({ tracker }: { tracker: Tracker }) {
+function ReadTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const today = dateKey();
-  if (s.activeWorkout)
-    return <Tile href="/fitness?view=live" icon={<PlanGlyph icon="gym" />} label="Fitness" figure={s.activeWorkout.name} line="In progress" badge="Now" />;
-  const startable = s.workouts.filter((w) => w.exercises.length > 0);
-  const lastDone = (id: string) => s.workoutSessions.filter((x) => x.workoutId === id).map((x) => x.date).sort().pop();
-  const due = routines(s, today)
-    .filter((r) => r.kind === "workout" && !r.done)
-    .map((r) => startable.find((w) => w.id === r.id))
-    .filter((w): w is (typeof startable)[number] => !!w)
-    .sort((a, b) => (lastDone(a.id) ?? "").localeCompare(lastDone(b.id) ?? ""));
-  const next = due[0] ?? startable[0];
-  if (!next) return <Tile href="/fitness" icon={<PlanGlyph icon="gym" />} label="Fitness" figure="No workouts" line="Make one in Fitness" />;
-  const last = lastDone(next.id);
-  const ago = last ? Math.round((Date.parse(today) - Date.parse(last)) / 86400000) : null;
+  const w = pagesWeek(s);
+  const target = readingTarget(s);
+  const perDay = Math.round(w.total / (todayIndex() + 1));
   return (
     <Tile
-      href="/fitness"
-      icon={<PlanGlyph icon="gym" />}
-      label="Fitness"
-      figure={next.name}
-      line={`${due.length ? "Up next" : "All done"}, ${ago == null ? "not done yet" : ago === 0 ? "done today" : `last ${ago} day${ago === 1 ? "" : "s"} ago`}`}
-    />
+      href="/education"
+      icon={<PlanGlyph icon="book" />}
+      label="Read"
+      figure={w.total}
+      unit="pages"
+      line={target ? `${perDay} a day, ${perDay >= target ? "on target" : `target ${target}`}` : compare(w.total, w.before)}
+    >
+      <DayBars days={w.days} label={`Pages by day: ${w.days.join(", ")}`} />
+    </Tile>
   );
 }
 
-function ProjectsTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const doing = s.projects.flatMap((p) => columnCards(p, "doing").map(() => p));
-  const names = [...new Set(doing.map((p) => p.title))];
+function FocusTile({ tracker }: { tracker: Tracker }) {
+  const w = focusWeek(tracker.state!);
+  const h = Math.round((w.total / 60) * 10) / 10;
   return (
     <Tile
-      href="/projects"
-      icon={<PlanGlyph icon="task" />}
-      label="Projects"
-      figure={doing.length}
-      unit="doing"
-      line={names.length ? names.join(", ") : `${s.projects.length} project${s.projects.length === 1 ? "" : "s"}`}
-    />
+      href="/progress"
+      icon={<PlanGlyph icon="target" />}
+      label="Focus"
+      figure={h}
+      unit="h this week"
+      line={`${w.sessions} session${w.sessions === 1 ? "" : "s"}`}
+    >
+      <DayBars days={w.days} label={`Focus minutes by day: ${w.days.join(", ")}`} />
+    </Tile>
   );
 }
 
-function NutritionTile({ tracker }: { tracker: Tracker }) {
+function CaloriesTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
-  const today = dateKey();
-  const kcal = s.calories.filter((c) => c.date === today).reduce((a, c) => a + c.kcal, 0);
-  const protein = Math.round(macroTotalsByDate(s.macros)[today]?.protein ?? 0);
-  const budget = s.calorieBudget;
-  const over = budget ? kcal > budget : false;
+  const w = caloriesWeek(s);
   return (
     <Tile
       href="/nutrition"
       icon={<PlanGlyph icon="target" />}
-      label="Nutrition"
-      figure={(budget ? Math.abs(budget - kcal) : kcal).toLocaleString()}
-      unit={budget ? (over ? "kcal over" : "kcal left") : "kcal"}
-      line={s.proteinTarget ? `${protein} of ${s.proteinTarget} g protein` : `${protein} g protein`}
+      label="Calories"
+      figure={w.avg ? w.avg.toLocaleString() : "–"}
+      unit="avg a day"
+      line={s.calorieBudget ? `${w.onBudget} of ${w.logged} day${w.logged === 1 ? "" : "s"} on budget` : `${w.logged} day${w.logged === 1 ? "" : "s"} logged`}
     >
-      {budget ? (
-        <span className="dash-tile__meter" aria-hidden>
-          <span style={{ inlineSize: `${Math.min(100, (kcal / budget) * 100)}%` }} />
-        </span>
-      ) : null}
+      <DayBars days={w.days} label={`Calories by day: ${w.days.join(", ")}`} />
     </Tile>
+  );
+}
+
+function ProteinTile({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const p = proteinWeek(s);
+  return s.proteinTarget ? (
+    <Tile href="/nutrition" icon={<PlanGlyph icon="target" />} label="Protein" figure={p.hit} unit={`of ${p.logged} day${p.logged === 1 ? "" : "s"}`} line={`at ${s.proteinTarget} g, ${p.avg} g avg`} />
+  ) : (
+    <Tile href="/nutrition" icon={<PlanGlyph icon="target" />} label="Protein" figure={p.avg} unit="g avg a day" line={`${p.logged} day${p.logged === 1 ? "" : "s"} logged`} />
+  );
+}
+
+function TodosTile({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const today = dateKey();
+  const open = s.todos.filter((t) => !t.done && todoDueBy(t, today));
+  const w = todosWeek(s);
+  return (
+    <Tile
+      href="/todos"
+      icon={<PlanGlyph icon="task" />}
+      label="To-dos"
+      figure={w.done}
+      unit="done this week"
+      line={open.length ? `${open.length} for today` : "Nothing due today"}
+    />
   );
 }
 
@@ -419,23 +532,6 @@ function WeightTile({ tracker }: { tracker: Tracker }) {
         </svg>
       )}
     </Tile>
-  );
-}
-
-function TodosTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const today = dateKey();
-  const open = s.todos.filter((t) => !t.done && todoDueBy(t, today));
-  const overdue = open.filter((t) => t.date && t.date < today);
-  return (
-    <Tile
-      href="/todos"
-      icon={<PlanGlyph icon="task" />}
-      label="To-dos"
-      figure={open.length}
-      unit="for today"
-      line={overdue.length ? `${overdue.length} overdue, ${overdue[0].title}` : open[0]?.title ?? "Nothing due"}
-    />
   );
 }
 
