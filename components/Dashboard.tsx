@@ -93,6 +93,8 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
         <LearningTile tracker={tracker} />
         <WeightTile tracker={tracker} />
         <ReadTile tracker={tracker} />
+        <KcalTodayTile tracker={tracker} />
+        <KcalAverageTile tracker={tracker} />
         <CaloriesTile tracker={tracker} />
         <FocusTile tracker={tracker} />
         <ProteinTile tracker={tracker} />
@@ -627,7 +629,7 @@ function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
 /* ------------------------------------------------- this week's numbers */
 
 /** Monday to Sunday as small bars: days so far bright, today's letter bright, days ahead faint. */
-function DayBars({ days, label }: { days: number[]; label: string }) {
+function DayBars({ days, label, avg }: { days: number[]; label: string; /** Drawn as a dashed line across the bars. */ avg?: number }) {
   const t = todayIndex();
   const hi = Math.max(1, ...days);
   return (
@@ -646,6 +648,7 @@ function DayBars({ days, label }: { days: number[]; label: string }) {
             }}
           />
         ))}
+        {avg ? <span className="day-mini__avg" style={{ insetBlockEnd: `${Math.min(100, (avg / hi) * 100)}%` }} aria-hidden /> : null}
       </span>
       <span className="day-mini__days" aria-hidden>
         {"MTWTFSS".split("").map((d, i) => (
@@ -799,6 +802,63 @@ function FocusTile({ tracker }: { tracker: Tracker }) {
         days={w.days}
         label={`Focus minutes by day: ${w.days.join(", ")}`}
       />
+    </Tile>
+  );
+}
+
+/** Calories eaten today: what's left of the budget, and a meter filling toward it. */
+function KcalTodayTile({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const w = caloriesWeek(s);
+  const today = w.days[todayIndex()] ?? 0;
+  const budget = s.calorieBudget;
+  const left = budget ? budget - today : 0;
+  return (
+    <Tile
+      tone="food"
+      href="/nutrition"
+      icon={<PlanGlyph icon="target" />}
+      label="Eaten today"
+      figure={today.toLocaleString()}
+      unit="kcal"
+      line={
+        budget
+          ? left >= 0
+            ? `${left.toLocaleString()} left of ${budget.toLocaleString()}`
+            : `${(-left).toLocaleString()} over ${budget.toLocaleString()}`
+          : today
+            ? "No budget set"
+            : "Nothing logged yet"
+      }
+    >
+      {budget ? (
+        <span className="dash-tile__meter" aria-hidden>
+          <span style={{ inlineSize: `${Math.min(100, (today / budget) * 100)}%` }} />
+        </span>
+      ) : null}
+    </Tile>
+  );
+}
+
+/** This week's calories a day, over the days logged, with a bar per day and the average dashed across them. */
+function KcalAverageTile({ tracker }: { tracker: Tracker }) {
+  const s = tracker.state!;
+  const w = caloriesWeek(s);
+  return (
+    <Tile
+      tone="food"
+      href="/nutrition"
+      icon={<PlanGlyph icon="target" />}
+      label="Daily average"
+      figure={w.avg ? w.avg.toLocaleString() : "–"}
+      unit="kcal"
+      line={
+        s.calorieBudget
+          ? `${soFar()}, budget ${s.calorieBudget.toLocaleString()}`
+          : `${w.logged} day${w.logged === 1 ? "" : "s"} logged`
+      }
+    >
+      <DayBars days={w.days} avg={w.avg} label={`Calories by day: ${w.days.join(", ")}; average ${w.avg}`} />
     </Tile>
   );
 }
