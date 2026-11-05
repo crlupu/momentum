@@ -26,7 +26,7 @@ import {
   type PlanIcon,
 } from "@/lib/plan";
 import { dayRun, history, runWords, stepRun } from "@/lib/habits";
-import { addDays as addDaysW } from "@/lib/weight";
+import { validPlan } from "@/lib/weight";
 import {
   MEASURES,
   monthName,
@@ -36,6 +36,7 @@ import {
 } from "@/lib/measurements";
 import {
   caloriesWeek,
+  weightWeek,
   compare,
   focusWeek,
   learningWeek,
@@ -44,7 +45,6 @@ import {
   liftedWeek,
   pagesWeek,
   proteinWeek,
-  readingTarget,
   todayIndex,
   todosWeek,
   workoutsWeek,
@@ -91,11 +91,11 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
         <WorkoutsTile tracker={tracker} />
         <LiftedTile tracker={tracker} />
         <LearningTile tracker={tracker} />
-        <ReadTile tracker={tracker} />
-        <FocusTile tracker={tracker} />
-        <CaloriesTile tracker={tracker} />
-        <ProteinTile tracker={tracker} />
         <WeightTile tracker={tracker} />
+        <ReadTile tracker={tracker} />
+        <CaloriesTile tracker={tracker} />
+        <FocusTile tracker={tracker} />
+        <ProteinTile tracker={tracker} />
         <TodosTile tracker={tracker} />
         {s && <MeasurementsTile tracker={tracker} />}
       </div>
@@ -441,6 +441,46 @@ function LeftoverFold({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
 
 /* --------------------------------------------------------------- tiles */
 
+/** A change from last week: green when it's the way you want, red when not, grey when neither. */
+type Delta = { text: string; up: boolean; good: boolean | null };
+
+function DeltaChip({ d }: { d: Delta }) {
+  return (
+    <span className={"dash-delta" + (d.good == null ? "" : d.good ? " is-good" : " is-bad")}>
+      <span aria-hidden>{d.up ? "\u2191" : "\u2193"}</span>
+      <span className="sr-only">{d.up ? "up" : "down"} </span>
+      {d.text}
+      <span className="sr-only"> on last week</span>
+    </span>
+  );
+}
+
+/** Monday to today, as the tiles say it: "Mon–Thu", or "Mon" on a Monday. */
+function soFar(): string {
+  const t = todayIndex();
+  return t === 0 ? "Mon" : `Mon\u2013${WEEKDAY[weekdayOf(dateKey())]}`;
+}
+
+/**
+ * The change from last week as a percentage chip. `want` says which way is
+ * good; null when neither is.
+ */
+function change(now: number, before: number, want: "up" | "down" | null): Delta | undefined {
+  if (!before || !now || now === before) return undefined;
+  const pct = Math.round(((now - before) / before) * 100);
+  if (pct === 0) return undefined;
+  const up = pct > 0;
+  return { text: `${Math.abs(pct)}%`, up, good: want == null ? null : up === (want === "up") };
+}
+
+/** Whether the weight plan is to lose: less is good. Null without a plan. */
+function losing(s: NonNullable<Tracker["state"]>): boolean | null {
+  const plan = validPlan(s.weightPlan);
+  const last = s.weights[s.weights.length - 1];
+  if (!plan) return null;
+  return plan.targetKg < (last?.kg ?? plan.startKg);
+}
+
 function Tile({
   href,
   icon,
@@ -452,6 +492,9 @@ function Tile({
   wide,
   fill,
   tone,
+  delta,
+  figureNote,
+  beside,
   children,
 }: {
   /** The last tile of an odd row: spans the row while tiles go two across. */
@@ -465,6 +508,12 @@ function Tile({
   unit?: string;
   line?: ReactNode;
   badge?: string;
+  /** The change from last week, in the badge's place. */
+  delta?: Delta;
+  /** Under the figure: what it covers, "Mon–Thu". */
+  figureNote?: string;
+  /** Last week's figure, small beside this week's. */
+  beside?: { value: ReactNode; label: string };
   wide?: boolean;
   children?: ReactNode;
 }) {
@@ -485,16 +534,34 @@ function Tile({
           </span>
           {label}
         </span>
-        {badge ? (
+        {delta ? (
+          <DeltaChip d={delta} />
+        ) : badge ? (
           <span className="dash-tile__badge">{badge}</span>
         ) : (
           <ChevronRight className="dash-tile__chev" aria-hidden />
         )}
       </span>
-      <span className="dash-tile__figure">
-        <span className="dash-tile__value">{figure}</span>
-        {unit && <span className="dash-tile__unit">{unit}</span>}
-      </span>
+      {beside ? (
+        <span className="dash-pair">
+          <span className="dash-pair__now">
+            <span className="dash-tile__figure">
+              <span className="dash-tile__value">{figure}</span>
+              {unit && <span className="dash-tile__unit">{unit}</span>}
+            </span>
+            {figureNote && <span className="dash-pair__note">{figureNote}</span>}
+          </span>
+          <span className="dash-pair__before">
+            <span className="dash-pair__value">{beside.value}</span>
+            <span className="dash-pair__note">{beside.label}</span>
+          </span>
+        </span>
+      ) : (
+        <span className="dash-tile__figure">
+          <span className="dash-tile__value">{figure}</span>
+          {unit && <span className="dash-tile__unit">{unit}</span>}
+        </span>
+      )}
       {line && <span className="dash-tile__line">{line}</span>}
       {children}
     </Link>
@@ -697,11 +764,9 @@ function LearningTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
+/** Pages read, Monday to today, against the same days last week. */
 function ReadTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const w = pagesWeek(s);
-  const target = readingTarget(s);
-  const perDay = Math.round(w.total / (todayIndex() + 1));
+  const w = pagesWeek(tracker.state!);
   return (
     <Tile
       tone="read"
@@ -710,14 +775,10 @@ function ReadTile({ tracker }: { tracker: Tracker }) {
       label="Read"
       figure={w.total}
       unit="pages"
-      line={
-        target
-          ? `${perDay} a day, ${perDay >= target ? "on target" : `target ${target}`}`
-          : compare(w.total, w.before)
-      }
-    >
-      <DayBars days={w.days} label={`Pages by day: ${w.days.join(", ")}`} />
-    </Tile>
+      figureNote={soFar()}
+      beside={{ value: w.before, label: "last week" }}
+      delta={change(w.total, w.before, "up")}
+    />
   );
 }
 
@@ -742,25 +803,30 @@ function FocusTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
+/** Calories eaten, Monday to today, against last week by the same day. */
 function CaloriesTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const w = caloriesWeek(s);
+  const day = WEEKDAY[weekdayOf(dateKey())];
+  const diff = w.total - w.before;
   return (
     <Tile
       tone="food"
+      wide
       href="/nutrition"
       icon={<PlanGlyph icon="target" />}
-      label="Calories"
-      figure={w.avg ? w.avg.toLocaleString() : "–"}
-      unit="avg a day"
+      label="Calories so far"
+      figure={w.total ? w.total.toLocaleString() : "–"}
+      unit="kcal"
+      figureNote={soFar()}
+      beside={{ value: w.before ? w.before.toLocaleString() : "–", label: "last week" }}
+      delta={change(w.total, w.before, losing(s) ? "down" : null)}
       line={
-        s.calorieBudget
-          ? `${w.onBudget} of ${w.logged} day${w.logged === 1 ? "" : "s"} on budget`
-          : `${w.logged} day${w.logged === 1 ? "" : "s"} logged`
+        w.total && w.before && diff !== 0
+          ? `${Math.abs(diff).toLocaleString()} ${diff < 0 ? "fewer" : "more"} than by ${day} last week`
+          : undefined
       }
-    >
-      <DayBars days={w.days} label={`Calories by day: ${w.days.join(", ")}`} />
-    </Tile>
+    />
   );
 }
 
@@ -808,64 +874,27 @@ function TodosTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
+/** The median weigh-in this week against last week's. */
 function WeightTile({ tracker }: { tracker: Tracker }) {
-  const w = tracker.state!.weights;
-  const latest = w[w.length - 1];
-  if (!latest)
-    return (
-      <Tile
-        tone="body"
-        href="/fitness?view=weight"
-        icon={<PlanGlyph icon="gym" />}
-        label="Weight"
-        figure="–"
-        unit="kg"
-        line="No weigh-ins yet"
-      />
-    );
-  const weekAgo = [...w]
-    .reverse()
-    .find((x) => x.date <= addDaysW(latest.date, -7));
-  const d = weekAgo ? Math.round((latest.kg - weekAgo.kg) * 10) / 10 : null;
-  const pts = w.slice(-14);
-  const lo = Math.min(...pts.map((p) => p.kg));
-  const span = Math.max(...pts.map((p) => p.kg)) - lo || 1;
+  const s = tracker.state!;
+  const w = weightWeek(s);
+  const d = w.now != null && w.before != null ? Math.round((w.now - w.before) * 10) / 10 : null;
   return (
     <Tile
       tone="body"
       href="/fitness?view=weight"
       icon={<PlanGlyph icon="target" />}
       label="Weight"
-      figure={latest.kg.toFixed(1)}
+      figure={w.now != null ? w.now.toFixed(1) : "–"}
       unit="kg"
-      line={
+      figureNote={w.n ? (w.n === 1 ? "1 weigh-in" : `median of ${w.n}`) : "none yet"}
+      beside={{ value: w.before != null ? w.before.toFixed(1) : "–", label: "last week" }}
+      delta={
         d == null
-          ? "Latest weigh-in"
-          : `${d === 0 ? "±0" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)}`} vs last week`
+          ? undefined
+          : { text: d === 0 ? "±0 kg" : `${Math.abs(d).toFixed(1)} kg`, up: d > 0, good: d === 0 ? null : losing(s) == null ? null : (d < 0) === losing(s) }
       }
-    >
-      {pts.length > 1 && (
-        <svg
-          className="dash-tile__spark"
-          viewBox="0 0 100 24"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          <polyline
-            points={pts
-              .map(
-                (p, i) =>
-                  `${(i / (pts.length - 1)) * 100},${21 - ((p.kg - lo) / span) * 18}`,
-              )
-              .join(" ")}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      )}
-    </Tile>
+    />
   );
 }
 
@@ -879,7 +908,6 @@ function MeasurementsTile({ tracker }: { tracker: Tracker }) {
   return (
     <Tile
       tone="body"
-      fill
       href="/fitness?view=measurements"
       icon={<PlanGlyph icon="target" />}
       label="Measurements"

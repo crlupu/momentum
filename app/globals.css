@@ -6935,3 +6935,16 @@ html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-g
 @media (hover: hover) { .dialog textarea.inline-title:not(:focus):hover { background: color-mix(in srgb, var(--foreground) 6%, transparent) !important; } }
 /* Secondary hero actions stay on one line. */
 .hero__ghost { white-space: nowrap; }
+
+/* ---- This week against last: the figure, last week's beside it, the change ---- */
+.dash-pair { display: flex; align-items: flex-end; gap: 1rem; margin-block-start: 0.25rem; min-inline-size: 0; }
+.dash-pair__now { display: flex; flex-direction: column; min-inline-size: 0; }
+.dash-pair__now .dash-tile__figure { margin-block-start: 0; }
+.dash-pair__before { display: flex; flex-direction: column; padding-block-end: 0.0625rem; min-inline-size: 0; }
+.dash-pair__value { font-size: 1.125rem; font-weight: 300; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dash-pair__note { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.dash-pair__before .dash-pair__note { color: var(--faint); }
+.dash-delta { display: inline-flex; flex: none; align-items: center; gap: 0.1875rem; padding: 0.0625rem 0.375rem; border-radius: 6px; background: color-mix(in srgb, var(--foreground) 10%, transparent); color: var(--muted); font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.dash-delta.is-good { background: color-mix(in srgb, var(--tone-food) 16%, transparent); color: var(--tone-food); }
+.dash-delta.is-bad { background: color-mix(in srgb, #f87168 16%, transparent); color: #f87168; }
+html[data-theme="light"] .dash-delta.is-bad, .light .dash-delta.is-bad { background: color-mix(in srgb, #c9372c 12%, transparent); color: #c9372c; }

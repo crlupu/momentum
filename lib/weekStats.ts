@@ -14,6 +14,7 @@ import {
   type TrackerState,
 } from "./model";
 import * as R from "./reading";
+import { median } from "./weight";
 
 export type WeekSeries = {
   /** Monday to Sunday; days still to come are 0. */
@@ -241,6 +242,19 @@ export function topicsWeek(
 export function pctText(v: number): string {
   if (v > 0 && v < 1) return `${Math.max(0.1, Math.round(v * 10) / 10)}%`;
   return `${Math.round(v)}%`;
+}
+
+/**
+ * Weight this week against last: the median of this week's weigh-ins so far
+ * and of last week's, Monday to Sunday. Null where a week has none.
+ */
+export function weightWeek(s: TrackerState, today = dateKey()): { now: number | null; n: number; before: number | null } {
+  const week = weekOf(today);
+  const last = addDays(week, -7);
+  const now = s.weights.filter((w) => w.date >= week && w.date <= today).map((w) => w.kg);
+  const before = s.weights.filter((w) => w.date >= last && w.date < week).map((w) => w.kg);
+  const r = (v: number) => Math.round(v * 10) / 10;
+  return { now: now.length ? r(median(now)) : null, n: now.length, before: before.length ? r(median(before)) : null };
 }
 
 export function todosWeek(
