@@ -16,6 +16,10 @@ import * as R from "@/lib/reading";
 import { routines } from "@/lib/routines";
 import { categoryIcon, doneThisWeek, weeklyTasksOf } from "@/lib/weekly";
 import type { TrackerState } from "@/lib/model";
+import type { Tone } from "./sections";
+
+/** Each kind's area colour, as on Today. */
+const ADD_TONE: Partial<Record<string, Tone>> = { todo: "todo", weight: "body", pages: "read", workout: "fit", meal: "food", weekly: "habit" };
 
 /** What a logged thing was, and how to take it back for a few seconds. */
 export type Toast = { text: string; undo?: Partial<TrackerState> };
@@ -102,7 +106,7 @@ function Menu({ tracker, onView, onClose, onToast }: { tracker: Tracker; onView:
         {tiles.map((t) => (
           <li key={t.key}>
             <button type="button" className="quick__tile" disabled={t.disabled} onClick={t.onPress}>
-              <span className="quick__icon" aria-hidden>
+              <span className={`quick__icon tone-${ADD_TONE[t.key] ?? "habit"}`} aria-hidden>
                 {t.icon}
               </span>
               <span className="quick__title">{t.title}</span>

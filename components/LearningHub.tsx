@@ -115,7 +115,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
       </div>
 
       {tab === "active" ? (
-        <>
+        <div className="hub-active">
           {reading.length === 0 && !s.goals.some((g) => goalStatus(g) === "active") ? (
             <SummaryCard
               aria-label="Nothing active"
@@ -136,7 +136,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
           ) : (
             <NextSteps tracker={tracker} onOpen={setOpenId} />
           )}
-          <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
+          <div className="hub-active__lists grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
             <Panel title="Reading" bare>
               {reading.length === 0 ? (
                 <EmptyState icon={<BookOpen />} title="No book open">
@@ -165,7 +165,7 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
               />
             </Panel>
           </div>
-        </>
+        </div>
       ) : (
         <>
           <Panel

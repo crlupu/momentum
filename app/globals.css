@@ -6836,7 +6836,8 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .tone-food { --tone-solid: #1f845a; }
 .tone-todo { --tone-solid: #946f00; }
 .tone-body { --tone-solid: #5b7f24; }
-.section-panel[class*="tone-"] {
+.section-panel[class*="tone-"],
+.tone-scope[class*="tone-"] {
   --accent: var(--tone-solid);
   --accent-text: var(--tone);
   --accent-soft: color-mix(in srgb, var(--tone) 14%, transparent);
@@ -6872,3 +6873,65 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .section-panel[class*="tone-"] .card-meter.is-accent > span,
 .section-panel[class*="tone-"] .momentum__seg.is-next { background: var(--tone-bright); }
 html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-gradient(circle at 30% 75%, color-mix(in srgb, var(--tone-bright) 50%, transparent), transparent 65%); }
+
+/* ---- Audit fixes, November ---- */
+/* Health: training on the left, the body on the right from iPad landscape. */
+.health-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.health-grid > * { min-inline-size: 0; }
+@media (min-width: 768px) {
+  .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .health-grid__next { grid-column: 1 / -1; }
+}
+@media (min-width: 1056px) {
+  .health-grid__next { grid-column: 1; grid-row: 1; }
+  .health-grid__volume { grid-column: 1; grid-row: 2; }
+  .health-grid__weight { grid-column: 2; grid-row: 1; }
+  .health-grid__measure { grid-column: 2; grid-row: 2; }
+}
+/* Education: the next step on the left, reading and learning on the right. */
+.hub-active { display: flex; flex-direction: column; gap: 1.25rem; }
+@media (min-width: 1056px) {
+  .hub-active { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; column-gap: 1.25rem; row-gap: 1.25rem; }
+  .hub-active > * { grid-column: 1; min-inline-size: 0; }
+  .hub-active > .hub-active__lists { grid-column: 2; grid-row: 1 / span 3; grid-template-columns: minmax(0, 1fr) !important; }
+}
+/* Big buttons stop growing past a comfortable width. */
+@media (min-width: 1056px) { .section-panel .cds--btn--primary { max-inline-size: 22rem; } }
+/* Meal chips wrap instead of running off the card. */
+.meal-log__chips { flex-wrap: wrap; overflow: visible; }
+/* Stat labels wrap rather than cut off. */
+.momentum__label { overflow: visible !important; white-space: normal !important; text-overflow: clip !important; }
+/* Day letters under the bars: 11px, the axis size. */
+.day-mini__days > span { font-size: 0.6875rem; }
+/* One rule for day bars: days so far in the area's colour, today full, days ahead faint. */
+.dash-tile[class*="tone-"] .day-mini__bar.is-on { background: color-mix(in srgb, var(--tone) 55%, transparent); }
+.dash-tile[class*="tone-"] .day-mini__bar.is-on.is-today { background: var(--tone); }
+.section-panel[class*="tone-"] .card-bars li.is-on .card-bars__bar,
+.tone-scope[class*="tone-"] .card-bars li.is-on .card-bars__bar { background: color-mix(in srgb, var(--tone-bright) 55%, transparent); }
+.tone-scope[class*="tone-"] .card-bars li.is-hi .card-bars__bar { background: var(--tone-bright); box-shadow: 0 0 10px color-mix(in srgb, var(--tone-bright) 60%, transparent); }
+.tone-scope[class*="tone-"] .card-meter.is-accent > span { background: var(--tone-bright); }
+.section-panel[class*="tone-"] .day-bars__step.is-done { background: var(--tone-bright); }
+/* The last tile of an odd row spans it while tiles go two across. */
+@media (max-width: 1439px) { .dash-tile.is-fill { grid-column: 1 / -1; } }
+/* A disabled + is plainly off, not a muddy colour. */
+.todo-add__plus:disabled { background: var(--default) !important; color: var(--faint) !important; opacity: 1; }
+.todo-add__plus:disabled svg { fill: var(--faint) !important; }
+/* Filters read as fields. */
+.menu-select.menu-select--field { border-color: color-mix(in srgb, var(--foreground) 18%, transparent); }
+/* A small switch, for on/off filters. */
+.mini-switch { display: inline-flex; align-items: center; gap: 0.5rem; min-block-size: 2.25rem; padding: 0 0.25rem; border: 0; background: none; color: var(--foreground); font: inherit; font-size: 0.875rem; cursor: pointer; }
+.mini-switch__track { position: relative; inline-size: 2.25rem; block-size: 1.375rem; flex: none; border-radius: 999px; background: var(--default); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground) 14%, transparent); transition: background-color 160ms ease; }
+.mini-switch__thumb { position: absolute; inset-block-start: 0.1875rem; inset-inline-start: 0.1875rem; inline-size: 1rem; block-size: 1rem; border-radius: 50%; background: var(--foreground); transition: transform 160ms ease; }
+.mini-switch[aria-checked="true"] .mini-switch__track { background: var(--accent); box-shadow: none; }
+.mini-switch[aria-checked="true"] .mini-switch__thumb { transform: translateX(0.875rem); background: #fff; }
+@media (prefers-reduced-motion: reduce) { .mini-switch__track, .mini-switch__thumb { transition: none; } }
+/* Coloured icons in the Add sheet and the Log. */
+.quick__icon[class*="tone-"] { color: var(--tone); }
+.quick__icon[class*="tone-"] svg { fill: currentColor; }
+.log-icon[class*="tone-"] { background: color-mix(in srgb, var(--tone) 16%, transparent) !important; color: var(--tone) !important; }
+.log-icon[class*="tone-"] svg { fill: var(--tone) !important; }
+/* A sheet's title reads as a title until it's tapped to rename. */
+.dialog textarea.inline-title:not(:focus) { box-shadow: none !important; background: transparent !important; }
+@media (hover: hover) { .dialog textarea.inline-title:not(:focus):hover { background: color-mix(in srgb, var(--foreground) 6%, transparent) !important; } }
+/* Secondary hero actions stay on one line. */
+.hero__ghost { white-space: nowrap; }

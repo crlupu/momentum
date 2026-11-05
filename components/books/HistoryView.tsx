@@ -59,10 +59,14 @@ export function HistoryView({ tracker }: { tracker: Tracker }) {
           {/* A toggle like every other in the app, not the browser's checkbox. */}
           <button
             type="button"
-            className="text-action"
-            aria-pressed={showDropped}
+            role="switch"
+            className="mini-switch"
+            aria-checked={showDropped}
             onClick={() => setShowDropped((v) => !v)}
           >
+            <span className="mini-switch__track" aria-hidden>
+              <span className="mini-switch__thumb" />
+            </span>
             Include dropped
           </button>
         </div>

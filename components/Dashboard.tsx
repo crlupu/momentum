@@ -450,9 +450,12 @@ function Tile({
   line,
   badge,
   wide,
+  fill,
   tone,
   children,
 }: {
+  /** The last tile of an odd row: spans the row while tiles go two across. */
+  fill?: boolean;
   /** The area's colour: its icon chip, label, bars and badge. */
   tone?: Tone;
   href: string;
@@ -469,7 +472,10 @@ function Tile({
     <Link
       href={href}
       className={
-        "dash-tile" + (wide ? " is-wide" : "") + (tone ? ` tone-${tone}` : "")
+        "dash-tile" +
+        (wide ? " is-wide" : "") +
+        (fill ? " is-fill" : "") +
+        (tone ? ` tone-${tone}` : "")
       }
     >
       <span className="dash-tile__head">
@@ -563,7 +569,11 @@ function DayBars({ days, label }: { days: number[]; label: string }) {
         {days.map((v, i) => (
           <span
             key={i}
-            className={"day-mini__bar" + (i <= t && v > 0 ? " is-on" : "")}
+            className={
+              "day-mini__bar" +
+              (i <= t && v > 0 ? " is-on" : "") +
+              (i === t ? " is-today" : "")
+            }
             style={{
               blockSize: `${v > 0 ? Math.max(12, (v / hi) * 100) : 10}%`,
             }}
@@ -869,6 +879,7 @@ function MeasurementsTile({ tracker }: { tracker: Tracker }) {
   return (
     <Tile
       tone="body"
+      fill
       href="/fitness?view=measurements"
       icon={<PlanGlyph icon="target" />}
       label="Measurements"

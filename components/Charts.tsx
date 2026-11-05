@@ -32,13 +32,15 @@ function buildMonthCells(): (string | null)[] {
 function Heatmap({
   cells,
   map,
+  color,
 }: {
   cells: (string | null)[];
   map: Record<string, number>;
+  /** The days' colour: the category's when one is picked, the accent for all. */
+  color?: string;
 }) {
-  // Shades of the text colour, not a category's hue: colour is kept for the
-  // next step and the primary action.
-  const mix = (pct: number) => `color-mix(in srgb, var(--foreground) ${pct}%, transparent)`;
+  // Shades of one colour, deeper for busier days.
+  const mix = (pct: number) => `color-mix(in srgb, ${color ?? "var(--accent)"} ${pct}%, transparent)`;
   const shade = (n: number) => {
     if (n === 0) return "var(--default)";
     if (n === 1) return mix(30);
@@ -167,7 +169,7 @@ const Charts = memo(function Charts({ tracker }: { tracker: Tracker }) {
                       ))}
                     </div>
                     <div className="mt-3">
-                      <Heatmap cells={cells} map={map} />
+                      <Heatmap cells={cells} map={map} color={picked?.c.color} />
                     </div>
                   </>
                 );

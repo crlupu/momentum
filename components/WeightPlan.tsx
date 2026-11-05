@@ -96,8 +96,8 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
           onPress: onEdit,
         }}
         figures={[
-          { value: pace(sum.neededPace), label: "kg / week" },
-          { value: pace(sum.actualPace), label: "kg / week so far", warn: slow },
+          { value: pace(sum.neededPace), label: "kg/wk needed" },
+          { value: pace(sum.actualPace), label: "kg/wk so far", warn: slow },
           { value: expectedOn(plan, today).toFixed(1), label: "kg expected" },
         ]}
       >

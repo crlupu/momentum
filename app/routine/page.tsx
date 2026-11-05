@@ -6,8 +6,16 @@ import { SectionPage } from "@/components/Section";
 import RecurringList from "@/components/RecurringList";
 import { PlanLeftovers, PlanTimeline } from "@/components/plan/PlanTimeline";
 import { PlanGlyph } from "@/components/plan/bits";
+import { RoutineSwitch } from "@/components/plan/RoutineSwitch";
 import { ChevronLeft } from "@/components/icons";
-import { addDays, planOf, stepsOn, WEEKDAY_LONG, weekdayOf, type DayPlan } from "@/lib/plan";
+import {
+  addDays,
+  planOf,
+  stepsOn,
+  WEEKDAY_LONG,
+  weekdayOf,
+  type DayPlan,
+} from "@/lib/plan";
 import { dateKey } from "@/lib/tracker";
 
 /**
@@ -26,6 +34,7 @@ export default function RoutinePage() {
       id="tasks"
       tone="habit"
       title="Routine"
+      header={<RoutineSwitch current="today" />}
       subtitle={
         <Link href="/" className="back-link">
           <ChevronLeft aria-hidden />
@@ -58,11 +67,14 @@ export default function RoutinePage() {
 function NextPlanDay({ plan }: { plan: DayPlan }) {
   const today = dateKey();
   let day = addDays(today, 1);
-  for (let i = 0; i < 7 && !plan.days.includes(weekdayOf(day)); i++) day = addDays(day, 1);
+  for (let i = 0; i < 7 && !plan.days.includes(weekdayOf(day)); i++)
+    day = addDays(day, 1);
   return (
     <section>
       <div className="panel-head">
-        <h2 className="panel-head__title">{WEEKDAY_LONG[weekdayOf(day)]}&rsquo;s plan</h2>
+        <h2 className="panel-head__title">
+          {WEEKDAY_LONG[weekdayOf(day)]}&rsquo;s plan
+        </h2>
         <div className="panel-head__side">
           <Link href="/plan" className="text-action">
             Edit plan

@@ -4,18 +4,18 @@ import Link from "next/link";
 import { usePageTracker } from "@/components/AppShell";
 import { SectionPage } from "@/components/Section";
 import { WeekView } from "@/components/plan/WeekView";
+import { RoutineSwitch } from "@/components/plan/RoutineSwitch";
 import { ChevronLeft } from "@/components/icons";
-import { weekNumber, weekOf } from "@/lib/plan";
-import { dateKey } from "@/lib/tracker";
 
-/** This week, under Today: its goals, its plan days and the weeks before. */
+/** Routine's week: its goals, its plan days and the weeks before. */
 export default function WeekPage() {
   const tracker = usePageTracker();
   return (
     <SectionPage
       id="tasks"
       tone="habit"
-      title={`Week ${weekNumber(weekOf(dateKey()))}`}
+      title="Routine"
+      header={<RoutineSwitch current="week" />}
       subtitle={
         <Link href="/" className="back-link">
           <ChevronLeft aria-hidden />

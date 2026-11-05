@@ -8,12 +8,12 @@ import { X, LogOut, ChevronRight } from "./icons";
 import type { IconType } from "react-icons";
 import {
   IoAlbums, IoAlbumsOutline, IoBarChart, IoBarChartOutline, IoCalendar, IoCalendarOutline, IoDocumentText,
-  IoDocumentTextOutline, IoHeart, IoCalendarClear, IoCalendarClearOutline, IoList, IoListOutline, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline, IoCheckbox, IoCheckboxOutline, IoRepeat, IoRepeatOutline,
+  IoDocumentTextOutline, IoHeart, IoContrastOutline, IoAdd, IoHeartOutline, IoSchool, IoSchoolOutline, IoSettings, IoSettingsOutline, IoCheckbox, IoCheckboxOutline, IoRepeat, IoRepeatOutline,
 } from "react-icons/io5";
 import { Logo } from "./Logo";
 import { Tracker, completionsByDate, dateKey, todoDueBy } from "@/lib/tracker";
 import { routineCompletions } from "@/lib/routines";
-import { WEEKDAY, planOf, summarizeWeek, weekNumber, weekOf } from "@/lib/plan";
+import { planOf } from "@/lib/plan";
 import type { TrackerState } from "@/lib/model";
 import { useTheme } from "next-themes";
 import {
@@ -91,9 +91,9 @@ function SectionLink({ id, current }: { id: "charts" | "log" | "config"; current
   );
 }
 
-/** The plan's two pages, the Week and the Day plan, which a phone reaches from More. */
-function PlanLink({ href, title, icon, iconOn, current }: { href: string; title: string; icon: IconType; iconOn: IconType; current: string }) {
-  const active = trimPath(href) === current;
+/** Routine and To-dos, which a phone reaches from More. */
+function PlanLink({ href, title, icon, iconOn, current, also = [] }: { href: string; title: string; icon: IconType; iconOn: IconType; current: string; /** Pages that belong to it: Routine's Week and plan editor. */ also?: string[] }) {
+  const active = [href, ...also].some((h) => trimPath(h) === current);
   const Icon = active ? iconOn : icon;
   return (
     <Link href={href} aria-current={active ? "page" : undefined} className={"side-link" + (active ? " is-active" : "")}>
@@ -131,10 +131,8 @@ export function Sidebar({ tracker, onAdd }: { tracker: Tracker; onAdd: () => voi
       <nav className="sidebar__nav">
         {NAV.map((n) => <NavLink key={n.id} id={n.id} current={current} />)}
         <div className="sidebar__gap" />
-        <PlanLink href="/routine" title="Routine" icon={IoRepeatOutline} iconOn={IoRepeat} current={current} />
+        <PlanLink href="/routine" title="Routine" icon={IoRepeatOutline} iconOn={IoRepeat} current={current} also={["/week", "/plan"]} />
         <PlanLink href="/todos" title="To-dos" icon={IoCheckboxOutline} iconOn={IoCheckbox} current={current} />
-        <PlanLink href="/week" title="Week" icon={IoCalendarClearOutline} iconOn={IoCalendarClear} current={current} />
-        <PlanLink href="/plan" title="Day plan" icon={IoListOutline} iconOn={IoList} current={current} />
         <div className="sidebar__gap" />
         <SectionLink id="charts" current={current} />
         <SectionLink id="log" current={current} />
@@ -290,7 +288,6 @@ function MoreGroups({ tracker, onClose, current }: { tracker: Tracker; onClose: 
   const month = today.slice(0, 7);
   const byDay = completionsByDate([...s.completions, ...routineCompletions(s)]);
   const monthDone = Object.entries(byDay).filter(([k]) => k.startsWith(month)).reduce((a, [, n]) => a + n, 0);
-  const week = summarizeWeek(s, weekOf(today), today);
   const plan = planOf(s);
   const look = mounted ? (theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System") : "";
   const groups: { head: string; rows: { href: string; icon: IconType; title: string; value: string }[] }[] = [
@@ -306,8 +303,6 @@ function MoreGroups({ tracker, onClose, current }: { tracker: Tracker; onClose: 
       rows: [
         { href: "/routine", icon: IoRepeatOutline, title: "Routine", value: plan ? `${plan.steps.length} habit${plan.steps.length === 1 ? "" : "s"}` : "" },
         { href: "/todos", icon: IoCheckboxOutline, title: "To-dos", value: `${s.todos.filter((t) => !t.done && todoDueBy(t, today)).length} for today` },
-        { href: "/week", icon: IoCalendarClearOutline, title: `Week ${weekNumber(week.week)}`, value: `${week.daysDone} of ${week.daysPlanned}` },
-        { href: "/plan", icon: IoListOutline, title: "Day plan", value: plan ? `${plan.steps.length} step${plan.steps.length === 1 ? "" : "s"}` : "Make one" },
       ],
     },
     {
