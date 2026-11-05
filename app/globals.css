@@ -6765,27 +6765,27 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .dash-tile__badge { padding: 0.0625rem 0.375rem; font-size: 0.6875rem; }
 .dash-tile__head { gap: 0.375rem; }
 
-/* ---- Dashboard colour: one per area, after Apple Health's categories.
+/* ---- Dashboard colour: one per area, from Atlassian's accent palette.
    Light mode takes the deeper shades so text in them stays readable. ---- */
 :root, [data-theme="light"] {
-  --tone-habit: #d30f45;
-  --tone-fit: #c93400;
-  --tone-learn: #8944ab;
-  --tone-read: #0071a4;
-  --tone-focus: #3634a3;
-  --tone-food: #248a3d;
-  --tone-todo: #9a5b00;
-  --tone-body: #b25000;
+  --tone-habit: #ae4787;
+  --tone-fit: #c25100;
+  --tone-learn: #6e5dc6;
+  --tone-read: #227d9b;
+  --tone-focus: #0c66e4;
+  --tone-food: #1f845a;
+  --tone-todo: #946f00;
+  --tone-body: #5b7f24;
 }
 [data-theme="dark"], .dark {
-  --tone-habit: #ff375f;
-  --tone-fit: #ff9f0a;
-  --tone-learn: #bf5af2;
-  --tone-read: #64d2ff;
-  --tone-focus: #7d7aff;
-  --tone-food: #32d74b;
-  --tone-todo: #ffd60a;
-  --tone-body: #ffb340;
+  --tone-habit: #e774bb;
+  --tone-fit: #fea362;
+  --tone-learn: #9f8fef;
+  --tone-read: #6cc3e0;
+  --tone-focus: #579dff;
+  --tone-food: #4bce97;
+  --tone-todo: #f5cd47;
+  --tone-body: #94c748;
 }
 .tone-habit { --tone: var(--tone-habit); }
 .tone-fit { --tone: var(--tone-fit); }
@@ -6814,12 +6814,12 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .dash-routine .habit-list__tile[class*="tone-"] { background: color-mix(in srgb, var(--tone) 18%, transparent); color: var(--tone); }
 /* The routine card is dark in both themes: it takes the bright shades. */
 .dash-routine {
-  --tone-habit: #ff375f;
-  --tone-fit: #ff9f0a;
-  --tone-learn: #bf5af2;
-  --tone-read: #64d2ff;
-  --tone-focus: #7d7aff;
-  --tone-food: #32d74b;
-  --tone-todo: #ffd60a;
-  --tone-body: #ffb340;
+  --tone-habit: #e774bb;
+  --tone-fit: #fea362;
+  --tone-learn: #9f8fef;
+  --tone-read: #6cc3e0;
+  --tone-focus: #579dff;
+  --tone-food: #4bce97;
+  --tone-todo: #f5cd47;
+  --tone-body: #94c748;
 }
