@@ -6768,21 +6768,21 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 /* ---- Dashboard colour: one per area, from Atlassian's accent palette.
    Light mode takes the deeper shades so text in them stays readable. ---- */
 :root, [data-theme="light"] {
-  --tone-habit: #ae4787;
+  --tone-habit: #0c66e4;
   --tone-fit: #c25100;
   --tone-learn: #6e5dc6;
   --tone-read: #227d9b;
-  --tone-focus: #0c66e4;
+  --tone-focus: #c9372c;
   --tone-food: #1f845a;
   --tone-todo: #946f00;
   --tone-body: #5b7f24;
 }
 [data-theme="dark"], .dark {
-  --tone-habit: #e774bb;
+  --tone-habit: #579dff;
   --tone-fit: #fea362;
   --tone-learn: #9f8fef;
   --tone-read: #6cc3e0;
-  --tone-focus: #579dff;
+  --tone-focus: #f87168;
   --tone-food: #4bce97;
   --tone-todo: #f5cd47;
   --tone-body: #94c748;
@@ -6814,11 +6814,11 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .dash-routine .habit-list__tile[class*="tone-"] { background: color-mix(in srgb, var(--tone) 18%, transparent); color: var(--tone); }
 /* The routine card is dark in both themes: it takes the bright shades. */
 .dash-routine {
-  --tone-habit: #e774bb;
+  --tone-habit: #579dff;
   --tone-fit: #fea362;
   --tone-learn: #9f8fef;
   --tone-read: #6cc3e0;
-  --tone-focus: #579dff;
+  --tone-focus: #f87168;
   --tone-food: #4bce97;
   --tone-todo: #f5cd47;
   --tone-body: #94c748;
@@ -6828,11 +6828,11 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
    text and charts in the theme's shade, fills and buttons in the deeper
    shade, which carries white text in both themes. Sheets and the bars
    around the page keep the app's blue. ---- */
-.tone-habit { --tone-solid: #ae4787; }
+.tone-habit { --tone-solid: #0c66e4; }
 .tone-fit { --tone-solid: #c25100; }
 .tone-learn { --tone-solid: #6e5dc6; }
 .tone-read { --tone-solid: #227d9b; }
-.tone-focus { --tone-solid: #0c66e4; }
+.tone-focus { --tone-solid: #c9372c; }
 .tone-food { --tone-solid: #1f845a; }
 .tone-todo { --tone-solid: #946f00; }
 .tone-body { --tone-solid: #5b7f24; }
@@ -6860,11 +6860,11 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .area-tile[class*="tone-"] { background: color-mix(in srgb, var(--tone) 16%, transparent) !important; color: var(--tone) !important; }
 .area-tile[class*="tone-"] svg { fill: currentColor; }
 /* The dark cards keep the bright shades: their highlighted bar, meter and glow take the page's colour. */
-.tone-habit { --tone-bright: #e774bb; }
+.tone-habit { --tone-bright: #579dff; }
 .tone-fit { --tone-bright: #fea362; }
 .tone-learn { --tone-bright: #9f8fef; }
 .tone-read { --tone-bright: #6cc3e0; }
-.tone-focus { --tone-bright: #579dff; }
+.tone-focus { --tone-bright: #f87168; }
 .tone-food { --tone-bright: #4bce97; }
 .tone-todo { --tone-bright: #f5cd47; }
 .tone-body { --tone-bright: #94c748; }
