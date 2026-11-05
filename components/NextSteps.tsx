@@ -140,7 +140,7 @@ function StepRow({ tracker, step, onOpen }: { tracker: Tracker; step: Step; onOp
     );
   return (
     <li className="next-step">
-      <span className="area-tile" aria-hidden>
+      <span className="area-tile tone-learn" aria-hidden>
         <School />
       </span>
       <button type="button" className="next-step__open" onClick={() => onOpen(step.goal.id)}>

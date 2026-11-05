@@ -33,6 +33,14 @@ export function Modal({
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   useEffect(() => setMounted(true), []);
+  // A sheet takes the colour of the page it opened from (see SECTION_TONE).
+  const [tone, setTone] = useState("");
+  useEffect(() => {
+    if (!open) return;
+    // The tabs' pages stay mounted: the one showing is the one opened from.
+    const page = [...document.querySelectorAll<HTMLElement>(".app-content .section-panel")].find((el) => el.offsetParent !== null);
+    setTone([...(page?.classList ?? [])].find((c) => c.startsWith("tone-")) ?? "");
+  }, [open]);
 
   // Close on Escape.
   useEffect(() => {
@@ -58,7 +66,7 @@ export function Modal({
     >
       <div className="scrim absolute inset-0" onClick={onClose} aria-hidden />
       <div
-        className={"dialog overlay-surface " + (wide ? "md:max-w-2xl" : "md:max-w-md")}
+        className={"dialog overlay-surface " + (wide ? "md:max-w-2xl" : "md:max-w-md") + (tone ? ` tone-scope ${tone}` : "")}
         style={{ color: "var(--overlay-foreground)" }}
       >
         <div className="sheet__grabber md:hidden" aria-hidden />

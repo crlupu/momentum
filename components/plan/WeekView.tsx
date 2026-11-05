@@ -45,13 +45,16 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
   const behind = open.filter((g) => g.pace === "behind").length;
   const onPace = open.filter((g) => g.pace === "on").length;
   const daysLeft = 7 - sum.days.findIndex((d) => d.day === today);
+  // Habits kept, the one count Today and Routine use too.
+  const kept = sum.days.reduce((a, d) => a + (d.planned ? d.done : 0), 0);
+  const habits = sum.days.reduce((a, d) => a + (d.planned ? d.total : 0), 0);
   const weekLine: ReactNode[] | string = sum.done
     ? "Every goal and every plan day, done."
     : [
         onPace ? `${onPace} on pace` : null,
         behind ? <span key="b" className="week-hero__behind">{behind} behind</span> : null,
-        // The figure already counts plan days when there are no goals.
-        sum.goals.length && sum.daysPlanned ? `plan days ${sum.daysDone} of ${sum.daysPlanned}` : null,
+        // Without goals the figures already count the days fully kept.
+        sum.goals.length && sum.daysPlanned ? `${sum.daysDone} of ${sum.daysPlanned} days fully kept` : null,
       ]
         .filter(Boolean)
         .flatMap((x, i) => (i ? [", ", x] : [x]));
@@ -68,14 +71,11 @@ export function WeekView({ tracker }: { tracker: Tracker }) {
         aside={daysLeft === 1 ? "Last day" : `${daysLeft} days left`}
         done={sum.done}
         doneLabel="Week done"
-        figure={sum.goals.length ? `${sum.goalsDone} of ${sum.goals.length}` : `${sum.daysDone} of ${sum.daysPlanned}`}
-        detail={sum.goals.length ? "week goals" : "plan days"}
+        figure={sum.goals.length ? `${sum.goalsDone} of ${sum.goals.length}` : `${kept} of ${habits}`}
+        detail={sum.goals.length ? "week goals" : "habits kept"}
         line={weekLine.length ? weekLine : undefined}
         figures={[
-          {
-            value: `${sum.days.reduce((a, d) => a + (d.planned ? d.done : 0), 0)} of ${sum.days.reduce((a, d) => a + (d.planned ? d.total : 0), 0)}`,
-            label: "steps done",
-          },
+          sum.goals.length ? { value: `${kept} of ${habits}`, label: "habits kept" } : { value: `${sum.daysDone} of ${sum.daysPlanned}`, label: "days fully kept" },
           { value: s.workoutSessions.filter((x) => x.date >= week).length + (s.learningLog ?? []).filter((e) => e.date >= week).length, label: "sessions" },
           { value: s.readingSessions.filter((x) => x.date >= week).reduce((a, x) => a + x.pages, 0), label: "pages read" },
         ]}

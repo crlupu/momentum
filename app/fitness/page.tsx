@@ -34,7 +34,8 @@ function Fitness() {
   // and a router move fetches the page anew, which after a deploy meant a
   // full reload, and a blank screen, the moment a workout was finished.
   useEffect(() => {
-    if (shown && view === "live" && !live) window.history.replaceState(null, "", window.location.pathname);
+    if (shown && view === "live" && !live)
+      window.history.replaceState(null, "", window.location.pathname);
   }, [shown, view, live]);
   // While lifting, the tab bar steps aside, as it does for focus: the
   // Finish card is the bottom of the screen.
@@ -56,13 +57,19 @@ function Fitness() {
         id="fitness"
         title={active?.name ?? "Workout"}
         subtitle={back}
-        actions={active ? <LiveActions tracker={tracker} active={active} /> : undefined}
+        actions={
+          active ? <LiveActions tracker={tracker} active={active} /> : undefined
+        }
       >
         {active ? (
           <ActiveWorkoutPanel tracker={tracker} active={active} />
         ) : (
           <p className="text-[15px] text-[var(--muted)]">
-            No workout under way. Start one from <Link href="/fitness" className="text-[var(--accent-text)]">Health</Link>.
+            No workout under way. Start one from{" "}
+            <Link href="/fitness" className="text-[var(--accent-text)]">
+              Health
+            </Link>
+            .
           </p>
         )}
       </SectionPage>
@@ -89,9 +96,15 @@ function Fitness() {
         }
       >
         {w ? (
-          <WorkoutScreen tracker={tracker} workout={w} onDeleted={() => router.replace("/fitness?view=workouts")} />
+          <WorkoutScreen
+            tracker={tracker}
+            workout={w}
+            onDeleted={() => router.replace("/fitness?view=workouts")}
+          />
         ) : (
-          <p className="text-[15px] text-[var(--muted)]">This workout is gone.</p>
+          <p className="text-[15px] text-[var(--muted)]">
+            This workout is gone.
+          </p>
         )}
       </SectionPage>
     );
@@ -109,7 +122,12 @@ function Fitness() {
   }
   if (view === "measurements") {
     return (
-      <SectionPage id="fitness" tone="body" title="Measurements" subtitle={back}>
+      <SectionPage
+        id="fitness"
+        tone="body"
+        title="Measurements"
+        subtitle={back}
+      >
         <MeasurementsPage tracker={tracker} />
       </SectionPage>
     );
@@ -122,12 +140,24 @@ function Fitness() {
     );
   }
   return (
-    <SectionPage id="fitness" title="Health" header={<HealthSwitch current="fitness" />}>
-      <div className="space-y-5">
-        <UpNextWorkout tracker={tracker} />
-        <div className="grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
-          <WeightTracker tracker={tracker} summary />
+    <SectionPage
+      id="fitness"
+      title="Health"
+      header={<HealthSwitch current="fitness" />}
+    >
+      {/* Training on the left, the body on the right from iPad landscape;
+          Weight and Measurements keep their own colour on this page. */}
+      <div className="health-grid">
+        <div className="health-grid__next">
+          <UpNextWorkout tracker={tracker} />
+        </div>
+        <div className="health-grid__volume">
           <WorkoutVolumeChart tracker={tracker} summary />
+        </div>
+        <div className="health-grid__weight tone-scope tone-body">
+          <WeightTracker tracker={tracker} summary />
+        </div>
+        <div className="health-grid__measure tone-scope tone-body">
           <MeasurementsCard tracker={tracker} />
         </div>
       </div>

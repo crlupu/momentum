@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { FormEvent, useState } from "react";
 import {
   DndContext,
@@ -103,7 +105,7 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
       {plan.steps.length === 0 && <FromRoutines tracker={tracker} onUse={save} days={plan.days} />}
 
       <section>
-        <h3 className="group-head">Steps, in order</h3>
+        <h3 className="group-head">Habits, in order</h3>
         <div className="card plan-steps">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -115,7 +117,7 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
             </SortableContext>
           </DndContext>
           <div className="plan-steps__add-row">
-            <InsertRow label="Add step" onPress={() => setEditing("new")} />
+            <InsertRow label="Add habit" onPress={() => setEditing("new")} />
           </div>
         </div>
         <p className="plan-note">
@@ -123,17 +125,9 @@ export function PlanEditor({ tracker }: { tracker: Tracker }) {
         </p>
       </section>
 
-      {planOf(s) && (
-        <button
-          type="button"
-          className="text-action plan-off"
-          onClick={() => {
-            if (window.confirm("Turn off the day plan? Its steps are deleted; your goals, books and workouts stay.")) void tracker.setDayPlan(null);
-          }}
-        >
-          Turn off the day plan
-        </button>
-      )}
+      <p className="plan-note">
+        To stop using the day plan, turn it off in <Link href="/configuration?view=today">Settings, Today</Link>.
+      </p>
 
       <Modal
         open={!!editing}

@@ -103,7 +103,7 @@ export function UpNextWorkout({ tracker }: { tracker: Tracker }) {
           </Button>
           {startable.length > 1 && (
             <button type="button" className="hero__ghost" aria-label="Choose another workout" onClick={() => setChoosing(true)}>
-              Others <ChevronDown aria-hidden />
+              Choose workout <ChevronDown aria-hidden />
             </button>
           )}
         </>

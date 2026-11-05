@@ -36,6 +36,7 @@ import {
   Warning,
 } from "@/components/icons";
 import { validPlan } from "@/lib/weight";
+import { planOf } from "@/lib/plan";
 import { fmtDateAuto } from "@/lib/dates";
 import { projectFinished } from "@/lib/projects";
 import type { Tracker } from "@/lib/tracker";
@@ -205,11 +206,29 @@ function PageBody({ id, tracker }: { id: PageId; tracker: Tracker }) {
   switch (id) {
     case "today":
       return (
-        <Group title="Categories" note="Each goal and to-do carries one; its colour marks it in lists and charts.">
-          <ConfigCard title="">
-            <CategoriesCard tracker={tracker} />
-          </ConfigCard>
-        </Group>
+        <>
+          <Group title="Categories" note="Each goal and to-do carries one; its colour marks it in lists and charts.">
+            <ConfigCard title="">
+              <CategoriesCard tracker={tracker} />
+            </ConfigCard>
+          </Group>
+          {/* Kept here, away from the plan editor's Add habit. */}
+          {planOf(s) && (
+            <Group title="Routine" note="Turning off the day plan deletes its habits; your goals, books and workouts stay.">
+              <div className="card p-3">
+                <button
+                  type="button"
+                  className="text-action plan-off"
+                  onClick={() => {
+                    if (window.confirm("Turn off the day plan? Its habits are deleted; your goals, books and workouts stay.")) void tracker.setDayPlan(null);
+                  }}
+                >
+                  Turn off the day plan
+                </button>
+              </div>
+            </Group>
+          )}
+        </>
       );
 
     case "education":

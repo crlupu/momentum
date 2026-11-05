@@ -254,11 +254,11 @@ function weightFigures(weights: WeightEntry[], plan?: WeightPlan): CardFigure[] 
   const week = mondayOf(dateKey());
   const out: CardFigure[] = [
     { value: median ? median.median.toFixed(1) : "–", label: "median" },
-    { value: weights.filter((w) => w.date >= week).length, label: "weigh-ins this week" },
+    { value: weights.filter((w) => w.date >= week).length, label: "weigh-ins" },
   ];
   if (plan) {
     const sum = planSummary(plan, weights);
-    out.push({ value: sum.neededPace != null ? sum.neededPace.toFixed(2) : "–", label: "kg / week needed" });
+    out.push({ value: sum.neededPace != null ? sum.neededPace.toFixed(2) : "–", label: "kg/wk needed" });
   } else out.push({ value: fmtDateAuto(weights[weights.length - 1].date), label: "last weigh-in" });
   return out;
 }
@@ -383,11 +383,13 @@ export default function WeightTracker({ tracker, summary }: { tracker: Tracker; 
 
       <WeightChart weights={data} plan={plan} days={days} />
       <div className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: LABEL }}>
-        <span className="inline-block w-3 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
+        <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--chart-1)" }} aria-hidden />
+        Weigh-ins
+        <span className="ml-3 inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "var(--chart-2)" }} aria-hidden />
         Weekly median
         {plan && (
           <>
-            <span className="ml-3 inline-block w-3 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
+            <span className="ml-3 inline-block w-5 border-t-2 border-dotted" style={{ borderColor: "var(--muted)" }} aria-hidden />
             Plan
           </>
         )}

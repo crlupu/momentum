@@ -2,6 +2,7 @@
 
 import { Panel } from "./Panel";
 import { Apple, Check, Dumbbell, Flame, Repeat, RotateCcw, Target } from "./icons";
+import type { Tone } from "./sections";
 import { Button } from "./ui";
 import { usePending } from "./ActionButton";
 import { DeleteButton } from "./DeleteButton";
@@ -56,7 +57,18 @@ const KIND_COLOR: Record<Entry["kind"], string> = {
   Macros: "#64761c",
 };
 
-/** Each kind's glyph, white on its colour, as iOS lists lead with an icon. */
+/** Each kind's area colour (--tone-* in globals.css), as on Today. */
+const KIND_TONE: Record<Entry["kind"], Tone> = {
+  "To-do": "todo",
+  Goal: "learn",
+  Recurring: "habit",
+  Workout: "fit",
+  Cardio: "fit",
+  Calories: "food",
+  Macros: "food",
+};
+
+/** Each kind's glyph, as iOS lists lead with an icon. */
 const KIND_ICON: Record<Entry["kind"], typeof Check> = {
   "To-do": Check,
   Goal: Target,
@@ -276,7 +288,7 @@ const CompletionLog = memo(function CompletionLog({ tracker }: { tracker: Tracke
                         {(() => {
                           const Icon = KIND_ICON[e.kind];
                           return (
-                            <span className="log-icon" style={{ background: e.color }} title={e.kind}>
+                            <span className={`log-icon tone-${KIND_TONE[e.kind]}`} title={e.kind}>
                               <Icon aria-hidden />
                             </span>
                           );
