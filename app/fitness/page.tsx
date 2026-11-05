@@ -98,7 +98,7 @@ function Fitness() {
   }
   if (view === "weight") {
     return (
-      <SectionPage id="fitness" title="Weight" subtitle={back}>
+      <SectionPage id="fitness" tone="body" title="Weight" subtitle={back}>
         <div className="space-y-5">
           <WeightTracker tracker={tracker} />
           <WeightPlanCard tracker={tracker} />
@@ -109,7 +109,7 @@ function Fitness() {
   }
   if (view === "measurements") {
     return (
-      <SectionPage id="fitness" title="Measurements" subtitle={back}>
+      <SectionPage id="fitness" tone="body" title="Measurements" subtitle={back}>
         <MeasurementsPage tracker={tracker} />
       </SectionPage>
     );

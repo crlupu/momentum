@@ -50,9 +50,10 @@ import {
   workoutsWeek,
 } from "@/lib/weekStats";
 import { usePending } from "./ActionButton";
-import { PlanGlyph } from "./plan/bits";
+import { PlanGlyph, toneOf } from "./plan/bits";
 import { FocusCard, PlanWelcome } from "./plan/PlanCard";
 import { Check, ChevronDown, ChevronRight } from "./icons";
+import type { Tone } from "./sections";
 
 /**
  * Today as a dashboard: the routine on top, its habits as a track across
@@ -105,26 +106,6 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
 /* ------------------------------------------------------------- routine */
 
 /** The activity alone: "Course · Module" reads as the course. */
-/** The colour an area carries across the dashboard. */
-type Tone =
-  | "habit"
-  | "fit"
-  | "learn"
-  | "read"
-  | "focus"
-  | "food"
-  | "todo"
-  | "body";
-/** A plan step's colour, from its icon. */
-const TONE_OF: Record<PlanIcon, Tone> = {
-  book: "read",
-  gym: "fit",
-  video: "learn",
-  learn: "learn",
-  task: "todo",
-  target: "focus",
-};
-const toneOf = (icon: PlanIcon): Tone => TONE_OF[icon] ?? "habit";
 const activityName = (t: string) => t.split(" · ")[0].trim() || t;
 
 /**

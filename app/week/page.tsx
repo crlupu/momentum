@@ -14,6 +14,7 @@ export default function WeekPage() {
   return (
     <SectionPage
       id="tasks"
+      tone="habit"
       title={`Week ${weekNumber(weekOf(dateKey()))}`}
       subtitle={
         <Link href="/" className="back-link">

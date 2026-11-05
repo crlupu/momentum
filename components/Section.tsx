@@ -1,7 +1,12 @@
 "use client";
 
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { sectionTitle, type SectionId } from "@/components/sections";
+import {
+  SECTION_TONE,
+  sectionTitle,
+  type SectionId,
+  type Tone,
+} from "@/components/sections";
 import { useShell } from "@/components/AppShell";
 import { Apps } from "@/components/icons";
 
@@ -26,7 +31,11 @@ export function SectionBand({
   /** Anything that sits at the trailing end of the title row. */
   children?: ReactNode;
 }) {
-  const className = ["sec-band", size === "md" ? "sec-band--md" : "", extraClass]
+  const className = [
+    "sec-band",
+    size === "md" ? "sec-band--md" : "",
+    extraClass,
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -59,9 +68,12 @@ export function SectionPage({
   subtitle,
   header,
   actions,
+  tone,
   children,
 }: {
   id: SectionId;
+  /** The page's colour, in place of its section's (see SECTION_TONE). */
+  tone?: Tone;
   /** The large title, when it isn't the section's own (Health, over Fitness). */
   title?: string;
   size?: "lg" | "md";
@@ -77,23 +89,38 @@ export function SectionPage({
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    document.title = id === "tasks" ? "Momentum" : `${sectionTitle(id)} | Momentum`;
+    document.title =
+      id === "tasks" ? "Momentum" : `${sectionTitle(id)} | Momentum`;
   }, [id]);
 
   useEffect(() => {
     const el = titleRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting), {
-      rootMargin: "-8px 0px 0px 0px",
-    });
+    const io = new IntersectionObserver(
+      ([e]) => setCompact(!e.isIntersecting),
+      {
+        rootMargin: "-8px 0px 0px 0px",
+      },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return (
-    <section id={id} className="section-panel">
+    <section
+      id={id}
+      className={
+        "section-panel" +
+        ((tone ?? SECTION_TONE[id]) ? ` tone-${tone ?? SECTION_TONE[id]}` : "")
+      }
+    >
       {/* Compact bar: phones and tablets, once the large title is gone. */}
-      <div className={"nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")} aria-hidden={!compact}>
+      <div
+        className={
+          "nav-compact bar-material lg:hidden" + (compact ? " is-shown" : "")
+        }
+        aria-hidden={!compact}
+      >
         <span className="nav-compact__title">{title ?? sectionTitle(id)}</span>
         <button
           type="button"
@@ -111,7 +138,12 @@ export function SectionPage({
           {actions}
           {/* More: Progress, Log, the week and plan, settings. The tab bar's
               middle is the +, so More sits at the top of each page. */}
-          <button type="button" onClick={openMore} aria-label="More" className="more-button lg:hidden">
+          <button
+            type="button"
+            onClick={openMore}
+            aria-label="More"
+            className="more-button lg:hidden"
+          >
             <Apps aria-hidden />
           </button>
         </SectionBand>

@@ -24,6 +24,7 @@ export default function RoutinePage() {
   return (
     <SectionPage
       id="tasks"
+      tone="habit"
       title="Routine"
       subtitle={
         <Link href="/" className="back-link">

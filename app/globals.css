@@ -6823,3 +6823,52 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
   --tone-todo: #f5cd47;
   --tone-body: #94c748;
 }
+
+/* ---- Each page in its area's colour. The page's accent becomes its tone:
+   text and charts in the theme's shade, fills and buttons in the deeper
+   shade, which carries white text in both themes. Sheets and the bars
+   around the page keep the app's blue. ---- */
+.tone-habit { --tone-solid: #ae4787; }
+.tone-fit { --tone-solid: #c25100; }
+.tone-learn { --tone-solid: #6e5dc6; }
+.tone-read { --tone-solid: #227d9b; }
+.tone-focus { --tone-solid: #0c66e4; }
+.tone-food { --tone-solid: #1f845a; }
+.tone-todo { --tone-solid: #946f00; }
+.tone-body { --tone-solid: #5b7f24; }
+.section-panel[class*="tone-"] {
+  --accent: var(--tone-solid);
+  --accent-text: var(--tone);
+  --accent-soft: color-mix(in srgb, var(--tone) 14%, transparent);
+  --accent-soft-strong: color-mix(in srgb, var(--tone) 24%, transparent);
+  --button-primary: var(--tone-solid);
+  --button-primary-hover: color-mix(in srgb, var(--tone-solid) 86%, #000);
+  --color-primary: var(--tone-solid);
+  --chart-1: var(--tone);
+  --scale-1: color-mix(in srgb, var(--tone) 22%, var(--surface));
+  --scale-2: color-mix(in srgb, var(--tone) 42%, var(--surface));
+  --scale-3: color-mix(in srgb, var(--tone) 62%, var(--surface));
+  --scale-4: color-mix(in srgb, var(--tone) 82%, var(--surface));
+  --scale-5: var(--tone);
+  --cds-interactive: var(--tone-solid);
+  --cds-border-interactive: var(--tone);
+  --cds-focus: var(--tone);
+  --cds-link-primary: var(--tone);
+  --cds-button-primary: var(--tone-solid);
+}
+/* A step's tile, tinted with its kind's colour. */
+.area-tile[class*="tone-"] { background: color-mix(in srgb, var(--tone) 16%, transparent) !important; color: var(--tone) !important; }
+.area-tile[class*="tone-"] svg { fill: currentColor; }
+/* The dark cards keep the bright shades: their highlighted bar, meter and glow take the page's colour. */
+.tone-habit { --tone-bright: #e774bb; }
+.tone-fit { --tone-bright: #fea362; }
+.tone-learn { --tone-bright: #9f8fef; }
+.tone-read { --tone-bright: #6cc3e0; }
+.tone-focus { --tone-bright: #579dff; }
+.tone-food { --tone-bright: #4bce97; }
+.tone-todo { --tone-bright: #f5cd47; }
+.tone-body { --tone-bright: #94c748; }
+.section-panel[class*="tone-"] .card-bars li.is-hi .card-bars__bar { background: var(--tone-bright); box-shadow: 0 0 10px color-mix(in srgb, var(--tone-bright) 60%, transparent); }
+.section-panel[class*="tone-"] .card-meter.is-accent > span,
+.section-panel[class*="tone-"] .momentum__seg.is-next { background: var(--tone-bright); }
+html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-gradient(circle at 30% 75%, color-mix(in srgb, var(--tone-bright) 50%, transparent), transparent 65%); }
