@@ -6948,3 +6948,6 @@ html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-g
 .dash-delta.is-good { background: color-mix(in srgb, var(--tone-food) 16%, transparent); color: var(--tone-food); }
 .dash-delta.is-bad { background: color-mix(in srgb, #f87168 16%, transparent); color: #f87168; }
 html[data-theme="light"] .dash-delta.is-bad, .light .dash-delta.is-bad { background: color-mix(in srgb, #c9372c 12%, transparent); color: #c9372c; }
+/* The week's average, dashed across the day bars. */
+.day-mini__bars { position: relative; }
+.day-mini__avg { position: absolute; inset-inline: 0; block-size: 0; border-block-start: 1.5px dashed color-mix(in srgb, var(--foreground) 55%, transparent); pointer-events: none; }
