@@ -23,6 +23,7 @@ import {
   leftovers,
   leftoverDays,
   type DayPlan,
+  type PlanIcon,
 } from "@/lib/plan";
 import { dayRun, history, runWords, stepRun } from "@/lib/habits";
 import { addDays as addDaysW } from "@/lib/weight";
@@ -104,6 +105,26 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
 /* ------------------------------------------------------------- routine */
 
 /** The activity alone: "Course · Module" reads as the course. */
+/** The colour an area carries across the dashboard. */
+type Tone =
+  | "habit"
+  | "fit"
+  | "learn"
+  | "read"
+  | "focus"
+  | "food"
+  | "todo"
+  | "body";
+/** A plan step's colour, from its icon. */
+const TONE_OF: Record<PlanIcon, Tone> = {
+  book: "read",
+  gym: "fit",
+  video: "learn",
+  learn: "learn",
+  task: "todo",
+  target: "focus",
+};
+const toneOf = (icon: PlanIcon): Tone => TONE_OF[icon] ?? "habit";
 const activityName = (t: string) => t.split(" · ")[0].trim() || t;
 
 /**
@@ -139,7 +160,10 @@ function HabitList({
             className={"habit-list__row" + (x.done ? " is-done" : "")}
           >
             <Link href="/routine" className="habit-list__open">
-              <span className="habit-list__tile" aria-hidden>
+              <span
+                className={`habit-list__tile tone-${toneOf(x.icon)}`}
+                aria-hidden
+              >
                 <PlanGlyph icon={x.icon} />
               </span>
               <span className="habit-list__text">
@@ -397,7 +421,10 @@ function LeftoverFold({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
               <li key={l.day + l.x.step.id} className="habit-list__row">
                 <span className="dash-left__day">{dayName}</span>
                 <Link href="/routine#leftovers" className="habit-list__open">
-                  <span className="habit-list__tile" aria-hidden>
+                  <span
+                    className={`habit-list__tile tone-${toneOf(l.x.icon)}`}
+                    aria-hidden
+                  >
                     <PlanGlyph icon={l.x.icon} />
                   </span>
                   <span className="habit-list__text">
@@ -442,8 +469,11 @@ function Tile({
   line,
   badge,
   wide,
+  tone,
   children,
 }: {
+  /** The area's colour: its icon chip, label, bars and badge. */
+  tone?: Tone;
   href: string;
   icon: ReactNode;
   label: string;
@@ -455,7 +485,12 @@ function Tile({
   children?: ReactNode;
 }) {
   return (
-    <Link href={href} className={"dash-tile" + (wide ? " is-wide" : "")}>
+    <Link
+      href={href}
+      className={
+        "dash-tile" + (wide ? " is-wide" : "") + (tone ? ` tone-${tone}` : "")
+      }
+    >
       <span className="dash-tile__head">
         <span className="dash-tile__label">
           <span className="dash-tile__icon" aria-hidden>
@@ -491,7 +526,7 @@ function WeekTile({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
   const now = days.find((d) => d.day === today);
   const short = (d: string) => WEEKDAY[weekdayOf(d)];
   return (
-    <Link href="/week" className="dash-tile is-wide dash-week">
+    <Link href="/week" className="dash-tile is-wide dash-week tone-habit">
       <span className="dash-tile__head">
         <span className="dash-tile__label">
           <span className="dash-tile__icon" aria-hidden>
@@ -569,6 +604,7 @@ function WorkoutsTile({ tracker }: { tracker: Tracker }) {
   const w = workoutsWeek(tracker.state!);
   return (
     <Tile
+      tone="fit"
       href="/fitness?view=training"
       icon={<PlanGlyph icon="gym" />}
       label="Workouts"
@@ -585,6 +621,7 @@ function LiftedTile({ tracker }: { tracker: Tracker }) {
   const w = liftedWeek(tracker.state!);
   return (
     <Tile
+      tone="fit"
       href="/fitness?view=training"
       icon={<PlanGlyph icon="gym" />}
       label="Lifted"
@@ -611,6 +648,7 @@ function LearningTile({ tracker }: { tracker: Tracker }) {
   const moved = t.moved.slice(0, 3);
   return (
     <Tile
+      tone="learn"
       href="/education"
       icon={<PlanGlyph icon="learn" />}
       label="Learning"
@@ -675,6 +713,7 @@ function ReadTile({ tracker }: { tracker: Tracker }) {
   const perDay = Math.round(w.total / (todayIndex() + 1));
   return (
     <Tile
+      tone="read"
       href="/education"
       icon={<PlanGlyph icon="book" />}
       label="Read"
@@ -696,6 +735,7 @@ function FocusTile({ tracker }: { tracker: Tracker }) {
   const h = Math.round((w.total / 60) * 10) / 10;
   return (
     <Tile
+      tone="focus"
       href="/progress"
       icon={<PlanGlyph icon="target" />}
       label="Focus"
@@ -716,6 +756,7 @@ function CaloriesTile({ tracker }: { tracker: Tracker }) {
   const w = caloriesWeek(s);
   return (
     <Tile
+      tone="food"
       href="/nutrition"
       icon={<PlanGlyph icon="target" />}
       label="Calories"
@@ -737,6 +778,7 @@ function ProteinTile({ tracker }: { tracker: Tracker }) {
   const p = proteinWeek(s);
   return s.proteinTarget ? (
     <Tile
+      tone="food"
       href="/nutrition"
       icon={<PlanGlyph icon="target" />}
       label="Protein"
@@ -746,6 +788,7 @@ function ProteinTile({ tracker }: { tracker: Tracker }) {
     />
   ) : (
     <Tile
+      tone="food"
       href="/nutrition"
       icon={<PlanGlyph icon="target" />}
       label="Protein"
@@ -763,6 +806,7 @@ function TodosTile({ tracker }: { tracker: Tracker }) {
   const w = todosWeek(s);
   return (
     <Tile
+      tone="todo"
       href="/todos"
       icon={<PlanGlyph icon="task" />}
       label="To-dos"
@@ -779,6 +823,7 @@ function WeightTile({ tracker }: { tracker: Tracker }) {
   if (!latest)
     return (
       <Tile
+        tone="body"
         href="/fitness?view=weight"
         icon={<PlanGlyph icon="gym" />}
         label="Weight"
@@ -796,6 +841,7 @@ function WeightTile({ tracker }: { tracker: Tracker }) {
   const span = Math.max(...pts.map((p) => p.kg)) - lo || 1;
   return (
     <Tile
+      tone="body"
       href="/fitness?view=weight"
       icon={<PlanGlyph icon="target" />}
       label="Weight"
@@ -841,6 +887,7 @@ function MeasurementsTile({ tracker }: { tracker: Tracker }) {
   const now = lead ? lastTwo(list, lead).now : undefined;
   return (
     <Tile
+      tone="body"
       href="/fitness?view=measurements"
       icon={<PlanGlyph icon="target" />}
       label="Measurements"
