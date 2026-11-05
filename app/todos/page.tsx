@@ -20,6 +20,7 @@ export default function TodosPage() {
   return (
     <SectionPage
       id="tasks"
+      tone="todo"
       title="To-dos"
       subtitle={
         <Link href="/" className="back-link">

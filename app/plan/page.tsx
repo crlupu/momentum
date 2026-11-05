@@ -12,6 +12,7 @@ export default function PlanPage() {
   return (
     <SectionPage
       id="tasks"
+      tone="habit"
       title="Day plan"
       subtitle={
         <Link href="/" className="back-link">

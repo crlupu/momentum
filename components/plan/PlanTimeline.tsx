@@ -30,7 +30,7 @@ import { useFlow } from "../books/flowContext";
 import { Check, ChevronDown, Play, Swap } from "../icons";
 import { doneThisWeek } from "@/lib/weekly";
 
-import { PlanGlyph } from "./bits";
+import { PlanGlyph, toneOf } from "./bits";
 import { history, runWords, stepRun } from "@/lib/habits";
 
 /**
@@ -39,11 +39,19 @@ import { history, runWords, stepRun } from "@/lib/habits";
  * run, and one tick; tapping it opens its actions (log pages, start the
  * workout, the next entry). Under them, what earlier plan days left undone.
  */
-export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
+export function PlanTimeline({
+  tracker,
+  plan,
+}: {
+  tracker: Tracker;
+  plan: DayPlan;
+}) {
   const today = dateKey();
   const s = tracker.state!;
   // What's left first, in the plan's order; kept ones sink to the bottom.
-  const steps = stepsOn(s, plan, today).sort((a, b) => Number(a.done) - Number(b.done));
+  const steps = stepsOn(s, plan, today).sort(
+    (a, b) => Number(a.done) - Number(b.done),
+  );
   const h = useMemo(() => history(s, plan, today), [s, plan, today]);
   const [openGoal, setOpenGoal] = useState<string | null>(null);
 
@@ -62,7 +70,15 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
             </div>
             <ol className="card plan-steps-today">
               {steps.map((x) => (
-                <StepRow key={x.step.id} tracker={tracker} plan={plan} x={x} day={today} streak={stepRun(h, x.step.id)} onOpenGoal={setOpenGoal} />
+                <StepRow
+                  key={x.step.id}
+                  tracker={tracker}
+                  plan={plan}
+                  x={x}
+                  day={today}
+                  streak={stepRun(h, x.step.id)}
+                  onOpenGoal={setOpenGoal}
+                />
               ))}
             </ol>
           </section>
@@ -74,34 +90,65 @@ export function PlanTimeline({ tracker, plan }: { tracker: Tracker; plan: DayPla
           <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
         </div>
       </div>
-      <GoalModal tracker={tracker} id={openGoal} onClose={() => setOpenGoal(null)} />
+      <GoalModal
+        tracker={tracker}
+        id={openGoal}
+        onClose={() => setOpenGoal(null)}
+      />
     </ReadingFlow>
   );
 }
 
 /** A goal opened from a step, in its sheet. */
-function GoalModal({ tracker, id, onClose }: { tracker: Tracker; id: string | null; onClose: () => void }) {
+function GoalModal({
+  tracker,
+  id,
+  onClose,
+}: {
+  tracker: Tracker;
+  id: string | null;
+  onClose: () => void;
+}) {
   const goal = id ? tracker.state!.goals.find((g) => g.id === id) : undefined;
   return (
     <Modal
       open={!!goal}
       onClose={onClose}
       title={goal?.title ?? ""}
-      titleNode={goal && <GoalTitle key={goal.id} tracker={tracker} goal={goal} />}
+      titleNode={
+        goal && <GoalTitle key={goal.id} tracker={tracker} goal={goal} />
+      }
       wide
     >
-      {goal && <GoalDetail key={goal.id} tracker={tracker} goal={goal} onClose={onClose} />}
+      {goal && (
+        <GoalDetail
+          key={goal.id}
+          tracker={tracker}
+          goal={goal}
+          onClose={onClose}
+        />
+      )}
     </Modal>
   );
 }
 
 /** Left from earlier on its own, for the right-hand column of a wide Today. */
-export function PlanLeftovers({ tracker, plan }: { tracker: Tracker; plan: DayPlan }) {
+export function PlanLeftovers({
+  tracker,
+  plan,
+}: {
+  tracker: Tracker;
+  plan: DayPlan;
+}) {
   const [openGoal, setOpenGoal] = useState<string | null>(null);
   return (
     <ReadingFlow tracker={tracker}>
       <Leftovers tracker={tracker} plan={plan} onOpenGoal={setOpenGoal} />
-      <GoalModal tracker={tracker} id={openGoal} onClose={() => setOpenGoal(null)} />
+      <GoalModal
+        tracker={tracker}
+        id={openGoal}
+        onClose={() => setOpenGoal(null)}
+      />
     </ReadingFlow>
   );
 }
@@ -111,17 +158,35 @@ export function PlanLeftovers({ tracker, plan }: { tracker: Tracker; plan: DayPl
  * plan, opened to review them by day, each tickable for its day or skipped,
  * a step or a day at a time.
  */
-function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayPlan; onOpenGoal: (id: string) => void }) {
+function Leftovers({
+  tracker,
+  plan,
+  onOpenGoal,
+}: {
+  tracker: Tracker;
+  plan: DayPlan;
+  onOpenGoal: (id: string) => void;
+}) {
   const list = leftovers(tracker.state!, plan);
   const { pending, run } = usePending();
   const [open, setOpen] = useState(false);
   if (!list.length) return null;
   const days = [...new Set(list.map((l) => l.day))].sort();
-  const skip = (ls: typeof list) => void run(() => tracker.skipPlanSteps(ls.map((l) => ({ day: l.day, stepId: l.x.step.id }))));
+  const skip = (ls: typeof list) =>
+    void run(() =>
+      tracker.skipPlanSteps(
+        ls.map((l) => ({ day: l.day, stepId: l.x.step.id })),
+      ),
+    );
   return (
     <section id="leftovers" className="scroll-mt-20">
       <div className="card leftovers">
-        <button type="button" className="leftovers__head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <button
+          type="button"
+          className="leftovers__head"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
           <span className="leftovers__count font-mono-n">{list.length}</span>
           <span className="leftovers__text">
             <span className="leftovers__title">Left from earlier</span>
@@ -129,7 +194,10 @@ function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayP
           </span>
           <span className="leftovers__action">
             Review
-            <ChevronDown className={open ? "rotate-180" : undefined} aria-hidden />
+            <ChevronDown
+              className={open ? "rotate-180" : undefined}
+              aria-hidden
+            />
           </span>
         </button>
         {open &&
@@ -139,13 +207,26 @@ function Leftovers({ tracker, plan, onOpenGoal }: { tracker: Tracker; plan: DayP
               <div key={d} className="leftovers__day">
                 <div className="leftovers__day-head">
                   <span>{WEEKDAY_LONG[weekdayOf(d)]}</span>
-                  <button type="button" className="text-action" disabled={pending} onClick={() => skip(ofDay)}>
+                  <button
+                    type="button"
+                    className="text-action"
+                    disabled={pending}
+                    onClick={() => skip(ofDay)}
+                  >
                     Skip day
                   </button>
                 </div>
                 <ol className="plan-steps-today">
                   {ofDay.map((l) => (
-                    <StepRow key={l.day + l.x.step.id} tracker={tracker} plan={plan} x={l.x} day={l.day} dayLabel={WEEKDAY[weekdayOf(l.day)]} onOpenGoal={onOpenGoal} />
+                    <StepRow
+                      key={l.day + l.x.step.id}
+                      tracker={tracker}
+                      plan={plan}
+                      x={l.x}
+                      day={l.day}
+                      dayLabel={WEEKDAY[weekdayOf(l.day)]}
+                      onOpenGoal={onOpenGoal}
+                    />
                   ))}
                 </ol>
               </div>
@@ -184,14 +265,31 @@ function StepRow({
   const [open, setOpen] = useState(false);
   const shown = open || (suggested && !x.done);
   const title = refTitle(s, x.ref) ?? (x.ref ? "Gone" : "Nothing picked");
-  const running = s.activeFocus?.stepId === x.step.id && s.activeFocus.day === day;
+  const running =
+    s.activeFocus?.stepId === x.step.id && s.activeFocus.day === day;
 
   return (
-    <li className={"plan-row" + (x.done ? " is-done" : "") + (suggested && !x.done ? " is-next" : "")}>
+    <li
+      className={
+        "plan-row" +
+        (x.done ? " is-done" : "") +
+        (suggested && !x.done ? " is-next" : "")
+      }
+    >
       <div className="plan-row__main">
-        <button type="button" className="plan-row__open" aria-expanded={!!shown} onClick={() => setOpen((v) => !v)}>
-          {streak === undefined && <span className="plan-row__n">{dayLabel ?? n}</span>}
-          <span className="area-tile plan-row__tile" aria-hidden>
+        <button
+          type="button"
+          className="plan-row__open"
+          aria-expanded={!!shown}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {streak === undefined && (
+            <span className="plan-row__n">{dayLabel ?? n}</span>
+          )}
+          <span
+            className={`area-tile plan-row__tile tone-${toneOf(x.icon)}`}
+            aria-hidden
+          >
             <PlanGlyph icon={x.icon} />
           </span>
           {/* One line: what it is. The tile says the kind; the actions say the rest. */}
@@ -200,14 +298,24 @@ function StepRow({
               <span className="plan-row__title">
                 {title}
                 {running ? ", running" : ""}
-                {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
+                {isSwapped(s, x.step, day) && (
+                  <Swap
+                    className="plan-row__swapped"
+                    aria-label="swapped this week"
+                  />
+                )}
               </span>
             </span>
           ) : (
             <span className="plan-row__text">
               <span className="plan-row__title">
                 {x.name}
-                {isSwapped(s, x.step, day) && <Swap className="plan-row__swapped" aria-label="swapped this week" />}
+                {isSwapped(s, x.step, day) && (
+                  <Swap
+                    className="plan-row__swapped"
+                    aria-label="swapped this week"
+                  />
+                )}
               </span>
               <span className="plan-row__sub">
                 {activityName(title)}
@@ -222,7 +330,11 @@ function StepRow({
             type="button"
             className="plan-row__skip"
             disabled={pending}
-            onClick={() => void run(() => tracker.skipPlanSteps([{ day, stepId: x.step.id }]))}
+            onClick={() =>
+              void run(() =>
+                tracker.skipPlanSteps([{ day, stepId: x.step.id }]),
+              )
+            }
           >
             Skip
           </button>
@@ -237,10 +349,21 @@ function StepRow({
           title={x.auto ? "Done: logged that day. Tap to unmark." : undefined}
           onClick={() => void run(() => tracker.togglePlanStep(day, x.step.id))}
         >
-          <span className="check__ring">{x.done && <Check className="h-4 w-4" aria-hidden />}</span>
+          <span className="check__ring">
+            {x.done && <Check className="h-4 w-4" aria-hidden />}
+          </span>
         </button>
       </div>
-      {shown && !x.done && <StepActions tracker={tracker} plan={plan} x={x} day={day} onOpenGoal={onOpenGoal} running={running} />}
+      {shown && !x.done && (
+        <StepActions
+          tracker={tracker}
+          plan={plan}
+          x={x}
+          day={day}
+          onOpenGoal={onOpenGoal}
+          running={running}
+        />
+      )}
     </li>
   );
 }
@@ -270,7 +393,8 @@ function StepActions({
   // today lends it the activity, so today's step isn't done by it as well.
   // (Focus blocks already log to their step's day.)
   const leftover = day !== dateKey();
-  const credit = () => (leftover ? tracker.creditLeftover(day, x.step.id) : Promise.resolve(true));
+  const credit = () =>
+    leftover ? tracker.creditLeftover(day, x.step.id) : Promise.resolve(true);
 
   // Swap carries its word while there's room; beside Open it's the icon alone.
   const swapBtn = (labelled: boolean) => (
@@ -285,8 +409,20 @@ function StepActions({
         <Swap aria-hidden />
         {labelled && "Swap"}
       </button>
-      <Modal open={swapping} onClose={() => setSwapping(false)} title={`Swap ${refTitle(tracker.state!, x.ref) ?? x.name}`}>
-        {swapping && <SwapSheet tracker={tracker} plan={plan} x={x} day={day} onDone={() => setSwapping(false)} />}
+      <Modal
+        open={swapping}
+        onClose={() => setSwapping(false)}
+        title={`Swap ${refTitle(tracker.state!, x.ref) ?? x.name}`}
+      >
+        {swapping && (
+          <SwapSheet
+            tracker={tracker}
+            plan={plan}
+            x={x}
+            day={day}
+            onDone={() => setSwapping(false)}
+          />
+        )}
       </Modal>
     </>
   );
@@ -294,7 +430,10 @@ function StepActions({
   if (!it)
     return (
       <StepPanel kicker="Nothing picked" title="Pick what this step is">
-        <Link href="/plan" className="pill-link pill-link--primary step-panel__main">
+        <Link
+          href="/plan"
+          className="pill-link pill-link--primary step-panel__main"
+        >
           Pick
         </Link>
       </StepPanel>
@@ -303,7 +442,10 @@ function StepActions({
   if (it.kind === "goal") {
     const nx = nextOfGoal(it.item);
     return (
-      <StepPanel kicker="Next" title={nx?.itemId ? nx.title : "A session on it"}>
+      <StepPanel
+        kicker="Next"
+        title={nx?.itemId ? nx.title : "A session on it"}
+      >
         {nx && (
           <button
             type="button"
@@ -312,14 +454,20 @@ function StepActions({
             onClick={() =>
               void run(async () => {
                 await credit();
-                return nx.itemId ? tracker.setItemDone(it.item.id, nx.itemId, true) : tracker.logSession(it.item.id);
+                return nx.itemId
+                  ? tracker.setItemDone(it.item.id, nx.itemId, true)
+                  : tracker.logSession(it.item.id);
               })
             }
           >
             <Check aria-hidden /> Done
           </button>
         )}
-        <button type="button" className="pill-link" onClick={() => onOpenGoal(it.item.id)}>
+        <button
+          type="button"
+          className="pill-link"
+          onClick={() => onOpenGoal(it.item.id)}
+        >
           Open
         </button>
         {swapBtn(false)}
@@ -330,7 +478,13 @@ function StepActions({
     const book = it.kind === "track" ? it.book : it.item;
     return (
       <StepPanel
-        kicker={book ? (book.pages > 0 ? `Reading, p. ${book.read} of ${book.pages}` : `Reading, p. ${book.read}`) : "Reading"}
+        kicker={
+          book
+            ? book.pages > 0
+              ? `Reading, p. ${book.read} of ${book.pages}`
+              : `Reading, p. ${book.read}`
+            : "Reading"
+        }
         title={book ? book.title : "Nothing open in this track"}
       >
         {book ? (
@@ -345,12 +499,19 @@ function StepActions({
             >
               Log
             </button>
-            <button type="button" className="pill-link" onClick={() => flow.open({ kind: "detail", bookId: book.id })}>
+            <button
+              type="button"
+              className="pill-link"
+              onClick={() => flow.open({ kind: "detail", bookId: book.id })}
+            >
               Open
             </button>
           </>
         ) : (
-          <Link href={`/education?track=${it.kind === "track" ? it.item.id : ""}`} className="pill-link pill-link--primary step-panel__main">
+          <Link
+            href={`/education?track=${it.kind === "track" ? it.item.id : ""}`}
+            className="pill-link pill-link--primary step-panel__main"
+          >
             Open
           </Link>
         )}
@@ -373,7 +534,10 @@ function StepActions({
         >
           <Play aria-hidden /> Start
         </button>
-        <Link href={`/fitness?view=workout&id=${it.item.id}`} className="pill-link">
+        <Link
+          href={`/fitness?view=workout&id=${it.item.id}`}
+          className="pill-link"
+        >
           Open
         </Link>
         {swapBtn(false)}
@@ -390,12 +554,19 @@ function StepActions({
           type="button"
           className="pill-link pill-link--primary step-panel__main"
           disabled={pending}
-          onClick={() => void run(() => tracker.toggleWeeklyTask(it.item.id, day))}
+          onClick={() =>
+            void run(() => tracker.toggleWeeklyTask(it.item.id, day))
+          }
         >
           <Check aria-hidden /> Done
         </button>
         {link && (
-          <a href={link} target="_blank" rel="noopener noreferrer" className="pill-link">
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pill-link"
+          >
             Open
           </a>
         )}
@@ -405,14 +576,24 @@ function StepActions({
   }
   // Focus: a timer, on Today's card while it runs.
   return (
-    <StepPanel kicker={running ? "Focus, running" : "Focus"} title={`${it.minutes} min${it.project ? `, ${it.project.title}` : ""}`}>
+    <StepPanel
+      kicker={running ? "Focus, running" : "Focus"}
+      title={`${it.minutes} min${it.project ? `, ${it.project.title}` : ""}`}
+    >
       <button
         type="button"
         className="pill-link pill-link--primary step-panel__main"
         disabled={pending || running}
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
-          void run(() => tracker.startFocus({ minutes: it.minutes, projectId: it.project?.id, stepId: x.step.id, day }));
+          void run(() =>
+            tracker.startFocus({
+              minutes: it.minutes,
+              projectId: it.project?.id,
+              stepId: x.step.id,
+              day,
+            }),
+          );
         }}
       >
         <Play aria-hidden /> Start
@@ -439,7 +620,15 @@ function activityName(title: string): string {
  * An opened step: what it's about to do in two lines (a kicker and a
  * title), then its main action across the width with the rest beside it.
  */
-function StepPanel({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) {
+function StepPanel({
+  kicker,
+  title,
+  children,
+}: {
+  kicker: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <div className="step-panel">
       <p className="step-panel__kicker">{kicker}</p>
@@ -455,25 +644,50 @@ function StepPanel({ kicker, title, children }: { kicker: string; title: string;
  * same day. Each takes the other's place; next week the plan is as it was.
  * A swapped step can be swapped back.
  */
-function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: DayPlan; x: DayStep; day: string; onDone: () => void }) {
+function SwapSheet({
+  tracker,
+  plan,
+  x,
+  day,
+  onDone,
+}: {
+  tracker: Tracker;
+  plan: DayPlan;
+  x: DayStep;
+  day: string;
+  onDone: () => void;
+}) {
   const s = tracker.state!;
   const { pending, run } = usePending();
   const options = swapOptions(s, plan, day, x.step.id);
-  const partner = isSwapped(s, x.step, day) ? swapPartner(s, plan, day, x.step.id) : null;
+  const partner = isSwapped(s, x.step, day)
+    ? swapPartner(s, plan, day, x.step.id)
+    : null;
   const swap = (b: { day: string; stepId: string }) =>
     void run(async () => {
       const ok = await tracker.swapPlanSteps({ day, stepId: x.step.id }, b);
       onDone();
       return ok;
     });
-  const when = (d: string) => (d === day ? "Same day" : d < day ? "Earlier this week" : "Later this week");
+  const when = (d: string) =>
+    d === day ? "Same day" : d < day ? "Earlier this week" : "Later this week";
   // The options by day, the step's own day first.
-  const days = [...new Set(options.map((o) => o.day))].sort((a, b) => (a === day ? -1 : b === day ? 1 : a.localeCompare(b)));
+  const days = [...new Set(options.map((o) => o.day))].sort((a, b) =>
+    a === day ? -1 : b === day ? 1 : a.localeCompare(b),
+  );
   return (
     <div className="flex flex-col gap-4">
-      <p className="plan-note">Trades places with another activity of this week&rsquo;s plan, for this week only. Next week the plan is as it was.</p>
+      <p className="plan-note">
+        Trades places with another activity of this week&rsquo;s plan, for this
+        week only. Next week the plan is as it was.
+      </p>
       {partner && (
-        <button type="button" className="pill-link" disabled={pending} onClick={() => swap(partner)}>
+        <button
+          type="button"
+          className="pill-link"
+          disabled={pending}
+          onClick={() => swap(partner)}
+        >
           <Swap aria-hidden /> Swap back
         </button>
       )}
@@ -488,13 +702,21 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
               {options
                 .filter((o) => o.day === d)
                 .map((o) => (
-                  <button key={o.day + o.stepId} type="button" className="plan-opt" disabled={pending} onClick={() => swap(o)}>
+                  <button
+                    key={o.day + o.stepId}
+                    type="button"
+                    className="plan-opt"
+                    disabled={pending}
+                    onClick={() => swap(o)}
+                  >
                     <span className="area-tile" aria-hidden>
                       <PlanGlyph icon={o.icon} />
                     </span>
                     <span className="plan-opt__text">
                       <span className="plan-opt__title">{o.title}</span>
-                      <span className="plan-opt__sub">{optionSub(s, o.ref)}</span>
+                      <span className="plan-opt__sub">
+                        {optionSub(s, o.ref)}
+                      </span>
                     </span>
                     <Swap className="plan-opt__swap" aria-hidden />
                   </button>
@@ -503,7 +725,9 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
           </section>
         ))
       ) : (
-        <p className="plan-note">Nothing else left in this week&rsquo;s plan to swap with.</p>
+        <p className="plan-note">
+          Nothing else left in this week&rsquo;s plan to swap with.
+        </p>
       )}
     </div>
   );
@@ -513,8 +737,10 @@ function SwapSheet({ tracker, plan, x, day, onDone }: { tracker: Tracker; plan: 
 function optionSub(s: TrackerState, r: PlanRef): string {
   const it = resolve(s, r);
   if (!it) return "";
-  if (it.kind === "workout") return `Workout, ${it.item.exercises.length} exercise${it.item.exercises.length === 1 ? "" : "s"}`;
-  if (it.kind === "track") return it.book ? `Reading, ${it.book.title}` : "Reading";
+  if (it.kind === "workout")
+    return `Workout, ${it.item.exercises.length} exercise${it.item.exercises.length === 1 ? "" : "s"}`;
+  if (it.kind === "track")
+    return it.book ? `Reading, ${it.book.title}` : "Reading";
   if (it.kind === "book") return "Reading";
   if (it.kind === "focus") return `Focus, ${it.minutes} min`;
   return s.categories.find((c) => c.id === it.item.catId)?.name ?? "Goal";
