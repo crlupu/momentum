@@ -6770,26 +6770,28 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
    measurements), purple for the mind (learning, reading, focus); to-dos
    neutral. They colour data only: bars, lines, meters. Names, icons and
    every button keep the app's neutrals and its one blue.
-   Light mode takes the deeper shades. ---- */
+   The routine is the accent itself; green and purple share its lightness
+   (OKLCH) and an equal strength, only the hue turned, so the three read as
+   one family. Light mode takes the deeper shades. ---- */
 :root, [data-theme="light"] {
-  --tone-habit: #0c66e4;
-  --tone-fit: #1f845a;
-  --tone-learn: #6e5dc6;
-  --tone-read: #6e5dc6;
-  --tone-focus: #6e5dc6;
-  --tone-food: #1f845a;
+  --tone-habit: #0667db;
+  --tone-fit: #058255;
+  --tone-learn: #795ba8;
+  --tone-read: #795ba8;
+  --tone-focus: #795ba8;
+  --tone-food: #058255;
   --tone-todo: #626f86;
-  --tone-body: #1f845a;
+  --tone-body: #058255;
 }
 [data-theme="dark"], .dark {
-  --tone-habit: #579dff;
-  --tone-fit: #4bce97;
-  --tone-learn: #9f8fef;
-  --tone-read: #9f8fef;
-  --tone-focus: #9f8fef;
-  --tone-food: #4bce97;
+  --tone-habit: #2b91ff;
+  --tone-fit: #0eab71;
+  --tone-learn: #9f7adc;
+  --tone-read: #9f7adc;
+  --tone-focus: #9f7adc;
+  --tone-food: #0eab71;
   --tone-todo: #9fadbc;
-  --tone-body: #4bce97;
+  --tone-body: #0eab71;
 }
 .tone-habit { --tone: var(--tone-habit); }
 .tone-fit { --tone: var(--tone-fit); }
@@ -6815,14 +6817,14 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .dash-tile[class*="tone-"] .dash-tile__badge { padding: 0.125rem 0.375rem; border-radius: 4px; background: color-mix(in srgb, var(--foreground) 10%, transparent); color: var(--foreground); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
 /* The routine card is dark in both themes: it takes the bright shades. */
 .dash-routine {
-  --tone-habit: #579dff;
-  --tone-fit: #4bce97;
-  --tone-learn: #9f8fef;
-  --tone-read: #9f8fef;
-  --tone-focus: #9f8fef;
-  --tone-food: #4bce97;
+  --tone-habit: #2b91ff;
+  --tone-fit: #0eab71;
+  --tone-learn: #9f7adc;
+  --tone-read: #9f7adc;
+  --tone-focus: #9f7adc;
+  --tone-food: #0eab71;
   --tone-todo: #9fadbc;
-  --tone-body: #4bce97;
+  --tone-body: #0eab71;
 }
 
 /* ---- Each page's charts in its area's group colour. Buttons, links and
@@ -6837,14 +6839,14 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
   --scale-5: var(--tone);
 }
 /* The dark cards keep the bright shades: their highlighted bar, meter and glow take the page's colour. */
-.tone-habit { --tone-bright: #579dff; }
-.tone-fit { --tone-bright: #4bce97; }
-.tone-learn { --tone-bright: #9f8fef; }
-.tone-read { --tone-bright: #9f8fef; }
-.tone-focus { --tone-bright: #9f8fef; }
-.tone-food { --tone-bright: #4bce97; }
+.tone-habit { --tone-bright: #2b91ff; }
+.tone-fit { --tone-bright: #0eab71; }
+.tone-learn { --tone-bright: #9f7adc; }
+.tone-read { --tone-bright: #9f7adc; }
+.tone-focus { --tone-bright: #9f7adc; }
+.tone-food { --tone-bright: #0eab71; }
 .tone-todo { --tone-bright: #9fadbc; }
-.tone-body { --tone-bright: #4bce97; }
+.tone-body { --tone-bright: #0eab71; }
 .section-panel[class*="tone-"] .card-bars li.is-hi .card-bars__bar { background: var(--tone-bright); box-shadow: 0 0 10px color-mix(in srgb, var(--tone-bright) 60%, transparent); }
 .section-panel[class*="tone-"] .card-meter.is-accent > span,
 .section-panel[class*="tone-"] .momentum__seg.is-next { background: var(--tone-bright); }
