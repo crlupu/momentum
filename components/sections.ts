@@ -81,7 +81,7 @@ export function navHolds(id: NavId, path: string): boolean {
 /** The Health pages, for the switch at the top of each. */
 export const HEALTH: SectionId[] = ["fitness", "nutrition"];
 
-/** An area's colour (see --tone-* in globals.css): the dashboard tiles, and each page's accent. */
+/** An area's colour group (see --tone-* in globals.css): it colours charts and other data, never buttons. */
 export type Tone =
   | "habit"
   | "fit"
@@ -92,7 +92,7 @@ export type Tone =
   | "todo"
   | "body";
 
-/** The colour a section's pages take; none keeps the app's blue. */
+/** The colour group a section's charts take; none keeps the app's blue. */
 export const SECTION_TONE: Partial<Record<SectionId, Tone>> = {
   learning: "learn",
   books: "read",
