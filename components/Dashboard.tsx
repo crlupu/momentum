@@ -2,7 +2,6 @@
 
 import {
   ReactNode,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -189,9 +188,10 @@ function HabitList({
 
 /**
  * The routine: today's count and run, and the habits as round icons of one
- * size on a track that fills from the left as they're kept, the next one's
- * icon brighter. On a phone the track opens into today's habits; ticking one
- * closes it again, the new tick glowing for a moment on the track.
+ * size on a track, in the plan's order. A kept habit turns white where it
+ * stands, its tick popping in; nothing moves. The next one's icon is
+ * brighter. On a phone the track opens into today's habits; ticking one
+ * closes it again.
  */
 function RoutineHero({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
@@ -204,40 +204,14 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
     [s, planned, today],
   );
   const [open, setOpen] = useState(false);
-  const [glow, setGlow] = useState<string | null>(null);
-  // Each habit's place on the track, so a re-order glides instead of jumping.
   const slots = useRef(new Map<string, HTMLSpanElement>());
-  const places = useRef(new Map<string, number>());
   // Habits kept since the last render: only these get the tick's pop.
   const keptBefore = useRef<Set<string> | null>(null);
-  useEffect(() => {
-    if (!glow) return;
-    const id = window.setTimeout(() => setGlow(null), 1400);
-    return () => window.clearTimeout(id);
-  }, [glow]);
   const trackKey = steps.map((x) => `${x.step.id}:${x.done ? 1 : 0}`).join(",");
   useLayoutEffect(() => {
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const next = new Map<string, number>();
-    slots.current.forEach((el, id) => {
-      const left = el.offsetLeft;
-      next.set(id, left);
-      const was = places.current.get(id);
-      if (reduce || was == null || was === left) return;
-      el.animate(
-        [
-          { transform: `translateX(${was - left}px)` },
-          { transform: "translateX(0)" },
-        ],
-        {
-          duration: 520,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        },
-      );
-    });
-    places.current = next;
     // A habit just kept: its tick pops in.
     const kept = new Set(steps.filter((x) => x.done).map((x) => x.step.id));
     if (keptBefore.current && !reduce)
@@ -266,8 +240,6 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
   let nextDay = addDays(today, 1);
   for (let i = 0; i < 7 && !planned.days.includes(weekdayOf(nextDay)); i++)
     nextDay = addDays(nextDay, 1);
-  // Kept on the left, under the fill; what's left after, in the plan's order.
-  const ordered = [...steps].sort((p, q) => Number(q.done) - Number(p.done));
 
   return (
     <section
@@ -318,17 +290,7 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
           onClick={() => setOpen((v) => !v)}
         >
           <span className="habit-track__rail">
-            <span
-              className="habit-track__fill"
-              // As much room after the last kept habit as before the first: the
-              // rail's padding on both sides, plus the kept slots between.
-              style={{
-                inlineSize:
-                  done === 0 ? "0%" : done === n ? "100%" : `calc(${done / n} * (100% - 0.625rem) + 0.625rem)`,
-              }}
-              aria-hidden
-            />
-            {ordered.map((x) => (
+            {steps.map((x) => (
               <span
                 key={x.step.id}
                 ref={(el) => {
@@ -342,8 +304,7 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
                 <span
                   className={
                     "habit-track__dot" +
-                    (x.done ? " is-done" : x === next ? " is-next" : "") +
-                    (glow === x.step.id ? " is-glow" : "")
+                    (x.done ? " is-done" : x === next ? " is-next" : "")
                   }
                 >
                   {x.done ? <Check /> : <PlanGlyph icon={x.icon} />}
@@ -360,10 +321,7 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
           <HabitList
             tracker={tracker}
             plan={planned}
-            onTicked={(id) => {
-              setOpen(false);
-              setGlow(id);
-            }}
+            onTicked={() => setOpen(false)}
           />
         </div>
       )}
