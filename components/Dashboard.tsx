@@ -320,7 +320,12 @@ function RoutineHero({ tracker }: { tracker: Tracker }) {
           <span className="habit-track__rail">
             <span
               className="habit-track__fill"
-              style={{ inlineSize: `${(done / n) * 100}%` }}
+              // As much room after the last kept habit as before the first: the
+              // rail's padding on both sides, plus the kept slots between.
+              style={{
+                inlineSize:
+                  done === 0 ? "0%" : done === n ? "100%" : `calc(${done / n} * (100% - 0.625rem) + 0.625rem)`,
+              }}
               aria-hidden
             />
             {ordered.map((x) => (
