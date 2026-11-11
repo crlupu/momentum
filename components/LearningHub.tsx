@@ -8,7 +8,7 @@ import { Modal } from "./Modal";
 import { GoalDetail, GoalTitle } from "./GoalDetail";
 import { GoalRow } from "./GoalsView";
 import { PathsView } from "./PathsView";
-import { NextSteps } from "./NextSteps";
+import { BookProgressCard, GoalsByTopic, goingLine } from "./EduProgress";
 import { BookOpen, ChevronRight, Clock, School, Upload } from "./icons";
 import { EmptyState } from "./EmptyState";
 import { SummaryCard } from "./SummaryCard";
@@ -18,10 +18,9 @@ import { ReadingFlow } from "./books/flow";
 import { useFlow } from "./books/flowContext";
 import { useCoverLookup } from "./books/Cover";
 import { Segmented } from "./books/bits";
-import { OpenBook } from "./books/TodayView";
 import { NoTrack, TrackPageView } from "./books/TracksView";
 import { HistoryView } from "./books/HistoryView";
-import { Tracker, dateKey, goalStatus, type Goal } from "@/lib/tracker";
+import { Tracker, goalStatus, type Goal } from "@/lib/tracker";
 import * as R from "@/lib/reading";
 
 type Tab = "active" | "library";
@@ -91,7 +90,6 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
   const droppedGoals = s.goals.filter((g) => goalStatus(g) === "dropped");
   const [showDropped, setShowDropped] = useState(false);
   const opened = openId ? s.goals.find((g) => g.id === openId) : undefined;
-  const today = dateKey();
   // Every book open, in track order: just the books and their page box.
   const reading = R.liveTracks(s).flatMap((t) => R.activeBooks(s, t.id));
 
@@ -133,37 +131,47 @@ function Hub({ tracker, library }: { tracker: Tracker; library?: boolean }) {
                 </>
               }
             />
-          ) : (
-            <NextSteps tracker={tracker} onOpen={setOpenId} />
-          )}
-          <div className="hub-active__lists grid items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
-            <Panel title="Reading" bare>
+          ) : null}
+          {/* Progress, nothing above it: each open book as a card, then the
+              goals going now by topic. Two columns side by side on wide
+              screens; cards two across on an iPad held upright. */}
+          <div className="edu-progress">
+            <section className="edu-progress__col" aria-label="Reading">
+              <div className="panel-head">
+                <h2 className="panel-head__title">Reading</h2>
+                <div className="panel-head__side">
+                  <span className="edu-progress__aside">{reading.length ? `${reading.length} open` : ""}</span>
+                </div>
+              </div>
               {reading.length === 0 ? (
                 <EmptyState icon={<BookOpen />} title="No book open">
                   Start one from Library; its page and pace show here.
                 </EmptyState>
               ) : (
-                <div className="card goal-list">
-                  <ul className="goal-list__rows">
-                    {reading.map((b) => (
-                      <OpenBook key={b.id} tracker={tracker} book={b} today={today} minimal />
-                    ))}
-                  </ul>
+                <div className="edu-progress__cards">
+                  {reading.map((b) => (
+                    <BookProgressCard key={b.id} tracker={tracker} book={b} />
+                  ))}
                 </div>
               )}
-            </Panel>
-            <Panel title="Learning" bare>
-              <PathsView
-                tracker={tracker}
-                statuses={["active"]}
-                onOpen={setOpenId}
-                empty={
-                  <EmptyState icon={<School />} title="No goals active">
-                    Set a goal to Active and it shows here.
-                  </EmptyState>
-                }
-              />
-            </Panel>
+            </section>
+            <section className="edu-progress__col" aria-label="Goals">
+              <div className="panel-head">
+                <h2 className="panel-head__title">Goals</h2>
+                <div className="panel-head__side">
+                  <span className="edu-progress__aside">{goingLine(tracker)}</span>
+                </div>
+              </div>
+              {s.goals.some((g) => goalStatus(g) === "active") ? (
+                <div className="edu-progress__cards">
+                  <GoalsByTopic tracker={tracker} onOpen={setOpenId} />
+                </div>
+              ) : (
+                <EmptyState icon={<School />} title="No goals going">
+                  Set a goal to Active and its progress shows here.
+                </EmptyState>
+              )}
+            </section>
           </div>
         </div>
       ) : (

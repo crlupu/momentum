@@ -157,7 +157,7 @@ export function learningWeek(
 }
 
 /** How far a goal has come, as counted units: its parts' counts when it has parts. */
-function units(g: Goal): { done: number; total: number } {
+export function goalUnits(g: Goal): { done: number; total: number } {
   if (g.parts?.length) {
     const total = g.parts.reduce((a, p) => a + (p.target ?? 0), 0);
     if (total > 0)
@@ -200,7 +200,7 @@ export function topicsWeek(
       gain = 0;
     for (const g of goals) {
       if (goalStatus(g) === "dropped") continue;
-      const u = units(g);
+      const u = goalUnits(g);
       if (!u.total) continue;
       done += u.done;
       total += u.total;
