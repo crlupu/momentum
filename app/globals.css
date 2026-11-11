@@ -6863,13 +6863,48 @@ html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-g
   .health-grid__weight { grid-column: 2; grid-row: 1; }
   .health-grid__measure { grid-column: 2; grid-row: 2; }
 }
-/* Education: the next step on the left, reading and learning on the right. */
+/* Education: progress on books and goals, nothing above it. */
 .hub-active { display: flex; flex-direction: column; gap: 1.25rem; }
+.edu-progress { display: flex; flex-direction: column; gap: 1.5rem; }
+.edu-progress__col { display: flex; flex-direction: column; min-inline-size: 0; }
+.edu-progress__aside { font-size: 0.8125rem; color: var(--muted); }
+.edu-progress__cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.625rem; align-items: start; }
+/* iPad upright: cards two across. */
+@media (min-width: 768px) { .edu-progress__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; } }
+/* With the sidebar: Reading and Goals side by side, cards stacked in each. */
 @media (min-width: 1056px) {
-  .hub-active { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; column-gap: 1.25rem; row-gap: 1.25rem; }
-  .hub-active > * { grid-column: 1; min-inline-size: 0; }
-  .hub-active > .hub-active__lists { grid-column: 2; grid-row: 1 / span 3; grid-template-columns: minmax(0, 1fr) !important; }
+  .edu-progress { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1.25rem; align-items: start; }
+  .edu-progress__cards { grid-template-columns: minmax(0, 1fr); }
 }
+.edu-bar { display: block; block-size: 0.375rem; overflow: hidden; border-radius: 3px; background: color-mix(in srgb, var(--foreground) 10%, transparent); }
+.edu-bar > span { display: block; block-size: 100%; border-radius: inherit; background: var(--tone); }
+.edu-bar--thick { block-size: 0.5rem; border-radius: 4px; }
+.edu-book { display: flex; flex-direction: column; gap: 0.625rem; padding: 0.875rem; }
+.edu-book__open { display: flex; gap: 0.75rem; min-inline-size: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.edu-book__cover .book-cover { inline-size: 46px; block-size: 66px; border-radius: 6px; }
+.edu-book__text { display: flex; flex-direction: column; min-inline-size: 0; }
+.edu-book__title { overflow: hidden; font-size: 0.9375rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.edu-book__author { overflow: hidden; font-size: 0.75rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.edu-book__figure { display: flex; align-items: baseline; gap: 0.375rem; margin-block-start: auto; padding-block-start: 0.375rem; }
+.edu-book__pct { font-size: 1.5rem; font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.edu-book__page { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.edu-book__foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; color: var(--muted); }
+.edu-book__pages { display: inline-flex; flex: none; align-items: center; gap: 0.25rem; min-block-size: 2rem; padding: 0 0.75rem; border: 0; border-radius: var(--r-control); background: var(--default); color: var(--foreground); font: inherit; font-size: 0.8125rem; font-weight: 500; cursor: pointer; }
+.edu-book__pages svg { inline-size: 1rem; block-size: 1rem; fill: currentColor; }
+.edu-topic { display: flex; flex-direction: column; gap: 0.375rem; padding: 0.875rem 0.875rem 0.25rem; }
+.edu-topic__head { display: flex; align-items: baseline; gap: 0.5rem; }
+.edu-topic__title { flex: 1 1 auto; min-inline-size: 0; overflow: hidden; font-size: 0.9375rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.edu-topic__pct { flex: none; font-size: 1.25rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+.edu-topic__count { font-size: 0.75rem; color: var(--muted); }
+.edu-topic__goals { margin: 0.25rem 0 0; padding: 0; list-style: none; }
+.edu-topic__goals > li + li { border-block-start: 1px solid var(--separator); }
+.edu-goal { display: flex; align-items: center; gap: 0.75rem; inline-size: 100%; min-block-size: 3.5rem; padding: 0.5rem 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.edu-goal svg:first-child { flex: none; }
+.edu-goal__text { display: flex; flex: 1 1 auto; flex-direction: column; min-inline-size: 0; }
+.edu-goal__title { overflow: hidden; font-size: 0.875rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.edu-goal__sub { overflow: hidden; font-size: 0.75rem; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.edu-goal__chev { flex: none; inline-size: 1.125rem; block-size: 1.125rem; fill: var(--faint); }
+@media (hover: hover) { .edu-book__open:hover .edu-book__title, .edu-goal:hover .edu-goal__title { text-decoration: underline; text-underline-offset: 3px; } }
 /* Big buttons stop growing past a comfortable width. */
 @media (min-width: 1056px) { .section-panel .cds--btn--primary { max-inline-size: 22rem; } }
 /* Meal chips wrap instead of running off the card. */
