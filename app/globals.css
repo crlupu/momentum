@@ -6600,8 +6600,6 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .habit-track__dot.is-done svg { inline-size: 0.875rem; block-size: 0.875rem; }
 .habit-track__dot.is-next { background: color-mix(in srgb, var(--hero-fg) 14%, transparent); color: var(--hero-fg); box-shadow: 0 0 0 1.5px var(--accent); }
 .dash-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; }
-@media (min-width: 768px) { .dash-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .dash-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .dash-tile {
   display: flex;
   flex-direction: column;
@@ -6700,12 +6698,10 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
   .dashboard { grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .dashboard__routine { grid-column: 1; grid-row: 1; }
   .dashboard__habits { grid-column: 1; grid-row: 2; }
-  .dash-tiles { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dash-tiles { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (min-width: 1440px) { .dash-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 /* iPad landscape leaves room for two tiles across beside the routine; three from wide desktops. */
 @media (min-width: 1056px) { .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1440px) { .dash-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .dash-tile__label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dash-tile__badge { flex: none; }
 
@@ -6965,3 +6961,10 @@ html[data-theme="light"] .dash-delta.is-bad, .light .dash-delta.is-bad { backgro
 .momentum .card-bars li.is-hi .card-bars__bar { background: currentColor !important; box-shadow: none !important; }
 .momentum .card-bars li.is-hi .card-bars__label { color: currentColor !important; }
 .momentum .card-meter.is-accent > span { background: currentColor !important; }
+
+/* Today's tiles stay two across at every width, so pairs (Workouts and
+   Lifted, Weight and Read, Eaten today and Daily average) keep their row
+   and wide tiles span it; no gaps, no lone tile. A figure and last week's
+   beside it wrap onto two lines rather than cutting the figure short. */
+.dash-pair { flex-wrap: wrap; row-gap: 0.25rem; }
+.dash-pair .dash-tile__value { overflow: visible; text-overflow: clip; }
