@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { Tracker, dateKey, todoDueBy } from "@/lib/tracker";
+import { Tracker, dateKey } from "@/lib/tracker";
 import {
   planOf,
   stepsOn,
@@ -27,25 +27,15 @@ import {
 import { dayRun, history, runWords, stepRun } from "@/lib/habits";
 import { validPlan } from "@/lib/weight";
 import {
-  MEASURES,
-  monthName,
-  monthOf,
-  lastTwo,
-  cmText,
-} from "@/lib/measurements";
-import {
   caloriesWeek,
   weightWeek,
   compare,
-  focusWeek,
   learningWeek,
   pctText,
   topicsWeek,
   liftedWeek,
   pagesWeek,
-  proteinWeek,
   todayIndex,
-  todosWeek,
   workoutsWeek,
 } from "@/lib/weekStats";
 import { usePending } from "./ActionButton";
@@ -95,10 +85,6 @@ export function Dashboard({ tracker }: { tracker: Tracker }) {
         <KcalTodayTile tracker={tracker} />
         <KcalAverageTile tracker={tracker} />
         <CaloriesTile tracker={tracker} />
-        <FocusTile tracker={tracker} />
-        <ProteinTile tracker={tracker} />
-        <TodosTile tracker={tracker} />
-        {s && <MeasurementsTile tracker={tracker} />}
       </div>
     </div>
   );
@@ -748,28 +734,6 @@ function ReadTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
-function FocusTile({ tracker }: { tracker: Tracker }) {
-  const w = focusWeek(tracker.state!);
-  const h = Math.round((w.total / 60) * 10) / 10;
-  return (
-    <Tile
-      tone="focus"
-      href="/progress"
-      icon={<PlanGlyph icon="target" />}
-      label="Focus"
-      figure={h}
-      unit="h this week"
-      line={`${w.sessions} session${w.sessions === 1 ? "" : "s"}`}
-    >
-      <DayBars
-        days={w.days}
-        label={`Focus minutes by day: ${w.days.join(", ")}`}
-      />
-    </Tile>
-  );
-}
-
-/** Calories eaten today: what's left of the budget, and a meter filling toward it. */
 function KcalTodayTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const w = caloriesWeek(s);
@@ -853,51 +817,6 @@ function CaloriesTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
-function ProteinTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const p = proteinWeek(s);
-  return s.proteinTarget ? (
-    <Tile
-      tone="food"
-      href="/nutrition"
-      icon={<PlanGlyph icon="target" />}
-      label="Protein"
-      figure={p.hit}
-      unit={`of ${p.logged} day${p.logged === 1 ? "" : "s"}`}
-      line={`at ${s.proteinTarget} g, ${p.avg} g avg`}
-    />
-  ) : (
-    <Tile
-      tone="food"
-      href="/nutrition"
-      icon={<PlanGlyph icon="target" />}
-      label="Protein"
-      figure={p.avg}
-      unit="g avg a day"
-      line={`${p.logged} day${p.logged === 1 ? "" : "s"} logged`}
-    />
-  );
-}
-
-function TodosTile({ tracker }: { tracker: Tracker }) {
-  const s = tracker.state!;
-  const today = dateKey();
-  const open = s.todos.filter((t) => !t.done && todoDueBy(t, today));
-  const w = todosWeek(s);
-  return (
-    <Tile
-      tone="todo"
-      href="/todos"
-      icon={<PlanGlyph icon="task" />}
-      label="To-dos"
-      figure={w.done}
-      unit="done this week"
-      line={open.length ? `${open.length} for today` : "Nothing due today"}
-    />
-  );
-}
-
-/** The median weigh-in this week against last week's. */
 function WeightTile({ tracker }: { tracker: Tracker }) {
   const s = tracker.state!;
   const w = weightWeek(s);
@@ -921,27 +840,3 @@ function WeightTile({ tracker }: { tracker: Tracker }) {
   );
 }
 
-function MeasurementsTile({ tracker }: { tracker: Tracker }) {
-  const list = tracker.state!.measurements ?? [];
-  const today = dateKey();
-  const month = monthOf(today);
-  const due = !list.some((m) => m.month === month);
-  const lead = MEASURES.find((k) => lastTwo(list, k).now);
-  const now = lead ? lastTwo(list, lead).now : undefined;
-  return (
-    <Tile
-      tone="body"
-      href="/fitness?view=measurements"
-      icon={<PlanGlyph icon="target" />}
-      label="Measurements"
-      figure={now ? cmText(now.v) : "–"}
-      unit={now ? `cm ${lead}` : undefined}
-      line={
-        due
-          ? `Log ${monthName(month, today)}`
-          : `${monthName(month, today)} logged`
-      }
-      badge={due ? "Due" : undefined}
-    />
-  );
-}
