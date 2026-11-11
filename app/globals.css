@@ -6844,9 +6844,6 @@ button.measure-table__row { cursor: pointer; border-block-start: 0.5px solid var
 .tone-food { --tone-bright: #0eab71; }
 .tone-todo { --tone-bright: #9fadbc; }
 .tone-body { --tone-bright: #0eab71; }
-.section-panel[class*="tone-"] .card-bars li.is-hi .card-bars__bar { background: var(--tone-bright); box-shadow: 0 0 10px color-mix(in srgb, var(--tone-bright) 60%, transparent); }
-.section-panel[class*="tone-"] .card-meter.is-accent > span,
-.section-panel[class*="tone-"] .momentum__seg.is-next { background: var(--tone-bright); }
 html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-gradient(circle at 30% 75%, color-mix(in srgb, var(--tone-bright) 50%, transparent), transparent 65%); }
 
 /* ---- Audit fixes, November ---- */
@@ -6916,10 +6913,6 @@ html[data-scheme="volt"] .section-panel[class*="tone-"] { --hero-shape: radial-g
 /* One rule for day bars: days so far in the area's colour, today full, days ahead faint. */
 .dash-tile[class*="tone-"] .day-mini__bar.is-on { background: color-mix(in srgb, var(--tone) 55%, transparent); }
 .dash-tile[class*="tone-"] .day-mini__bar.is-on.is-today { background: var(--tone); }
-.section-panel[class*="tone-"] .card-bars li.is-on .card-bars__bar,
-.tone-scope[class*="tone-"] .card-bars li.is-on .card-bars__bar { background: color-mix(in srgb, var(--tone-bright) 55%, transparent); }
-.tone-scope[class*="tone-"] .card-bars li.is-hi .card-bars__bar { background: var(--tone-bright); box-shadow: 0 0 10px color-mix(in srgb, var(--tone-bright) 60%, transparent); }
-.tone-scope[class*="tone-"] .card-meter.is-accent > span { background: var(--tone-bright); }
 .section-panel[class*="tone-"] .day-bars__step.is-done { background: var(--tone-bright); }
 /* The last tile of an odd row spans it while tiles go two across. */
 @media (max-width: 1439px) { .dash-tile.is-fill { grid-column: 1 / -1; } }
@@ -6956,3 +6949,19 @@ html[data-theme="light"] .dash-delta.is-bad, .light .dash-delta.is-bad { backgro
 /* The week's average, dashed across the day bars. */
 .day-mini__bars { position: relative; }
 .day-mini__avg { position: absolute; inset-inline: 0; block-size: 0; border-block-start: 1.5px dashed color-mix(in srgb, var(--foreground) 55%, transparent); pointer-events: none; }
+
+/* ---- Charts on coloured cards draw in the card's own text colour: white
+   on the blue and black cards, black on the light ones. Today a bar is
+   full, days before it half, the median and plan fainter still. Area
+   colours stay on neutral surfaces, where they read. ---- */
+.momentum {
+  --chart-1: currentColor;
+  --chart-2: color-mix(in srgb, currentColor 55%, transparent);
+  --chart-grid: color-mix(in srgb, currentColor 14%, transparent);
+  --muted: color-mix(in srgb, currentColor 62%, transparent);
+  --default: color-mix(in srgb, currentColor 12%, transparent);
+}
+.momentum .card-bars li.is-on .card-bars__bar { background: color-mix(in srgb, currentColor 50%, transparent) !important; box-shadow: none !important; }
+.momentum .card-bars li.is-hi .card-bars__bar { background: currentColor !important; box-shadow: none !important; }
+.momentum .card-bars li.is-hi .card-bars__label { color: currentColor !important; }
+.momentum .card-meter.is-accent > span { background: currentColor !important; }
