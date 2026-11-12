@@ -25,7 +25,6 @@ import {
   Dumbbell,
   MoreHorizontal,
   OneArm,
-  Hourglass,
   Plus,
   Trash2,
   LinkIcon,
@@ -669,14 +668,15 @@ function SetRow({
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
-  // While resting the row itself fills, "Resting" in place of last time's
-  // numbers and this set's greyed out; full, they come back outlined: ready.
-  // A tap on "Resting" brings them back early.
+  // While resting, a ring fills round this set's tick and the time left
+  // stands where last time's numbers go; full, the tick turns blue and the
+  // row says "Go". The figures stay editable throughout, and ticking the set
+  // early simply ends the rest.
   const now = useNow(!!rest);
-  const [peeked, setPeeked] = useState<number | null>(null);
   const fill = rest ? Math.min(1, Math.max(0, now - rest.at) / (rest.rest * 1000)) : 0;
-  const resting = !!rest && fill < 1 && peeked !== rest.at;
-  const ready = !!rest && fill >= 1;
+  const resting = !!rest && !done && fill < 1;
+  const ready = !!rest && !done && fill >= 1;
+  const left = rest ? Math.max(0, Math.ceil((rest.at + rest.rest * 1000 - now) / 1000)) * 1000 : 0;
 
   const complete = () => {
     tap();
@@ -686,36 +686,19 @@ function SetRow({
   return (
     <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
     <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : "", resting ? "is-resting" : "", ready ? "is-ready" : ""].filter(Boolean).join(" ")}>
-      {resting && <span className="set-line__fill" style={{ inlineSize: `${fill * 100}%` }} aria-hidden />}
       <span className="set-line__no">{index + 1}</span>
       {resting ? (
-        <>
-          <button
-            type="button"
-            className="set-line__resting"
-            role="progressbar"
-            aria-label={`Resting before set ${index + 1}; tap to show its numbers`}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(fill * 100)}
-            onClick={() => setPeeked(rest!.at)}
-          >
-            <Hourglass aria-hidden />
-            Resting
-          </button>
-          <span className="set-line__ghost font-mono-n" aria-hidden>
-            {set.weight ?? previous?.weight ?? "kg"}
-          </span>
-          <span className="set-line__ghost font-mono-n" aria-hidden>
-            {set.reps ?? previous?.reps ?? "reps"}
-          </span>
-        </>
+        <span className="set-line__prev set-line__left" role="timer" aria-label={`Resting before set ${index + 1}: ${formatElapsed(left)} left`}>
+          <span className="font-mono-n">{formatElapsed(left)}</span> left
+        </span>
+      ) : ready ? (
+        <span className="set-line__prev set-line__go">Go</span>
       ) : (
-        <>
-      {/* Last time's numbers: reference only, never editable. */}
-      <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
-        {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
-      </span>
+        /* Last time's numbers: reference only, never editable. */
+        <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
+          {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
+        </span>
+      )}
       <NumberField
         label={`Weight for set ${index + 1}`}
         placeholder={previous?.weight != null ? String(previous.weight) : "kg"}
@@ -731,14 +714,18 @@ function SetRow({
         locked={done}
         onCommit={(n) => tracker.setSetReps(exerciseId, set.id, n)}
       />
-        </>
-      )}
       <IconButton
         label={done ? `Reopen set ${index + 1}` : `Complete set ${index + 1}`}
         pressed={done}
         onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
       >
-        <span className={"icon-disc set-done" + (done ? " is-on" : "")}>
+        {resting && (
+          <svg className="set-spin" viewBox="0 0 44 44" role="progressbar" aria-label="Rest" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fill * 100)}>
+            <circle className="set-spin__track" cx="22" cy="22" r="20" pathLength={100} />
+            <circle className="set-spin__arc" cx="22" cy="22" r="20" pathLength={100} strokeDasharray={`${fill * 100} 100`} />
+          </svg>
+        )}
+        <span className={"icon-disc set-done" + (done ? " is-on" : "") + (ready ? " is-ready" : "")}>
           <Check />
         </span>
       </IconButton>
