@@ -97,12 +97,18 @@ export type PlanSummary = {
   toGo: number;
   /** 0–1: how much of the planned loss is done. */
   progress: number;
-  /** kg a week still needed from the current median to the target. */
+  /** kg a week still needed from the current median to the next checkpoint. */
   neededPace: number | null;
   /** kg a week lost so far, from the start to the latest median. */
   actualPace: number | null;
   /** Where the plan says today's weight should be. */
   expectedNow: number;
+  /**
+   * How far the latest median is under the plan (positive: ahead), judged
+   * on the day the median stands for, the middle of its week; null before
+   * any weigh-ins.
+   */
+  aheadBy: number | null;
   /** The next checkpoint from today on. */
   next?: WeightCheckpoint;
 };
@@ -114,17 +120,23 @@ export function planSummary(plan: WeightPlan, weights: WeightEntry[], today: str
   const total = plan.startKg - plan.targetKg;
   const lost = plan.startKg - current;
   const days = (a: string, b: string) => daysSinceEpoch(b) - daysSinceEpoch(a);
-  const weeksLeft = Math.max(0, days(today, plan.targetDate) / 7);
-  // The median stands for the middle of its week.
-  const elapsed = last ? days(plan.startDate, addDays(last.week, 3)) / 7 : 0;
+  // The median stands for the middle of its week (or today, if that's sooner).
+  const mid = last ? (addDays(last.week, 3) < today ? addDays(last.week, 3) : today) : today;
+  const elapsed = last ? days(plan.startDate, mid) / 7 : 0;
+  // The pace still needed is toward the next checkpoint ahead, not the target
+  // averaged over the whole plan: checkpoints set their own pace. Under a
+  // week away it's read as a week, so a near checkpoint doesn't spike it.
+  const ahead = plan.checkpoints.find((c) => c.date > today);
+  const weeksToNext = ahead ? Math.max(1, days(today, ahead.date) / 7) : 0;
   return {
     current,
     lost: round1(lost),
     toGo: round1(Math.max(0, current - plan.targetKg)),
     progress: total > 0 ? Math.min(1, Math.max(0, lost / total)) : 0,
-    neededPace: weeksLeft > 0 ? Math.max(0, current - plan.targetKg) / weeksLeft : null,
+    neededPace: ahead ? Math.max(0, current - ahead.kg) / weeksToNext : null,
     actualPace: last && elapsed >= 1 ? lost / elapsed : null,
     expectedNow: round1(expectedOn(plan, today)),
+    aheadBy: last ? round1(expectedOn(plan, mid) - current) : null,
     next: plan.checkpoints.find((c) => c.date >= today),
   };
 }

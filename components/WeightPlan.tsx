@@ -98,7 +98,11 @@ function PlanBody({ plan, tracker, today, onEdit }: { plan: WeightPlan; tracker:
         figures={[
           { value: pace(sum.neededPace), label: "kg/wk needed" },
           { value: pace(sum.actualPace), label: "kg/wk so far", warn: slow },
-          { value: expectedOn(plan, today).toFixed(1), label: "kg expected" },
+          sum.aheadBy == null
+            ? { value: expectedOn(plan, today).toFixed(1), label: "kg expected" }
+            : Math.abs(sum.aheadBy) < 0.1
+              ? { value: "0.0", label: "kg off plan" }
+              : { value: Math.abs(sum.aheadBy).toFixed(1), label: sum.aheadBy > 0 ? "kg ahead of plan" : "kg behind plan", warn: sum.aheadBy < 0 },
         ]}
       >
         <CardMeter value={sum.progress} accent />
