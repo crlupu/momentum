@@ -6004,15 +6004,12 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 
 /* Rest between sets: the next set's row fills blue while resting, "Resting" in place of last time's numbers and this set's greyed; full, it comes back outlined in white. */
 .set-line { position: relative; }
-/* The rest as a ring filling round the next set's tick, the time left in the row. */
+/* The rest as a ring filling round the next set's tick. */
 .set-line .icon-btn { position: relative; }
 .set-spin { position: absolute; inset: 50% auto auto 50%; inline-size: 2.625rem; block-size: 2.625rem; translate: -50% -50%; rotate: -90deg; pointer-events: none; overflow: visible; }
 .set-spin circle { fill: none; stroke-width: 2.5; }
 .set-spin__track { stroke: color-mix(in srgb, var(--foreground) 10%, transparent); }
 .set-spin__arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray 1s linear; }
-.set-line__left { color: var(--foreground); }
-.set-line__left .font-mono-n { color: var(--accent); font-weight: 600; }
-.set-line__go { color: var(--foreground); font-weight: 600; }
 .live-workout .set-line .icon-disc.set-done.is-ready, .icon-disc.set-done.is-ready { background: var(--accent); color: var(--accent-foreground, #fff); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
 @media (prefers-reduced-motion: reduce) { .set-spin__arc { transition: none; } }
 .rest-choice { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.375rem; }
