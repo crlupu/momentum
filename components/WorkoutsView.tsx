@@ -668,15 +668,13 @@ function SetRow({
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
-  // While resting, a ring fills round this set's tick and the time left
-  // stands where last time's numbers go; full, the tick turns blue and the
-  // row says "Go". The figures stay editable throughout, and ticking the set
-  // early simply ends the rest.
+  // While resting, a ring fills round this set's tick; full, the tick turns
+  // blue. The figures stay editable throughout, and ticking the set early
+  // simply ends the rest.
   const now = useNow(!!rest);
   const fill = rest ? Math.min(1, Math.max(0, now - rest.at) / (rest.rest * 1000)) : 0;
   const resting = !!rest && !done && fill < 1;
   const ready = !!rest && !done && fill >= 1;
-  const left = rest ? Math.max(0, Math.ceil((rest.at + rest.rest * 1000 - now) / 1000)) * 1000 : 0;
 
   const complete = () => {
     tap();
@@ -687,18 +685,10 @@ function SetRow({
     <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
     <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : "", resting ? "is-resting" : "", ready ? "is-ready" : ""].filter(Boolean).join(" ")}>
       <span className="set-line__no">{index + 1}</span>
-      {resting ? (
-        <span className="set-line__prev set-line__left" role="timer" aria-label={`Resting before set ${index + 1}: ${formatElapsed(left)} left`}>
-          <span className="font-mono-n">{formatElapsed(left)}</span> left
-        </span>
-      ) : ready ? (
-        <span className="set-line__prev set-line__go">Go</span>
-      ) : (
-        /* Last time's numbers: reference only, never editable. */
-        <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
-          {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
-        </span>
-      )}
+      {/* Last time's numbers: reference only, never editable. */}
+      <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
+        {previous ? `${previous.weight ?? "–"} × ${previous.reps ?? "–"}` : "–"}
+      </span>
       <NumberField
         label={`Weight for set ${index + 1}`}
         placeholder={previous?.weight != null ? String(previous.weight) : "kg"}
@@ -720,7 +710,7 @@ function SetRow({
         onPress={() => (done ? void tracker.setSetDone(exerciseId, set.id, false) : complete())}
       >
         {resting && (
-          <svg className="set-spin" viewBox="0 0 44 44" role="progressbar" aria-label="Rest" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fill * 100)}>
+          <svg className="set-spin" viewBox="0 0 44 44" role="progressbar" aria-label={`Rest before set ${index + 1}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(fill * 100)}>
             <circle className="set-spin__track" cx="22" cy="22" r="20" pathLength={100} />
             <circle className="set-spin__arc" cx="22" cy="22" r="20" pathLength={100} strokeDasharray={`${fill * 100} 100`} />
           </svg>
@@ -859,8 +849,11 @@ function ExerciseBlock({
     }
   };
   const lastOpen = [...e.sets].reverse().find((x) => !x.done);
-  // The rest shows on the next set to do: its row fills while it runs.
-  const nextIndex = e.sets.findIndex((x) => !x.done);
+  // The rest shows on the next set to do: after the set just ticked, if it
+  // was this exercise's and one is still open below it, else the first open.
+  const firstOpen = e.sets.findIndex((x) => !x.done);
+  const afterLast = lastSet && lastSet.exerciseId === e.exerciseId ? e.sets.findIndex((x, i) => i >= lastSet.set && !x.done) : -1;
+  const nextIndex = afterLast >= 0 ? afterLast : firstOpen;
   const undo = removed && (
     <div className="set-undo" role="status">
       <span>Set {removed.index + 1} removed</span>
@@ -979,7 +972,7 @@ function ExerciseBlock({
   );
 }
 
-type LastSet = { at: number; set: number; name: string; rest: number };
+type LastSet = { at: number; set: number; name: string; rest: number; exerciseId: string };
 
 /**
  * The workout's most recently completed set, if any, with the rest its
@@ -993,7 +986,7 @@ function lastSetOf(active: ActiveWorkout, definition?: Workout): LastSet | null 
     const linked = !!e.supersetNext && k < active.exercises.length - 1;
     const rest = linked ? 0 : definition?.exercises.find((d) => d.id === e.exerciseId)?.restSeconds ?? DEFAULT_REST;
     e.sets.forEach((x, i) => {
-      if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name, rest };
+      if (x.done && x.doneAt && (!last || x.doneAt > last.at)) last = { at: x.doneAt, set: i + 1, name: e.name, rest, exerciseId: e.exerciseId };
     });
   }
   return last;
