@@ -668,13 +668,12 @@ function SetRow({
 }) {
   const [tapped, tap] = useTapFeedback();
   const done = !!set.done;
-  // While resting, a ring fills round this set's tick; full, the tick turns
-  // blue. The figures stay editable throughout, and ticking the set early
+  // While resting, a ring fills round this set's tick; when the rest is over
+  // the ring goes and the tick is as before. The figures stay editable throughout, and ticking the set early
   // simply ends the rest.
   const now = useNow(!!rest);
   const fill = rest ? Math.min(1, Math.max(0, now - rest.at) / (rest.rest * 1000)) : 0;
   const resting = !!rest && !done && fill < 1;
-  const ready = !!rest && !done && fill >= 1;
 
   const complete = () => {
     tap();
@@ -683,7 +682,7 @@ function SetRow({
 
   return (
     <SwipeToDelete label={`Remove set ${index + 1}`} onDelete={onRemove} nudge={nudge}>
-    <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : "", resting ? "is-resting" : "", ready ? "is-ready" : ""].filter(Boolean).join(" ")}>
+    <div className={["set-line", done ? "is-done" : "", tapped ? "is-tapped" : "", resting ? "is-resting" : ""].filter(Boolean).join(" ")}>
       <span className="set-line__no">{index + 1}</span>
       {/* Last time's numbers: reference only, never editable. */}
       <span className="set-line__prev" aria-label={`Last time: ${formatSet(previous ?? {})}`}>
@@ -715,7 +714,7 @@ function SetRow({
             <circle className="set-spin__arc" cx="22" cy="22" r="20" pathLength={100} strokeDasharray={`${fill * 100} 100`} />
           </svg>
         )}
-        <span className={"icon-disc set-done" + (done ? " is-on" : "") + (ready ? " is-ready" : "")}>
+        <span className={"icon-disc set-done" + (done ? " is-on" : "")}>
           <Check />
         </span>
       </IconButton>

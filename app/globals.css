@@ -6010,7 +6010,6 @@ button.path__summary { inline-size: 100%; border: 0; background: transparent; co
 .set-spin circle { fill: none; stroke-width: 2.5; }
 .set-spin__track { stroke: color-mix(in srgb, var(--foreground) 10%, transparent); }
 .set-spin__arc { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray 1s linear; }
-.live-workout .set-line .icon-disc.set-done.is-ready, .icon-disc.set-done.is-ready { background: var(--accent); color: var(--accent-foreground, #fff); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
 @media (prefers-reduced-motion: reduce) { .set-spin__arc { transition: none; } }
 .rest-choice { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.375rem; }
 .rest-choice__opt { min-block-size: 2.75rem; border-radius: var(--r-small); background: var(--surface-secondary); color: var(--foreground); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
